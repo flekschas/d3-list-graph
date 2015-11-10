@@ -32,7 +32,9 @@ svg {
 var width = 800,
     height = 200;
 
-var listGraph = new d3.layout.listGraph();
+var D3ListGraph = d3.layout.listGraph();
+
+listGraph = new D3ListGraph([width, height], [5,5]);
 
 var diagonal = d3.svg.diagonal()
   .projection(function(d) { return [d.y, d.x]; });
@@ -49,7 +51,7 @@ var scaleY = d3.scale.linear().domain([0,5]).range([0,200]);
 d3.json("data.json", function(error, data) {
   if (error) throw error;
 
-  var visData = listGraph(data, ['1', '2']);
+  var visData = listGraph.process(data, ['1', '2']);
 
   d3.select('svg')
     .selectAll('circle')
@@ -57,10 +59,10 @@ d3.json("data.json", function(error, data) {
     .enter()
     .append('circle')
       .attr('cx', function(data) {
-        return scaleX(data.x);
+        return data.x;
       })
       .attr('cy', function(data) {
-        return scaleY(data.y);
+        return data.y;
       })
       .attr('r', 20)
       .style('fill', 'pink');

@@ -1,10 +1,37 @@
 d3.layout.listGraph = function() {
-  var depthCache = {};
-  var nodeCache = {};
+  /**
+   * Default size
+   *
+   * @type  {Object}
+   * @private
+   */
+  var _size = {
+    width: 300,
+    height: 300
+  };
+
+  /**
+   * Default grid
+   *
+   * @type  {Object}
+   * @private
+   */
+  var _grid = {
+    columns: 3,
+    rows: 3
+  };
 
   // Lodash
   function isArray (value) {
     return Array.isArray(value);
+  }
+
+  // Lodash
+  function isObject(value) {
+    // Avoid a V8 JIT bug in Chrome 19-20.
+    // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
+    var type = typeof value;
+    return !!value && (type == 'object' || type == 'function');
   }
 
   // Lodash
@@ -44,7 +71,7 @@ d3.layout.listGraph = function() {
   }
 
   // Breadth first search
-  function walkGraph (graph, start) {
+  function walkGraph (graph, start, depthCache, scaleX, scaleY) {
     var i;
     var node;
     var visited = {};
@@ -74,8 +101,8 @@ d3.layout.listGraph = function() {
 
       if (!depthCache[node.depth][id]) {
         depthCache[node.depth][id] = true;
-        _node.x = node.depth;
-        _node.y = Object.keys(depthCache[node.depth]).length;
+        _node.x = scaleX(node.depth);
+        _node.y = scaleY(Object.keys(depthCache[node.depth]).length);
       }
     }
 
@@ -109,31 +136,148 @@ d3.layout.listGraph = function() {
           );
         }
       }
-
-      console.log(depthCache);
     }
   }
 
-  function ListGraph (data, rootIds) {
-    var i;
+  /**
+   * [ListGraph description]
+   *
+   * @method  ListGraph
+   * @author  Fritz Lekschas
+   * @date    2015-11-10
+   *
+   * @constructor
+   * @param  {Array|Object}  size  New size. Can either be an Array, e.g.
+   *   `[200,20]` or an Object, e.g. `{width: 200, height: 20}`.
+   * @param  {Array|Object}  grid  New grid configuration. Can either be an
+   *   Array, e.g. `[5,3]` or an Object, e.g. `{columns: 5, rows: 3}`.
+   */
+  function ListGraph (size, grid) {
+    this.scale = {
+      x: d3.scale.linear(),
+      y: d3.scale.linear()
+    };
 
-    if (!isArray(rootIds)) {
-      rootIds = [rootIds];
-    }
+    this._grid = {
+      columns: _grid.columns,
+      rows: _grid.rows
+    };
 
-    for (i = rootIds.length; i--;) {
-      walkGraph(data, rootIds[i], 0);
-    }
+    this._size = {
+      width: _size.width,
+      height: _size.height
+    };
 
-    return nodeListToFatArray(data);
+    this.grid(grid);
+    this.size(size);
+
+    console.log(this._size, this._grid);
+
+    this.depthCache = {};
+
+    return this;
   }
 
+  ListGraph.prototype.process = function (data, rootIds) {
+    this.data = data || this.data;
+    this.rootIds = rootIds || this.rootIds;
+
+    if (!isArray(this.rootIds)) {
+      this.rootIds = [this.rootIds];
+    }
+
+    for (var i = this.rootIds.length; i--;) {
+      walkGraph(
+        this.data,
+        this.rootIds[i],
+        this.depthCache,
+        this.scale.x,
+        this.scale.y
+      );
+    }
+
+    return nodeListToFatArray(this.data);
+  }
+
+  /**
+   * Set or get the grid configuration.
+   *
+   * @method  grid
+   * @author  Fritz Lekschas
+   * @date    2015-11-10
+   *
+   * @public
+   * @param   {Array|Object}  newGrid  New grid configuration. Can either be an
+   *   Array, e.g. `[5,3]` or an Object, e.g. `{columns: 5, rows: 3}`.
+   * @return  {Object}  Self.
+   */
+  ListGraph.prototype.grid = function (newGrid) {
+    if (!arguments.length) {
+      return this._grid;
+    }
+
+    if (isArray(newGrid)) {
+      this._grid.columns = parseInt(newGrid[0]) || this._grid.columns;
+      this._grid.rows = parseInt(newGrid[1]) || this._grid.rows;
+    }
+
+    if (isObject(newGrid)) {
+      this._grid.columns = parseInt(newGrid.columns)|| this._grid.columns;
+      this._grid.rows = parseInt(newGrid.rows)|| this._grid.rows;
+    }
+
+    this.updateScaling();
+
+    return this;
+  }
+
+  /**
+   * Updates scaling according to the size and grid configuration.
+   *
+   * @method  updateScaling
+   * @author  Fritz Lekschas
+   * @date    2015-11-10
+   *
+   * @public
+   * @return  {Object}  Self.
+   */
+  ListGraph.prototype.updateScaling = function () {
+    console.log(this._size);
+    this.scale.x.domain([0, this._grid.columns]).range([0, this._size.width]);
+    this.scale.y.domain([0, this._grid.rows]).range([0, this._size.height]);
+
+    return this;
+  }
+
+  /**
+   * Set or get the size of the layout.
+   *
+   * @method  size
+   * @author  Fritz Lekschas
+   * @date    2015-11-10
+   *
+   * @public
+   * @param   {Array|Object}  newSize  New size. Can either be an Array, e.g.
+   *   `[200,20]` or an Object, e.g. `{width: 200, height: 20}`.
+   * @return  {Object}  Self.
+   */
   ListGraph.prototype.size = function (newSize) {
     if (!arguments.length) {
-      return gridSize;
+      return this._size;
     }
 
-    gridSize = newSize;
+    if (isArray(newSize)) {
+      this._size.width = parseInt(newSize[0]) || this._size.width;
+      this._size.height = parseInt(newSize[1]) || this._size.height;
+    }
+
+    if (isObject(newSize)) {
+      this._size.width = parseInt(newSize.width) || this._size.width;
+      this._size.height = parseInt(newSize.height) || this._size.height;
+    }
+
+    this.updateScaling();
+
     return this;
   }
 
