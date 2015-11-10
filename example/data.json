@@ -1,110 +1,110 @@
 {
     "1": {
         "name": "one",
-        "children": ["one.one", "one.two"]
+        "children": ["1-1", "1-2"]
     },
     "2": {
         "name": "two",
-        "children": ["two.one", "two.two"]
+        "children": ["2-1", "2-2"]
     },
-    "1.1": {
-        "name": "one.one",
+    "1-1": {
+        "name": "one-one",
         "children": [
-            "one.one",
-            "one.two",
-            "one.three",
-            "one.four"
+            "1-1-1",
+            "1-1-2",
+            "1-1-3",
+            "1-1-4"
         ]
     },
-    "1.2": {
-        "name": "one.two",
+    "1-2": {
+        "name": "one-two",
         "children": [
-            "one.two.one",
-            "one.two.two",
-            "one.two.three",
-            "one.two.four"
+            "1-2-1",
+            "1-2-2",
+            "1-2-3",
+            "1-2-4"
         ]
     },
-    "2.1": {
-        "name": "two.one",
+    "2-1": {
+        "name": "two-one",
         "children": [
-            "two.one.one",
-            "two.one.two",
-            "two.one.three",
-            "two.one.fou"
+            "2-1-1",
+            "2-1-2",
+            "2-1-3",
+            "2-1-4"
         ]
     },
-    "2.2": {
-        "name": "two.one",
+    "2-2": {
+        "name": "two-one",
         "children": [
-            "two.two.one",
-            "two.two.two",
-            "two.two.three",
-            "two.two.fou"
+            "2-2-1",
+            "2-2-2",
+            "2-2-3",
+            "2-2-4"
         ]
     },
-    "1.1.1": {
-        "name": "one.one.one",
+    "1-1-1": {
+        "name": "one-one-one",
         "children": []
     },
-    "1.1.2": {
-        "name": "one.one.tow",
+    "1-1-2": {
+        "name": "one-one-two",
         "children": []
     },
-    "1.1.3": {
-        "name": "one.one.three",
+    "1-1-3": {
+        "name": "one-one-three",
         "children": []
     },
-    "1.1.4": {
-        "name": "one.one.four",
+    "1-1-4": {
+        "name": "one-one-four",
         "children": []
     },
-    "1.2.1": {
-        "name": "one.two.one",
+    "1-2-1": {
+        "name": "one-two-one",
         "children": []
     },
-    "1.2.2": {
-        "name": "one.two.two",
+    "1-2-2": {
+        "name": "one-two-two",
         "children": []
     },
-    "1.2.3": {
-        "name": "one.two.three",
+    "1-2-3": {
+        "name": "one-two-three",
         "children": []
     },
-    "1.2.4": {
-        "name": "one.two.four",
+    "1-2-4": {
+        "name": "one-two-four",
         "children": []
     },
-    "2.1.1": {
-        "name": "two.one.one",
+    "2-1-1": {
+        "name": "two-one-one",
         "children": []
     },
-    "2.1.2": {
-        "name": "two.one.two",
+    "2-1-2": {
+        "name": "two-one-two",
         "children": []
     },
-    "2.1.3": {
-        "name": "two.one.three",
+    "2-1-3": {
+        "name": "two-one-three",
         "children": []
     },
-    "2.1.4": {
-        "name": "two.one.four",
+    "2-1-4": {
+        "name": "two-one-four",
         "children": []
     },
-    "2.2.1": {
-        "name": "two.two.one",
+    "2-2-1": {
+        "name": "two-two-one",
         "children": []
     },
-    "2.2.2": {
-        "name": "two.two.two",
+    "2-2-2": {
+        "name": "two-two-two",
         "children": []
     },
-    "2.2.3": {
-        "name": "two.two.three",
+    "2-2-3": {
+        "name": "two-two-three",
         "children": []
     },
-    "2.2.4": {
-        "name": "two.two.four",
+    "2-2-4": {
+        "name": "two-two-four",
         "children": []
     }
 }
