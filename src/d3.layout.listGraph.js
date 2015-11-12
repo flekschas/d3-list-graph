@@ -73,23 +73,29 @@ d3.layout.listGraph = function() {
   // Breadth first search
   function walkGraph (graph, start, depthCache, scaleX, scaleY) {
     var i;
+    var child;
     var node;
     var visited = {};
     var queue = [];
+    var cloneId;
 
     function processNode (id, node, duplication) {
       var _node = node;
 
       if (duplication) {
-        _node = {
+        cloneId = id + '.' + node.clones.length + 1;
+        graph[cloneId] = {
           children: [],
           clone: true,
-          cloneId: node.clones.length,
-          id: node + '.' + node.clones.length,
-          name: node.name,
+          cloneId: node.clones.length + 1,
+          // Data will be referenced rather than copied to avoid inconsistencies
+          data: node.data,
           originalId: id,
+          // Reference to the original node
           originalNode: node,
         }
+        _node = graph[cloneId];
+        // Add a reference to the original node that points to the clone.
         node.clones.push(_node);
       } else {
         _node['clones'] = [];
@@ -121,19 +127,23 @@ d3.layout.listGraph = function() {
 
       processNode(id, node);
       for (i = node.children.length; i--;) {
-        if (!visited[node.children[i]]) {
-          queue.push(node.children[i]);
-          visited[node.children[i]] = true;
-          graph[node.children[i]].depth = node.depth + 1;
-        } else {
-          // Duplicate
-          // Adding an _indicator_ node for user-controlled switching. Children
-          // of duplicated nodes wont be processed at this time.
-          processNode(
-            node.children[i],
-            graph[node.children[i]],
-            true
-          );
+        child = graph[node.children[i]];
+
+        if (!!child) {
+          if (!visited[node.children[i]]) {
+            queue.push(node.children[i]);
+            visited[node.children[i]] = true;
+            graph[node.children[i]].depth = node.depth + 1;
+          } else {
+            // Duplicate
+            // Adding an _indicator_ node for user-controlled switching. Children
+            // of duplicated nodes wont be processed at this time.
+            processNode(
+              node.children[i],
+              graph[node.children[i]],
+              true
+            );
+          }
         }
       }
     }
@@ -170,8 +180,6 @@ d3.layout.listGraph = function() {
 
     this.grid(grid);
     this.size(size);
-
-    console.log(this._size, this._grid);
 
     this.depthCache = {};
 
@@ -242,7 +250,6 @@ d3.layout.listGraph = function() {
    * @return  {Object}  Self.
    */
   ListGraph.prototype.updateScaling = function () {
-    console.log(this._size);
     this.scale.x.domain([0, this._grid.columns]).range([0, this._size.width]);
     this.scale.y.domain([0, this._grid.rows]).range([0, this._size.height]);
 
