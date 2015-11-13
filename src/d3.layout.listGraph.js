@@ -2,8 +2,8 @@ d3.layout.listGraph = function() {
   /**
    * Default size
    *
-   * @type  {Object}
    * @private
+   * @type  {Object}
    */
   var _size = {
     width: 300,
@@ -13,20 +13,40 @@ d3.layout.listGraph = function() {
   /**
    * Default grid
    *
-   * @type  {Object}
    * @private
+   * @type  {Object}
    */
   var _grid = {
     columns: 3,
     rows: 3
   };
 
-  // Lodash
+  /**
+   * Test if the value is an Array.
+   *
+   * @copyright  Lodash
+   * @see  https://lodash.com/docs#isArray
+   *
+   * @method  isArray
+   * @private
+   * @param  {*}  value  Value to be tested.
+   * @return  {Boolean}  If `true` the value is an Array.
+   */
   function isArray (value) {
     return Array.isArray(value);
   }
 
-  // Lodash
+  /**
+   * Test if the value is an Object.
+   *
+   * @copyright  Lodash
+   * @see  https://lodash.com/docs#isObject
+   *
+   * @method  isObject
+   * @private
+   * @param  {*}  value  Value to be tested.
+   * @return  {Boolean}  If `true` the value is an Object.
+   */
   function isObject(value) {
     // Avoid a V8 JIT bug in Chrome 19-20.
     // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
@@ -34,52 +54,105 @@ d3.layout.listGraph = function() {
     return !!value && (type == 'object' || type == 'function');
   }
 
-  // Lodash
+  /**
+   * Test if the value is a String.
+   *
+   * @copyright  Lodash
+   * @see        https://lodash.com/docs#isString
+   *
+   * @method   isString
+   * @private
+   * @param  {*}  value  Value to be tested.
+   * @return  {Boolean}  If `true` the value is a String.
+   */
   function isString (value) {
     return typeof value == 'string' ||
       (isObjectLike(value) && objToString.call(value) == stringTag);
   }
 
   /**
-   * Convert an object-based list of nodes into a fat array.
+   * Convert an object-based list of nodes into an array of arrays of nodes.
    *
    * @description
-   * Representing a graph using hierarchical data structure such as an array is
+   * Representing a graph using hierarchical data structures such as an Array is
    * difficult. To save resources and avoid complex structures a graph is
    * represented as a simple list of nodes. The list correspondes to an objects
    * where the object's keys stand for node identifiers. This ensures uniqueness
-   * but has the disadvantage that D3 doesn't know what to do with it, this we
-   * have to convert that structure into a fat array with duplicated nodes.
+   * but has the disadvantage that D3 doesn't know what to do with it, thus we
+   * have to convert that structure into a fat array of array of nodes. It's
+   * important to notice that the nodes are *not* cloned into the array but
+   * instead simply linked using references.
    *
-   * @method  nodeListToFatArray
    * @author  Fritz Lekschas
-   * @date    2015-11-10
+   * @date  2015-11-10
    *
+   * @method  nodesToFatMatrix
    * @private
-   * @param   {Object}  nodeList  List of nodes.
-   * @return  {Array}             Fat array of nodes.
+   * @param  {Object}  nodeList  List of nodes.
+   * @return  {Array}  Fat array of arrays of nodes.
    */
-  function nodeListToFatArray (nodeList) {
+  function nodesToFatMatrix (nodeList, columnCache) {
     var arr = [];
-    var keys = Object.keys(nodeList);
+    var keys;
+    var numLevels = Object.keys(columnCache).length
 
-    for (var i = keys.length; i--;) {
-      arr.push(nodeList[keys[i]]);
+    for (var i = 0; i < numLevels; i++) {
+      arr.push([]);
+      keys = Object.keys(columnCache[i]);
+      for (var j = keys.length; j--;) {
+        arr[i].push(nodeList[keys[j]]);
+      }
     }
 
     return arr;
   }
 
-  // Breadth first search
-  function walkGraph (graph, start, depthCache, scaleX, scaleY) {
-    var i;
+  /**
+   * Traverse graph in a breadth-first search fashion and process nodes along
+   * the traversal.
+   *
+   * @author  Fritz Lekschas
+   * @date    2015-11-13
+   *
+   * @private
+   * @method  traverseGraph
+   * @param  {Object}  graph  Graph to be traversed
+   * @param  {Array}  starts  Array of node IDs for start the traversal.
+   * @param  {Object}  columnCache  Cache storing node IDs per column.
+   * @param  {Object|Function}  scaleX  D3 linear scale function for the
+   *    x-axis, e.g. columns.
+   * @param  {Object|Function}  scaleY  D3 linear scale function for the
+   *    y-axis, e.g. rows.
+   */
+  function traverseGraph (graph, starts, columnCache, scaleX, scaleY) {
+    var j;
     var child;
+    var childId;
+    var clone;
     var node;
     var visited = {};
     var queue = [];
     var cloneId;
 
-    function processNode (id, node, duplication) {
+    /**
+     * Process a node, e.g. assign `x` and `y`, clone node etc.
+     *
+     * @description
+     * Nodes are edited in place.
+     *
+     * @method  processNode
+     * @author  Fritz Lekschas
+     * @date    2015-11-13
+     *
+     * @private
+     * @memberOf  traverseGraph
+     * @param     {String}   id           Node ID.
+     * @param     {Object}   node         Node to be processed.
+     * @param     {Object}   parent       Parent node.
+     * @param     {Boolean}  duplication  If `true` node is a duplication.
+     */
+    function processNode (id, node, parent, duplication) {
+      var _id = id;
       var _node = node;
 
       if (duplication) {
@@ -94,6 +167,7 @@ d3.layout.listGraph = function() {
           // Reference to the original node
           originalNode: node,
         }
+        _id = cloneId;
         _node = graph[cloneId];
         // Add a reference to the original node that points to the clone.
         node.clones.push(_node);
@@ -101,47 +175,53 @@ d3.layout.listGraph = function() {
         _node['clones'] = [];
       }
 
-      if (!depthCache[node.depth]) {
-        depthCache[node.depth] = {};
+      _node.depth = parent ? parent.depth + 1 : 0;
+
+      if (!columnCache[_node.depth]) {
+        columnCache[_node.depth] = {};
       }
 
-      if (!depthCache[node.depth][id]) {
-        depthCache[node.depth][id] = true;
-        _node.x = scaleX(node.depth);
-        _node.y = scaleY(Object.keys(depthCache[node.depth]).length);
+      if (!columnCache[_node.depth][_id]) {
+        columnCache[_node.depth][_id] = true;
+        _node.x = scaleX(_node.depth);
+        _node.y = scaleY(Object.keys(columnCache[_node.depth]).length - 1);
       }
     }
 
-    if (!graph[start]) {
-      return;
-    }
+    for (var i = starts.length; i--;) {
+      start = starts[i];
 
-    graph[start].depth = 0;
+      if (!graph[start]) {
+        return;
+      }
 
-    queue.push(start);
-    visited[start] = true;
+      processNode(start, graph[start]);
 
-    while (queue.length > 0) {
-      id = queue.shift();
-      node = graph[id];
+      queue.push(start);
+      visited[start] = true;
 
-      processNode(id, node);
-      for (i = node.children.length; i--;) {
-        child = graph[node.children[i]];
+      while (queue.length > 0) {
+        id = queue.shift();
+        node = graph[id];
 
-        if (!!child) {
-          if (!visited[node.children[i]]) {
-            queue.push(node.children[i]);
-            visited[node.children[i]] = true;
-            graph[node.children[i]].depth = node.depth + 1;
-          } else {
-            // Duplicate
-            // Adding an _indicator_ node for user-controlled switching. Children
-            // of duplicated nodes wont be processed at this time.
+        for (j = node.children.length; j--;) {
+          childId = node.children[j];
+          child = graph[childId];
+
+          if (!!child) {
+            if (!visited[childId]) {
+              queue.push(childId);
+              visited[childId] = true;
+              clone = false;
+            } else {
+              clone = true;
+            }
+
             processNode(
-              node.children[i],
-              graph[node.children[i]],
-              true
+              childId,
+              child,
+              node,
+              clone
             );
           }
         }
@@ -150,16 +230,16 @@ d3.layout.listGraph = function() {
   }
 
   /**
-   * [ListGraph description]
+   * ListGraph class constructor.
    *
-   * @method  ListGraph
    * @author  Fritz Lekschas
    * @date    2015-11-10
    *
-   * @constructor
-   * @param  {Array|Object}  size  New size. Can either be an Array, e.g.
+   * @class
+   * @method  ListGraph
+   * @param   {Array|Object}  size  New size. Can either be an Array, e.g.
    *   `[200,20]` or an Object, e.g. `{width: 200, height: 20}`.
-   * @param  {Array|Object}  grid  New grid configuration. Can either be an
+   * @param   {Array|Object}  grid  New grid configuration. Can either be an
    *   Array, e.g. `[5,3]` or an Object, e.g. `{columns: 5, rows: 3}`.
    */
   function ListGraph (size, grid) {
@@ -181,7 +261,7 @@ d3.layout.listGraph = function() {
     this.grid(grid);
     this.size(size);
 
-    this.depthCache = {};
+    this.columnCache = {};
 
     return this;
   }
@@ -194,27 +274,28 @@ d3.layout.listGraph = function() {
       this.rootIds = [this.rootIds];
     }
 
-    for (var i = this.rootIds.length; i--;) {
-      walkGraph(
-        this.data,
-        this.rootIds[i],
-        this.depthCache,
-        this.scale.x,
-        this.scale.y
-      );
-    }
+    traverseGraph(
+      this.data,
+      this.rootIds,
+      this.columnCache,
+      this.scale.x,
+      this.scale.y
+    );
 
-    return nodeListToFatArray(this.data);
+    return nodesToFatMatrix(this.data, this.columnCache);
   }
 
   /**
    * Set or get the grid configuration.
    *
-   * @method  grid
    * @author  Fritz Lekschas
    * @date    2015-11-10
    *
+   * @method  grid
+   * @memberOf  ListGraph
    * @public
+   * @chainable
+   * @category  Data
    * @param   {Array|Object}  newGrid  New grid configuration. Can either be an
    *   Array, e.g. `[5,3]` or an Object, e.g. `{columns: 5, rows: 3}`.
    * @return  {Object}  Self.
@@ -242,11 +323,12 @@ d3.layout.listGraph = function() {
   /**
    * Updates scaling according to the size and grid configuration.
    *
-   * @method  updateScaling
    * @author  Fritz Lekschas
    * @date    2015-11-10
    *
+   * @method  updateScaling
    * @public
+   * @chainable
    * @return  {Object}  Self.
    */
   ListGraph.prototype.updateScaling = function () {
@@ -259,11 +341,12 @@ d3.layout.listGraph = function() {
   /**
    * Set or get the size of the layout.
    *
-   * @method  size
    * @author  Fritz Lekschas
    * @date    2015-11-10
    *
+   * @method  size
    * @public
+   * @chainable
    * @param   {Array|Object}  newSize  New size. Can either be an Array, e.g.
    *   `[200,20]` or an Object, e.g. `{width: 200, height: 20}`.
    * @return  {Object}  Self.
