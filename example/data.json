@@ -6,7 +6,11 @@
         }
     },
     "2": {
-        "children": ["2-1", "2-2"],
+        "children": [
+            "2-1",
+            "2-2",
+            "2-3"
+        ],
         "data": {
             "name": "two"
         }
@@ -52,11 +56,22 @@
             "2-2-4"
         ],
         "data": {
-            "name": "two-one"
+            "name": "two-two"
+        }
+    },
+    "2-3": {
+        "children": [
+            "2-3-1",
+            "2-3-2"
+        ],
+        "data": {
+            "name": "two-three"
         }
     },
     "1-1-1": {
-        "children": [],
+        "children": [
+            "2-3"
+        ],
         "data": {
             "name": "one-one-one"
         }
@@ -149,6 +164,18 @@
         "children": [],
         "data": {
             "name": "two-two-four"
+        }
+    },
+    "2-3-1": {
+        "children": [],
+        "data": {
+            "name": "two-three-one"
+        }
+    },
+    "2-3-2": {
+        "children": [],
+        "data": {
+            "name": "two-three-two"
         }
     },
     "2-1-1-1": {
