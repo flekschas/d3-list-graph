@@ -1,6 +1,9 @@
 {
-  "gloabal": {
+  "global": {
     "angular": false,
     "d3": false
+  },
+  "rules": {
+    "semi": [2, "always"]
   }
 }
