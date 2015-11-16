@@ -71,43 +71,6 @@ d3.layout.listGraph = function() {
   }
 
   /**
-   * Convert an object-based list of nodes into an array of arrays of nodes.
-   *
-   * @description
-   * Representing a graph using hierarchical data structures such as an Array is
-   * difficult. To save resources and avoid complex structures a graph is
-   * represented as a simple list of nodes. The list correspondes to an objects
-   * where the object's keys stand for node identifiers. This ensures uniqueness
-   * but has the disadvantage that D3 doesn't know what to do with it, thus we
-   * have to convert that structure into a fat array of array of nodes. It's
-   * important to notice that the nodes are *not* cloned into the array but
-   * instead simply linked using references.
-   *
-   * @author  Fritz Lekschas
-   * @date  2015-11-10
-   *
-   * @method  nodesToFatMatrix
-   * @private
-   * @param  {Object}  nodeList  List of nodes.
-   * @return  {Array}  Fat array of arrays of nodes.
-   */
-  function nodesToFatMatrix (nodeList, columnCache) {
-    var arr = [];
-    var keys;
-    var numLevels = Object.keys(columnCache).length
-
-    for (var i = 0; i < numLevels; i++) {
-      arr.push([]);
-      keys = Object.keys(columnCache[i]);
-      for (var j = keys.length; j--;) {
-        arr[i].push(nodeList[keys[j]]);
-      }
-    }
-
-    return arr;
-  }
-
-  /**
    * Traverse graph in a breadth-first search fashion and process nodes along
    * the traversal.
    *
@@ -166,7 +129,7 @@ d3.layout.listGraph = function() {
           originalId: id,
           // Reference to the original node
           originalNode: node,
-        }
+        };
         _id = cloneId;
         _node = graph[cloneId];
         // Add a reference to the original node that points to the clone.
@@ -188,6 +151,7 @@ d3.layout.listGraph = function() {
       }
     }
 
+    // BFS for each start node.
     for (var i = starts.length; i--;) {
       start = starts[i];
 
@@ -262,10 +226,69 @@ d3.layout.listGraph = function() {
     this.size(size);
 
     this.columnCache = {};
+    this.columns = {};
 
     return this;
   }
 
+  /**
+   * Convert an object-based list of nodes into an array of arrays of nodes.
+   *
+   * @description
+   * Representing a graph using hierarchical data structures such as an Array is
+   * difficult. To save resources and avoid complex structures a graph is
+   * represented as a simple list of nodes. The list correspondes to an objects
+   * where the object's keys stand for node identifiers. This ensures uniqueness
+   * but has the disadvantage that D3 doesn't know what to do with it, thus we
+   * have to convert that structure into a fat array of array of nodes. It's
+   * important to notice that the nodes are *not* cloned into the array but
+   * instead simply linked using references.
+   *
+   * @author  Fritz Lekschas
+   * @date  2015-11-10
+   *
+   * @method  nodesToMatrix
+   * @memberOf  ListGraph
+   * @public
+   * @return  {Array}  Fat array of arrays of nodes.
+   */
+  ListGraph.prototype.nodesToMatrix = function () {
+    var arr = [];
+    var keys;
+    var numLevels = Object.keys(this.columnCache).length;
+
+    for (var i = 0; i < numLevels; i++) {
+      arr.push({
+        y: 0,
+        x: this.scale.x(i),
+        width: this.columnWidth,
+        height: this._size.height,
+        rowHeight: this.rowHeight,
+        rows: []
+      });
+      keys = Object.keys(this.columnCache[i]);
+      for (var j = keys.length; j--;) {
+        arr[i].rows.push(this.data[keys[j]]);
+      }
+    }
+
+    return arr;
+  };
+
+  /**
+   * Process original data and return an D3 ready Array.
+   *
+   * @author  Fritz Lekschas
+   * @date    2015-11-16
+   *
+   * @method  process
+   * @memberOf  ListGraph
+   * @public
+   * @category  Data
+   * @param   {Object}  data     Object list of nodes.
+   * @param   {Array}   rootIds  Array of node IDs to start traversal.
+   * @return  {Array}            Array of Array of nodes.
+   */
   ListGraph.prototype.process = function (data, rootIds) {
     this.data = data || this.data;
     this.rootIds = rootIds || this.rootIds;
@@ -282,8 +305,8 @@ d3.layout.listGraph = function() {
       this.scale.y
     );
 
-    return nodesToFatMatrix(this.data, this.columnCache);
-  }
+    return this.nodesToMatrix();
+  };
 
   /**
    * Set or get the grid configuration.
@@ -318,7 +341,7 @@ d3.layout.listGraph = function() {
     this.updateScaling();
 
     return this;
-  }
+  };
 
   /**
    * Updates scaling according to the size and grid configuration.
@@ -335,8 +358,11 @@ d3.layout.listGraph = function() {
     this.scale.x.domain([0, this._grid.columns]).range([0, this._size.width]);
     this.scale.y.domain([0, this._grid.rows]).range([0, this._size.height]);
 
+    this.columnWidth = this._size.width / this._grid.columns;
+    this.rowHeight = this._size.height / this._grid.rows;
+
     return this;
-  }
+  };
 
   /**
    * Set or get the size of the layout.
@@ -369,7 +395,7 @@ d3.layout.listGraph = function() {
     this.updateScaling();
 
     return this;
-  }
+  };
 
   return ListGraph;
-}
+};

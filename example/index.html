@@ -22,6 +22,32 @@ svg {
   stroke-width: 1.5px;
 }
 
+.scroll-container {
+  /* `fill:none;` doesnt work because this avoids drawing the element and will
+   * engender the same behavior as if the element is ommited. See why this
+   * element is actually needed below.
+   */
+  fill-opacity: 0;
+}
+
+.scrollbar {
+  fill: #000;
+  fill-opacity: 0;
+  transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1);
+}
+
+svg:hover .scrollbar {
+  fill-opacity: 0.2;
+}
+
+svg:hover .scrollbar:hover {
+  fill-opacity: 0.66;
+}
+
+.scrollbar.active {
+  fill-opacity: 1 !important;
+}
+
 </style>
 <body>
 <script src="../bower_components/jquery/dist/jquery.js"></script>
@@ -29,10 +55,68 @@ svg {
 <script src="../bower_components/d3/d3.js"></script>
 <script src="../src/d3.layout.listGraph.js"></script>
 <script>
-/* eslint d3:false, jQuery:false */
+function scrollColumn (element, offset) {
+  try {
+    d3.select(element).attr(
+      'transform',
+      'translate(0, ' + offset + ')'
+    );
+  } catch (e) {
+    console.err('ListGraph is not properly initialized!', e);
+  }
+}
+
+function mousewheelColumn (e) {
+  e.preventDefault();
+
+  if (this.__data__.scrollHeight > 0) {
+    // Scroll nodes
+    this.__data__.scrollTop = Math.max(
+      Math.min(this.__data__.scrollTop + e.deltaY, 0),
+      -this.__data__.scrollHeight
+    );
+
+    scrollColumn(
+      this.children[1],
+      this.__data__.scrollTop
+    );
+
+    // Scroll scrollbar
+    this.children[2].__data__.scrollTop = this.__data__.scrollbar.heightScale(
+      -this.__data__.scrollTop
+    );
+
+    scrollColumn(
+      this.children[2],
+      this.children[2].__data__.scrollTop
+    );
+  }
+}
+
+function prepareColumnForScrolling (data) {
+  var columnHeight = this.getBoundingClientRect().height;
+  var scrollHeight = columnHeight - height;
+  var scrollbarHeight = scrollHeight > 0 ?
+    Math.max((height * height / scrollHeight), 10) : 0;
+
+  data.height = columnHeight;
+  data.scrollHeight = scrollHeight;
+  data.scrollTop = 0;
+  data.scrollbar = {
+    x: data.x + data.width - scrollbarWidth,
+    y: 0,
+    width: scrollbarWidth,
+    height: scrollbarHeight,
+    scrollHeight: height - scrollbarHeight,
+    heightScale: d3.scale.linear()
+      .domain([0, scrollHeight])
+      .range([0, height - scrollbarHeight])
+  };
+}
 
 var width = 800,
-    height = 200;
+    height = 200,
+    scrollbarWidth = 6;
 
 var D3ListGraph = d3.layout.listGraph();
 
@@ -63,21 +147,155 @@ d3.json("data.json", function(error, data) {
     .append('g')
       .attr('class', 'level');
 
-  var terms = levels
+  // We need to add an empty rectangle that fills up the whole column to ensure
+  // that the `g`'s size is at a maximum, otherwise scrolling will be halted
+  // when the cursor leaves an actually drawn element.
+  levels
+    .append('rect')
+      .attr('class', 'scroll-container')
+      .attr('x', function (data) {
+        return data.x;
+      })
+      .attr('y', function (data) {
+        return data.y;
+      })
+      .attr('width', function (data) {
+        return data.width;
+      })
+      .attr('height', function (data) {
+        return data.height;
+      });
+
+  // We need an extra container which is transformed during scrolling. Otherwise
+  // we "scroll away" the container that is listening to the mousehweel event.
+  var levelScrollGroup = levels.append('g').attr('class', 'scroll-group');
+
+  var terms = levelScrollGroup
     .selectAll('circle')
-    .data(function(node) { return node; })
+    .data(function(data) { return data.rows; })
     .enter()
     .append('circle')
-      .attr('cx', function(node) {
-        return node.x;
+      .attr('cx', function(data) {
+        return data.x + 20;
       })
-      .attr('cy', function(node) {
-        return node.y;
+      .attr('cy', function(data) {
+        return data.y + 20;
       })
       .attr('r', 20)
-      .style('fill', function (node) {
-        return node.clone ? 'grey' : 'blue';
+      .style('fill', function (data) {
+        return data.clone ? 'grey' : 'blue';
       });
+
+  // Store the height for each column to save computations when scrolling.
+  levels.each(prepareColumnForScrolling);
+
+  // Add scrollbar
+  var scrollbars = levels
+    .append('rect')
+      .attr('class', 'scrollbar')
+      .attr('x', function (data) {
+        return data.scrollbar.x;
+      })
+      .attr('y', function (data) {
+        return data.scrollbar.y;
+      })
+      .attr('width', function (data) {
+        return scrollbarWidth;
+      })
+      .attr('height', function (data) {
+        return data.scrollbar.height;
+      })
+      .attr('rx', scrollbarWidth / 2)
+      .attr('ry', scrollbarWidth / 2);
+
+  var $levels = $(levels[0]).on('mousewheel', mousewheelColumn);
+
+  // Reference to the currently active scrollbar. A scrollbar is active when
+  // one clicked on the scrollbar and hold the mouse down.
+  var activeScrollbar;
+
+  var $scrollbars = $(scrollbars[0])
+    .each(function () {
+      this.__data__ = {
+        clientY: null,
+        scrollTop: 0
+      };
+      // Copy data over from the parent
+      var keys = Object.keys(this.parentNode.__data__.scrollbar);
+      for (var i = keys.length; i--;) {
+        this.__data__[keys[i]] = this.parentNode.__data__.scrollbar[keys[i]];
+      }
+      // Invert scale
+      this.__data__.invertedHeightScale = this.__data__.heightScale.invert;
+      // Store a reference to the actual node list to be scrolled
+      this.__data__.contentEl = this.parentNode.querySelector('.scroll-group');
+    })
+    .on('mousedown', function (e) {
+      activeScrollbar = this;
+      activeScrollbar.__data__.clientY = e.clientY;
+
+      d3.select(activeScrollbar).classed('active', true);
+    });
+
+  // We need to listen to `mouseup` and `mousemove` globally otherwise scrolling
+  // will only work as long as the cursor hovers the actual scrollbar, which is
+  // super annoying.
+  var $document = $(document)
+    .on('mouseup', function (e) {
+      if (activeScrollbar) {
+        var deltaY = activeScrollbar.__data__.clientY - e.clientY;
+        // Save final vertical position
+        // Scrollbar
+        activeScrollbar.__data__.scrollTop = Math.min(
+          Math.max(
+            activeScrollbar.__data__.scrollTop - deltaY,
+            0
+          ),
+          activeScrollbar.__data__.scrollHeight
+        );
+        // Content
+        var contentEl = activeScrollbar.__data__.contentEl;
+        contentEl.__data__.scrollTop = Math.max(
+          Math.min(
+            contentEl.__data__.scrollTop + activeScrollbar.__data__.invertedHeightScale(deltaY),
+            0
+          ),
+          -contentEl.__data__.scrollHeight
+        );
+
+        d3.select(activeScrollbar).classed('active', false);
+
+        activeScrollbar = undefined;
+      }
+    })
+    .on('mousemove', function (e) {
+      if (activeScrollbar) {
+        var deltaY = activeScrollbar.__data__.clientY - e.clientY;
+        // Scroll scrollbar
+        scrollColumn(
+          activeScrollbar,
+          Math.min(
+            Math.max(
+              activeScrollbar.__data__.scrollTop - deltaY,
+              0
+            ),
+            activeScrollbar.__data__.scrollHeight
+          )
+        );
+        // Scroll content
+        var contentEl = activeScrollbar.__data__.contentEl;
+        scrollColumn(
+          contentEl,
+          Math.max(
+            Math.min(
+              contentEl.__data__.scrollTop + activeScrollbar.__data__.invertedHeightScale(deltaY),
+              0
+            ),
+            -contentEl.__data__.scrollHeight
+          )
+        );
+      }
+    });
 });
 
 </script>
