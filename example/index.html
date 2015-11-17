@@ -6,16 +6,6 @@ svg {
   background: #efefef;
 }
 
-.node circle {
-  fill: #fff;
-  stroke: steelblue;
-  stroke-width: 1.5px;
-}
-
-.node {
-  font: 10px sans-serif;
-}
-
 .link {
   fill: none;
   stroke: #ccc;
@@ -37,7 +27,11 @@ svg {
 }
 
 svg:hover .scrollbar {
-  fill-opacity: 0.2;
+  fill-opacity: 0.1;
+}
+
+svg:hover .level:hover .scrollbar {
+  fill-opacity: 0.33;
 }
 
 svg:hover .scrollbar:hover {
@@ -93,7 +87,7 @@ function mousewheelColumn (e) {
   }
 }
 
-function prepareColumnForScrolling (data) {
+function prepareColumnForScrolling (data, global) {
   var columnHeight = this.getBoundingClientRect().height;
   var scrollHeight = columnHeight - height;
   var scrollbarHeight = scrollHeight > 0 ?
@@ -103,7 +97,7 @@ function prepareColumnForScrolling (data) {
   data.scrollHeight = scrollHeight;
   data.scrollTop = 0;
   data.scrollbar = {
-    x: data.x + data.width - scrollbarWidth,
+    x: data.x + global.column.width - scrollbarWidth,
     y: 0,
     width: scrollbarWidth,
     height: scrollbarHeight,
@@ -132,17 +126,31 @@ var svg = d3.select('body')
 
 var container = svg.append('g');
 
-var scaleX = d3.scale.linear().domain([0,5]).range([0,800]);
-var scaleY = d3.scale.linear().domain([0,5]).range([0,200]);
-
-d3.json("data.json", function(error, data) {
+d3.json('data.json', function(error, data) {
   if (error) throw error;
 
   var visData = listGraph.process(data, ['1', '2']);
 
+  var diagonal = d3.svg.diagonal()
+    .source(function (data) {
+      return {
+        x: data.y + visData.global.row.height / 2,
+        y: data.x + visData.global.column.contentWidth + visData.global.column.padding
+      };
+    })
+    .target(function (data) {
+      return {
+        x: data.currentChild.y + visData.global.row.height / 2,
+        y: data.currentChild.x + visData.global.column.padding
+      };
+    })
+    .projection(function (data) {
+      return [data.y, data.x];
+    });
+
   var levels = container
     .selectAll('g')
-    .data(visData)
+    .data(visData.nodes)
     .enter()
     .append('g')
       .attr('class', 'level');
@@ -160,10 +168,10 @@ d3.json("data.json", function(error, data) {
         return data.y;
       })
       .attr('width', function (data) {
-        return data.width;
+        return visData.global.column.width;
       })
       .attr('height', function (data) {
-        return data.height;
+        return visData.global.column.height;
       });
 
   // We need an extra container which is transformed during scrolling. Otherwise
@@ -171,23 +179,47 @@ d3.json("data.json", function(error, data) {
   var levelScrollGroup = levels.append('g').attr('class', 'scroll-group');
 
   var terms = levelScrollGroup
-    .selectAll('circle')
+    .selectAll('g.node')
     .data(function(data) { return data.rows; })
     .enter()
-    .append('circle')
-      .attr('cx', function(data) {
-        return data.x + 20;
+    .append('g')
+      .attr('class', 'node');
+
+  terms.each(function (data) {
+    // We traverse `children` because that is _safe_, i.e. we require that every
+    // node object has a `children` Array but we access `childRefs`, which
+    // contains the pointer to the actual child object.
+    for (var i = data.children.length; i--;) {
+      data.currentChild = data.childRefs[i];
+      d3.select(this)
+        .append('path')
+          .attr('class', 'link')
+          .attr('d', diagonal);
+    }
+    // Unset current child to avoid later confusion.
+    data.currentChild = undefined;
+  });
+
+  terms
+    .append('rect')
+      .attr('x', function(data) {
+        return data.x + visData.global.column.padding;
       })
-      .attr('cy', function(data) {
-        return data.y + 20;
+      .attr('y', function(data) {
+        return data.y + visData.global.row.padding;
       })
-      .attr('r', 20)
+      .attr('width', visData.global.column.contentWidth)
+      .attr('height', visData.global.row.contentHeight)
+      .attr('rx', 2)
+      .attr('ry', 2)
       .style('fill', function (data) {
         return data.clone ? 'grey' : 'blue';
       });
 
   // Store the height for each column to save computations when scrolling.
-  levels.each(prepareColumnForScrolling);
+  levels.each(function (data) {
+    prepareColumnForScrolling.call(this, data, visData.global);
+  });
 
   // Add scrollbar
   var scrollbars = levels

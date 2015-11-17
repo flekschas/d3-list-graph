@@ -22,7 +22,33 @@ d3.layout.listGraph = function() {
   };
 
   /**
-   * Test if the value is an Array.
+   * Default relative padding of columns.
+   *
+   * @description
+   * Padding between columns refers to the left and right inner padding used
+   * for links between items in the column. Padding is relative to the overall
+   * width of the column.
+   *
+   * @private
+   * @type  {Number}
+   */
+  var _colRelPadding = 0.2;
+
+  /**
+   * Default relative padding of rows.
+   *
+   * @description
+   * Padding between rows refers to the top and bottom inner padding used to
+   * separate items vertically in the column. Padding is relative to the overall
+   * height of the row.
+   *
+   * @private
+   * @type  {Number}
+   */
+  var _rowRelPadding = 0.05;
+
+  /**
+   * Tests if value is an array.
    *
    * @copyright  Lodash
    * @see  https://lodash.com/docs#isArray
@@ -37,7 +63,24 @@ d3.layout.listGraph = function() {
   }
 
   /**
-   * Test if the value is an Object.
+   * Tests if value is a finite primitive number.
+   *
+   * @copyright  Lodash
+   * @see  https://lodash.com/docs#isFinite
+   *
+   * @date  2015-11-17
+   *
+   * @method  isNumber
+   * @private
+   * @param  {*}  value  Value to be tested.
+   * @return  {Boolean}  If `true` the value is a Number.
+   */
+  function isFiniteNumber (value) {
+    return typeof value == 'number' && window.isFinite(value);
+  }
+
+  /**
+   * Tests if value is an object.
    *
    * @copyright  Lodash
    * @see  https://lodash.com/docs#isObject
@@ -48,19 +91,17 @@ d3.layout.listGraph = function() {
    * @return  {Boolean}  If `true` the value is an Object.
    */
   function isObject(value) {
-    // Avoid a V8 JIT bug in Chrome 19-20.
-    // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
     var type = typeof value;
     return !!value && (type == 'object' || type == 'function');
   }
 
   /**
-   * Test if the value is a String.
+   * Tests if value is a string.
    *
    * @copyright  Lodash
-   * @see        https://lodash.com/docs#isString
+   * @see  https://lodash.com/docs#isString
    *
-   * @method   isString
+   * @method  isString
    * @private
    * @param  {*}  value  Value to be tested.
    * @return  {Boolean}  If `true` the value is a String.
@@ -75,7 +116,7 @@ d3.layout.listGraph = function() {
    * the traversal.
    *
    * @author  Fritz Lekschas
-   * @date    2015-11-13
+   * @date  2015-11-13
    *
    * @private
    * @method  traverseGraph
@@ -87,7 +128,7 @@ d3.layout.listGraph = function() {
    * @param  {Object|Function}  scaleY  D3 linear scale function for the
    *    y-axis, e.g. rows.
    */
-  function traverseGraph (graph, starts, columnCache, scaleX, scaleY) {
+  function traverseGraph (graph, starts, columnCache, links, scaleX, scaleY) {
     var j;
     var child;
     var childId;
@@ -109,10 +150,10 @@ d3.layout.listGraph = function() {
      *
      * @private
      * @memberOf  traverseGraph
-     * @param     {String}   id           Node ID.
-     * @param     {Object}   node         Node to be processed.
-     * @param     {Object}   parent       Parent node.
-     * @param     {Boolean}  duplication  If `true` node is a duplication.
+     * @param  {String}  id  Node ID.
+     * @param  {Object}  node  Node to be processed.
+     * @param  {Object}  parent  Parent node.
+     * @param  {Boolean}  duplication  If `true` node is a duplication.
      */
     function processNode (id, node, parent, duplication) {
       var _id = id;
@@ -138,7 +179,18 @@ d3.layout.listGraph = function() {
         _node['clones'] = [];
       }
 
-      _node.depth = parent ? parent.depth + 1 : 0;
+      _node.parent = parent;
+
+      if (parent) {
+        _node.depth = parent.depth + 1;
+        // Save a pointer or reference to the actual child node object.
+        if (!parent.childRefs) {
+          parent.childRefs = [];
+        }
+        parent.childRefs.push(_node);
+      } else {
+        _node.depth = 0;
+      }
 
       if (!columnCache[_node.depth]) {
         columnCache[_node.depth] = {};
@@ -197,13 +249,13 @@ d3.layout.listGraph = function() {
    * ListGraph class constructor.
    *
    * @author  Fritz Lekschas
-   * @date    2015-11-10
+   * @date  2015-11-10
    *
    * @class
    * @method  ListGraph
-   * @param   {Array|Object}  size  New size. Can either be an Array, e.g.
+   * @param  {Array|Object}  size  New size. Can either be an Array, e.g.
    *   `[200,20]` or an Object, e.g. `{width: 200, height: 20}`.
-   * @param   {Array|Object}  grid  New grid configuration. Can either be an
+   * @param  {Array|Object}  grid  New grid configuration. Can either be an
    *   Array, e.g. `[5,3]` or an Object, e.g. `{columns: 5, rows: 3}`.
    */
   function ListGraph (size, grid) {
@@ -211,6 +263,9 @@ d3.layout.listGraph = function() {
       x: d3.scale.linear(),
       y: d3.scale.linear()
     };
+
+    this._colRelPadding = _colRelPadding;
+    this._rowRelPadding = _rowRelPadding;
 
     this._grid = {
       columns: _grid.columns,
@@ -261,9 +316,6 @@ d3.layout.listGraph = function() {
       arr.push({
         y: 0,
         x: this.scale.x(i),
-        width: this.columnWidth,
-        height: this._size.height,
-        rowHeight: this.rowHeight,
         rows: []
       });
       keys = Object.keys(this.columnCache[i]);
@@ -279,15 +331,15 @@ d3.layout.listGraph = function() {
    * Process original data and return an D3 ready Array.
    *
    * @author  Fritz Lekschas
-   * @date    2015-11-16
+   * @date  2015-11-16
    *
    * @method  process
    * @memberOf  ListGraph
    * @public
    * @category  Data
-   * @param   {Object}  data     Object list of nodes.
-   * @param   {Array}   rootIds  Array of node IDs to start traversal.
-   * @return  {Array}            Array of Array of nodes.
+   * @param  {Object}  data  Object list of nodes.
+   * @param  {Array}  rootIds  Array of node IDs to start traversal.
+   * @return  {Array}  Array of Array of nodes.
    */
   ListGraph.prototype.process = function (data, rootIds) {
     this.data = data || this.data;
@@ -301,10 +353,46 @@ d3.layout.listGraph = function() {
       this.data,
       this.rootIds,
       this.columnCache,
+      this.links,
       this.scale.x,
       this.scale.y
     );
 
+    return {
+      global: this.compileGlobalProps(),
+      nodes: this.nodesToMatrix()
+    };
+  };
+
+  ListGraph.prototype.compileGlobalProps = function () {
+    return {
+      column: {
+        width: this._columnWidth,
+        height: this._size.height,
+        padding: this._colAbsPadding,
+        contentWidth: this._colAbsContentWidth
+      },
+      row: {
+        height: this._rowHeight,
+        padding: this._rowAbsPadding,
+        contentHeight: this._rowAbsContentHeight
+      }
+    };
+  };
+
+  /**
+   * Returns the processed nodes as an Array of Array of nodes.
+   *
+   * @author  Fritz Lekschas
+   * @date  2015-11-16
+   *
+   * @method  nodes
+   * @memberOf  ListGraph
+   * @public
+   * @category  Data
+   * @return  {Array}  Array of Array of nodes.
+   */
+  ListGraph.prototype.nodes = function () {
     return this.nodesToMatrix();
   };
 
@@ -319,7 +407,7 @@ d3.layout.listGraph = function() {
    * @public
    * @chainable
    * @category  Data
-   * @param   {Array|Object}  newGrid  New grid configuration. Can either be an
+   * @param  {Array|Object}  newGrid  New grid configuration. Can either be an
    *   Array, e.g. `[5,3]` or an Object, e.g. `{columns: 5, rows: 3}`.
    * @return  {Object}  Self.
    */
@@ -331,14 +419,14 @@ d3.layout.listGraph = function() {
     if (isArray(newGrid)) {
       this._grid.columns = parseInt(newGrid[0]) || this._grid.columns;
       this._grid.rows = parseInt(newGrid[1]) || this._grid.rows;
+      this.updateScaling();
     }
 
     if (isObject(newGrid)) {
       this._grid.columns = parseInt(newGrid.columns)|| this._grid.columns;
       this._grid.rows = parseInt(newGrid.rows)|| this._grid.rows;
+      this.updateScaling();
     }
-
-    this.updateScaling();
 
     return this;
   };
@@ -347,9 +435,10 @@ d3.layout.listGraph = function() {
    * Updates scaling according to the size and grid configuration.
    *
    * @author  Fritz Lekschas
-   * @date    2015-11-10
+   * @date  2015-11-10
    *
    * @method  updateScaling
+   * @memberOf  ListGraph
    * @public
    * @chainable
    * @return  {Object}  Self.
@@ -358,8 +447,18 @@ d3.layout.listGraph = function() {
     this.scale.x.domain([0, this._grid.columns]).range([0, this._size.width]);
     this.scale.y.domain([0, this._grid.rows]).range([0, this._size.height]);
 
-    this.columnWidth = this._size.width / this._grid.columns;
-    this.rowHeight = this._size.height / this._grid.rows;
+    this._columnWidth = this._size.width / this._grid.columns;
+    this._rowHeight = this._size.height / this._grid.rows;
+
+    this._colAbsPadding = this._columnWidth * this._colRelPadding;
+    this._colAbsContentWidth = this._columnWidth * (
+      1 - 2 * this._colRelPadding
+    );
+
+    this._rowAbsPadding = this._rowHeight * _rowRelPadding;
+    this._rowAbsContentHeight = this._rowHeight * (
+      1 - 2 * this._rowRelPadding
+    );
 
     return this;
   };
@@ -368,12 +467,13 @@ d3.layout.listGraph = function() {
    * Set or get the size of the layout.
    *
    * @author  Fritz Lekschas
-   * @date    2015-11-10
+   * @date  2015-11-10
    *
    * @method  size
+   * @memberOf  ListGraph
    * @public
    * @chainable
-   * @param   {Array|Object}  newSize  New size. Can either be an Array, e.g.
+   * @param  {Array|Object}  newSize  New size. Can either be an Array, e.g.
    *   `[200,20]` or an Object, e.g. `{width: 200, height: 20}`.
    * @return  {Object}  Self.
    */
@@ -385,14 +485,78 @@ d3.layout.listGraph = function() {
     if (isArray(newSize)) {
       this._size.width = parseInt(newSize[0]) || this._size.width;
       this._size.height = parseInt(newSize[1]) || this._size.height;
+      this.updateScaling();
     }
 
     if (isObject(newSize)) {
       this._size.width = parseInt(newSize.width) || this._size.width;
       this._size.height = parseInt(newSize.height) || this._size.height;
+      this.updateScaling();
     }
 
-    this.updateScaling();
+    return this;
+  };
+
+  /**
+   * Set or get the relative width of the content area of a node.
+   *
+   * @author  Fritz Lekschas
+   * @date    2015-11-17
+   *
+   * @method  columnPadding
+   * @memberOf  ListGraph
+   * @public
+   * @chainable
+   * @param  {Number}  padding  Number in [0.1, 0.66].
+   * @param  {Boolean}  absolute  If `true` `padding` is regarded to be an
+   *   absolute number. Otherwise a relative number is assumed.
+   * @return  {Number|Object}  When `padding` is passed `this` will be returned
+   *   for chaining. Otherwise the current padding of columns will be returned.
+   */
+  ListGraph.prototype.columnPadding = function (padding, absolute) {
+    if (!arguments.length) {
+      return this._colRelPadding;
+    }
+
+    if (isFiniteNumber(padding)) {
+      if (absolute && isFiniteNumber(this._columnWidth)) {
+        padding = padding / this._columnWidth;
+      }
+      this._colRelPadding = Math.max(Math.min(padding, 0.66), 0.1);
+      this.updateScaling();
+    }
+
+    return this;
+  };
+
+  /**
+   * Set or get the relative width of the content area of a node.
+   *
+   * @author  Fritz Lekschas
+   * @date    2015-11-17
+   *
+   * @method  rowPadding
+   * @memberOf  ListGraph
+   * @public
+   * @chainable
+   * @param  {Number}  padding  Number in [0, 0.5].
+   * @param  {Boolean}  absolute  If `true` `padding` is regarded to be an
+   *   absolute number. Otherwise a relative number is assumed.
+   * @return  {Number|Object}  When `padding` is passed `this` will be returned
+   *   for chaining. Otherwise the current padding of rows will be returned.
+   */
+  ListGraph.prototype.rowPadding = function (padding, absolute) {
+    if (!arguments.length) {
+      return this._rowRelPadding;
+    }
+
+    if (isFiniteNumber(padding)) {
+      if (absolute && isFiniteNumber(this._rowHeight)) {
+        padding = padding / this._rowHeight;
+      }
+      this._rowRelPadding = Math.max(Math.min(padding, 0.5), 0);
+      this.updateScaling();
+    }
 
     return this;
   };
