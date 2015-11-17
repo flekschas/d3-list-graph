@@ -144,10 +144,10 @@ d3.layout.listGraph = function() {
      * @description
      * Nodes are edited in place.
      *
-     * @method  processNode
      * @author  Fritz Lekschas
      * @date    2015-11-13
      *
+     * @method  processNode
      * @private
      * @memberOf  traverseGraph
      * @param  {String}  id  Node ID.
@@ -192,6 +192,10 @@ d3.layout.listGraph = function() {
         _node.depth = 0;
       }
 
+      if (!_node.links) {
+        _node.links = [];
+      }
+
       if (!columnCache[_node.depth]) {
         columnCache[_node.depth] = {};
       }
@@ -201,6 +205,39 @@ d3.layout.listGraph = function() {
         _node.x = scaleX(_node.depth);
         _node.y = scaleY(Object.keys(columnCache[_node.depth]).length - 1);
       }
+
+      if (parent) {
+        processLink(parent, _node);
+      }
+    }
+
+    /**
+     * Process outgoing links and add them to the source
+     *
+     * @author  Fritz Lekschas
+     * @date    2015-11-17
+     *
+     * @method  processLink
+     * @private
+     * @memberOf  traverseGraph
+     * @param  {Object}  source  Source node.
+     * @param  {Object}  target  Target node.
+     */
+    function processLink (source, target) {
+      source.links.push({
+        source: {
+          x: source.x,
+          y: source.y,
+          offsetX: 0,
+          offsetY: 0
+        },
+        target: {
+          x: target.x,
+          y: target.y,
+          offsetX: 0,
+          offsetY: 0
+        }
+      });
     }
 
     // BFS for each start node.
@@ -316,6 +353,7 @@ d3.layout.listGraph = function() {
       arr.push({
         y: 0,
         x: this.scale.x(i),
+        level: i,
         rows: []
       });
       keys = Object.keys(this.columnCache[i]);
@@ -364,6 +402,23 @@ d3.layout.listGraph = function() {
     };
   };
 
+  /**
+   * Compiles an object of global properties of the visualization.
+   *
+   * @description
+   * Global properties comprise all properties that can be applied to globally
+   * across the visualization such as the width and padding of columns or the
+   * height and padding of rows.
+   *
+   * @author  Fritz Lekschas
+   * @date    2015-11-17
+   *
+   * @method  compileGlobalProps
+   * @memberOf  ListGraph
+   * @public
+   * @category  Data
+   * @return  {Object}  Object with global properties.
+   */
   ListGraph.prototype.compileGlobalProps = function () {
     return {
       column: {
@@ -394,6 +449,63 @@ d3.layout.listGraph = function() {
    */
   ListGraph.prototype.nodes = function () {
     return this.nodesToMatrix();
+  };
+
+  /**
+   * Returns an array of links per level, i.e. column, or all links.
+   *
+   * @description
+   * The column ID and level might be the same for small graphs but it's
+   * possible that the first column does not represent the root nodes. This is
+   * obviously the case when the user scrolls away.
+   *
+   * @author  Fritz Lekschas
+   * @date  2015-11-17
+   *
+   * @method  links
+   * @memberOf  ListGraph
+   * @public
+   * @category  Data
+   * @param  {Integer}  level  If given get's only links of a certain level. The
+   *   level of a node is relative to the length of the shortest path to the
+   *   root node.
+   * @return  {Array}  Array of objects containing the information for outgoing
+   *   links between nodes.
+   */
+  ListGraph.prototype.links = function (level) {
+    var allLinks = [], source, keys, links;
+
+    if (!isFiniteNumber(level)) {
+      source = this.data;
+    } else {
+      source = this.columnCache[level];
+    }
+
+    keys = source ? Object.keys(source) : [];
+
+    for (var i = keys.length; i--;) {
+      links = this.data[keys[i]].links;
+      for (var j = links.length; j--;) {
+        allLinks.push(links[j]);
+      }
+    }
+
+    return allLinks;
+  };
+
+  ListGraph.prototype.offsetLinks = function (level, offsetY, nodeType) {
+    var links = this.links(level);
+
+    if (
+      (nodeType === 'source' || nodeType === 'target') &&
+      isFiniteNumber(offsetY)
+    ) {
+      for (var i = links.length; i--;) {
+        links[i][nodeType].offsetY = offsetY;
+      }
+    }
+
+    return links;
   };
 
   /**

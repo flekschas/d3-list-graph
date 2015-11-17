@@ -23,7 +23,6 @@ svg {
 .scrollbar {
   fill: #000;
   fill-opacity: 0;
-  transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1);
 }
 
 .scrollbar.ready {
@@ -64,7 +63,20 @@ function scrollColumn (element, offset) {
   }
 }
 
-function mousewheelColumn (e) {
+function scrollLinks (graph, selection, level, scrollTop, nodeType) {
+  selection
+    .data(function () {
+      return graph.offsetLinks(
+        level,
+        scrollTop,
+        nodeType
+      );
+    })
+    .attr('d', diagonal)
+    .exit().remove();
+}
+
+function mousewheelColumn (e, listGraph) {
   e.preventDefault();
 
   if (this.__data__.scrollHeight > 0) {
@@ -80,13 +92,30 @@ function mousewheelColumn (e) {
     );
 
     // Scroll scrollbar
-    this.__data__.scrollbar.el.__data__.scrollTop = this.__data__.scrollbar.heightScale(
-      -this.__data__.scrollTop
-    );
+    this.__data__.scrollbar.el.__data__.scrollTop = this.__data__.scrollbar
+      .heightScale(
+        -this.__data__.scrollTop
+      );
 
     scrollColumn(
       this.__data__.scrollbar.el,
       this.__data__.scrollbar.el.__data__.scrollTop
+    );
+
+    // Update links
+    scrollLinks(
+      listGraph,
+      this.__data__.linkSelections.outgoing,
+      this.__data__.level,
+      this.__data__.scrollTop,
+      'source'
+    );
+    scrollLinks(
+      listGraph,
+      this.__data__.linkSelections.incoming,
+      this.__data__.level - 1,
+      this.__data__.scrollTop,
+      'target'
     );
   }
 }
@@ -102,6 +131,11 @@ function prepareColumnForScrolling (data, global) {
     Math.max((height * height / scrollHeight), 10) : 0;
 
   data.height = columnHeight;
+  data.linkSelections = {
+    incoming: this.previousSibling ?
+      d3.select(this.previousSibling).selectAll('.link') : null,
+    outgoing: d3.select(this).selectAll('.link')
+  };
   data.scrollEl = scrollEl;
   data.scrollHeight = scrollHeight;
   data.scrollTop = 0;
@@ -141,17 +175,17 @@ d3.json('data.json', function(error, data) {
 
   var visData = listGraph.process(data, ['1', '2']);
 
-  var diagonal = d3.svg.diagonal()
+  diagonal
     .source(function (data) {
       return {
-        x: data.y + visData.global.row.height / 2,
-        y: data.x + visData.global.column.contentWidth + visData.global.column.padding
+        x: data.source.y + data.source.offsetY + visData.global.row.height / 2,
+        y: data.source.x + data.source.offsetX + visData.global.column.contentWidth + visData.global.column.padding
       };
     })
     .target(function (data) {
       return {
-        x: data.currentChild.y + visData.global.row.height / 2,
-        y: data.currentChild.x + visData.global.column.padding
+        x: data.target.y + data.target.offsetY+ visData.global.row.height / 2,
+        y: data.target.x + data.target.offsetX+ visData.global.column.padding
       };
     })
     .projection(function (data) {
@@ -188,27 +222,14 @@ d3.json('data.json', function(error, data) {
   // we "scroll away" the container that is listening to the mousehweel event.
   var linksGroups = levels.append('g').attr('class', 'links');
 
-  var nodeLinks = linksGroups
-    .selectAll('g.node-links')
-    .data(function(data) { return data.rows; })
+  var links = linksGroups.selectAll('.link')
+    .data(function (data, i) {
+      return listGraph.links(i);
+    })
     .enter()
-    .append('g')
-      .attr('class', 'node-links');
-
-  nodeLinks.each(function (data) {
-    // We traverse `children` because that is _safe_, i.e. we require that every
-    // node object has a `children` Array but we access `childRefs`, which
-    // contains the pointer to the actual child object.
-    for (var i = data.children.length; i--;) {
-      data.currentChild = data.childRefs[i];
-      d3.select(this)
-        .append('path')
-          .attr('class', 'link')
-          .attr('d', diagonal);
-    }
-    // Unset current child to avoid later confusion.
-    data.currentChild = undefined;
-  });
+    .append('path')
+      .attr('class', 'link')
+      .attr('d', diagonal);
 
   var nodesGroups = levels.append('g').attr('class', 'nodes');
 
@@ -267,7 +288,9 @@ d3.json('data.json', function(error, data) {
     .attr('ry', scrollbarWidth / 2)
     .classed('ready', true);
 
-  var $levels = $(levels[0]).on('mousewheel', mousewheelColumn);
+  var $levels = $(levels[0]).on('mousewheel', function (e) {
+    mousewheelColumn.call(this, e, listGraph);
+  });
 
   // Reference to the currently active scrollbar. A scrollbar is active when
   // one clicked on the scrollbar and hold the mouse down.
@@ -316,7 +339,8 @@ d3.json('data.json', function(error, data) {
         var contentEl = activeScrollbar.__data__.contentEl;
         contentEl.__data__.scrollTop = Math.max(
           Math.min(
-            contentEl.__data__.scrollTop + activeScrollbar.__data__.invertedHeightScale(deltaY),
+            contentEl.__data__.scrollTop +
+            activeScrollbar.__data__.invertedHeightScale(deltaY),
             0
           ),
           -contentEl.__data__.scrollHeight
@@ -342,16 +366,33 @@ d3.json('data.json', function(error, data) {
           )
         );
         // Scroll content
-        var contentEl = activeScrollbar.__data__.contentEl;
+        var contentEl = activeScrollbar.__data__.contentEl,
+            contentScrollTop = Math.max(
+                Math.min(
+                  contentEl.__data__.scrollTop +
+                  activeScrollbar.__data__.invertedHeightScale(deltaY),
+                  0
+                ),
+                -contentEl.__data__.scrollHeight
+              );
         scrollColumn(
           contentEl,
-          Math.max(
-            Math.min(
-              contentEl.__data__.scrollTop + activeScrollbar.__data__.invertedHeightScale(deltaY),
-              0
-            ),
-            -contentEl.__data__.scrollHeight
-          )
+          contentScrollTop
+        );
+        // Scroll links
+        scrollLinks(
+          listGraph,
+          contentEl.__data__.linkSelections.outgoing,
+          contentEl.__data__.level,
+          contentScrollTop,
+          'source'
+        );
+        scrollLinks(
+          listGraph,
+          contentEl.__data__.linkSelections.incoming,
+          contentEl.__data__.level - 1,
+          contentScrollTop,
+          'target'
         );
       }
     });
