@@ -26,6 +26,10 @@ svg {
   transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1);
 }
 
+.scrollbar.ready {
+  transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1);
+}
+
 svg:hover .scrollbar {
   fill-opacity: 0.1;
 }
@@ -71,32 +75,38 @@ function mousewheelColumn (e) {
     );
 
     scrollColumn(
-      this.children[1],
+      this.__data__.scrollEl,
       this.__data__.scrollTop
     );
 
     // Scroll scrollbar
-    this.children[2].__data__.scrollTop = this.__data__.scrollbar.heightScale(
+    this.__data__.scrollbar.el.__data__.scrollTop = this.__data__.scrollbar.heightScale(
       -this.__data__.scrollTop
     );
 
     scrollColumn(
-      this.children[2],
-      this.children[2].__data__.scrollTop
+      this.__data__.scrollbar.el,
+      this.__data__.scrollbar.el.__data__.scrollTop
     );
   }
 }
 
 function prepareColumnForScrolling (data, global) {
-  var columnHeight = this.getBoundingClientRect().height;
+  var scrollEl = this.querySelector('.nodes');
+  var scrollbarEl = this.querySelector('.scrollbar');
+
+  var columnHeight = scrollEl.getBoundingClientRect().height +
+    2 * global.row.padding;
   var scrollHeight = columnHeight - height;
   var scrollbarHeight = scrollHeight > 0 ?
     Math.max((height * height / scrollHeight), 10) : 0;
 
   data.height = columnHeight;
+  data.scrollEl = scrollEl;
   data.scrollHeight = scrollHeight;
   data.scrollTop = 0;
   data.scrollbar = {
+    el: scrollbarEl,
     x: data.x + global.column.width - scrollbarWidth,
     y: 0,
     width: scrollbarWidth,
@@ -176,16 +186,16 @@ d3.json('data.json', function(error, data) {
 
   // We need an extra container which is transformed during scrolling. Otherwise
   // we "scroll away" the container that is listening to the mousehweel event.
-  var levelScrollGroup = levels.append('g').attr('class', 'scroll-group');
+  var linksGroups = levels.append('g').attr('class', 'links');
 
-  var terms = levelScrollGroup
-    .selectAll('g.node')
+  var nodeLinks = linksGroups
+    .selectAll('g.node-links')
     .data(function(data) { return data.rows; })
     .enter()
     .append('g')
-      .attr('class', 'node');
+      .attr('class', 'node-links');
 
-  terms.each(function (data) {
+  nodeLinks.each(function (data) {
     // We traverse `children` because that is _safe_, i.e. we require that every
     // node object has a `children` Array but we access `childRefs`, which
     // contains the pointer to the actual child object.
@@ -200,7 +210,16 @@ d3.json('data.json', function(error, data) {
     data.currentChild = undefined;
   });
 
-  terms
+  var nodesGroups = levels.append('g').attr('class', 'nodes');
+
+  var nodes = nodesGroups
+    .selectAll('g.node')
+    .data(function(data) { return data.rows; })
+    .enter()
+    .append('g')
+      .attr('class', 'node');
+
+  nodes
     .append('rect')
       .attr('x', function(data) {
         return data.x + visData.global.column.padding;
@@ -216,29 +235,37 @@ d3.json('data.json', function(error, data) {
         return data.clone ? 'grey' : 'blue';
       });
 
-  // Store the height for each column to save computations when scrolling.
-  levels.each(function (data) {
-    prepareColumnForScrolling.call(this, data, visData.global);
-  });
-
-  // Add scrollbar
+  // Add empty scrollbar element
   var scrollbars = levels
     .append('rect')
-      .attr('class', 'scrollbar')
-      .attr('x', function (data) {
-        return data.scrollbar.x;
-      })
-      .attr('y', function (data) {
-        return data.scrollbar.y;
-      })
-      .attr('width', function (data) {
-        return scrollbarWidth;
-      })
-      .attr('height', function (data) {
-        return data.scrollbar.height;
-      })
-      .attr('rx', scrollbarWidth / 2)
-      .attr('ry', scrollbarWidth / 2);
+      .classed('scrollbar', true);
+
+  // Store the height for each column to save computations when scrolling.
+  levels.each(function (data) {
+    prepareColumnForScrolling.call(
+      this,
+      data,
+      visData.global
+    );
+  });
+
+  // Adjust scrollbars
+  scrollbars
+    .attr('x', function (data) {
+      return data.scrollbar.x;
+    })
+    .attr('y', function (data) {
+      return data.scrollbar.y;
+    })
+    .attr('width', function (data) {
+      return scrollbarWidth;
+    })
+    .attr('height', function (data) {
+      return data.scrollbar.height;
+    })
+    .attr('rx', scrollbarWidth / 2)
+    .attr('ry', scrollbarWidth / 2)
+    .classed('ready', true);
 
   var $levels = $(levels[0]).on('mousewheel', mousewheelColumn);
 
@@ -260,7 +287,7 @@ d3.json('data.json', function(error, data) {
       // Invert scale
       this.__data__.invertedHeightScale = this.__data__.heightScale.invert;
       // Store a reference to the actual node list to be scrolled
-      this.__data__.contentEl = this.parentNode.querySelector('.scroll-group');
+      this.__data__.contentEl = this.parentNode.querySelector('.nodes');
     })
     .on('mousedown', function (e) {
       activeScrollbar = this;
