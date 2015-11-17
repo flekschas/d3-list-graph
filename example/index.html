@@ -3,13 +3,14 @@
 <style>
 
 svg {
-  background: #efefef;
+  border: 1px solid #efefef;
 }
 
 .link {
   fill: none;
-  stroke: #ccc;
-  stroke-width: 1.5px;
+  stroke: #000;
+  stroke-opacity: 0.2;
+  stroke-width: 2;
 }
 
 .scroll-container {
@@ -43,6 +44,17 @@ svg:hover .scrollbar:hover {
 
 .scrollbar.active {
   fill-opacity: 1 !important;
+}
+
+.node .bg {
+  fill: #ccc;
+}
+
+.node.clone .bg {
+  fill: #fff;
+  stroke: #ccc;
+  stroke-width: 2;
+  stroke-dasharray: 5, 2;
 }
 
 </style>
@@ -238,7 +250,10 @@ d3.json('data.json', function(error, data) {
     .data(function(data) { return data.rows; })
     .enter()
     .append('g')
-      .attr('class', 'node');
+      .classed('node', true)
+      .classed('clone', function (data) {
+        return data.clone;
+      });
 
   nodes
     .append('rect')
@@ -252,9 +267,7 @@ d3.json('data.json', function(error, data) {
       .attr('height', visData.global.row.contentHeight)
       .attr('rx', 2)
       .attr('ry', 2)
-      .style('fill', function (data) {
-        return data.clone ? 'grey' : 'blue';
-      });
+      .classed('bg', true);
 
   // Add empty scrollbar element
   var scrollbars = levels
