@@ -6,13 +6,6 @@ svg {
   border: 1px solid #efefef;
 }
 
-.link {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: 0.2;
-  stroke-width: 2;
-}
-
 .scroll-container {
   /* `fill:none;` doesnt work because this avoids drawing the element and will
    * engender the same behavior as if the element is ommited. See why this
@@ -47,14 +40,83 @@ svg:hover .scrollbar:hover {
 }
 
 .node .bg {
+  fill: none;
+  fill: #fff;
+  stroke: #ccc;
+  stroke-width: 1;
+}
+
+.node.hovering-directly,
+.node.hovering-indirectly {
+  cursor: pointer;
+}
+
+.node.hovering-directly .bg {
+  fill: #000;
+}
+
+.node.hovering-indirectly .bg {
   fill: #ccc;
 }
 
 .node.clone .bg {
-  fill: #fff;
-  stroke: #ccc;
-  stroke-width: 2;
   stroke-dasharray: 5, 2;
+}
+
+.node.clone.hovering-directly .bg {
+  stroke: #000;
+}
+
+.node.clone.hovering-indirectly .bg {
+  stroke: #999;
+}
+
+.link {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: 0.2;
+  stroke-width: 2;
+}
+
+.node .label {
+  box-sizing: border-box;
+  width: 100%;
+  height: 1em;
+  padding: 0 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #666;
+  font-size: 12px;
+}
+
+.node.hovering-directly .label {
+  color: #fff;
+}
+
+.node.hovering-indirectly .label {
+  color: #000;
+}
+
+.bar-border {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1px;
+}
+
+.node.hovering-directly .bar-border {
+  stroke: #666;
+}
+
+.node.hovering-indirectly .bar-border {
+  stroke: #bbb;
+}
+
+.bar-magnitude {
+  fill: #000;
+}
+
+.node.hovering-directly .bar-magnitude {
+  fill: #fff;
 }
 
 </style>
@@ -164,13 +226,111 @@ function prepareColumnForScrolling (data, global) {
   };
 }
 
+function traverseUp (node, callback) {
+  while (node.parent) {
+    node = node.parent;
+    callback(node);
+  }
+}
+
+function traverseDown (node, callback) {
+  for (var i = node.childRefs.length; i--;) {
+    callback(node.childRefs[i]);
+    traverseDown(node.childRefs[i], callback);
+  }
+}
+
+function traverse (node, callback) {
+  traverseUp(node, callback);
+  traverseDown(node, callback);
+  for (var i = node.childRefs.length; i--;) {
+    callback(node.childRefs[i]);
+    traverseDown(node.childRefs[i], callback);
+  }
+}
+
+function addLabel (selection) {
+  selection.append('foreignObject')
+    .attr('x', function(data) {
+      return data.x + visData.global.column.padding + visData.global.cell.padding;
+    })
+    .attr('y', function(data) {
+      return data.y + visData.global.row.padding + visData.global.cell.padding;
+    })
+    .attr('width', visData.global.column.contentWidth)
+    .attr('height', visData.global.row.contentHeight / 2 - visData.global.cell.padding * 2)
+    .attr('class', 'label-wrapper')
+    .append('xhtml:div')
+      .attr('class', 'label')
+      .attr('title', function(data) {
+        return data.data.name;
+      })
+      .append('xhtml:span')
+        .text(function(data) {
+          return data.data.name;
+        });
+}
+
+function addBar (selection) {
+  var datum = selection.datum();
+  var bars = datum.data.bars;
+  var barHeight = visData.global.row.contentHeight /
+  (datum.data.bars.length * 2) -
+  visData.global.cell.padding * 2;
+
+  var newSelection = selection.selectAll('.bar')
+    .data(bars)
+    .enter()
+    .append('g')
+      .attr('class', 'bar');
+
+  newSelection
+    .append('rect')
+      .attr('class', 'bar-border')
+      .attr('x', datum.x + visData.global.column.padding + visData.global.cell.padding + 0.5)
+      .attr('y', function (data, i) {
+        return datum.y +
+          visData.global.row.padding +
+          visData.global.row.contentHeight / 2 +
+          barHeight * i +
+          visData.global.cell.padding * (1 + 2 * i) +
+          0.5;
+      })
+      .attr('width', visData.global.column.contentWidth - visData.global.cell.padding * 2 - 1)
+      .attr('height', barHeight - 1);
+
+  newSelection
+    .append('rect')
+      .attr('class', 'bar-magnitude')
+      .attr('x', datum.x + visData.global.column.padding + visData.global.cell.padding)
+      .attr('y', function (data, i) {
+        return datum.y +
+          visData.global.row.padding +
+          visData.global.row.contentHeight / 2 +
+          barHeight * i +
+          visData.global.cell.padding * (1 + 2 * i);
+      })
+      .attr('width', function (data) {
+        return data.value * (visData.global.column.contentWidth - visData.global.cell.padding * 2);
+      })
+      .attr('height', barHeight);
+}
+
+function addBars (selection) {
+  selection
+    .append('g')
+      .classed('bars', true)
+      .call(addBar);
+}
+
 var width = 800,
     height = 200,
     scrollbarWidth = 6;
 
 var D3ListGraph = d3.layout.listGraph();
 
-listGraph = new D3ListGraph([width, height], [5,5]);
+var listGraph = new D3ListGraph([width, height], [5,5]);
+var visData;
 
 var diagonal = d3.svg.diagonal()
   .projection(function(d) { return [d.y, d.x]; });
@@ -185,7 +345,7 @@ var container = svg.append('g');
 d3.json('data.json', function(error, data) {
   if (error) throw error;
 
-  var visData = listGraph.process(data, ['1', '2']);
+  visData = listGraph.process(data, ['1', '2']);
 
   diagonal
     .source(function (data) {
@@ -268,6 +428,38 @@ d3.json('data.json', function(error, data) {
       .attr('rx', 2)
       .attr('ry', 2)
       .classed('bg', true);
+
+  nodes.on('mouseover', function (data) {
+    data.hovering = 1;
+    traverse(data, function (data) {
+      data.hovering = 2;
+    });
+
+    d3.select(this).classed('hovering-directly', true);
+    nodes.classed('hovering-indirectly', function (data) {
+      return data.hovering === 2;
+    });
+  });
+
+  nodes.on('mouseout', function (data) {
+    data.hovering = 0;
+    traverse(data, function (data) {
+      data.hovering = 0;
+    });
+
+    d3.select(this).classed('hovering-directly', false);
+    nodes.classed('hovering-indirectly', false);
+  });
+
+  // Add label
+  nodes.call(addLabel);
+
+  nodes.each(function (data) {
+    d3.select(this).call(addBars);
+  });
+
+  // Add bars
+  // nodes.call(addBars);
 
   // Add empty scrollbar element
   var scrollbars = levels

@@ -48,6 +48,14 @@ d3.layout.listGraph = function() {
   var _rowRelPadding = 0.05;
 
   /**
+   * Default inner padding of a cell relative to the shorter dimension, e.g.
+   * width or height.
+   *
+   * @type  {Number}
+   */
+  var _cellRelInnerPadding = 0.05;
+
+  /**
    * Tests if value is an array.
    *
    * @copyright  Lodash
@@ -139,13 +147,88 @@ d3.layout.listGraph = function() {
     var cloneId;
 
     /**
+     * Ensure that the bar values are in [0,1] and that the structure of `bars`
+     * is unified.
+     *
+     * @description
+     * Each node can feature a number of bars representing something. The layout
+     * can handle two structure, an object-based and an array-based structure.
+     *
+     * Object-based model:
+     * ```
+     * {
+     *   children: [...],
+     *   data: {
+     *     "name": "whatever",
+     *     "bars": {
+     *       "propertyA": 0.9,
+     *       "propertyB": 0.5
+     *     }
+     *   }
+     * }
+     * ```
+     *
+     * Array-based model:
+     * ```
+     * {
+     *   children: [...],
+     *   data: {
+     *     "name": "whatever",
+     *     "bars": [{
+     *         "id": "propertyA",
+     *         "value": 0.9
+     *       }, {
+     *         "id": "propertyB",
+     *         "value": 0.5
+     *       }
+     *     ]
+     *   }
+     * }
+     * ```
+     *
+     * @author  Fritz Lekschas
+     * @date  2015-11-18
+     *
+     * @method  processBars
+     * @private
+     * @memberOf  traverseGraph
+     * @param  {Object}  node  Node to be processed.
+     */
+    function processBars (node) {
+      if (node.data.bars) {
+        if (isArray(node.data.bars)) {
+          for (var i = node.data.bars.length; i--;) {
+            node.data.bars[i].value = Math.max(
+              Math.min(node.data.bars[i].value, 1),
+              0
+            );
+          }
+        } else if (isObject(node.data.bars)) {
+          var bars = [];
+          var keys = Object.keys(node.data.bars);
+          for (var i = keys.length; i--;) {
+            node.data.bars[keys[i]] = Math.max(
+              Math.min(node.data.bars[keys[i]], 1),
+              0
+            );
+            bars.push({
+              id: keys[i],
+              value: node.data.bars[keys[i]]
+            });
+          }
+          node.data.bars = bars;
+        }
+      }
+    }
+
+    /**
      * Process a node, e.g. assign `x` and `y`, clone node etc.
      *
      * @description
      * Nodes are edited in place.
      *
      * @author  Fritz Lekschas
-     * @date    2015-11-13
+     * @date  2015-11-13
      *
      * @method  processNode
      * @private
@@ -181,12 +264,12 @@ d3.layout.listGraph = function() {
 
       _node.parent = parent;
 
+      if (!_node.childRefs) {
+        _node.childRefs = [];
+      }
+
       if (parent) {
         _node.depth = parent.depth + 1;
-        // Save a pointer or reference to the actual child node object.
-        if (!parent.childRefs) {
-          parent.childRefs = [];
-        }
         parent.childRefs.push(_node);
       } else {
         _node.depth = 0;
@@ -205,6 +288,8 @@ d3.layout.listGraph = function() {
         _node.x = scaleX(_node.depth);
         _node.y = scaleY(Object.keys(columnCache[_node.depth]).length - 1);
       }
+
+      processBars(_node);
 
       if (parent) {
         processLink(parent, _node);
@@ -303,6 +388,7 @@ d3.layout.listGraph = function() {
 
     this._colRelPadding = _colRelPadding;
     this._rowRelPadding = _rowRelPadding;
+    this._cellRelInnerPadding = _cellRelInnerPadding;
 
     this._grid = {
       columns: _grid.columns,
@@ -431,6 +517,9 @@ d3.layout.listGraph = function() {
         height: this._rowHeight,
         padding: this._rowAbsPadding,
         contentHeight: this._rowAbsContentHeight
+      },
+      cell: {
+        padding: this._cellAbsInnerPadding
       }
     };
   };
@@ -470,7 +559,7 @@ d3.layout.listGraph = function() {
    *   level of a node is relative to the length of the shortest path to the
    *   root node.
    * @return  {Array}  Array of objects containing the information for outgoing
-   *   links between nodes.
+   *   links.
    */
   ListGraph.prototype.links = function (level) {
     var allLinks = [], source, keys, links;
@@ -493,6 +582,26 @@ d3.layout.listGraph = function() {
     return allLinks;
   };
 
+  /**
+   * Offset one end of all links per level vertically.
+   *
+   * @author  Fritz Lekschas
+   * @date    2015-11-18
+   *
+   * @method  offsetLinks
+   * @memberOf  ListGraph
+   * @public
+   * @category  Links
+   * @param  {Integer}  level  If given get's only links of a certain level. The
+   *   level of a node is relative to the length of the shortest path to the
+   *   root node.
+   * @param  {Number}  offsetY  The amount that one end of the link should be
+   *   offset vertically.
+   * @param  {String}  nodeType  Defines which end of the link should be
+   *   shifted. This can either be `source` or `traget`.
+   * @return  {Array}  Array of objects containing the information of the
+   *   modified outgoing links.
+   */
   ListGraph.prototype.offsetLinks = function (level, offsetY, nodeType) {
     var links = this.links(level);
 
@@ -572,6 +681,11 @@ d3.layout.listGraph = function() {
       1 - 2 * this._rowRelPadding
     );
 
+    this._cellAbsInnerPadding = this._cellRelInnerPadding * Math.min(
+      this._colAbsContentWidth,
+      this._rowAbsContentHeight
+    );
+
     return this;
   };
 
@@ -586,7 +700,7 @@ d3.layout.listGraph = function() {
    * @public
    * @chainable
    * @param  {Array|Object}  newSize  New size. Can either be an Array, e.g.
-   *   `[200,20]` or an Object, e.g. `{width: 200, height: 20}`.
+   *   `[200, 20]` or an Object, e.g. `{width: 200, height: 20}`.
    * @return  {Object}  Self.
    */
   ListGraph.prototype.size = function (newSize) {
@@ -613,7 +727,7 @@ d3.layout.listGraph = function() {
    * Set or get the relative width of the content area of a node.
    *
    * @author  Fritz Lekschas
-   * @date    2015-11-17
+   * @date  2015-11-17
    *
    * @method  columnPadding
    * @memberOf  ListGraph
@@ -645,7 +759,7 @@ d3.layout.listGraph = function() {
    * Set or get the relative width of the content area of a node.
    *
    * @author  Fritz Lekschas
-   * @date    2015-11-17
+   * @date  2015-11-17
    *
    * @method  rowPadding
    * @memberOf  ListGraph
