@@ -1,0 +1,108 @@
+.scroll-container {
+  /* `fill:none;` doesnt work because this avoids drawing the element and will
+   * engender the same behavior as if the element is ommited. See why this
+   * element is actually needed below.
+   */
+  fill-opacity: 0;
+}
+
+.scrollbar {
+  fill: #000;
+  fill-opacity: 0;
+}
+
+.scrollbar.ready {
+  transition: all $transitionFast $easeInOutCubic;
+}
+
+svg:hover .scrollbar {
+  fill-opacity: 0.1;
+}
+
+svg:hover .level:hover .scrollbar {
+  fill-opacity: 0.33;
+}
+
+svg:hover .scrollbar:hover {
+  fill-opacity: 0.66;
+}
+
+.scrollbar.active {
+  fill-opacity: 1 !important;
+}
+
+.node .bg {
+  fill: none;
+  fill: #fff;
+  stroke: #ccc;
+  stroke-width: 1;
+}
+
+.node.hovering-directly,
+.node.hovering-indirectly {
+  cursor: pointer;
+}
+
+.node.hovering-directly .bg {
+  fill: #000;
+}
+
+.node.hovering-indirectly .bg {
+  fill: #ccc;
+}
+
+.node.clone .bg {
+  stroke-dasharray: 5, 2;
+}
+
+.node.clone.hovering-directly .bg {
+  stroke: #000;
+}
+
+.node.clone.hovering-indirectly .bg {
+  stroke: #999;
+}
+
+.link {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: 0.2;
+  stroke-width: 2;
+}
+
+.node .label {
+  box-sizing: border-box;
+  width: 100%;
+  height: 1em;
+  padding: 0 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #666;
+  font-size: 12px;
+}
+
+.node.hovering-directly .label {
+  color: #fff;
+}
+
+.node.hovering-indirectly .label {
+  color: #000;
+}
+
+.bar-border,
+.bar-magnitude {
+  fill: #000;
+}
+
+.bar-border {
+  fill-opacity: 0.1;
+}
+
+.node.hovering-directly .bar-border,
+.node.hovering-directly .bar-magnitude {
+  fill: #fff;
+}
+
+.node.hovering-directly .bar-border {
+  fill-opacity: 0.25;
+}

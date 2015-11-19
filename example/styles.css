@@ -1,0 +1,10 @@
+html, body {
+
+}
+
+svg {
+  position: relative;
+  display: block;
+  margin: 1em auto;
+  border: 1px solid #efefef;
+}
