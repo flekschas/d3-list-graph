@@ -1,7 +1,7 @@
 {
   "name": "d3-list-graph",
-  "version": "0.0.1",
-  "description": "D3 layout for a graph of adjacent lists of nodes",
+  "version": "0.0.2",
+  "description": "D3 layout for a graph composed of adjacent lists of nodes",
   "author": "Fritz Lekschas",
   "license": "MIT",
   "devDependencies": {
@@ -11,6 +11,7 @@
     "gulp-changed": "^1.3.0",
     "gulp-clean": "^0.3.1",
     "gulp-concat": "^2.6.0",
+    "gulp-flatten": "^0.2.0",
     "gulp-if": "^2.0.0",
     "gulp-minify-css": "^1.2.0",
     "gulp-rename": "^1.2.2",

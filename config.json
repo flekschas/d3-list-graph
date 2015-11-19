@@ -1,8 +1,23 @@
 {
+  "browsers": [
+    "> 1%",
+    "last 2 versions",
+    "Firefox ESR",
+    "Opera 12.1",
+    "Explorer >= 9",
+    "Firefox >= 5"
+  ],
+  "globalPaths": {
+    "dev": "dev",
     "dist": "dist",
-    "server": {
-        "host": "localhost",
-        "port": "8001"
-    },
     "src": "src"
+  },
+  "server": {
+    "host": "localhost",
+    "port": "8001"
+  },
+  "sourcePaths": {
+    "scripts": "/scripts",
+    "styles": "/styles"
+  }
 }
