@@ -148,7 +148,7 @@ gulp.task('build', function(callback) {
   runSequence(
     'clean',
     [
-      'sass', 'js', 'watch'
+      'sass', 'js'
     ],
     callback
   );
@@ -157,7 +157,7 @@ gulp.task('build', function(callback) {
 gulp.task('dev', function(callback) {
   runSequence(
     [
-      'build', 'webserver'
+      'build', 'webserver', 'watch'
     ],
     'open',
     callback
