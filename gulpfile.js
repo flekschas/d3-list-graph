@@ -6,6 +6,7 @@ var flatten       = require('gulp-flatten');
 var gulp          = require('gulp');
 var gulpIf        = require('gulp-if');
 var gulpUtil      = require('gulp-util');
+var ignore        = require('gulp-ignore');
 var minifyCss     = require('gulp-minify-css');
 var opn           = require('opn');
 var rename        = require('gulp-rename');
@@ -39,75 +40,62 @@ var config        = require('./config.json');
  */
 
 gulp.task('clean', function () {
-  var dest = production ?
-    config.globalPaths.dist : config.globalPaths.dev;
-
   return gulp
-    .src(dest, {read: false})
+    .src(config.globalPaths.dist, {read: false})
     .pipe(clean());
 });
 
 gulp.task('sass', function () {
-  var dest = production ?
-    config.globalPaths.dist : config.globalPaths.dev;
-
   return gulp
     .src(config.globalPaths.src + config.sourcePaths.styles + '/main.scss')
-    .pipe(sourcemaps.init())
-    .pipe(sass().on('error', sass.logError))
-    // Add vendor prefixes in production mode
-    .pipe(
-      gulpIf(
-        production,
-        autoprefixer({
-          browsers: config.browsers,
-          cascade: true
-        })
-      )
-    )
-    // Minify stylesheet in production mode
-    .pipe(
-      gulpIf(
-        production,
-        minifyCss()
-      )
-    )
     .pipe(rename('listGraph.css'))
-    // Write sourcemap
+    .pipe(flatten())
+    .pipe(sass().on('error', sass.logError))
+    .pipe(gulp.dest(config.globalPaths.dist))
+    // Exclude everything when we are not in production mode.
     .pipe(
       gulpIf(
-        production,
-        sourcemaps.write('.')
+        !production,
+        ignore.exclude('*')
       )
     )
-    .pipe(gulp.dest(dest));
+    // Rename file
+    .pipe(rename({ suffix: '.min' }))
+    .pipe(sourcemaps.init())
+    // Add vendor prefixes in production mode
+    .pipe(autoprefixer({
+      browsers: config.browsers,
+      cascade: true
+    }))
+    // Minify stylesheet in production mode
+    .pipe(minifyCss())
+    // Write sourcemap
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest(config.globalPaths.dist));
 });
 
 gulp.task('js', function () {
-  var dest = production ?
-    config.globalPaths.dist : config.globalPaths.dev;
-
   return gulp
     .src(config.globalPaths.src + config.sourcePaths.scripts + '/**/*.js')
+    .pipe(flatten())
+    .pipe(gulp.dest(config.globalPaths.dist))
+    // Exclude everything when we are not in production mode.
+    .pipe(
+      gulpIf(
+        !production,
+        ignore.exclude('*')
+      )
+    )
+    // Rename file
+    .pipe(rename({ suffix: '.min' }))
     // Init source map
     .pipe(sourcemaps.init())
     // Unglify JavaScript if we start Gulp in production mode. Otherwise
     // concat files only.
-    .pipe(
-      gulpIf(
-        production,
-        uglify()
-      )
-    )
+    .pipe(uglify())
     // Append hash to file name in production mode for better cache control
-    .pipe(
-      gulpIf(
-        production,
-        sourcemaps.write('.')
-      )
-    )
-    .pipe(flatten())
-    .pipe(gulp.dest(dest));
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest(config.globalPaths.dist));
 });
 
 gulp.task('watch', function() {

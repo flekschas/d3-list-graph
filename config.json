@@ -8,7 +8,6 @@
     "Firefox >= 5"
   ],
   "globalPaths": {
-    "dev": "dev",
     "dist": "dist",
     "src": "src"
   },
