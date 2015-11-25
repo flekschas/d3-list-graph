@@ -11,6 +11,15 @@
     "dist": "dist",
     "src": "src"
   },
+  "js": {
+    "bundles": [{
+        "output": "listGraph.js",
+        "entry": "composition/index.js"
+      }, {
+        "output": "d3.layout.listGraph.js",
+        "entry": "layout/index.js"
+      }]
+  },
   "server": {
     "host": "localhost",
     "port": "8001"

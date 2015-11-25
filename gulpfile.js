@@ -1,3 +1,5 @@
+'use strict';
+
 var autoprefixer  = require('gulp-autoprefixer');
 var changed       = require('gulp-changed');
 var clean         = require('gulp-clean');
@@ -10,6 +12,7 @@ var ignore        = require('gulp-ignore');
 var minifyCss     = require('gulp-minify-css');
 var opn           = require('opn');
 var rename        = require('gulp-rename');
+var rollup        = require('gulp-rollup');
 var runSequence   = require('run-sequence');
 var sass          = require('gulp-sass');
 var sourcemaps    = require('gulp-sourcemaps');
@@ -18,6 +21,7 @@ var templateCache = require('gulp-angular-templatecache');
 var uglify        = require('gulp-uglify');
 var webserver     = require('gulp-webserver');
 var wrap          = require('gulp-wrap');
+var babel         = require('rollup-plugin-babel');
 
 // Flags
 var production    = gulpUtil.env.production;  // E.g. `--production`
@@ -31,6 +35,7 @@ var production    = gulpUtil.env.production;  // E.g. `--production`
 
 var openBrowser   = gulpUtil.env.open;
 var config        = require('./config.json');
+var packageJson   = require('./package.json');
 
 
 /*
@@ -38,6 +43,31 @@ var config        = require('./config.json');
  * Tasks
  * -----------------------------------------------------------------------------
  */
+
+gulp.task('bundle', function () {
+  gulp
+    .src(
+      config.globalPaths.src +
+      config.sourcePaths.scripts + '/' +
+      config.js.bundles[1].entry, {
+        read: false
+      }
+    )
+    .pipe(rollup({
+      banner: '/* Durz */',
+      format: 'iife',
+      moduleName: 'D3LayoutListGraph',
+      plugins: [
+        babel({
+          exclude: 'node_modules/**'
+        })
+      ],
+      sourceMap: true
+    }))
+    .pipe(rename(config.js.bundles[1].output))
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest(config.globalPaths.dist));
+});
 
 gulp.task('clean', function () {
   return gulp
