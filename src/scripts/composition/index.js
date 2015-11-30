@@ -1,3 +1,5 @@
+'use strict';
+
 function scrollColumn (element, offset) {
   try {
     d3.select(element).attr(
@@ -194,9 +196,9 @@ var width = 800,
     height = 200,
     scrollbarWidth = 6;
 
-var D3ListGraph = d3.layout.listGraph();
+// var D3ListGraph = D3LayoutListGraph();
 
-var listGraph = new D3ListGraph([width, height], [5,5]);
+var listGraph = new D3LayoutListGraph([width, height], [5,5]);
 var visData;
 
 var diagonal = d3.svg.diagonal()

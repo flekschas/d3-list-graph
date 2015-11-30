@@ -1,5 +1,8 @@
 'use strict';
 
+import isArray from '../../../node_modules/lodash-es/lang/isArray.js';
+import isObject from '../../../node_modules/lodash-es/lang/isObject.js';
+
 /**
  * Traverse graph in a breadth-first search fashion and process nodes along
  * the traversal.
@@ -208,20 +211,17 @@ function traverseGraph (graph, starts, columnCache, links, scaleX, scaleY) {
 
   // BFS for each start node.
   for (let i = starts.length; i--;) {
-    start = starts[i];
-
-    if (!graph[start]) {
+    if (!graph[starts[i]]) {
       return;
     }
 
-    processNode(start, graph[start]);
+    processNode(starts[i], graph[starts[i]]);
 
-    queue.push(start);
-    visited[start] = true;
+    queue.push(starts[i]);
+    visited[starts[i]] = true;
 
     while (queue.length > 0) {
-      id = queue.shift();
-      node = graph[id];
+      node = graph[queue.shift()];
 
       for (j = node.children.length; j--;) {
         childId = node.children[j];

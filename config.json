@@ -12,13 +12,16 @@
     "src": "src"
   },
   "js": {
-    "bundles": [{
-        "output": "listGraph.js",
-        "entry": "composition/index.js"
-      }, {
-        "output": "d3.layout.listGraph.js",
-        "entry": "layout/index.js"
-      }]
+    "bundles": {
+      "composition": {
+        "output": "listGraph",
+        "name": "ListGraph"
+      },
+      "layout": {
+        "output": "d3.layout.listGraph",
+        "name": "D3LayoutListGraph"
+      }
+    }
   },
   "server": {
     "host": "localhost",

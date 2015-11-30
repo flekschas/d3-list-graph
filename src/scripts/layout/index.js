@@ -1,7 +1,9 @@
 'use strict';
 
-import scale from 'd3-scale';
-import _ from 'lodash';
+import d3 from 'd3';
+import isArray from '../../../node_modules/lodash-es/lang/isArray.js';
+import isFinite from '../../../node_modules/lodash-es/lang/isFinite.js';
+import isObject from '../../../node_modules/lodash-es/lang/isObject.js';
 import traverseGraph from './processNodes.js';
 
 /**
@@ -23,7 +25,7 @@ const SIZE = {
  * @default
  * @type  {Object}
  */
-const DEFAULT_GRID = {
+const GRID = {
   columns: 3,
   rows: 3
 };
@@ -79,8 +81,8 @@ class ListGraphLayout {
    */
   constructor (size, grid) {
     this.scale = {
-      x: scale.linear(),
-      y: scale.linear()
+      x: d3.scale.linear(),
+      y: d3.scale.linear()
     };
 
     this._colRelPadding = COL_REL_PADDING;
@@ -126,11 +128,11 @@ class ListGraphLayout {
    * @return  {Array}  Fat array of arrays of nodes.
    */
   nodesToMatrix () {
-    var arr = [];
-    var keys;
-    var numLevels = Object.keys(this.columnCache).length;
+    let arr = [];
+    let keys;
+    let numLevels = Object.keys(this.columnCache).length;
 
-    for (var i = 0; i < numLevels; i++) {
+    for (let i = 0; i < numLevels; i++) {
       arr.push({
         y: 0,
         x: this.scale.x(i),
@@ -138,7 +140,7 @@ class ListGraphLayout {
         rows: []
       });
       keys = Object.keys(this.columnCache[i]);
-      for (var j = keys.length; j--;) {
+      for (let j = keys.length; j--;) {
         arr[i].rows.push(this.data[keys[j]]);
       }
     }
@@ -257,9 +259,9 @@ class ListGraphLayout {
    *   links.
    */
   links (level) {
-    var allLinks = [], source, keys, links;
+    let allLinks = [], source, keys, nodeLinks;
 
-    if (!isFiniteNumber(level)) {
+    if (!isFinite(level)) {
       source = this.data;
     } else {
       source = this.columnCache[level];
@@ -267,10 +269,10 @@ class ListGraphLayout {
 
     keys = source ? Object.keys(source) : [];
 
-    for (var i = keys.length; i--;) {
-      links = this.data[keys[i]].links;
-      for (var j = links.length; j--;) {
-        allLinks.push(links[j]);
+    for (let i = keys.length; i--;) {
+      nodeLinks = this.data[keys[i]].links;
+      for (let j = nodeLinks.length; j--;) {
+        allLinks.push(nodeLinks[j]);
       }
     }
 
@@ -298,13 +300,13 @@ class ListGraphLayout {
    *   modified outgoing links.
    */
   offsetLinks (level, offsetY, nodeType) {
-    var links = this.links(level);
+    let links = this.links(level);
 
     if (
       (nodeType === 'source' || nodeType === 'target') &&
-      isFiniteNumber(offsetY)
+      isFinite(offsetY)
     ) {
-      for (var i = links.length; i--;) {
+      for (let i = links.length; i--;) {
         links[i][nodeType].offsetY = offsetY;
       }
     }
@@ -371,7 +373,7 @@ class ListGraphLayout {
       1 - 2 * this._colRelPadding
     );
 
-    this._rowAbsPadding = this._rowHeight * _rowRelPadding;
+    this._rowAbsPadding = this._rowHeight * this._rowRelPadding;
     this._rowAbsContentHeight = this._rowHeight * (
       1 - 2 * this._rowRelPadding
     );
@@ -439,8 +441,8 @@ class ListGraphLayout {
       return this._colRelPadding;
     }
 
-    if (_.isFinite(padding)) {
-      if (absolute && _.isFinite(this._columnWidth)) {
+    if (isFinite(padding)) {
+      if (absolute && isFinite(this._columnWidth)) {
         padding = padding / this._columnWidth;
       }
       this._colRelPadding = Math.max(Math.min(padding, 0.66), 0.1);
@@ -471,8 +473,8 @@ class ListGraphLayout {
       return this._rowRelPadding;
     }
 
-    if (isFiniteNumber(padding)) {
-      if (absolute && isFiniteNumber(this._rowHeight)) {
+    if (isFinite(padding)) {
+      if (absolute && isFinite(this._rowHeight)) {
         padding = padding / this._rowHeight;
       }
       this._rowRelPadding = Math.max(Math.min(padding, 0.5), 0);
