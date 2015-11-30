@@ -5,6 +5,7 @@
   "author": "Fritz Lekschas",
   "license": "MIT",
   "devDependencies": {
+    "babel-preset-es2015-rollup": "^1.0.0",
     "gulp": "^3.9.0",
     "gulp-angular-templatecache": "^1.7.0",
     "gulp-autoprefixer": "^3.1.0",
@@ -15,14 +16,28 @@
     "gulp-if": "^2.0.0",
     "gulp-ignore": "^2.0.1",
     "gulp-minify-css": "^1.2.0",
+    "gulp-notify": "^2.2.0",
+    "gulp-plumber": "^1.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-sass": "^2.0.3",
     "gulp-sourcemaps": "^1.5.2",
-    "gulp-uglify": "^1.2.0",
-    "gulp-util": "^3.0.6",
+    "gulp-uglify": "^1.5.1",
+    "gulp-util": "^3.0.7",
     "gulp-webserver": "^0.9.1",
     "gulp-wrap": "^0.11.0",
     "opn": "^3.0.2",
+    "rollup": "^0.21.0",
+    "rollup-plugin-babel": "^2.1.0",
+    "rollup-plugin-commonjs": "^1.4.0",
+    "rollup-plugin-npm": "^1.1.0",
     "run-sequence": "^1.1.1"
+  },
+  "dependencies": {
+    "d3": "^3.5.9",
+    "d3-scale": "^0.1.5",
+    "lodash-es": "^3.10.1"
+  },
+  "scripts": {
+    "build": "node scripts/build.js"
   }
 }
