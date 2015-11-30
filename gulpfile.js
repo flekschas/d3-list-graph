@@ -81,6 +81,9 @@ gulp.task('bundle', function () {
     .pipe(rollup(function (file) {
       var bundleName = path.dirname(path.relative(file.base, file.path));
       return {
+        banner: '/* Copyright ' + packageJson.author + ': ' + config.js.bundles[
+          path.dirname(path.relative(file.base, file.path))
+        ].banner + ' */',
         format: 'iife',
         moduleName: config.js.bundles[
             path.dirname(path.relative(file.base, file.path))
@@ -113,7 +116,9 @@ gulp.task('bundle', function () {
     .pipe(sourcemaps.init())
     // Unglify JavaScript if we start Gulp in production mode. Otherwise
     // concat files only.
-    .pipe(uglify())
+    .pipe(uglify({
+      preserveComments: 'license'
+    }))
     // Append hash to file name in production mode for better cache control
     .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest(config.globalPaths.dist));
