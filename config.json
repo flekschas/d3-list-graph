@@ -30,6 +30,7 @@
     "port": "8001"
   },
   "sourcePaths": {
+    "images": "/images",
     "scripts": "/scripts",
     "styles": "/styles"
   }

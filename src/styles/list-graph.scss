@@ -1,108 +1,255 @@
-.scroll-container {
-  /* `fill:none;` doesnt work because this avoids drawing the element and will
-   * engender the same behavior as if the element is ommited. See why this
-   * element is actually needed below.
-   */
-  fill-opacity: 0;
-}
+.list-graph {
+  position: relative;
+  display: block;
 
-.scrollbar {
-  fill: #000;
-  fill-opacity: 0;
-}
+  .topbar {
+    height: 1.5rem;
+    border-bottom: 1px solid #ccc;
+  }
 
-.scrollbar.ready {
-  transition: all $transitionFast $easeInOutCubic;
-}
+  .topbar .controls {
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    float: left;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: -1px 0 0 0 #efefef;
 
-svg:hover .scrollbar {
-  fill-opacity: 0.1;
-}
+    &:first-child {
+      border-left: none;
+    }
+  }
 
-svg:hover .level:hover .scrollbar {
-  fill-opacity: 0.33;
-}
+  .topbar .controls li {
+    position: absolute;
+    top: 0;
+    display: block;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    color: #666;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    overflow: hidden;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
 
-svg:hover .scrollbar:hover {
-  fill-opacity: 0.66;
-}
+    &:hover,
+    &.active {
+      color: #000;
+      background: #ccc;
+    }
 
-.scrollbar.active {
-  fill-opacity: 1 !important;
-}
+    &.active {
+      box-shadow: 0 1px 0 0 #000;
+    }
+  }
 
-.node .bg {
-  fill: none;
-  fill: #fff;
-  stroke: #ccc;
-  stroke-width: 1;
-}
+  .topbar .controls .expandable-label {
+    position: relative;
+  }
 
-.node.hovering-directly,
-.node.hovering-indirectly {
-  cursor: pointer;
-}
+  .topbar .controls .expandable-label .letter {
+    display: inline-block;
+    float: left;
+    max-width: 0;
+    transition: all $transitionFast $easeInOutCubic;
+    overflow: hidden;
+    text-transform: uppercase;
+  }
 
-.node.hovering-directly .bg {
-  fill: #000;
-}
+  .topbar .controls .expandable-label .abbr {
+    font-weight: bold;
+  }
 
-.node.hovering-indirectly .bg {
-  fill: #ccc;
-}
+  .topbar .controls .expandable-label .abbr,
+  .topbar .controls li:hover .expandable-label .letter {
+    max-width: 1rem;
+  }
 
-.node.clone .bg {
-  stroke-dasharray: 5, 2;
-}
+  .topbar .controls [class^='icon-'],
+  .topbar .controls [class*=' icon-'] {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    transition: all $transitionFast $easeInOutCubic;
+  }
 
-.node.clone.hovering-directly .bg {
-  stroke: #000;
-}
+  .topbar .controls .icon-gear {
+    top: 0.35rem;
+    right: 0.35rem;
+    width: 0.8rem;
+    height: 0.8rem;
+  }
 
-.node.clone.hovering-indirectly .bg {
-  stroke: #999;
-}
+  .topbar .controls .toggle {
+    left: 0;
+  }
 
-.link {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: 0.2;
-  stroke-width: 2;
-}
+  .topbar .controls .options {
+    right: 0;
+  }
 
-.node .label {
-  box-sizing: border-box;
-  width: 100%;
-  height: 1em;
-  padding: 0 2px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #666;
-  font-size: 12px;
-}
+  .topbar .controls .sort-precision:hover,
+  .topbar .controls .sort-recall:hover {
+    z-index: 2;
+    background: yellow;
+  }
 
-.node.hovering-directly .label {
-  color: #fff;
-}
+  .scroll-container {
+    /* `fill:none;` doesnt work because this avoids drawing the element and will
+     * engender the same behavior as if the element is ommited. See why this
+     * element is actually needed below.
+     */
+    fill-opacity: 0;
+  }
 
-.node.hovering-indirectly .label {
-  color: #000;
-}
+  .scrollbar {
+    fill: #000;
+    fill-opacity: 0;
+  }
 
-.bar-border,
-.bar-magnitude {
-  fill: #000;
-}
+  .scrollbar.ready {
+    transition: all $transitionFast $easeInOutCubic;
+  }
 
-.bar-border {
-  fill-opacity: 0.1;
-}
+  .list-graph:hover .scrollbar {
+    fill-opacity: 0.1;
+  }
 
-.node.hovering-directly .bar-border,
-.node.hovering-directly .bar-magnitude {
-  fill: #fff;
-}
+  .list-graph:hover .level:hover .scrollbar {
+    fill-opacity: 0.33;
+  }
 
-.node.hovering-directly .bar-border {
-  fill-opacity: 0.25;
+  .list-graph:hover .scrollbar:hover {
+    fill-opacity: 0.66;
+  }
+
+  .scrollbar.active {
+    fill-opacity: 1 !important;
+  }
+
+  .node {
+    transition: all $transitionFast $easeInOutCubic;
+  }
+
+  .node .bg {
+    fill: none;
+    fill: #fff;
+    stroke: #ccc;
+    stroke-width: 1;
+  }
+
+  .node.hovering-directly,
+  .node.hovering-indirectly {
+    cursor: pointer;
+  }
+
+  .node.hovering-directly .bg {
+    fill: #000;
+  }
+
+  .node.hovering-indirectly .bg {
+    fill: #ccc;
+  }
+
+  .node.clone .bg {
+    stroke-dasharray: 5, 2;
+  }
+
+  .node.clone.hovering-directly .bg {
+    stroke: #000;
+  }
+
+  .node.clone.hovering-indirectly .bg {
+    stroke: #999;
+  }
+
+  .link {
+    fill: none;
+    stroke: #000;
+    stroke-opacity: 0.2;
+    stroke-width: 2;
+  }
+
+  .node .label {
+    box-sizing: border-box;
+    width: 100%;
+    height: 1em;
+    padding: 0 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #666;
+    font-size: 12px;
+  }
+
+  .node.hovering-directly .label {
+    color: #fff;
+  }
+
+  .node.hovering-indirectly .label {
+    color: #000;
+  }
+
+  .bar-border,
+  .bar-magnitude {
+    fill: #000;
+    transition: all $transitionFast $easeInOutCubic;
+  }
+
+  .bar-border {
+    fill-opacity: 0.1;
+  }
+
+  .node.hovering-directly .bar-border,
+  .node.hovering-directly .bar-magnitude {
+    fill: #fff;
+  }
+
+  .node.hovering-directly .bar-border {
+    fill-opacity: 0.25;
+  }
+
+  .highlight .bar-border,
+  .highlight .bar-magnitude {
+    fill: $colorHighlightRed;
+  }
+
+  .sorting {
+    opacity: 0.33;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .hidden-default {
+    display: none;
+
+    &.shown {
+      display: display;
+    }
+  }
+
+  .invisible-default {
+    opacity: 0;
+
+    &.visible,
+    > .visible {
+      opacity: 1;
+    }
+  }
+
+  .ease-all {
+    transition: all $transitionFast $easeInOutCubic;
+  }
 }

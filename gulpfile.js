@@ -1,6 +1,7 @@
 'use strict';
 
 var autoprefixer  = require('gulp-autoprefixer');
+var babel         = require('rollup-plugin-babel');
 var changed       = require('gulp-changed');
 var clean         = require('gulp-clean');
 var concat        = require('gulp-concat');
@@ -20,11 +21,11 @@ var runSequence   = require('run-sequence');
 var sass          = require('gulp-sass');
 var sourcemaps    = require('gulp-sourcemaps');
 var spawn         = require('child_process').spawn;
+var svgmin        = require('gulp-svgmin');
 var templateCache = require('gulp-angular-templatecache');
 var uglify        = require('gulp-uglify');
 var webserver     = require('gulp-webserver');
 var wrap          = require('gulp-wrap');
-var babel         = require('rollup-plugin-babel');
 
 // Flags
 var production    = gulpUtil.env.production;  // E.g. `--production`
@@ -159,6 +160,22 @@ gulp.task('sass', function () {
     .pipe(gulp.dest(config.globalPaths.dist));
 });
 
+gulp.task('svg', function () {
+  return gulp
+    .src(config.globalPaths.src + config.sourcePaths.images + '/*.svg')
+    .pipe(svgmin({
+      plugins: [
+        {
+          removeTitle: true
+        },
+        {
+          cleanupIDs: false
+        }
+      ]
+    }))
+    .pipe(gulp.dest(config.globalPaths.dist));
+});
+
 gulp.task('watch', function() {
   gulp.watch(
     config.globalPaths.src + config.sourcePaths.scripts + '/**/*.js',
@@ -167,6 +184,10 @@ gulp.task('watch', function() {
   gulp.watch(
     config.globalPaths.src + config.sourcePaths.styles + '/**/*.scss',
     ['sass']
+  );
+  gulp.watch(
+    config.globalPaths.src + config.sourcePaths.images + '/*.svg',
+    ['svg']
   );
 });
 
@@ -197,7 +218,7 @@ gulp.task('build', function(callback) {
   runSequence(
     'clean',
     [
-      'bundle', 'sass'
+      'bundle', 'sass', 'svg'
     ],
     callback
   );

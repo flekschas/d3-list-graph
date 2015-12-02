@@ -1,6 +1,4 @@
-svg {
-  position: relative;
-  display: block;
+.list-graph {
   margin: 1em auto;
   border: 1px solid #efefef;
 }

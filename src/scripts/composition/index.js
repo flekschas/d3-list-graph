@@ -1,5 +1,8 @@
 'use strict';
 
+import d3 from 'd3';
+import {TRANSITION_SEMI_FAST} from './config.js';
+
 function scrollColumn (element, offset) {
   try {
     d3.select(element).attr(
@@ -69,13 +72,13 @@ function mousewheelColumn (e, listGraph) {
 }
 
 function prepareColumnForScrolling (data, global) {
-  var scrollEl = this.querySelector('.nodes');
-  var scrollbarEl = this.querySelector('.scrollbar');
+  let scrollEl = this.querySelector('.nodes');
+  let scrollbarEl = this.querySelector('.scrollbar');
 
-  var columnHeight = scrollEl.getBoundingClientRect().height +
+  let columnHeight = scrollEl.getBoundingClientRect().height +
     2 * global.row.padding;
-  var scrollHeight = columnHeight - height;
-  var scrollbarHeight = scrollHeight > 0 ?
+  let scrollHeight = columnHeight - height;
+  let scrollbarHeight = scrollHeight > 0 ?
     Math.max((height * height / scrollHeight), 10) : 0;
 
   data.height = columnHeight;
@@ -108,7 +111,7 @@ function traverseUp (node, callback) {
 }
 
 function traverseDown (node, callback) {
-  for (var i = node.childRefs.length; i--;) {
+  for (let i = node.childRefs.length; i--;) {
     callback(node.childRefs[i]);
     traverseDown(node.childRefs[i], callback);
   }
@@ -117,7 +120,7 @@ function traverseDown (node, callback) {
 function traverse (node, callback) {
   traverseUp(node, callback);
   traverseDown(node, callback);
-  for (var i = node.childRefs.length; i--;) {
+  for (let i = node.childRefs.length; i--;) {
     callback(node.childRefs[i]);
     traverseDown(node.childRefs[i], callback);
   }
@@ -147,7 +150,6 @@ function addLabel (selection) {
 
 function setUpBar (selection, datum, barHeight, className, magnitude) {
   selection
-    .attr('class', className)
     .attr('x', datum.x + visData.global.column.padding + visData.global.cell.padding)
     .attr('y', function (data, i) {
       return datum.y +
@@ -160,7 +162,8 @@ function setUpBar (selection, datum, barHeight, className, magnitude) {
       return (magnitude ? data.value : 1) *
         (visData.global.column.contentWidth - visData.global.cell.padding * 2);
     })
-    .attr('height', barHeight);
+    .attr('height', barHeight)
+    .classed(className, true);
 }
 
 function addBar (selection) {
@@ -174,7 +177,9 @@ function addBar (selection) {
     .data(bars)
     .enter()
     .append('g')
-      .attr('class', 'bar');
+      .attr('class', function (data) {
+        return 'bar ' + data.id;
+      });
 
   newSelection
     .append('rect')
@@ -192,11 +197,11 @@ function addBars (selection) {
       .call(addBar);
 }
 
-var width = 800,
+let width = 800,
     height = 200,
     scrollbarWidth = 6;
 
-// var D3ListGraph = D3LayoutListGraph();
+$('.list-graph').width(width);
 
 var listGraph = new D3LayoutListGraph([width, height], [5,5]);
 var visData;
@@ -204,7 +209,11 @@ var visData;
 var diagonal = d3.svg.diagonal()
   .projection(function(d) { return [d.y, d.x]; });
 
-var svg = d3.select('body')
+var topbarEl = d3.select('.list-graph')
+  .append('div')
+    .attr('class', 'topbar');
+
+var svg = d3.select('.list-graph')
   .append('svg')
     .attr('width', width)
     .attr('height', height);
@@ -214,6 +223,7 @@ var container = svg.append('g');
 d3.json('data.json', function(error, data) {
   if (error) throw error;
 
+  // Initialize tree with root IDs '1' and '2'.
   visData = listGraph.process(data, ['1', '2']);
 
   diagonal
@@ -261,9 +271,9 @@ d3.json('data.json', function(error, data) {
 
   // We need an extra container which is transformed during scrolling. Otherwise
   // we "scroll away" the container that is listening to the mousehweel event.
-  var linksGroups = levels.append('g').attr('class', 'links');
+  let linksGroups = levels.append('g').attr('class', 'links');
 
-  var links = linksGroups.selectAll('.link')
+  let links = linksGroups.selectAll('.link')
     .data(function (data, i) {
       return listGraph.links(i);
     })
@@ -272,9 +282,9 @@ d3.json('data.json', function(error, data) {
       .attr('class', 'link')
       .attr('d', diagonal);
 
-  var nodesGroups = levels.append('g').attr('class', 'nodes');
+  let nodesGroups = levels.append('g').attr('class', 'nodes');
 
-  var nodes = nodesGroups
+  let nodes = nodesGroups
     .selectAll('g.node')
     .data(function(data) { return data.rows; })
     .enter()
@@ -323,15 +333,13 @@ d3.json('data.json', function(error, data) {
   // Add label
   nodes.call(addLabel);
 
+  // Add bars
   nodes.each(function (data) {
     d3.select(this).call(addBars);
   });
 
-  // Add bars
-  // nodes.call(addBars);
-
   // Add empty scrollbar element
-  var scrollbars = levels
+  let scrollbars = levels
     .append('rect')
       .classed('scrollbar', true);
 
@@ -362,23 +370,23 @@ d3.json('data.json', function(error, data) {
     .attr('ry', scrollbarWidth / 2)
     .classed('ready', true);
 
-  var $levels = $(levels[0]).on('mousewheel', function (e) {
+  let $levels = $(levels[0]).on('mousewheel', function (e) {
     mousewheelColumn.call(this, e, listGraph);
   });
 
   // Reference to the currently active scrollbar. A scrollbar is active when
   // one clicked on the scrollbar and hold the mouse down.
-  var activeScrollbar;
+  let activeScrollbar;
 
-  var $scrollbars = $(scrollbars[0])
+  let $scrollbars = $(scrollbars[0])
     .each(function () {
       this.__data__ = {
         clientY: null,
         scrollTop: 0
       };
       // Copy data over from the parent
-      var keys = Object.keys(this.parentNode.__data__.scrollbar);
-      for (var i = keys.length; i--;) {
+      let keys = Object.keys(this.parentNode.__data__.scrollbar);
+      for (let i = keys.length; i--;) {
         this.__data__[keys[i]] = this.parentNode.__data__.scrollbar[keys[i]];
       }
       // Invert scale
@@ -399,7 +407,7 @@ d3.json('data.json', function(error, data) {
   var $document = $(document)
     .on('mouseup', function (e) {
       if (activeScrollbar) {
-        var deltaY = activeScrollbar.__data__.clientY - e.clientY;
+        let deltaY = activeScrollbar.__data__.clientY - e.clientY;
         // Save final vertical position
         // Scrollbar
         activeScrollbar.__data__.scrollTop = Math.min(
@@ -410,7 +418,7 @@ d3.json('data.json', function(error, data) {
           activeScrollbar.__data__.scrollHeight
         );
         // Content
-        var contentEl = activeScrollbar.__data__.contentEl;
+        let contentEl = activeScrollbar.__data__.contentEl;
         contentEl.__data__.scrollTop = Math.max(
           Math.min(
             contentEl.__data__.scrollTop +
@@ -427,7 +435,7 @@ d3.json('data.json', function(error, data) {
     })
     .on('mousemove', function (e) {
       if (activeScrollbar) {
-        var deltaY = activeScrollbar.__data__.clientY - e.clientY;
+        let deltaY = activeScrollbar.__data__.clientY - e.clientY;
         // Scroll scrollbar
         scrollColumn(
           activeScrollbar,
@@ -440,7 +448,7 @@ d3.json('data.json', function(error, data) {
           )
         );
         // Scroll content
-        var contentEl = activeScrollbar.__data__.contentEl,
+        let contentEl = activeScrollbar.__data__.contentEl,
             contentScrollTop = Math.max(
                 Math.min(
                   contentEl.__data__.scrollTop +
@@ -470,4 +478,212 @@ d3.json('data.json', function(error, data) {
         );
       }
     });
+
+  function toggleColumn () {
+    console.log('Toggle column');
+  }
+
+  function selectNodesColumn (el) {
+    return d3.select(levels[0][d3.select(el).data()[0].level])
+      .selectAll('.node');
+  }
+
+  function highlightBars (el, type, deHighlight) {
+    let nodes = selectNodesColumn(el);
+    nodes.selectAll('.bar.' + type)
+      .classed('highlight', !deHighlight);
+  }
+
+  function sortColumn (type, globalVisData) {
+    let $el = $(this);
+    let d3El = d3.select(this);
+    let sorting = $el.data('sortStatus');
+
+    console.log(d3El.select('.icon-sort-unsort'));
+    console.log(d3El.select('.icon-unsort').classed('visible', false));
+    console.log(d3El.select('.icon-unsort').attr('class'));
+
+    /*
+     * 0 = unsorted
+     * 1 = asc
+     * -1 = desc
+     */
+    switch (sorting) {
+      case 1:
+        sorting = 0;
+        d3El.select('.icon-sort-asc').classed('visible', false);
+        d3El.select('.icon-unsort').classed('visible', true);
+        break;
+      case -1:
+        sorting = 1;
+        d3El.select('.icon-sort-desc').classed('visible', false);
+        d3El.select('.icon-sort-asc').classed('visible', true);
+        break;
+      default:
+        sorting = -1;
+        d3El.select('.icon-unsort').classed('visible', false);
+        d3El.select('.icon-sort-desc').classed('visible', true);
+        break;
+    }
+
+    $el.data('sortStatus', sorting);
+
+    let nodes = selectNodesColumn(this.parentNode);
+    let dataset = nodes.data();
+
+    dataset.sort((a, b) => {
+      let valueA = a.data.barRefs[type];
+      let valueB = b.data.barRefs[type];
+      return valueA > valueB ? sorting : (valueA < valueB ? -sorting : 0);
+    });
+
+    let start = function () { d3.select(this).classed('sorting', true); };
+    let end = function () { d3.select(this).classed('sorting', false); };
+
+    if (sorting) {
+      nodes
+        .data(dataset, data => data.data.name)
+        .transition()
+        .duration(TRANSITION_SEMI_FAST)
+        .attr('transform', (data, i) => {
+          return 'translate(0, ' + (
+              (i * globalVisData.row.height) - data.y
+            ) + ')';
+        })
+        .each('start', start)
+        .each('end', end);
+    } else {
+      nodes
+        .transition()
+        .duration(TRANSITION_SEMI_FAST)
+        .attr('transform', 'translate(0, 0)')
+        .each('start', start)
+        .each('end', end);
+    }
+  }
+
+  function toggleOptions () {
+    console.log('Toggle options');
+  }
+
+  function addColumnControls (selection, globalVisData) {
+    let controls = $(selection[0])
+      .addClass('controls')
+      .width(globalVisData.column.width);
+
+    $('<li/>')
+      .addClass('toggle')
+      .width(globalVisData.column.padding)
+      .on('click', toggleColumn)
+      .appendTo(controls);
+
+    $('<li/>')
+      .addClass('sort-precision ease-all')
+      .css({
+        'width': globalVisData.column.contentWidth / 2,
+        'left': globalVisData.column.padding,
+      })
+      .on('click', function () {
+        sortColumn.call(this, 'precision', globalVisData);
+      })
+      .on('mouseenter', function () {
+        highlightBars(this.parentNode, 'precision');
+        $(this).css({
+          'width': globalVisData.column.contentWidth,
+        });
+      })
+      .on('mouseleave', function () {
+        highlightBars(this.parentNode, 'precision', true);
+        $(this).css({
+          'width': globalVisData.column.contentWidth / 2,
+        });
+      })
+      .appendTo(controls)
+      .append(
+        '<div class="expandable-label">' +
+        '  <span class="letter abbr">P</span>' +
+        '  <span class="letter abbr">r</span>' +
+        '  <span class="letter">e</span>' +
+        '  <span class="letter abbr">c</span>' +
+        '  <span class="letter">i</span>' +
+        '  <span class="letter">s</span>' +
+        '  <span class="letter">i</span>' +
+        '  <span class="letter">o</span>' +
+        '  <span class="letter">n</span>' +
+        '</div>' +
+        '<svg class="icon-unsort invisible-default visible">' +
+        '  <use xlink:href="/dist/icons.svg#unsort"></use>' +
+        '</svg>' +
+        '<svg class="icon-sort-asc invisible-default">' +
+        '  <use xlink:href="/dist/icons.svg#sort-asc"></use>' +
+        '</svg>' +
+        '<svg class="icon-sort-desc invisible-default">' +
+        '  <use xlink:href="/dist/icons.svg#sort-desc"></use>' +
+        '</svg>'
+      );
+
+    $('<li/>')
+      .addClass('sort-recall ease-all')
+      .css({
+        'width': globalVisData.column.contentWidth / 2,
+        'left': globalVisData.column.contentWidth / 2 +
+          globalVisData.column.padding,
+      })
+      .on('click', function () {
+        sortColumn.call(this, 'recall', globalVisData);
+      })
+      .on('mouseenter', function () {
+        highlightBars(this.parentNode, 'recall');
+        $(this).css({
+          'width': globalVisData.column.contentWidth,
+          'left': globalVisData.column.padding,
+        });
+      })
+      .on('mouseleave', function () {
+        highlightBars(this.parentNode, 'recall', true);
+        $(this).css({
+          'width': globalVisData.column.contentWidth / 2,
+          'left': globalVisData.column.contentWidth / 2 +
+            globalVisData.column.padding,
+        });
+      })
+      .appendTo(controls)
+      .append(
+        '<div class="expandable-label">' +
+        '  <span class="letter abbr">R</span>' +
+        '  <span class="letter">e</span>' +
+        '  <span class="letter abbr">c</span>' +
+        '  <span class="letter">a</span>' +
+        '  <span class="letter abbr">l</span>' +
+        '  <span class="letter">l</span>' +
+        '</div>' +
+        '<svg class="icon-unsort invisible-default visible">' +
+        '  <use xlink:href="/dist/icons.svg#unsort"></use>' +
+        '</svg>' +
+        '<svg class="icon-sort-asc invisible-default">' +
+        '  <use xlink:href="/dist/icons.svg#sort-asc"></use>' +
+        '</svg>' +
+        '<svg class="icon-sort-desc invisible-default">' +
+        '  <use xlink:href="/dist/icons.svg#sort-desc"></use>' +
+        '</svg>'
+      );
+
+    $('<li/>')
+      .addClass('options')
+      .width(globalVisData.column.padding)
+      .on('click', toggleOptions)
+      .appendTo(controls)
+      .append(
+        '<svg class="icon-gear">' +
+        '  <use xlink:href="/dist/icons.svg#gear"></use>' +
+        '</svg>'
+      );
+  }
+
+  // Add topbar
+  let topbarControls = topbarEl.selectAll('.controls')
+    .data(visData.nodes)
+    .enter()
+    .append('ul')
+      .call(addColumnControls, visData.global);
 });
