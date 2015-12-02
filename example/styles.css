@@ -1,3 +1,7 @@
+html, body {
+  font-family: 'Source Sans Pro', 'Clear Sans', 'Helvetica Neue', sans-serif;
+}
+
 .list-graph {
   margin: 1em auto;
   border: 1px solid #efefef;

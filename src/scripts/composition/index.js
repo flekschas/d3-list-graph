@@ -589,7 +589,7 @@ d3.json('data.json', function(error, data) {
       .on('mouseenter', function () {
         highlightBars(this.parentNode, 'precision');
         $(this).css({
-          'width': globalVisData.column.contentWidth,
+          'width': globalVisData.column.contentWidth - 16,
         });
       })
       .on('mouseleave', function () {
@@ -635,8 +635,8 @@ d3.json('data.json', function(error, data) {
       .on('mouseenter', function () {
         highlightBars(this.parentNode, 'recall');
         $(this).css({
-          'width': globalVisData.column.contentWidth,
-          'left': globalVisData.column.padding,
+          'width': globalVisData.column.contentWidth - 16,
+          'left': globalVisData.column.padding + 16,
         });
       })
       .on('mouseleave', function () {
