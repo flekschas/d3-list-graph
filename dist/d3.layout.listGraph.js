@@ -309,7 +309,7 @@ var D3LayoutListGraph = (function (d3) { 'use strict';
      * is unified.
      *
      * @description
-     * Each node can feature a number of bars representing something. The layout
+     * Each node can feature a number of bars representing some value. The layout
      * can handle two structure, an object-based and an array-based structure.
      *
      * Object-based model:
@@ -355,17 +355,22 @@ var D3LayoutListGraph = (function (d3) { 'use strict';
     function processBars(node) {
       if (node.data.bars) {
         if (isArray(node.data.bars)) {
+          node.data.barRefs = {};
           for (var i = node.data.bars.length; i--;) {
             node.data.bars[i].value = Math.max(Math.min(node.data.bars[i].value, 1), 0);
+            node.data.barRefs[node.data.bars[i].id] = node.data.bars[i].value;
           }
         } else if (isObject(node.data.bars)) {
           var bars = [];
           var keys = Object.keys(node.data.bars);
+          // Keep the old object reference for quick access, e.g.
+          // `node.data.barRefs.precision`
+          node.data.barRefs = {};
           for (var i = keys.length; i--;) {
-            node.data.bars[keys[i]] = Math.max(Math.min(node.data.bars[keys[i]], 1), 0);
+            node.data.barRefs[keys[i]] = Math.max(Math.min(node.data.bars[keys[i]], 1), 0);
             bars.push({
               id: keys[i],
-              value: node.data.bars[keys[i]]
+              value: node.data.barRefs[keys[i]]
             });
           }
           node.data.bars = bars;

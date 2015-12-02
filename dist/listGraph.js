@@ -1,5 +1,9 @@
 /* Copyright Fritz Lekschas: D3 example visualization app using list-based graphs */
-(function () { 'use strict';
+(function (d3) { 'use strict';
+
+  d3 = 'default' in d3 ? d3['default'] : d3;
+
+  var TRANSITION_SEMI_FAST = 250;
 
   function scrollColumn(element, offset) {
     try {
@@ -98,11 +102,11 @@
   }
 
   function setUpBar(selection, datum, barHeight, className, magnitude) {
-    selection.attr('class', className).attr('x', datum.x + visData.global.column.padding + visData.global.cell.padding).attr('y', function (data, i) {
+    selection.attr('x', datum.x + visData.global.column.padding + visData.global.cell.padding).attr('y', function (data, i) {
       return datum.y + visData.global.row.padding + visData.global.row.contentHeight / 2 + barHeight * i + visData.global.cell.padding * (1 + 2 * i);
     }).attr('width', function (data) {
       return (magnitude ? data.value : 1) * (visData.global.column.contentWidth - visData.global.cell.padding * 2);
-    }).attr('height', barHeight);
+    }).attr('height', barHeight).classed(className, true);
   }
 
   function addBar(selection) {
@@ -110,7 +114,9 @@
     var bars = datum.data.bars;
     var barHeight = visData.global.row.contentHeight / (datum.data.bars.length * 2) - visData.global.cell.padding * 2;
 
-    var newSelection = selection.selectAll('.bar').data(bars).enter().append('g').attr('class', 'bar');
+    var newSelection = selection.selectAll('.bar').data(bars).enter().append('g').attr('class', function (data) {
+      return 'bar ' + data.id;
+    });
 
     newSelection.append('rect').call(setUpBar, datum, barHeight, 'bar-border');
 
@@ -124,7 +130,7 @@
   var width = 800;
   var height = 200;
   var scrollbarWidth = 6;
-  // var D3ListGraph = D3LayoutListGraph();
+  $('.list-graph').width(width);
 
   var listGraph = new D3LayoutListGraph([width, height], [5, 5]);
   var visData;
@@ -133,13 +139,16 @@
     return [d.y, d.x];
   });
 
-  var svg = d3.select('body').append('svg').attr('width', width).attr('height', height);
+  var topbarEl = d3.select('.list-graph').append('div').attr('class', 'topbar');
+
+  var svg = d3.select('.list-graph').append('svg').attr('width', width).attr('height', height);
 
   var container = svg.append('g');
 
   d3.json('data.json', function (error, data) {
     if (error) throw error;
 
+    // Initialize tree with root IDs '1' and '2'.
     visData = listGraph.process(data, ['1', '2']);
 
     diagonal.source(function (data) {
@@ -218,12 +227,10 @@
     // Add label
     nodes.call(addLabel);
 
+    // Add bars
     nodes.each(function (data) {
       d3.select(this).call(addBars);
     });
-
-    // Add bars
-    // nodes.call(addBars);
 
     // Add empty scrollbar element
     var scrollbars = levels.append('rect').classed('scrollbar', true);
@@ -250,7 +257,7 @@
 
     // Reference to the currently active scrollbar. A scrollbar is active when
     // one clicked on the scrollbar and hold the mouse down.
-    var activeScrollbar;
+    var activeScrollbar = undefined;
 
     var $scrollbars = $(scrollbars[0]).each(function () {
       this.__data__ = {
@@ -304,6 +311,131 @@
         scrollLinks(listGraph, contentEl.__data__.linkSelections.incoming, contentEl.__data__.level - 1, contentScrollTop, 'target');
       }
     });
+
+    function toggleColumn() {
+      console.log('Toggle column');
+    }
+
+    function selectNodesColumn(el) {
+      return d3.select(levels[0][d3.select(el).data()[0].level]).selectAll('.node');
+    }
+
+    function highlightBars(el, type, deHighlight) {
+      var nodes = selectNodesColumn(el);
+      nodes.selectAll('.bar.' + type).classed('highlight', !deHighlight);
+    }
+
+    function sortColumn(type, globalVisData) {
+      var $el = $(this);
+      var d3El = d3.select(this);
+      var sorting = $el.data('sortStatus');
+
+      console.log(d3El.select('.icon-sort-unsort'));
+      console.log(d3El.select('.icon-unsort').classed('visible', false));
+      console.log(d3El.select('.icon-unsort').attr('class'));
+
+      /*
+       * 0 = unsorted
+       * 1 = asc
+       * -1 = desc
+       */
+      switch (sorting) {
+        case 1:
+          sorting = 0;
+          d3El.select('.icon-sort-asc').classed('visible', false);
+          d3El.select('.icon-unsort').classed('visible', true);
+          break;
+        case -1:
+          sorting = 1;
+          d3El.select('.icon-sort-desc').classed('visible', false);
+          d3El.select('.icon-sort-asc').classed('visible', true);
+          break;
+        default:
+          sorting = -1;
+          d3El.select('.icon-unsort').classed('visible', false);
+          d3El.select('.icon-sort-desc').classed('visible', true);
+          break;
+      }
+
+      $el.data('sortStatus', sorting);
+
+      var nodes = selectNodesColumn(this.parentNode);
+      var dataset = nodes.data();
+
+      dataset.sort(function (a, b) {
+        var valueA = a.data.barRefs[type];
+        var valueB = b.data.barRefs[type];
+        return valueA > valueB ? sorting : valueA < valueB ? -sorting : 0;
+      });
+
+      var start = function start() {
+        d3.select(this).classed('sorting', true);
+      };
+      var end = function end() {
+        d3.select(this).classed('sorting', false);
+      };
+
+      if (sorting) {
+        nodes.data(dataset, function (data) {
+          return data.data.name;
+        }).transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data, i) {
+          return 'translate(0, ' + (i * globalVisData.row.height - data.y) + ')';
+        }).each('start', start).each('end', end);
+      } else {
+        nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', 'translate(0, 0)').each('start', start).each('end', end);
+      }
+    }
+
+    function toggleOptions() {
+      console.log('Toggle options');
+    }
+
+    function addColumnControls(selection, globalVisData) {
+      var controls = $(selection[0]).addClass('controls').width(globalVisData.column.width);
+
+      $('<li/>').addClass('toggle').width(globalVisData.column.padding).on('click', toggleColumn).appendTo(controls);
+
+      $('<li/>').addClass('sort-precision ease-all').css({
+        'width': globalVisData.column.contentWidth / 2,
+        'left': globalVisData.column.padding
+      }).on('click', function () {
+        sortColumn.call(this, 'precision', globalVisData);
+      }).on('mouseenter', function () {
+        highlightBars(this.parentNode, 'precision');
+        $(this).css({
+          'width': globalVisData.column.contentWidth
+        });
+      }).on('mouseleave', function () {
+        highlightBars(this.parentNode, 'precision', true);
+        $(this).css({
+          'width': globalVisData.column.contentWidth / 2
+        });
+      }).appendTo(controls).append('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default visible">' + '  <use xlink:href="/dist/icons.svg#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default">' + '  <use xlink:href="/dist/icons.svg#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default">' + '  <use xlink:href="/dist/icons.svg#sort-desc"></use>' + '</svg>');
+
+      $('<li/>').addClass('sort-recall ease-all').css({
+        'width': globalVisData.column.contentWidth / 2,
+        'left': globalVisData.column.contentWidth / 2 + globalVisData.column.padding
+      }).on('click', function () {
+        sortColumn.call(this, 'recall', globalVisData);
+      }).on('mouseenter', function () {
+        highlightBars(this.parentNode, 'recall');
+        $(this).css({
+          'width': globalVisData.column.contentWidth,
+          'left': globalVisData.column.padding
+        });
+      }).on('mouseleave', function () {
+        highlightBars(this.parentNode, 'recall', true);
+        $(this).css({
+          'width': globalVisData.column.contentWidth / 2,
+          'left': globalVisData.column.contentWidth / 2 + globalVisData.column.padding
+        });
+      }).appendTo(controls).append('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default visible">' + '  <use xlink:href="/dist/icons.svg#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default">' + '  <use xlink:href="/dist/icons.svg#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default">' + '  <use xlink:href="/dist/icons.svg#sort-desc"></use>' + '</svg>');
+
+      $('<li/>').addClass('options').width(globalVisData.column.padding).on('click', toggleOptions).appendTo(controls).append('<svg class="icon-gear">' + '  <use xlink:href="/dist/icons.svg#gear"></use>' + '</svg>');
+    }
+
+    // Add topbar
+    var topbarControls = topbarEl.selectAll('.controls').data(visData.nodes).enter().append('ul').call(addColumnControls, visData.global);
   });
 
-})();
+})(d3);
