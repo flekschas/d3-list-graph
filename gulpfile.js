@@ -94,7 +94,7 @@ gulp.task('bundle', function () {
             exclude: 'node_modules/**'
           })
         ],
-        sourceMap: false
+        sourceMap: !production
       };
     }))
     .pipe(rename(function (path) {

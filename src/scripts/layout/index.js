@@ -1,10 +1,14 @@
 'use strict';
 
-import d3 from 'd3';
-import isArray from '../../../node_modules/lodash-es/lang/isArray.js';
-import isFinite from '../../../node_modules/lodash-es/lang/isFinite.js';
-import isObject from '../../../node_modules/lodash-es/lang/isObject.js';
-import traverseGraph from './processNodes.js';
+// External
+import * as d3 from 'd3';
+import isArray from '../../../node_modules/lodash-es/lang/isArray';
+import isFinite from '../../../node_modules/lodash-es/lang/isFinite';
+import isObject from '../../../node_modules/lodash-es/lang/isObject';
+
+// Internal
+import {NoRootNodes} from './errors';
+import traverseGraph from './processNodes';
 
 /**
  * Default size
@@ -167,7 +171,11 @@ class ListGraphLayout {
     this.rootIds = rootIds || this.rootIds;
 
     if (!isArray(this.rootIds)) {
-      this.rootIds = [this.rootIds];
+      if (isFinite(this.rootIds)) {
+        this.rootIds = [this.rootIds];
+      } else {
+        throw new NoRootNodes('No root node IDs specified.');
+      }
     }
 
     traverseGraph(
@@ -485,4 +493,4 @@ class ListGraphLayout {
   }
 }
 
-export default ListGraphLayout;
+d3.layout.listGraph = ListGraphLayout;

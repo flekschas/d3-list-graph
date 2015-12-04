@@ -9,11 +9,20 @@
   <title>List Graph Prototype</title>
 </head>
 <body>
-  <div class="list-graph"></div>
+  <div id="example" class="list-graph"></div>
   <script src="../bower_components/jquery/dist/jquery.js"></script>
   <script src="../bower_components/jquery-mousewheel/jquery.mousewheel.js"></script>
   <script src="../bower_components/d3/d3.js"></script>
   <script src="../dist/d3.layout.listGraph.js"></script>
   <script src="../dist/listGraph.js"></script>
+  <script>
+    'use strict';
+
+    d3.json('data.json', function(error, data) {
+      if (error) throw error;
+
+      new ListGraph(document.querySelector('#example'), data, [1, 2]);
+    });
+  </script>
 </body>
 </html>
