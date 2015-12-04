@@ -2,8 +2,10 @@
   position: relative;
   display: block; }
   .list-graph .topbar {
+    position: relative;
     height: 1.5rem;
-    border-bottom: 1px solid #ccc; }
+    border-bottom: 1px solid #efefef;
+    overflow: hidden; }
   .list-graph .topbar .controls {
     position: relative;
     display: block;
@@ -25,6 +27,7 @@
     color: #666;
     font-size: 0.75rem;
     line-height: 1rem;
+    background: #fff;
     overflow: hidden;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -39,16 +42,19 @@
     .list-graph .topbar .controls li.active {
       box-shadow: 0 1px 0 0 #000; }
   .list-graph .topbar .controls .expandable-label {
-    position: relative; }
+    position: relative;
+    line-height: 1.5rem; }
   .list-graph .topbar .controls .expandable-label .letter {
     display: inline-block;
     float: left;
     max-width: 0;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1);
     overflow: hidden;
-    text-transform: uppercase; }
+    text-transform: uppercase;
+    opacity: 0.8; }
   .list-graph .topbar .controls .expandable-label .abbr {
-    font-weight: bold; }
+    font-weight: bold;
+    opacity: 1; }
   .list-graph .topbar .controls .expandable-label .abbr,
   .list-graph .topbar .controls li:hover .expandable-label .letter {
     max-width: 1rem; }
@@ -72,7 +78,18 @@
   .list-graph .topbar .controls .sort-precision:hover,
   .list-graph .topbar .controls .sort-recall:hover {
     z-index: 2;
-    background: yellow; }
+    color: #fff;
+    background: #f23e00;
+    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1), color 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
+    .list-graph .topbar .controls .sort-precision:hover [class^='icon-'],
+    .list-graph .topbar .controls .sort-precision:hover [class*=' icon-'],
+    .list-graph .topbar .controls .sort-recall:hover [class^='icon-'],
+    .list-graph .topbar .controls .sort-recall:hover [class*=' icon-'] {
+      color: #fff; }
+  .list-graph .topbar .controls .sort-precision:hover {
+    box-shadow: 2px 0 3px 0 rgba(0, 0, 0, 0.25), 1px 0 1px 0 rgba(0, 0, 0, 0.1); }
+  .list-graph .topbar .controls .sort-recall:hover {
+    box-shadow: -2px 0 3px 0 rgba(0, 0, 0, 0.25), -1px 0 1px 0 rgba(0, 0, 0, 0.1); }
   .list-graph .scroll-container {
     /* `fill:none;` doesnt work because this avoids drawing the element and will
      * engender the same behavior as if the element is ommited. See why this
@@ -84,11 +101,11 @@
     fill-opacity: 0; }
   .list-graph .scrollbar.ready {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph .list-graph:hover .scrollbar {
+  .list-graph:hover .scrollbar {
     fill-opacity: 0.1; }
-  .list-graph .list-graph:hover .level:hover .scrollbar {
+  .list-graph:hover .column:hover .scrollbar {
     fill-opacity: 0.33; }
-  .list-graph .list-graph:hover .scrollbar:hover {
+  .list-graph:hover .scrollbar:hover {
     fill-opacity: 0.66; }
   .list-graph .scrollbar.active {
     fill-opacity: 1 !important; }

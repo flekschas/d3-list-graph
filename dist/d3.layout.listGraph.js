@@ -1,7 +1,5 @@
 /* Copyright Fritz Lekschas: D3 layout for list-based graphs */
-var D3LayoutListGraph = (function (d3) { 'use strict';
-
-  d3 = 'default' in d3 ? d3['default'] : d3;
+(function (d3) { 'use strict';
 
   var babelHelpers = {};
 
@@ -28,6 +26,30 @@ var D3LayoutListGraph = (function (d3) { 'use strict';
       return Constructor;
     };
   })();
+
+  babelHelpers.inherits = function (subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) {
+      throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+    }
+
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+  };
+
+  babelHelpers.possibleConstructorReturn = function (self, call) {
+    if (!self) {
+      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+    }
+
+    return call && (typeof call === "object" || typeof call === "function") ? call : self;
+  };
 
   babelHelpers;
   /** Used to determine if values are of the language type `Object`. */
@@ -516,6 +538,34 @@ var D3LayoutListGraph = (function (d3) { 'use strict';
     }
   }
 
+  var ExtendableError = (function (_Error) {
+    babelHelpers.inherits(ExtendableError, _Error);
+
+    function ExtendableError(message) {
+      babelHelpers.classCallCheck(this, ExtendableError);
+
+      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
+
+      _this.name = _this.constructor.name;
+      _this.message = message;
+      Error.captureStackTrace(_this, _this.constructor.name);
+      return _this;
+    }
+
+    return ExtendableError;
+  })(Error);
+
+  var NoRootNodes = (function (_ExtendableError) {
+    babelHelpers.inherits(NoRootNodes, _ExtendableError);
+
+    function NoRootNodes(message) {
+      babelHelpers.classCallCheck(this, NoRootNodes);
+      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(NoRootNodes).call(this, message || 'No root node IDs specified.'));
+    }
+
+    return NoRootNodes;
+  })(ExtendableError);
+
   /**
    * Default size
    *
@@ -686,7 +736,11 @@ var D3LayoutListGraph = (function (d3) { 'use strict';
         this.rootIds = rootIds || this.rootIds;
 
         if (!isArray(this.rootIds)) {
-          this.rootIds = [this.rootIds];
+          if (isFinite(this.rootIds)) {
+            this.rootIds = [this.rootIds];
+          } else {
+            throw new NoRootNodes('No root node IDs specified.');
+          }
         }
 
         traverseGraph(this.data, this.rootIds, this.columnCache, this.links, this.scale.x, this.scale.y);
@@ -1019,6 +1073,6 @@ var D3LayoutListGraph = (function (d3) { 'use strict';
     return ListGraphLayout;
   })();
 
-  return ListGraphLayout;
+  d3.layout.listGraph = ListGraphLayout;
 
 })(d3);
