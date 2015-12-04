@@ -15,7 +15,7 @@
     "gulp-flatten": "^0.2.0",
     "gulp-if": "^2.0.0",
     "gulp-ignore": "^2.0.1",
-    "gulp-minify-css": "^1.2.0",
+    "gulp-minify-css": "^1.2.1",
     "gulp-notify": "^2.2.0",
     "gulp-plumber": "^1.0.1",
     "gulp-rename": "^1.2.2",
@@ -27,15 +27,15 @@
     "gulp-webserver": "^0.9.1",
     "gulp-wrap": "^0.11.0",
     "opn": "^3.0.2",
-    "rollup": "^0.21.0",
+    "rollup": "^0.21.1",
     "rollup-plugin-babel": "^2.1.0",
     "rollup-plugin-commonjs": "^1.4.0",
     "rollup-plugin-npm": "^1.1.0",
-    "run-sequence": "^1.1.1"
+    "run-sequence": "^1.1.4"
   },
   "dependencies": {
-    "d3": "^3.5.9",
-    "d3-scale": "^0.1.5",
+    "d3": "^3.5.10",
+    "d3-scale": "^0.2.0",
     "lodash-es": "^3.10.1"
   },
   "scripts": {
