@@ -243,6 +243,12 @@ class ListGraph {
   selectByColumn (index, selector) {
     return d3.select(this.columns.groups[0][index]).selectAll(selector);
   }
+
+  sortColumn (level, property, sortOrder) {
+    let column = this.layout.sort(level, property, sortOrder).nodes(level);
+
+    this.nodes.sort(column);
+  }
 }
 
 export default ListGraph;

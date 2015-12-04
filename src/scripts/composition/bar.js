@@ -29,8 +29,7 @@ class Bar {
         .attr('x', that.nodeData.x + that.visData.global.column.padding +
           that.visData.global.cell.padding)
         .attr('y', function (data, i) {
-          return that.nodeData.y +
-            that.visData.global.row.padding +
+          return that.visData.global.row.padding +
             that.visData.global.row.contentHeight / 2 +
             that.height * i +
             that.visData.global.cell.padding * (1 + 2 * i);

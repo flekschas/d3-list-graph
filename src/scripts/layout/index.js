@@ -108,6 +108,7 @@ class ListGraphLayout {
 
     this.columnCache = {};
     this.columns = {};
+    this.columnNodeOrder = {};
   }
 
   /**
@@ -124,19 +125,26 @@ class ListGraphLayout {
    * instead simply linked using references.
    *
    * @author  Fritz Lekschas
-   * @date  2015-11-10
+   * @date  2015-12-04
    *
    * @method  nodesToMatrix
    * @memberOf  ListGraph
    * @public
+   * @param  {Integer}  Level for which nodes should be returned.
    * @return  {Array}  Fat array of arrays of nodes.
    */
-  nodesToMatrix () {
+  nodesToMatrix (level) {
     let arr = [];
     let keys;
-    let numLevels = Object.keys(this.columnCache).length;
+    let start = 0;
+    let end = Object.keys(this.columnCache).length;
 
-    for (let i = 0; i < numLevels; i++) {
+    if (isFinite(level)) {
+      start = level;
+      end = level + 1;
+    }
+
+    for (let i = start; i < end; i++) {
       arr.push({
         y: 0,
         x: this.scale.x(i),
@@ -145,7 +153,7 @@ class ListGraphLayout {
       });
       keys = Object.keys(this.columnCache[i]);
       for (let j = keys.length; j--;) {
-        arr[i].rows.push(this.data[keys[j]]);
+        arr[i - start].rows.push(this.data[keys[j]]);
       }
     }
 
@@ -182,6 +190,7 @@ class ListGraphLayout {
       this.data,
       this.rootIds,
       this.columnCache,
+      this.columnNodeOrder,
       this.links,
       this.scale.x,
       this.scale.y
@@ -191,6 +200,63 @@ class ListGraphLayout {
       global: this.compileGlobalProps(),
       nodes: this.nodesToMatrix()
     };
+  }
+
+  /**
+   * Sorts nodes of a all or a specific level according to a property and order.
+   *
+   * @description
+   * Currently only nodes can be sorted by _precision_, _recall_ or by name.
+   *
+   * @method  sort
+   * @author  Fritz Lekschas
+   * @date    2015-12-04
+   * @param  {Integer}  level  Specifies the level which should be sorted.
+   * @param  {String}  property   The property used for sorting. Can be one of
+   *   ['precision', 'recall', 'name'].
+   * @param  {Integer}  sortOrder  If `1` sort asc. If `-1` sort desc.
+   * @return  {Object}  Self.
+   */
+  sort (level, property, sortOrder) {
+    let allLinks = [],
+        itr = 0,
+        end = this.columnCache.length,
+        getValue;
+
+    // 1 = asc, -1 = desc
+    sortOrder = sortOrder === 1 ? 1 : -1;
+
+    switch (property) {
+      case 'precision':
+        getValue = obj => obj.data.barRefs.precision;
+        break;
+      case 'recall':
+        getValue = obj => obj.data.barRefs.recall;
+        break;
+      default:
+        getValue = obj => obj.data.name.toLowerCase();
+        break;
+    }
+
+    if (isFinite(level)) {
+      itr = level;
+      end = level + 1;
+    }
+
+    for (itr; itr < end; itr++) {
+      this.columnNodeOrder[itr].sort((a, b) => {
+        let valueA = getValue(a);
+        let valueB = getValue(b);
+        return valueA > valueB ? sortOrder : (valueA < valueB ? -sortOrder : 0);
+      });
+
+      // Update `y` according to the new position.
+      for (let i = this.columnNodeOrder[itr].length; i--;) {
+        this.columnNodeOrder[itr][i].y = this.scale.y(i);
+      }
+    }
+
+    return this;
   }
 
   /**
@@ -239,19 +305,20 @@ class ListGraphLayout {
    * @memberOf  ListGraph
    * @public
    * @category  Data
+   * @param  {Integer}  Level for which nodes should be returned.
    * @return  {Array}  Array of Array of nodes.
    */
-  nodes () {
-    return this.nodesToMatrix();
+  nodes (level) {
+    return this.nodesToMatrix(level);
   }
 
   /**
-   * Returns an array of links per level, i.e. column, or all links.
+   * Returns an array of outgoing links per level, i.e. column, or all outgoing
+   * links.
    *
    * @description
    * The column ID and level might be the same for small graphs but it's
-   * possible that the first column does not represent the root nodes. This is
-   * obviously the case when the user scrolls away.
+   * possible that the first column does not represent the first level.
    *
    * @author  Fritz Lekschas
    * @date  2015-11-17
@@ -275,7 +342,7 @@ class ListGraphLayout {
       source = this.columnCache[level];
     }
 
-    keys = source ? Object.keys(source) : [];
+    keys = Object.keys(source);
 
     for (let i = keys.length; i--;) {
       nodeLinks = this.data[keys[i]].links;

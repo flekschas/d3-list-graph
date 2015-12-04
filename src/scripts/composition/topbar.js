@@ -37,8 +37,8 @@ class Topbar {
         'width': this.visData.global.column.contentWidth / 2 + 'px',
         'left': this.visData.global.column.padding + 'px',
       })
-      .on('click', function () {
-        that.sortColumn(this, 'precision');
+      .on('click', function (data, index) {
+        that.sortColumn(this, index, 'precision');
       })
       .on('mouseenter', function () {
         that.highlightBars(this.parentNode, 'precision');
@@ -84,8 +84,8 @@ class Topbar {
         'left': this.visData.global.column.contentWidth / 2 +
           this.visData.global.column.padding + 'px',
       })
-      .on('click', function () {
-        that.sortColumn(this, 'recall');
+      .on('click', function (data, index) {
+        that.sortColumn(this, index, 'recall');
       })
       .on('mouseenter', function () {
         that.highlightBars(this.parentNode, 'recall');
@@ -131,6 +131,26 @@ class Topbar {
         '  <use xlink:href="/dist/icons.svg#gear"></use>' +
         '</svg>'
       );
+
+    /**
+     * Stores current sorting, e.g. type, order and a reference to the element.
+     *
+     * @type  {Object}
+     */
+    this.sorting = {};
+    this.controls.each((data, index) => {
+      /*
+       * Order:
+       * 0 = unsorted
+       * 1 = asc
+       * -1 = desc
+       */
+      this.sorting[index] = {
+        type: undefined,
+        order: 0,
+        el: undefined
+      };
+    });
   }
 
   toggleColumn () {
@@ -147,67 +167,40 @@ class Topbar {
       .classed('highlight', !deHighlight);
   }
 
-  sortColumn (el, type) {
-    let d3El = d3.select(el);
-    let sorting = d3El.datum().sortStatus;
-
-    /*
-     * 0 = unsorted
-     * 1 = asc
-     * -1 = desc
-     */
-    switch (sorting) {
-      case 1:
-        sorting = 0;
-        d3El.select('.icon-sort-asc').classed('visible', false);
-        d3El.select('.icon-unsort').classed('visible', true);
-        break;
-      case -1:
-        sorting = 1;
-        d3El.select('.icon-sort-desc').classed('visible', false);
-        d3El.select('.icon-sort-asc').classed('visible', true);
-        break;
-      default:
-        sorting = -1;
-        d3El.select('.icon-unsort').classed('visible', false);
-        d3El.select('.icon-sort-desc').classed('visible', true);
-        break;
+  sortColumn (el, index, type) {
+    if (this.sorting[index].el) {
+      if (this.sorting[index].type !== type) {
+        this.sorting[index].el.select('.icon-sort-desc')
+          .classed('visible', false);
+        this.sorting[index].el.select('.icon-sort-asc')
+          .classed('visible', false);
+        this.sorting[index].el.select('.icon-unsort')
+          .classed('visible', true);
+      }
     }
 
-    d3El.datum().sortStatus = sorting;
+    this.sorting[index].el = d3.select(el);
+    this.sorting[index].type = type;
 
-    let nodes = this.selectNodesColumn(el.parentNode);
-    let dataset = nodes.data();
-
-    dataset.sort((a, b) => {
-      let valueA = a.data.barRefs[type];
-      let valueB = b.data.barRefs[type];
-      return valueA > valueB ? sorting : (valueA < valueB ? -sorting : 0);
-    });
-
-    let start = function () { d3.select(this).classed('sorting', true); };
-    let end = function () { d3.select(this).classed('sorting', false); };
-
-    if (sorting) {
-      nodes
-        .data(dataset, data => data.data.name)
-        .transition()
-        .duration(config.TRANSITION_SEMI_FAST)
-        .attr('transform', (data, i) => {
-          return 'translate(0, ' + (
-              (i * this.visData.global.row.height) - data.y
-            ) + ')';
-        })
-        .each('start', start)
-        .each('end', end);
+    // -1 = desc, 1 = asc
+    if (this.sorting[index].order === -1) {
+      this.sorting[index].order = 1;
+      this.sorting[index].el.select('.icon-sort-desc')
+        .classed('visible', false);
+      this.sorting[index].el.select('.icon-sort-asc')
+        .classed('visible', true);
     } else {
-      nodes
-        .transition()
-        .duration(config.TRANSITION_SEMI_FAST)
-        .attr('transform', 'translate(0, 0)')
-        .each('start', start)
-        .each('end', end);
+      this.sorting[index].order = -1;
+      this.sorting[index].el.select('.icon-sort-asc')
+        .classed('visible', false);
+      this.sorting[index].el.select('.icon-sort-desc')
+        .classed('visible', true);
     }
+
+    this.sorting[index].el.select('.icon-unsort')
+      .classed('visible', false);
+
+    this.vis.sortColumn(index, type, this.sorting[index].order);
   }
 
   toggleOptions () {

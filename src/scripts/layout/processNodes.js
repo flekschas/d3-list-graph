@@ -20,7 +20,8 @@ import isObject from '../../../node_modules/lodash-es/lang/isObject.js';
  * @param  {Object|Function}  scaleY  D3 linear scale function for the
  *    y-axis, e.g. rows.
  */
-function traverseGraph (graph, starts, columnCache, links, scaleX, scaleY) {
+function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
+  scaleY) {
   let j;
   let child;
   let childId;
@@ -170,10 +171,12 @@ function traverseGraph (graph, starts, columnCache, links, scaleX, scaleY) {
 
     if (!columnCache[_node.depth]) {
       columnCache[_node.depth] = {};
+      nodeOrder[_node.depth] = [];
     }
 
     if (!columnCache[_node.depth][_id]) {
       columnCache[_node.depth][_id] = true;
+      nodeOrder[_node.depth].push(_node);
       _node.x = scaleX(_node.depth);
       _node.y = scaleY(Object.keys(columnCache[_node.depth]).length - 1);
     }
