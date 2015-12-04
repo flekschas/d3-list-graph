@@ -96,7 +96,7 @@ class Nodes {
       let end = function () { d3.select(this).classed('sorting', false); };
 
       this.nodes
-        .data(update[i].rows, data => data.data.name)
+        .data(update[i].rows, data => data.id)
         .transition()
         .duration(config.TRANSITION_SEMI_FAST)
         .attr('transform', data => 'translate(0, ' + data.y + ')')

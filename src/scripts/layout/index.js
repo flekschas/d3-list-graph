@@ -321,28 +321,31 @@ class ListGraphLayout {
    * possible that the first column does not represent the first level.
    *
    * @author  Fritz Lekschas
-   * @date  2015-11-17
+   * @date  2015-12-04
    *
    * @method  links
    * @memberOf  ListGraph
    * @public
    * @category  Data
-   * @param  {Integer}  level  If given get's only links of a certain level. The
-   *   level of a node is relative to the length of the shortest path to the
-   *   root node.
+   * @param  {Integer}  startLevel  Start level for returning links. If `to` is not
+   *   specified that only links from `start` level are returned.
+   * @param  {Integer}  endLevel  End level for returning links. So all links from
+   *   `start` to `to` (including) will be returned
    * @return  {Array}  Array of objects containing the information for outgoing
    *   links.
    */
-  links (level) {
-    let allLinks = [], source, keys, nodeLinks;
+  links (startLevel, endLevel) {
+    let allLinks = [], keys = [], nodeLinks;
 
-    if (!isFinite(level)) {
-      source = this.data;
+    if (!isFinite(startLevel)) {
+      keys = Object.keys(this.data);
     } else {
-      source = this.columnCache[level];
+      endLevel = isFinite(endLevel) ?
+        Math.min(endLevel, Object.keys(this.columnCache).length) : startLevel + 1;
+      for (let i = startLevel; i < endLevel; i++) {
+        keys = keys.concat(Object.keys(this.columnCache[i]));
+      }
     }
-
-    keys = Object.keys(source);
 
     for (let i = keys.length; i--;) {
       nodeLinks = this.data[keys[i]].links;

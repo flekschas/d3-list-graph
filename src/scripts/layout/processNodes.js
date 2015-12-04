@@ -152,6 +152,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
       _node['clones'] = [];
     }
 
+    _node.id = _id;
     _node.parent = parent;
 
     if (!_node.childRefs) {
@@ -202,15 +203,14 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    */
   function processLink (source, target) {
     source.links.push({
+      id: '(' + source.id + ')->(' + target.id + ')',
       source: {
-        x: source.x,
-        y: source.y,
+        node: source,
         offsetX: 0,
         offsetY: 0
       },
       target: {
-        x: target.x,
-        y: target.y,
+        node: target,
         offsetX: 0,
         offsetY: 0
       }

@@ -1,6 +1,10 @@
 'use strict';
 
+// External
 import * as d3 from 'd3';
+
+// Internal
+import * as config from './config';
 
 const LINKS_CLASS = 'links';
 const LINK_CLASS = 'link';
@@ -30,17 +34,18 @@ class Links {
 
   get diagonal () {
     return d3.svg.diagonal()
-      .source(data => ({
-        x: data.source.y + data.source.offsetY +
-          this.visData.global.row.height / 2,
-        y: data.source.x + data.source.offsetX +
-          this.visData.global.column.contentWidth +
-          this.visData.global.column.padding
-      }))
+      .source(data => {
+        return {
+          x: data.source.node.y + data.source.offsetY +
+            this.visData.global.row.height / 2,
+          y: data.source.node.x + data.source.offsetX +
+            this.visData.global.column.contentWidth +
+            this.visData.global.column.padding
+        };})
       .target(data => ({
-        x: data.target.y + data.target.offsetY +
+        x: data.target.node.y + data.target.offsetY +
           this.visData.global.row.height / 2,
-        y: data.target.x + data.target.offsetX +
+        y: data.target.node.x + data.target.offsetX +
           this.visData.global.column.padding
       }))
       .projection(data => [data.y, data.x]);
@@ -51,6 +56,19 @@ class Links {
       .data(data)
       .attr('d', this.diagonal)
       .exit().remove();
+  }
+
+  sort (update) {
+    let start = function () { d3.select(this).classed('sorting', true); };
+    let end = function () { d3.select(this).classed('sorting', false); };
+
+    this.links
+      .data(update, data => data.id)
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr('d', this.diagonal)
+      .each('start', start)
+      .each('end', end);
   }
 }
 

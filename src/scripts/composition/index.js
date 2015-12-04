@@ -245,9 +245,8 @@ class ListGraph {
   }
 
   sortColumn (level, property, sortOrder) {
-    let column = this.layout.sort(level, property, sortOrder).nodes(level);
-
-    this.nodes.sort(column);
+    this.nodes.sort(this.layout.sort(level, property, sortOrder).nodes(level));
+    this.links.sort(this.layout.links(level - 1, level + 1));
   }
 }
 
