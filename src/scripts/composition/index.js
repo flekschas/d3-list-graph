@@ -40,6 +40,7 @@ class ListGraph {
     this.scrollbarWidth = options.scrollbarWidth || config.SCROLLBAR_WIDTH;
     this.columns = options.columns || config.COLUMNS;
     this.rows = options.rows || config.ROWS;
+    this.iconPath = options.iconPath || config.ICON_PATH;
 
     this.baseElJq
       .width(this.width)

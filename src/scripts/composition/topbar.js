@@ -67,13 +67,13 @@ class Topbar {
         '  <span class="letter">n</span>' +
         '</div>' +
         '<svg class="icon-unsort invisible-default visible">' +
-        '  <use xlink:href="/dist/icons.svg#unsort"></use>' +
+        '  <use xlink:href="' + this.vis.iconPath + '#unsort"></use>' +
         '</svg>' +
         '<svg class="icon-sort-asc invisible-default">' +
-        '  <use xlink:href="/dist/icons.svg#sort-asc"></use>' +
+        '  <use xlink:href="' + this.vis.iconPath + '#sort-asc"></use>' +
         '</svg>' +
         '<svg class="icon-sort-desc invisible-default">' +
-        '  <use xlink:href="/dist/icons.svg#sort-desc"></use>' +
+        '  <use xlink:href="' + this.vis.iconPath + '#sort-desc"></use>' +
         '</svg>'
       );
 
@@ -112,13 +112,13 @@ class Topbar {
         '  <span class="letter">l</span>' +
         '</div>' +
         '<svg class="icon-unsort invisible-default visible">' +
-        '  <use xlink:href="/dist/icons.svg#unsort"></use>' +
+        '  <use xlink:href="' + this.vis.iconPath + '#unsort"></use>' +
         '</svg>' +
         '<svg class="icon-sort-asc invisible-default">' +
-        '  <use xlink:href="/dist/icons.svg#sort-asc"></use>' +
+        '  <use xlink:href="' + this.vis.iconPath + '#sort-asc"></use>' +
         '</svg>' +
         '<svg class="icon-sort-desc invisible-default">' +
-        '  <use xlink:href="/dist/icons.svg#sort-desc"></use>' +
+        '  <use xlink:href="' + this.vis.iconPath + '#sort-desc"></use>' +
         '</svg>'
       );
 
@@ -128,7 +128,7 @@ class Topbar {
       .on('click', this.toggleOptions)
       .html(
         '<svg class="icon-gear">' +
-        '  <use xlink:href="/dist/icons.svg#gear"></use>' +
+        '  <use xlink:href="' + this.vis.iconPath + '#gear"></use>' +
         '</svg>'
       );
 

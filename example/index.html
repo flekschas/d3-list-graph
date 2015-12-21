@@ -21,7 +21,14 @@
     d3.json('data.json', function(error, data) {
       if (error) throw error;
 
-      new ListGraph(document.querySelector('#example'), data, [1, 2]);
+      new ListGraph(
+        document.querySelector('#example'),
+        data,
+        [1, 2],
+        {
+          iconPath: '/dist/icons.svg'
+        }
+      );
     });
   </script>
 </body>

@@ -113,6 +113,9 @@ var ListGraph = (function ($,d3) { 'use strict';
   var COLUMNS = 5;
   var ROWS = 5;
 
+  // An empty path is equal to inline SVG.
+  var ICON_PATH = '';
+
   var TRANSITION_SEMI_FAST = 250;
 
   function up(node, callback) {
@@ -452,7 +455,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }).on('mouseleave', function () {
         that.highlightBars(this.parentNode, 'precision', true);
         d3.select(this).style('width', that.visData.global.column.contentWidth / 2 + 'px');
-      }).html('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default visible">' + '  <use xlink:href="/dist/icons.svg#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default">' + '  <use xlink:href="/dist/icons.svg#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default">' + '  <use xlink:href="/dist/icons.svg#sort-desc"></use>' + '</svg>');
+      }).html('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default visible">' + '  <use xlink:href="' + this.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default">' + '  <use xlink:href="' + this.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default">' + '  <use xlink:href="' + this.vis.iconPath + '#sort-desc"></use>' + '</svg>');
 
       this.controls.append('li').attr('class', 'sort-recall ease-all').style({
         'width': this.visData.global.column.contentWidth / 2 + 'px',
@@ -471,9 +474,9 @@ var ListGraph = (function ($,d3) { 'use strict';
           'width': that.visData.global.column.contentWidth / 2 + 'px',
           'left': that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
         });
-      }).html('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default visible">' + '  <use xlink:href="/dist/icons.svg#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default">' + '  <use xlink:href="/dist/icons.svg#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default">' + '  <use xlink:href="/dist/icons.svg#sort-desc"></use>' + '</svg>');
+      }).html('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default visible">' + '  <use xlink:href="' + this.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default">' + '  <use xlink:href="' + this.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default">' + '  <use xlink:href="' + this.vis.iconPath + '#sort-desc"></use>' + '</svg>');
 
-      this.controls.append('li').attr('class', 'options').style('width', this.visData.global.column.padding + 'px').on('click', this.toggleOptions).html('<svg class="icon-gear">' + '  <use xlink:href="/dist/icons.svg#gear"></use>' + '</svg>');
+      this.controls.append('li').attr('class', 'options').style('width', this.visData.global.column.padding + 'px').on('click', this.toggleOptions).html('<svg class="icon-gear">' + '  <use xlink:href="' + this.vis.iconPath + '#gear"></use>' + '</svg>');
 
       /**
        * Stores current sorting, e.g. type, order and a reference to the element.
@@ -605,6 +608,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.scrollbarWidth = options.scrollbarWidth || SCROLLBAR_WIDTH;
       this.columns = options.columns || COLUMNS;
       this.rows = options.rows || ROWS;
+      this.iconPath = options.iconPath || ICON_PATH;
 
       this.baseElJq.width(this.width).addClass(CLASSNAME);
 
