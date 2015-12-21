@@ -316,7 +316,7 @@
    * @param  {Object|Function}  scaleY  D3 linear scale function for the
    *    y-axis, e.g. rows.
    */
-  function traverseGraph(graph, starts, columnCache, links, scaleX, scaleY) {
+  function traverseGraph(graph, starts, columnCache, nodeOrder, links, scaleX, scaleY) {
     var j = undefined;
     var child = undefined;
     var childId = undefined;
@@ -441,6 +441,7 @@
         _node['clones'] = [];
       }
 
+      _node.id = _id;
       _node.parent = parent;
 
       if (!_node.childRefs) {
@@ -460,10 +461,12 @@
 
       if (!columnCache[_node.depth]) {
         columnCache[_node.depth] = {};
+        nodeOrder[_node.depth] = [];
       }
 
       if (!columnCache[_node.depth][_id]) {
         columnCache[_node.depth][_id] = true;
+        nodeOrder[_node.depth].push(_node);
         _node.x = scaleX(_node.depth);
         _node.y = scaleY(Object.keys(columnCache[_node.depth]).length - 1);
       }
@@ -489,15 +492,14 @@
      */
     function processLink(source, target) {
       source.links.push({
+        id: '(' + source.id + ')->(' + target.id + ')',
         source: {
-          x: source.x,
-          y: source.y,
+          node: source,
           offsetX: 0,
           offsetY: 0
         },
         target: {
-          x: target.x,
-          y: target.y,
+          node: target,
           offsetX: 0,
           offsetY: 0
         }
@@ -667,6 +669,7 @@
 
       this.columnCache = {};
       this.columns = {};
+      this.columnNodeOrder = {};
     }
 
     /**
@@ -683,22 +686,29 @@
      * instead simply linked using references.
      *
      * @author  Fritz Lekschas
-     * @date  2015-11-10
+     * @date  2015-12-04
      *
      * @method  nodesToMatrix
      * @memberOf  ListGraph
      * @public
+     * @param  {Integer}  Level for which nodes should be returned.
      * @return  {Array}  Fat array of arrays of nodes.
      */
 
     babelHelpers.createClass(ListGraphLayout, [{
       key: 'nodesToMatrix',
-      value: function nodesToMatrix() {
+      value: function nodesToMatrix(level) {
         var arr = [];
         var keys = undefined;
-        var numLevels = Object.keys(this.columnCache).length;
+        var start = 0;
+        var end = Object.keys(this.columnCache).length;
 
-        for (var i = 0; i < numLevels; i++) {
+        if (isFinite(level)) {
+          start = level;
+          end = level + 1;
+        }
+
+        for (var i = start; i < end; i++) {
           arr.push({
             y: 0,
             x: this.scale.x(i),
@@ -707,7 +717,7 @@
           });
           keys = Object.keys(this.columnCache[i]);
           for (var j = keys.length; j--;) {
-            arr[i].rows.push(this.data[keys[j]]);
+            arr[i - start].rows.push(this.data[keys[j]]);
           }
         }
 
@@ -743,12 +753,78 @@
           }
         }
 
-        traverseGraph(this.data, this.rootIds, this.columnCache, this.links, this.scale.x, this.scale.y);
+        traverseGraph(this.data, this.rootIds, this.columnCache, this.columnNodeOrder, this.links, this.scale.x, this.scale.y);
 
         return {
           global: this.compileGlobalProps(),
           nodes: this.nodesToMatrix()
         };
+      }
+
+      /**
+       * Sorts nodes of a all or a specific level according to a property and order.
+       *
+       * @description
+       * Currently only nodes can be sorted by _precision_, _recall_ or by name.
+       *
+       * @method  sort
+       * @author  Fritz Lekschas
+       * @date    2015-12-04
+       * @param  {Integer}  level  Specifies the level which should be sorted.
+       * @param  {String}  property   The property used for sorting. Can be one of
+       *   ['precision', 'recall', 'name'].
+       * @param  {Integer}  sortOrder  If `1` sort asc. If `-1` sort desc.
+       * @return  {Object}  Self.
+       */
+
+    }, {
+      key: 'sort',
+      value: function sort(level, property, sortOrder) {
+        var allLinks = [],
+            itr = 0,
+            end = this.columnCache.length,
+            getValue = undefined;
+
+        // 1 = asc, -1 = desc
+        sortOrder = sortOrder === 1 ? 1 : -1;
+
+        switch (property) {
+          case 'precision':
+            getValue = function (obj) {
+              return obj.data.barRefs.precision;
+            };
+            break;
+          case 'recall':
+            getValue = function (obj) {
+              return obj.data.barRefs.recall;
+            };
+            break;
+          default:
+            getValue = function (obj) {
+              return obj.data.name.toLowerCase();
+            };
+            break;
+        }
+
+        if (isFinite(level)) {
+          itr = level;
+          end = level + 1;
+        }
+
+        for (itr; itr < end; itr++) {
+          this.columnNodeOrder[itr].sort(function (a, b) {
+            var valueA = getValue(a);
+            var valueB = getValue(b);
+            return valueA > valueB ? sortOrder : valueA < valueB ? -sortOrder : 0;
+          });
+
+          // Update `y` according to the new position.
+          for (var i = this.columnNodeOrder[itr].length; i--;) {
+            this.columnNodeOrder[itr][i].y = this.scale.y(i);
+          }
+        }
+
+        return this;
       }
 
       /**
@@ -800,52 +876,54 @@
        * @memberOf  ListGraph
        * @public
        * @category  Data
+       * @param  {Integer}  Level for which nodes should be returned.
        * @return  {Array}  Array of Array of nodes.
        */
 
     }, {
       key: 'nodes',
-      value: function nodes() {
-        return this.nodesToMatrix();
+      value: function nodes(level) {
+        return this.nodesToMatrix(level);
       }
 
       /**
-       * Returns an array of links per level, i.e. column, or all links.
+       * Returns an array of outgoing links per level, i.e. column, or all outgoing
+       * links.
        *
        * @description
        * The column ID and level might be the same for small graphs but it's
-       * possible that the first column does not represent the root nodes. This is
-       * obviously the case when the user scrolls away.
+       * possible that the first column does not represent the first level.
        *
        * @author  Fritz Lekschas
-       * @date  2015-11-17
+       * @date  2015-12-04
        *
        * @method  links
        * @memberOf  ListGraph
        * @public
        * @category  Data
-       * @param  {Integer}  level  If given get's only links of a certain level. The
-       *   level of a node is relative to the length of the shortest path to the
-       *   root node.
+       * @param  {Integer}  startLevel  Start level for returning links. If `to` is not
+       *   specified that only links from `start` level are returned.
+       * @param  {Integer}  endLevel  End level for returning links. So all links from
+       *   `start` to `to` (including) will be returned
        * @return  {Array}  Array of objects containing the information for outgoing
        *   links.
        */
 
     }, {
       key: 'links',
-      value: function links(level) {
+      value: function links(startLevel, endLevel) {
         var allLinks = [],
-            source = undefined,
-            keys = undefined,
+            keys = [],
             nodeLinks = undefined;
 
-        if (!isFinite(level)) {
-          source = this.data;
+        if (!isFinite(startLevel)) {
+          keys = Object.keys(this.data);
         } else {
-          source = this.columnCache[level];
+          endLevel = isFinite(endLevel) ? Math.min(endLevel, Object.keys(this.columnCache).length) : startLevel + 1;
+          for (var i = startLevel; i < endLevel; i++) {
+            keys = keys.concat(Object.keys(this.columnCache[i]));
+          }
         }
-
-        keys = source ? Object.keys(source) : [];
 
         for (var i = keys.length; i--;) {
           nodeLinks = this.data[keys[i]].links;
