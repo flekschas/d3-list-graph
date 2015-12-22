@@ -11,7 +11,7 @@ class Bar {
     this.visData = visData;
 
     this.height = this.visData.global.row.contentHeight /
-      (this.nodeData.data.bars.length * 2) -
+      (this.data.length * 2) -
       this.visData.global.cell.padding * 2;
 
     this.selection = selection.selectAll(BAR_CLASS)
