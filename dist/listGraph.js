@@ -148,7 +148,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     this.nodeData = nodeData;
     this.visData = visData;
 
-    this.height = this.visData.global.row.contentHeight / (this.nodeData.data.bars.length * 2) - this.visData.global.cell.padding * 2;
+    this.height = this.visData.global.row.contentHeight / (this.data.length * 2) - this.visData.global.cell.padding * 2;
 
     this.selection = selection.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
       return BAR_CLASS + ' ' + data.id;
