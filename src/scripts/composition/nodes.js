@@ -78,7 +78,12 @@ class Nodes {
     data.hovering = 1;
     traverse.upAndDown(data, data => data.hovering = 2);
 
-    d3.select(el).classed('hovering-directly', true);
+    if (data.clone) {
+      data.originalNode.hovering = 1;
+      traverse.upAndDown(data.originalNode, data => data.hovering = 2);
+    }
+
+    this.nodes.classed('hovering-directly', data => data.hovering === 1);
     this.nodes.classed('hovering-indirectly', data => data.hovering === 2);
   }
 
@@ -86,7 +91,11 @@ class Nodes {
     data.hovering = 0;
     traverse.upAndDown(data, data => data.hovering = 0);
 
-    d3.select(el).classed('hovering-directly', false);
+    if (data.clone) {
+      data.originalNode.hovering = 0;
+    }
+
+    this.nodes.classed('hovering-directly', false);
     this.nodes.classed('hovering-indirectly', false);
   }
 
