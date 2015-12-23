@@ -420,7 +420,7 @@ var ListGraph = (function ($,d3) { 'use strict';
   })();
 
   var TOPBAR_EL = 'div';
-  var TOPBAR_CLASS = 'topbar';
+  var TOPBAR_CLASS = 'top-bar';
 
   var TOPBAR_CONTROL_EL = 'ul';
   var TOPBAR_CONTROL_CLASS = 'controls';
@@ -436,7 +436,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.vis = vis;
       this.visData = visData;
       // Add base topbar element
-      this.el = selection.select('.topbar');
+      this.el = selection.select('.' + TOPBAR_CLASS);
 
       if (this.el.empty()) {
         this.el = selection.insert(TOPBAR_EL, ':first-child').attr('class', TOPBAR_CLASS);

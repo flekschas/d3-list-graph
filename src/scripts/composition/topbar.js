@@ -4,7 +4,7 @@ import * as d3 from 'd3';
 import * as config from './config';
 
 const TOPBAR_EL = 'div';
-const TOPBAR_CLASS = 'topbar';
+const TOPBAR_CLASS = 'top-bar';
 
 const TOPBAR_CONTROL_EL = 'ul';
 const TOPBAR_CONTROL_CLASS = 'controls';
@@ -16,7 +16,7 @@ class Topbar {
     this.vis = vis;
     this.visData = visData;
     // Add base topbar element
-    this.el = selection.select('.topbar');
+    this.el = selection.select('.' + TOPBAR_CLASS);
 
     if (this.el.empty()) {
       this.el = selection.insert(TOPBAR_EL, ':first-child')

@@ -1,12 +1,12 @@
 .list-graph {
   position: relative;
   display: block; }
-  .list-graph .topbar {
+  .list-graph .top-bar {
     position: relative;
     height: 1.5rem;
     border-bottom: 1px solid #efefef;
     overflow: hidden; }
-  .list-graph .topbar .controls {
+  .list-graph .top-bar .controls {
     position: relative;
     display: block;
     box-sizing: border-box;
@@ -15,9 +15,9 @@
     margin: 0;
     padding: 0;
     box-shadow: -1px 0 0 0 #efefef; }
-    .list-graph .topbar .controls:first-child {
+    .list-graph .top-bar .controls:first-child {
       border-left: none; }
-  .list-graph .topbar .controls li {
+  .list-graph .top-bar .controls li {
     position: absolute;
     top: 0;
     display: block;
@@ -36,15 +36,15 @@
     -ms-user-select: none;
     user-select: none;
     cursor: pointer; }
-    .list-graph .topbar .controls li:hover, .list-graph .topbar .controls li.active {
+    .list-graph .top-bar .controls li:hover, .list-graph .top-bar .controls li.active {
       color: #000;
       background: #ccc; }
-    .list-graph .topbar .controls li.active {
+    .list-graph .top-bar .controls li.active {
       box-shadow: 0 1px 0 0 #000; }
-  .list-graph .topbar .controls .expandable-label {
+  .list-graph .top-bar .controls .expandable-label {
     position: relative;
     line-height: 1.5rem; }
-  .list-graph .topbar .controls .expandable-label .letter {
+  .list-graph .top-bar .controls .expandable-label .letter {
     display: inline-block;
     float: left;
     max-width: 0;
@@ -52,43 +52,43 @@
     overflow: hidden;
     text-transform: uppercase;
     opacity: 0.8; }
-  .list-graph .topbar .controls .expandable-label .abbr {
+  .list-graph .top-bar .controls .expandable-label .abbr {
     font-weight: bold;
     opacity: 1; }
-  .list-graph .topbar .controls .expandable-label .abbr,
-  .list-graph .topbar .controls li:hover .expandable-label .letter {
+  .list-graph .top-bar .controls .expandable-label .abbr,
+  .list-graph .top-bar .controls li:hover .expandable-label .letter {
     max-width: 1rem; }
-  .list-graph .topbar .controls [class^='icon-'],
-  .list-graph .topbar .controls [class*=' icon-'] {
+  .list-graph .top-bar .controls [class^='icon-'],
+  .list-graph .top-bar .controls [class*=' icon-'] {
     position: absolute;
     top: 0.25rem;
     right: 0.25rem;
     width: 1rem;
     height: 1rem;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph .topbar .controls .icon-gear {
+  .list-graph .top-bar .controls .icon-gear {
     top: 0.35rem;
     right: 0.35rem;
     width: 0.8rem;
     height: 0.8rem; }
-  .list-graph .topbar .controls .toggle {
+  .list-graph .top-bar .controls .toggle {
     left: 0; }
-  .list-graph .topbar .controls .options {
+  .list-graph .top-bar .controls .options {
     right: 0; }
-  .list-graph .topbar .controls .sort-precision:hover,
-  .list-graph .topbar .controls .sort-recall:hover {
+  .list-graph .top-bar .controls .sort-precision:hover,
+  .list-graph .top-bar .controls .sort-recall:hover {
     z-index: 2;
     color: #fff;
     background: #f23e00;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1), color 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
-    .list-graph .topbar .controls .sort-precision:hover [class^='icon-'],
-    .list-graph .topbar .controls .sort-precision:hover [class*=' icon-'],
-    .list-graph .topbar .controls .sort-recall:hover [class^='icon-'],
-    .list-graph .topbar .controls .sort-recall:hover [class*=' icon-'] {
+    .list-graph .top-bar .controls .sort-precision:hover [class^='icon-'],
+    .list-graph .top-bar .controls .sort-precision:hover [class*=' icon-'],
+    .list-graph .top-bar .controls .sort-recall:hover [class^='icon-'],
+    .list-graph .top-bar .controls .sort-recall:hover [class*=' icon-'] {
       color: #fff; }
-  .list-graph .topbar .controls .sort-precision:hover {
+  .list-graph .top-bar .controls .sort-precision:hover {
     box-shadow: 2px 0 3px 0 rgba(0, 0, 0, 0.25), 1px 0 1px 0 rgba(0, 0, 0, 0.1); }
-  .list-graph .topbar .controls .sort-recall:hover {
+  .list-graph .top-bar .controls .sort-recall:hover {
     box-shadow: -2px 0 3px 0 rgba(0, 0, 0, 0.25), -1px 0 1px 0 rgba(0, 0, 0, 0.1); }
   .list-graph .scroll-container {
     /* `fill:none;` doesnt work because this avoids drawing the element and will

@@ -2,14 +2,14 @@
   position: relative;
   display: block;
 
-  .topbar {
+  .top-bar {
     position: relative;
     height: 1.5rem;
     border-bottom: 1px solid #efefef;
     overflow: hidden;
   }
 
-  .topbar .controls {
+  .top-bar .controls {
     position: relative;
     display: block;
     box-sizing: border-box;
@@ -24,7 +24,7 @@
     }
   }
 
-  .topbar .controls li {
+  .top-bar .controls li {
     position: absolute;
     top: 0;
     display: block;
@@ -55,12 +55,12 @@
     }
   }
 
-  .topbar .controls .expandable-label {
+  .top-bar .controls .expandable-label {
     position: relative;
     line-height: 1.5rem;
   }
 
-  .topbar .controls .expandable-label .letter {
+  .top-bar .controls .expandable-label .letter {
     display: inline-block;
     float: left;
     max-width: 0;
@@ -70,18 +70,18 @@
     opacity: 0.8;
   }
 
-  .topbar .controls .expandable-label .abbr {
+  .top-bar .controls .expandable-label .abbr {
     font-weight: bold;
     opacity: 1;
   }
 
-  .topbar .controls .expandable-label .abbr,
-  .topbar .controls li:hover .expandable-label .letter {
+  .top-bar .controls .expandable-label .abbr,
+  .top-bar .controls li:hover .expandable-label .letter {
     max-width: 1rem;
   }
 
-  .topbar .controls [class^='icon-'],
-  .topbar .controls [class*=' icon-'] {
+  .top-bar .controls [class^='icon-'],
+  .top-bar .controls [class*=' icon-'] {
     position: absolute;
     top: 0.25rem;
     right: 0.25rem;
@@ -90,23 +90,23 @@
     transition: all $transitionFast $easeInOutCubic;
   }
 
-  .topbar .controls .icon-gear {
+  .top-bar .controls .icon-gear {
     top: 0.35rem;
     right: 0.35rem;
     width: 0.8rem;
     height: 0.8rem;
   }
 
-  .topbar .controls .toggle {
+  .top-bar .controls .toggle {
     left: 0;
   }
 
-  .topbar .controls .options {
+  .top-bar .controls .options {
     right: 0;
   }
 
-  .topbar .controls .sort-precision:hover,
-  .topbar .controls .sort-recall:hover {
+  .top-bar .controls .sort-precision:hover,
+  .top-bar .controls .sort-recall:hover {
     z-index: 2;
     color: #fff;
     background: $colorHighlightRed;
@@ -118,11 +118,11 @@
     }
   }
 
-  .topbar .controls .sort-precision:hover {
+  .top-bar .controls .sort-precision:hover {
     box-shadow: 2px 0 3px 0 rgba(0, 0, 0, 0.25), 1px 0 1px 0 rgba(0, 0, 0, 0.1);
   }
 
-  .topbar .controls .sort-recall:hover {
+  .top-bar .controls .sort-recall:hover {
     box-shadow: -2px 0 3px 0 rgba(0, 0, 0, 0.25), -1px 0 1px 0 rgba(0, 0, 0, 0.1);
   }
 
