@@ -2,8 +2,6 @@
 
 export const CLASSNAME = 'list-graph';
 
-export const WIDTH = 800;
-export const HEIGHT = 200;
 export const SCROLLBAR_WIDTH = 6;
 export const COLUMNS = 5;
 export const ROWS = 5;

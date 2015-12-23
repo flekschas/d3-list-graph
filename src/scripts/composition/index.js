@@ -32,11 +32,19 @@ class ListGraph {
     this.baseEl = baseEl;
     this.baseElD3 = d3.select(baseEl);
     this.baseElJq = $(baseEl);
+    this.svgJq = this.baseElJq.find('svg');
+
+    if (this.svgJq.length) {
+      this.svgD3 = d3.select(this.svgJq[0]);
+    } else {
+      this.svgD3 = d3.select('.list-graph').append('svg');
+      this.svgJq = $(this.svgD3[0]);
+    }
 
     this.rootNodes = rootNodes;
 
-    this.width = options.width || config.WIDTH;
-    this.height = options.height || config.HEIGHT;
+    this.width = options.width || this.svgJq.width();
+    this.height = options.height || this.svgJq.height();
     this.scrollbarWidth = options.scrollbarWidth || config.SCROLLBAR_WIDTH;
     this.columns = options.columns || config.COLUMNS;
     this.rows = options.rows || config.ROWS;
@@ -62,12 +70,9 @@ class ListGraph {
 
     this.topbar = new Topbar(this, this.baseElD3, this.visData);
 
-    this.svg = d3.select('.list-graph')
-      .append('svg')
-        .attr('width', this.width)
-        .attr('height', this.height);
+    this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
 
-    this.container = this.svg.append('g');
+    this.container = this.svgD3.append('g');
 
     this.columns = new Columns(this.container, this.visData);
 

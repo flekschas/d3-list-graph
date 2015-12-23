@@ -6,3 +6,9 @@ html, body {
   margin: 1em auto;
   border: 1px solid #efefef;
 }
+
+.list-graph > svg {
+  display: block;
+  width: 800px;
+  height: 200px;
+}
