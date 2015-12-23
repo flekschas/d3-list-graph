@@ -107,8 +107,6 @@ var ListGraph = (function ($,d3) { 'use strict';
 
   var CLASSNAME = 'list-graph';
 
-  var WIDTH = 800;
-  var HEIGHT = 200;
   var SCROLLBAR_WIDTH = 6;
   var COLUMNS = 5;
   var ROWS = 5;
@@ -438,7 +436,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.vis = vis;
       this.visData = visData;
       // Add base topbar element
-      this.el = selection.append(TOPBAR_EL).attr('class', TOPBAR_CLASS);
+      this.el = selection.insert(TOPBAR_EL, ':first-child').attr('class', TOPBAR_CLASS);
 
       this.controls = this.el.selectAll(TOPBAR_CONTROL_CLASS).data(visData.nodes).enter().append(TOPBAR_CONTROL_EL).classed(TOPBAR_CONTROL_CLASS, true).style('width', this.visData.global.column.width + 'px');
 
@@ -600,11 +598,19 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.baseEl = baseEl;
       this.baseElD3 = d3.select(baseEl);
       this.baseElJq = $(baseEl);
+      this.svgJq = this.baseElJq.find('svg');
+
+      if (this.svgJq.length) {
+        this.svgD3 = d3.select(this.svgJq[0]);
+      } else {
+        this.svgD3 = d3.select('.list-graph').append('svg');
+        this.svgJq = $(this.svgD3[0]);
+      }
 
       this.rootNodes = rootNodes;
 
-      this.width = options.width || WIDTH;
-      this.height = options.height || HEIGHT;
+      this.width = options.width || this.svgJq.width();
+      this.height = options.height || this.svgJq.height();
       this.scrollbarWidth = options.scrollbarWidth || SCROLLBAR_WIDTH;
       this.columns = options.columns || COLUMNS;
       this.rows = options.rows || ROWS;
@@ -619,9 +625,9 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.topbar = new Topbar(this, this.baseElD3, this.visData);
 
-      this.svg = d3.select('.list-graph').append('svg').attr('width', this.width).attr('height', this.height);
+      this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
 
-      this.container = this.svg.append('g');
+      this.container = this.svgD3.append('g');
 
       this.columns = new Columns(this.container, this.visData);
 
