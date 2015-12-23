@@ -133,27 +133,35 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     let _node = node;
 
     if (duplication) {
-      cloneId = id + '.' + node.clones.length + 1;
-      graph[cloneId] = {
-        children: [],
-        clone: true,
-        cloneId: node.clones.length + 1,
-        // Data will be referenced rather than copied to avoid inconsistencies
-        data: node.data,
-        originalId: id,
-        // Reference to the original node
-        originalNode: node,
-      };
-      _id = cloneId;
-      _node = graph[cloneId];
-      // Add a reference to the original node that points to the clone.
-      node.clones.push(_node);
+      if (parent.depth + 1 !== node.depth) {
+        cloneId = id + '.' + node.clones.length + 1;
+        graph[cloneId] = {
+          children: [],
+          clone: true,
+          cloneId: node.clones.length + 1,
+          // Data will be referenced rather than copied to avoid inconsistencies
+          data: node.data,
+          originalId: id,
+          // Reference to the original node
+          originalNode: node,
+        };
+        _id = cloneId;
+        _node = graph[cloneId];
+        // Add a reference to the original node that points to the clone.
+        node.clones.push(_node);
+      }
     } else {
       _node['clones'] = [];
     }
 
     _node.id = _id;
-    _node.parent = parent;
+
+    if (!_node.parent) {
+      _node.parent = [];
+    }
+    if (parent) {
+      _node.parent.push(parent);
+    }
 
     if (!_node.childRefs) {
       _node.childRefs = [];

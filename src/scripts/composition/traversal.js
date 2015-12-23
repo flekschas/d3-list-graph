@@ -1,13 +1,15 @@
 'use strict';
 
 export function up (node, callback) {
-  // Used as a reference from which child we access the parent.
-  let child;
-
-  while (node.parent) {
-    child = node;
-    node = node.parent;
+  function traverse (node, child, callback) {
     callback(node, child);
+    for (let i = node.parent.length; i--;) {
+      traverse(node.parent[i], node, callback);
+    }
+  }
+
+  for (let i = node.parent.length; i--;) {
+    traverse(node.parent[i], node, callback);
   }
 }
 
