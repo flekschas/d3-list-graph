@@ -7,8 +7,12 @@ html, body {
   border: 1px solid #efefef;
 }
 
-.list-graph > svg {
+.list-graph svg.base {
   display: block;
   width: 800px;
   height: 200px;
+}
+
+#example-two.list-graph svg.base {
+  background: #f4f4f4;
 }

@@ -32,12 +32,12 @@ class ListGraph {
     this.baseEl = baseEl;
     this.baseElD3 = d3.select(baseEl);
     this.baseElJq = $(baseEl);
-    this.svgJq = this.baseElJq.find('svg');
+    this.svgD3 = this.baseElD3.select('svg.base');
 
-    if (this.svgJq.length) {
-      this.svgD3 = d3.select(this.svgJq[0]);
+    if (this.svgD3.empty()) {
+      this.svgD3 = this.baseElD3.append('svg').attr('class', 'base');
+      this.svgJq = $(this.svgD3[0]);
     } else {
-      this.svgD3 = d3.select('.list-graph').append('svg');
       this.svgJq = $(this.svgD3[0]);
     }
 

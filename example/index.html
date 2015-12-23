@@ -10,6 +10,10 @@
 </head>
 <body>
   <div id="example" class="list-graph"></div>
+  <div id="example-two" class="list-graph">
+    <div class="topbar"></div>
+    <div class="wrapper"><svg class="base"></svg></div>
+  </div>
   <script src="../bower_components/jquery/dist/jquery.js"></script>
   <script src="../bower_components/jquery-mousewheel/jquery.mousewheel.js"></script>
   <script src="../bower_components/d3/d3.js"></script>
@@ -23,6 +27,15 @@
 
       new ListGraph(
         document.querySelector('#example'),
+        data,
+        [1, 2],
+        {
+          iconPath: '/dist/icons.svg'
+        }
+      );
+
+      new ListGraph(
+        document.querySelector('#example-two'),
         data,
         [1, 2],
         {

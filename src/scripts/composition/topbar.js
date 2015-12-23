@@ -16,8 +16,12 @@ class Topbar {
     this.vis = vis;
     this.visData = visData;
     // Add base topbar element
-    this.el = selection.insert(TOPBAR_EL, ':first-child')
-      .attr('class', TOPBAR_CLASS);
+    this.el = selection.select('.topbar');
+
+    if (this.el.empty()) {
+      this.el = selection.insert(TOPBAR_EL, ':first-child')
+        .attr('class', TOPBAR_CLASS);
+    }
 
     this.controls = this.el.selectAll(TOPBAR_CONTROL_CLASS)
       .data(visData.nodes)
