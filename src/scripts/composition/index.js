@@ -77,7 +77,7 @@ class ListGraph {
     this.columns = new Columns(this.container, this.visData);
 
     this.links = new Links(this.columns.groups, this.visData, this.layout);
-    this.nodes = new Nodes(this.columns.groups, this.visData);
+    this.nodes = new Nodes(this.columns.groups, this.visData, this.links);
     this.columns.scrollPreparation(this, this.scrollbarWidth);
     this.scrollbars = new Scrollbars(
       this.columns.groups,

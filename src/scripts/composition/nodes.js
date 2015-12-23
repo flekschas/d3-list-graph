@@ -4,19 +4,22 @@
 import * as d3 from 'd3';
 
 // Internal
-import Bars from './bars';
 import * as traverse from './traversal';
 import * as config from './config';
+import Bars from './bars';
+import Links from './links';
+import {arrayToFakeObjs} from './utils';
 
 const NODES_CLASS = 'nodes';
 const NODE_CLASS = 'node';
 const CLONE_CLASS = 'clone';
 
 class Nodes {
-  constructor (baseSelection, visData) {
+  constructor (baseSelection, visData, links) {
     let that = this;
 
     this.visData = visData;
+    this.links = links;
 
     this.groups = baseSelection.append('g')
       .attr('class', NODES_CLASS)
@@ -75,28 +78,60 @@ class Nodes {
   }
 
   mouseEnter (el, data) {
-    data.hovering = 1;
-    traverse.upAndDown(data, data => data.hovering = 2);
+    // Store link IDs
+    this.currentlyHighlightedLinks = [];
+
+    let traverseCallbackUp = (data, childData) => {
+      data.hovering = 2;
+      for (let i = data.links.length; i--;) {
+        // Only push direct connection to the node we are coming from. E.g.
+        // Store: (parent)->(child)
+        // Ignore: (parent)->(siblings of child)
+        if (data.links[i].target.node.id === childData.id) {
+          this.currentlyHighlightedLinks.push(data.links[i].id);
+        }
+      }
+    };
+
+    let traverseCallbackDown = data => {
+      data.hovering = 2;
+      for (let i = data.links.length; i--;) {
+        this.currentlyHighlightedLinks.push(data.links[i].id);
+      }
+    };
+    traverse.upAndDown(data, traverseCallbackUp, traverseCallbackDown);
 
     if (data.clone) {
+      traverse.upAndDown(
+        data.originalNode, traverseCallbackUp, traverseCallbackDown
+      );
       data.originalNode.hovering = 1;
-      traverse.upAndDown(data.originalNode, data => data.hovering = 2);
     }
 
+    data.hovering = 1;
     this.nodes.classed('hovering-directly', data => data.hovering === 1);
     this.nodes.classed('hovering-indirectly', data => data.hovering === 2);
+
+    this.links.highlight(arrayToFakeObjs(this.currentlyHighlightedLinks));
   }
 
   mouseLeave (el, data) {
+    let traverseCallback = data => data.hovering = 0;
+
     data.hovering = 0;
-    traverse.upAndDown(data, data => data.hovering = 0);
+    traverse.upAndDown(data, traverseCallback);
 
     if (data.clone) {
       data.originalNode.hovering = 0;
+      traverse.upAndDown(data.originalNode, traverseCallback);
     }
 
     this.nodes.classed('hovering-directly', false);
     this.nodes.classed('hovering-indirectly', false);
+
+    this.links.highlight(
+      arrayToFakeObjs(this.currentlyHighlightedLinks), false
+    );
   }
 
   sort (update) {

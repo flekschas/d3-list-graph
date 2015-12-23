@@ -51,6 +51,12 @@ class Links {
       .projection(data => [data.y, data.x]);
   }
 
+  highlight (nodeIds, highlight) {
+    this.links
+      .data(nodeIds, data => data.id)
+      .classed('highlight', highlight === false ? false : true);
+  }
+
   scroll (selection, data) {
     selection
       .data(data)

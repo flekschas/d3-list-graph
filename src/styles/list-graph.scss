@@ -164,7 +164,6 @@
   }
 
   .node .bg {
-    fill: none;
     fill: #fff;
     stroke: #ccc;
     stroke-width: 1;
@@ -177,22 +176,17 @@
 
   .node.hovering-directly .bg {
     fill: #000;
+    stroke: #000;
+    stroke-width: 2;
   }
 
   .node.hovering-indirectly .bg {
-    fill: #ccc;
+    stroke: #000;
+    stroke-width: 2;
   }
 
   .node.clone .bg {
     stroke-dasharray: 5, 2;
-  }
-
-  .node.clone.hovering-directly .bg {
-    stroke: #000;
-  }
-
-  .node.clone.hovering-indirectly .bg {
-    stroke: #999;
   }
 
   .link {
@@ -200,6 +194,12 @@
     stroke: #000;
     stroke-opacity: 0.2;
     stroke-width: 2;
+
+    &.highlight {
+      stroke-opacity: 0.8;
+      stroke-width: 3;
+      stroke: #000;
+    }
   }
 
   .node .label {
