@@ -203,14 +203,17 @@
   }
 
   .node .label {
+    display: block;
     box-sizing: border-box;
     width: 100%;
     height: 1em;
     padding: 0 2px;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
     color: #666;
     font-size: 12px;
+    line-height: 1em;
   }
 
   .node.hovering-directly .label {
