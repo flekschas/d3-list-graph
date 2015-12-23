@@ -3,14 +3,13 @@
 <head>
   <meta charset="utf-8">
   <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" type="text/css" href="../dist/listGraph.min.css">
+  <link rel="stylesheet" type="text/css" href="../dist/listGraph.css">
   <link rel="stylesheet" type="text/css" href="styles.css">
 
   <title>List Graph Prototype</title>
 </head>
 <body>
-  <div id="example" class="list-graph"></div>
-  <div id="example-two" class="list-graph">
+  <div id="example" class="list-graph">
     <div class="top-bar"></div>
     <div class="wrapper"><svg class="base"></svg></div>
   </div>
@@ -27,15 +26,6 @@
 
       new ListGraph(
         document.querySelector('#example'),
-        data,
-        [1, 2],
-        {
-          iconPath: '/dist/icons.svg'
-        }
-      );
-
-      new ListGraph(
-        document.querySelector('#example-two'),
         data,
         [1, 2],
         {
