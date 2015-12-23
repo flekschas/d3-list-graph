@@ -33,6 +33,10 @@
         }
       );
     });
+
+    $('#example').on('d3ListGraphNodeClick', function (e) {
+      console.log('I clicked on ' + e.originalEvent.detail.id);
+    });
   </script>
 </body>
 </html>

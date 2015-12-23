@@ -13,14 +13,12 @@ import Columns from './columns';
 import Links from './links';
 import Nodes from './nodes';
 import Scrollbars from './scrollbars';
+import Events from './events';
 
 class ListGraph {
   constructor (baseEl, data, rootNodes, options) {
     if (!d3.layout.listGraph) {
-      throw new LayoutNotAvailable(
-        'D3 list graph layout (d3.layout.listGraph.js) needs to be loaded ' +
-        'before creating the visualization.'
-      );
+      throw new LayoutNotAvailable();
     }
 
     if (!isObject(options)) {
@@ -50,6 +48,8 @@ class ListGraph {
     this.rows = options.rows || config.ROWS;
     this.iconPath = options.iconPath || config.ICON_PATH;
 
+    this.events = new Events(this.baseEl, options.dispatcher);
+
     this.baseElJq
       .width(this.width)
       .addClass(config.CLASSNAME);
@@ -77,7 +77,9 @@ class ListGraph {
     this.columns = new Columns(this.container, this.visData);
 
     this.links = new Links(this.columns.groups, this.visData, this.layout);
-    this.nodes = new Nodes(this.columns.groups, this.visData, this.links);
+    this.nodes = new Nodes(
+      this.columns.groups, this.visData, this.links, this.events
+    );
     this.columns.scrollPreparation(this, this.scrollbarWidth);
     this.scrollbars = new Scrollbars(
       this.columns.groups,

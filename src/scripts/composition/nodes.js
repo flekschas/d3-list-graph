@@ -15,11 +15,12 @@ const NODE_CLASS = 'node';
 const CLONE_CLASS = 'clone';
 
 class Nodes {
-  constructor (baseSelection, visData, links) {
+  constructor (baseSelection, visData, links, events) {
     let that = this;
 
     this.visData = visData;
     this.links = links;
+    this.events = events;
 
     this.groups = baseSelection.append('g')
       .attr('class', NODES_CLASS)
@@ -48,6 +49,10 @@ class Nodes {
         .attr('ry', 2)
         .classed('bg', true);
 
+    this.nodes.on('click', function (data) {
+      that.mouseClick(this, data);
+    });
+
     this.nodes.on('mouseenter', function (data) {
       that.mouseEnter(this, data);
     });
@@ -75,6 +80,10 @@ class Nodes {
     });
 
     this.bars = new Bars(this.nodes, this.visData);
+  }
+
+  mouseClick (el, data) {
+    this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
   }
 
   mouseEnter (el, data) {
@@ -113,6 +122,8 @@ class Nodes {
     this.nodes.classed('hovering-indirectly', data => data.hovering === 2);
 
     this.links.highlight(arrayToFakeObjs(this.currentlyHighlightedLinks));
+
+    this.events.broadcast('d3ListGraphNodeEnter', { id: data.id });
   }
 
   mouseLeave (el, data) {
@@ -132,6 +143,8 @@ class Nodes {
     this.links.highlight(
       arrayToFakeObjs(this.currentlyHighlightedLinks), false
     );
+
+    this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
   }
 
   sort (update) {
