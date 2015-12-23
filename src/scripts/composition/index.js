@@ -97,9 +97,9 @@ class ListGraph {
       that.scrollbarMouseDown(this, d3.event);
     });
 
-    // We need to listen to `mouseup` and `mousemove` globally otherwise scrolling
-    // will only work as long as the cursor hovers the actual scrollbar, which is
-    // super annoying.
+    // We need to listen to `mouseup` and `mousemove` globally otherwise
+    // scrolling will only work as long as the cursor hovers the actual
+    // scrollbar, which is super annoying.
     d3.select(document)
       .on('mouseup', () => { this.globalMouseUp(d3.event); })
       .on('mousemove', () => { this.globalMouseMove(d3.event); });
