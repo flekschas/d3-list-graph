@@ -422,27 +422,35 @@
       var _node = node;
 
       if (duplication) {
-        cloneId = id + '.' + node.clones.length + 1;
-        graph[cloneId] = {
-          children: [],
-          clone: true,
-          cloneId: node.clones.length + 1,
-          // Data will be referenced rather than copied to avoid inconsistencies
-          data: node.data,
-          originalId: id,
-          // Reference to the original node
-          originalNode: node
-        };
-        _id = cloneId;
-        _node = graph[cloneId];
-        // Add a reference to the original node that points to the clone.
-        node.clones.push(_node);
+        if (parent.depth + 1 !== node.depth) {
+          cloneId = id + '.' + node.clones.length + 1;
+          graph[cloneId] = {
+            children: [],
+            clone: true,
+            cloneId: node.clones.length + 1,
+            // Data will be referenced rather than copied to avoid inconsistencies
+            data: node.data,
+            originalId: id,
+            // Reference to the original node
+            originalNode: node
+          };
+          _id = cloneId;
+          _node = graph[cloneId];
+          // Add a reference to the original node that points to the clone.
+          node.clones.push(_node);
+        }
       } else {
         _node['clones'] = [];
       }
 
       _node.id = _id;
-      _node.parent = parent;
+
+      if (!_node.parent) {
+        _node.parent = [];
+      }
+      if (parent) {
+        _node.parent.push(parent);
+      }
 
       if (!_node.childRefs) {
         _node.childRefs = [];
@@ -901,10 +909,10 @@
        * @memberOf  ListGraph
        * @public
        * @category  Data
-       * @param  {Integer}  startLevel  Start level for returning links. If `to` is not
-       *   specified that only links from `start` level are returned.
-       * @param  {Integer}  endLevel  End level for returning links. So all links from
-       *   `start` to `to` (including) will be returned
+       * @param  {Integer}  startLevel  Start level for returning links. If `to` is
+       *   not specified that only links from `start` level are returned.
+       * @param  {Integer}  endLevel  End level for returning links. So all links
+       *   from `start` to `to` (including) will be returned
        * @return  {Array}  Array of objects containing the information for outgoing
        *   links.
        */
@@ -919,7 +927,9 @@
         if (!isFinite(startLevel)) {
           keys = Object.keys(this.data);
         } else {
+          startLevel = Math.max(startLevel, 0);
           endLevel = isFinite(endLevel) ? Math.min(endLevel, Object.keys(this.columnCache).length) : startLevel + 1;
+
           for (var i = startLevel; i < endLevel; i++) {
             keys = keys.concat(Object.keys(this.columnCache[i]));
           }

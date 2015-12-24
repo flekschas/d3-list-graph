@@ -112,7 +112,6 @@
   .list-graph .node {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .node .bg {
-    fill: none;
     fill: #fff;
     stroke: #ccc;
     stroke-width: 1; }
@@ -120,29 +119,35 @@
   .list-graph .node.hovering-indirectly {
     cursor: pointer; }
   .list-graph .node.hovering-directly .bg {
-    fill: #000; }
+    fill: #000;
+    stroke: #000;
+    stroke-width: 2; }
   .list-graph .node.hovering-indirectly .bg {
-    fill: #ccc; }
+    stroke: #000;
+    stroke-width: 2; }
   .list-graph .node.clone .bg {
     stroke-dasharray: 5, 2; }
-  .list-graph .node.clone.hovering-directly .bg {
-    stroke: #000; }
-  .list-graph .node.clone.hovering-indirectly .bg {
-    stroke: #999; }
   .list-graph .link {
     fill: none;
     stroke: #000;
     stroke-opacity: 0.2;
     stroke-width: 2; }
+    .list-graph .link.highlight {
+      stroke-opacity: 0.75;
+      stroke-width: 3;
+      stroke: #000; }
   .list-graph .node .label {
+    display: block;
     box-sizing: border-box;
     width: 100%;
     height: 1em;
     padding: 0 2px;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
     color: #666;
-    font-size: 12px; }
+    font-size: 12px;
+    line-height: 1em; }
   .list-graph .node.hovering-directly .label {
     color: #fff; }
   .list-graph .node.hovering-indirectly .label {
