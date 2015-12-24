@@ -327,10 +327,10 @@ class ListGraphLayout {
    * @memberOf  ListGraph
    * @public
    * @category  Data
-   * @param  {Integer}  startLevel  Start level for returning links. If `to` is not
-   *   specified that only links from `start` level are returned.
-   * @param  {Integer}  endLevel  End level for returning links. So all links from
-   *   `start` to `to` (including) will be returned
+   * @param  {Integer}  startLevel  Start level for returning links. If `to` is
+   *   not specified that only links from `start` level are returned.
+   * @param  {Integer}  endLevel  End level for returning links. So all links
+   *   from `start` to `to` (including) will be returned
    * @return  {Array}  Array of objects containing the information for outgoing
    *   links.
    */
