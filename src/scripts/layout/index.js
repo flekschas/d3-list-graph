@@ -340,8 +340,11 @@ class ListGraphLayout {
     if (!isFinite(startLevel)) {
       keys = Object.keys(this.data);
     } else {
+      startLevel = Math.max(startLevel, 0);
       endLevel = isFinite(endLevel) ?
-        Math.min(endLevel, Object.keys(this.columnCache).length) : startLevel + 1;
+        Math.min(endLevel, Object.keys(this.columnCache).length) :
+        startLevel + 1;
+
       for (let i = startLevel; i < endLevel; i++) {
         keys = keys.concat(Object.keys(this.columnCache[i]));
       }
