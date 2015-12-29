@@ -109,6 +109,7 @@ class ListGraphLayout {
     this.columnCache = {};
     this.columns = {};
     this.columnNodeOrder = {};
+    this.columnSorting = {};
   }
 
   /**
@@ -149,7 +150,9 @@ class ListGraphLayout {
         y: 0,
         x: this.scale.x(i),
         level: i,
-        rows: []
+        rows: [],
+        sortBy: this.columnSorting[i].by,
+        sortOrder: this.columnSorting[i].order
       });
       keys = Object.keys(this.columnCache[i]);
       for (let j = keys.length; j--;) {
@@ -164,7 +167,7 @@ class ListGraphLayout {
    * Process original data and return an D3 ready Array.
    *
    * @author  Fritz Lekschas
-   * @date  2015-11-16
+   * @date  2015-12-28
    *
    * @method  process
    * @memberOf  ListGraph
@@ -172,9 +175,10 @@ class ListGraphLayout {
    * @category  Data
    * @param  {Object}  data  Object list of nodes.
    * @param  {Array}  rootIds  Array of node IDs to start traversal.
+   * @param  {Object}  options  Object holding extra options such as sorting.
    * @return  {Array}  Array of Array of nodes.
    */
-  process (data, rootIds) {
+  process (data, rootIds, options) {
     this.data = data || this.data;
     this.rootIds = rootIds || this.rootIds;
 
@@ -196,6 +200,14 @@ class ListGraphLayout {
       this.scale.y
     );
 
+    for (let i = Object.keys(this.columnCache).length; i--;) {
+      this.columnSorting[i] = {};
+    }
+
+    if (options && options.sortBy) {
+      this.sort(undefined, options.sortBy, options.sortOrder || 'desc');
+    }
+
     return {
       global: this.compileGlobalProps(),
       nodes: this.nodesToMatrix()
@@ -203,10 +215,10 @@ class ListGraphLayout {
   }
 
   /**
-   * Sorts nodes of a all or a specific level according to a property and order.
+   * Sorts nodes of all or a specific level according to a property and order.
    *
    * @description
-   * Currently only nodes can be sorted by _precision_, _recall_ or by name.
+   * Currently nodes can only be sorted by _precision_, _recall_ or by name.
    *
    * @method  sort
    * @author  Fritz Lekschas
@@ -220,10 +232,10 @@ class ListGraphLayout {
   sort (level, property, sortOrder) {
     let allLinks = [],
         itr = 0,
-        end = this.columnCache.length,
+        end = Object.keys(this.columnCache).length,
         getValue;
 
-    // 1 = asc, -1 = desc
+    // 1 = asc, -1 = desc [default]
     sortOrder = sortOrder === 1 ? 1 : -1;
 
     switch (property) {
@@ -235,6 +247,7 @@ class ListGraphLayout {
         break;
       default:
         getValue = obj => obj.data.name.toLowerCase();
+        property = name;
         break;
     }
 
@@ -249,6 +262,9 @@ class ListGraphLayout {
         let valueB = getValue(b);
         return valueA > valueB ? sortOrder : (valueA < valueB ? -sortOrder : 0);
       });
+
+      this.columnSorting[itr].by = property;
+      this.columnSorting[itr].order = sortOrder;
 
       // Update `y` according to the new position.
       for (let i = this.columnNodeOrder[itr].length; i--;) {
@@ -454,14 +470,13 @@ class ListGraphLayout {
       1 - 2 * this._colRelPadding
     );
 
-    this._rowAbsPadding = this._rowHeight * this._rowRelPadding;
-    this._rowAbsContentHeight = this._rowHeight * (
-      1 - 2 * this._rowRelPadding
-    );
+    this._rowAbsPadding = Math.max(this._rowHeight * this._rowRelPadding, 2);
+    this._rowAbsContentHeight = this._rowHeight - 2 * this._rowAbsPadding;
 
     this._cellAbsInnerPadding = this._cellRelInnerPadding * Math.min(
       this._colAbsContentWidth,
-      this._rowAbsContentHeight
+      this._rowAbsContentHeight,
+      1
     );
 
     return this;
