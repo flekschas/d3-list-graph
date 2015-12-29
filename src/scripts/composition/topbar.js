@@ -175,7 +175,8 @@ class Topbar {
 
   highlightBars (el, type, deHighlight) {
     let nodes = this.selectNodesColumn(el);
-    nodes.selectAll('.bar.' + type)
+    nodes.classed('highlight-bar', !deHighlight)
+      .selectAll('.bar.' + type)
       .classed('highlight', !deHighlight);
   }
 
