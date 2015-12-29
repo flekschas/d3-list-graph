@@ -1,5 +1,8 @@
 'use strict';
 
+// Internal
+import {roundRect} from './charts';
+
 const BAR_CLASS = 'bar';
 
 class Bar {
@@ -14,6 +17,10 @@ class Bar {
       (this.data.length * 2) -
       this.visData.global.cell.padding * 2;
 
+    this.activeHeight = this.visData.global.row.contentHeight - 2;
+
+    this.inactiveheight = this.visData.global.cell.padding * 2 - 1;
+
     this.selection = selection.selectAll(BAR_CLASS)
       .data(this.data)
       .enter()
@@ -24,34 +31,52 @@ class Bar {
     // Calling a class method from within the consructor is possible but `this`
     // is not available. Thus, we need to create local function and pass in
     // `this` as `that`, which feels very hacky but it works.
-    function setup (selection, className, magnitude) {
+    function setupMagnitude (selection, className) {
       selection
-        .attr('x', that.nodeData.x + that.visData.global.column.padding +
-          that.visData.global.cell.padding)
-        .attr('y', function (data, i) {
-          return that.visData.global.row.padding +
-            that.visData.global.row.contentHeight / 2 +
-            that.height * i +
-            that.visData.global.cell.padding * (1 + 2 * i);
+        .attr('d', (data, index) => {
+          let x = that.nodeData.x + that.visData.global.column.padding;
+
+          if (data.id !== 'precision') {
+            x += data.value * that.visData.global.column.contentWidth;
+          }
+
+          let y = that.visData.global.row.padding;
+
+          let width = 1;
+          if (data.id === 'precision') {
+            width = that.visData.global.column.contentWidth * data.value;
+          }
+
+          let height = that.visData.global.row.contentHeight;
+
+          let radius = {
+            topLeft: 2,
+            bottomLeft: 2,
+          };
+
+          return roundRect(x, y, width, height, radius);
         })
-        .attr('width', function (data) {
-          return (magnitude ? data.value : 1) *
-            (
-              that.visData.global.column.contentWidth -
-              that.visData.global.cell.padding * 2
-            );
-        })
-        .attr('height', that.height)
+        .classed(className, true);
+    }
+
+    function setupBorder (selection, className) {
+      selection
+        .attr('x', that.nodeData.x + that.visData.global.column.padding)
+        .attr('y', that.visData.global.row.padding)
+        .attr('width', that.visData.global.column.contentWidth)
+        .attr('height', that.visData.global.row.contentHeight)
+        .attr('rx', 2)
+        .attr('ry', 2)
         .classed(className, true);
     }
 
     this.selection
       .append('rect')
-        .call(setup, 'bar-border');
+        .call(setupBorder, 'bar-border');
 
     this.selection
-      .append('rect')
-        .call(setup, 'bar-magnitude', true);
+      .append('path')
+        .call(setupMagnitude, 'bar-magnitude');
   }
 }
 
