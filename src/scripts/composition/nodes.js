@@ -125,9 +125,6 @@ class Nodes {
     traverse.upAndDown(data, traverseCallbackUp, traverseCallbackDown);
 
     if (data.clone) {
-      traverse.upAndDown(
-        data.originalNode, traverseCallbackUp, traverseCallbackDown
-      );
       data.originalNode.hovering = 1;
     }
 
@@ -148,7 +145,6 @@ class Nodes {
 
     if (data.clone) {
       data.originalNode.hovering = 0;
-      traverse.upAndDown(data.originalNode, traverseCallback);
     }
 
     this.nodes.classed('hovering-directly', false);
