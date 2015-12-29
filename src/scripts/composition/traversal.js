@@ -1,22 +1,44 @@
 'use strict';
 
-export function up (node, callback) {
-  function traverse (node, child, callback) {
-    callback(node, child);
-    for (let i = node.parent.length; i--;) {
-      traverse(node.parent[i], node, callback);
-    }
+function collectInclClones (node) {
+  let originalNode = node;
+
+  if (node.clone) {
+    originalNode = node.originalNode;
   }
 
-  for (let i = node.parent.length; i--;) {
-    traverse(node.parent[i], node, callback);
+  let clones = [originalNode];
+
+  if (originalNode.clones.length) {
+    clones = clones.concat(originalNode.clones);
+  }
+
+  return clones;
+}
+
+export function up (node, callback, child) {
+  let nodesInclClones = collectInclClones(node);
+
+  for (let i = nodesInclClones.length; i--;) {
+    if (child) {
+      callback(nodesInclClones[i], child);
+    }
+
+    for (let j = nodesInclClones[i].parent.length; j--;) {
+      up(nodesInclClones[i].parent[j], callback, node);
+    }
   }
 }
 
 export function down (node, callback) {
-  callback(node);
-  for (let i = node.childRefs.length; i--;) {
-    down(node.childRefs[i], callback);
+  let nodesInclClones = collectInclClones(node);
+
+  for (let i = nodesInclClones.length; i--;) {
+    callback(nodesInclClones[i]);
+
+    for (let j = nodesInclClones[i].childRefs.length; j--;) {
+      down(nodesInclClones[i].childRefs[j], callback);
+    }
   }
 }
 
