@@ -25,7 +25,7 @@ export function up (node, callback, child) {
     }
 
     for (let j = nodesInclClones[i].parent.length; j--;) {
-      up(nodesInclClones[i].parent[j], callback, node);
+      up(nodesInclClones[i].parent[j], callback, nodesInclClones[i]);
     }
   }
 }
