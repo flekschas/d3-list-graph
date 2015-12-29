@@ -32,20 +32,13 @@ class Bar {
     // is not available. Thus, we need to create local function and pass in
     // `this` as `that`, which feels very hacky but it works.
     function setupMagnitude (selection, className) {
+      let currentSorting = that.visData.nodes[that.nodeData.depth].sortBy;
+
       selection
         .attr('d', (data, index) => {
           let x = that.nodeData.x + that.visData.global.column.padding;
 
-          if (data.id !== 'precision') {
-            x += data.value * that.visData.global.column.contentWidth;
-          }
-
-          let y = that.visData.global.row.padding;
-
           let width = 1;
-          if (data.id === 'precision') {
-            width = that.visData.global.column.contentWidth * data.value;
-          }
 
           let height = that.visData.global.row.contentHeight;
 
@@ -54,7 +47,20 @@ class Bar {
             bottomLeft: 2,
           };
 
-          return roundRect(x, y, width, height, radius);
+          if (data.id !== currentSorting) {
+            x += data.value * that.visData.global.column.contentWidth;
+            radius = {};
+          } else {
+            width = that.visData.global.column.contentWidth * data.value;
+          }
+
+          return roundRect(
+            x,
+            that.visData.global.row.padding,
+            width,
+            height,
+            radius
+          );
         })
         .classed(className, true);
     }
