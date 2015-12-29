@@ -83,7 +83,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     if (node.data.bars) {
       if (isArray(node.data.bars)) {
         node.data.barRefs = {};
-        for (let i = node.data.bars.length; i--;) {
+        for (let i = 0, len = node.data.bars.length; i < len; i++) {
           node.data.bars[i].value = Math.max(
             Math.min(node.data.bars[i].value, 1),
             0
@@ -96,7 +96,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
         // Keep the old object reference for quick access, e.g.
         // `node.data.barRefs.precision`
         node.data.barRefs = {};
-        for (let i = keys.length; i--;) {
+        for (let i = 0, len = keys.length; i < len; i++) {
           node.data.barRefs[keys[i]] = Math.max(
             Math.min(node.data.bars[keys[i]], 1),
             0
