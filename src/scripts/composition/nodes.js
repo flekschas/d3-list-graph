@@ -18,6 +18,22 @@ class Nodes {
   constructor (baseSelection, visData, links, events) {
     let that = this;
 
+    // Helper
+    function drawFullSizeRect (selection, className, shrinking) {
+      if (!shrinking) {
+        shrinking = 0;
+      }
+
+      selection
+        .attr('x', data => data.x + that.visData.global.column.padding + shrinking)
+        .attr('y', data => that.visData.global.row.padding + shrinking)
+        .attr('width', that.visData.global.column.contentWidth - 2 * shrinking)
+        .attr('height', that.visData.global.row.contentHeight - 2 * shrinking)
+        .attr('rx', 2 - shrinking)
+        .attr('ry', 2 - shrinking)
+        .classed(className, true);
+    }
+
     this.visData = visData;
     this.links = links;
     this.events = events;
@@ -41,13 +57,7 @@ class Nodes {
 
     this.nodes
       .append('rect')
-        .attr('x', data => data.x + this.visData.global.column.padding)
-        .attr('y', data => this.visData.global.row.padding)
-        .attr('width', this.visData.global.column.contentWidth)
-        .attr('height', this.visData.global.row.contentHeight)
-        .attr('rx', 2)
-        .attr('ry', 2)
-        .classed('bg', true);
+        .call(drawFullSizeRect, 'bg', 1);
 
     this.nodes.on('click', function (data) {
       that.mouseClick(this, data);
@@ -60,6 +70,12 @@ class Nodes {
     this.nodes.on('mouseleave', function (data) {
       that.mouseLeave(this, data);
     });
+
+    this.bars = new Bars(this.nodes, this.visData);
+
+    this.nodes
+      .append('rect')
+        .call(drawFullSizeRect, 'border');
 
     // Add node label
     this.nodes.call(selection => {
@@ -78,8 +94,6 @@ class Nodes {
           .append('xhtml:span')
             .text(data => data.data.name);
     });
-
-    this.bars = new Bars(this.nodes, this.visData);
   }
 
   mouseClick (el, data) {
@@ -93,7 +107,7 @@ class Nodes {
     let traverseCallbackUp = (data, childData) => {
       data.hovering = 2;
       for (let i = data.links.length; i--;) {
-        // Only push direct connection to the node we are coming from. E.g.
+        // Only push direct parent child connections. E.g.
         // Store: (parent)->(child)
         // Ignore: (parent)->(siblings of child)
         if (data.links[i].target.node.id === childData.id) {
