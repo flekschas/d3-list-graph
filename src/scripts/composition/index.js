@@ -48,6 +48,9 @@ class ListGraph {
     this.rows = options.rows || config.ROWS;
     this.iconPath = options.iconPath || config.ICON_PATH;
 
+    this.sortBy = options.sortBy;
+    this.sortOrder = options.sortOrder || config.DEFAULT_SORT_ORDER;
+
     this.events = new Events(this.baseEl, options.dispatcher);
 
     this.baseElJq
@@ -66,7 +69,14 @@ class ListGraph {
     );
 
     this.data = data;
-    this.visData = this.layout.process(this.data, this.rootNodes);
+    this.visData = this.layout.process(
+      this.data,
+      this.rootNodes,
+      {
+        sortBy: this.sortBy,
+        sortOrder: this.sortOrder
+      }
+    );
 
     this.topbar = new Topbar(this, this.baseElD3, this.visData);
 
