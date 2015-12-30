@@ -83,8 +83,7 @@ class Nodes {
     // Add node label
     this.nodes.call(selection => {
       selection.append('foreignObject')
-        .attr('x', data => this.visData.global.column.padding +
-          this.visData.global.cell.padding)
+        .attr('x', data => this.visData.global.cell.padding)
         .attr('y', data => this.visData.global.row.padding +
           this.visData.global.cell.padding)
         .attr('width', this.visData.global.column.contentWidth)
@@ -104,8 +103,14 @@ class Nodes {
   }
 
   mouseEnter (el, data) {
+    let that = this;
+    let currentNodeData = data;
+
     // Store link IDs
     this.currentlyHighlightedLinks = [];
+
+    let currentActiveProperty = d3.select(el)
+      .selectAll('.bar.active .bar-magnitude').datum();
 
     let traverseCallbackUp = (data, childData) => {
       data.hovering = 2;
@@ -132,8 +137,31 @@ class Nodes {
     }
 
     data.hovering = 1;
-    this.nodes.classed('hovering-directly', data => data.hovering === 1);
-    this.nodes.classed('hovering-indirectly', data => data.hovering === 2);
+
+    this.nodes.each(function (data) {
+      let node = d3.select(this);
+
+      if (data.hovering === 1) {
+        node.classed('hovering-directly', true);
+      } else if (data.hovering === 2) {
+        node.classed('hovering-indirectly', true);
+        node.selectAll('.bar.' + currentActiveProperty.id)
+          .classed('copy', data => {
+            if (data.id !== currentNodeData.id) {
+              return true;
+            }
+          });
+
+        let currentBar = d3.select(el).selectAll('.bar.' + currentActiveProperty.id)
+          .classed('reference', true);
+
+        that.bars.updateIndicator(
+          node.selectAll('.bar.copy .bar-indicator'),
+          currentBar.selectAll('.bar-indicator'),
+          currentActiveProperty.value
+        );
+      }
+    });
 
     this.links.highlight(arrayToFakeObjs(this.currentlyHighlightedLinks));
 
@@ -152,6 +180,7 @@ class Nodes {
 
     this.nodes.classed('hovering-directly', false);
     this.nodes.classed('hovering-indirectly', false);
+    this.nodes.selectAll('.bar.reference').classed('reference', false);
 
     this.links.highlight(
       arrayToFakeObjs(this.currentlyHighlightedLinks), false

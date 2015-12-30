@@ -7,6 +7,7 @@ import isObject from '../../../node_modules/lodash-es/lang/isObject';
 
 // Internal
 import {LayoutNotAvailable} from './errors';
+import {exponentialGradient} from './gradients';
 import * as config from './config';
 import Topbar from './topbar';
 import Columns from './columns';
@@ -76,6 +77,48 @@ class ListGraph {
         sortBy: this.sortBy,
         sortOrder: this.sortOrder
       }
+    );
+
+    exponentialGradient(
+      this.svgD3,
+      {
+        color: config.COLOR_NEGATIVE_RED,
+        offset: 0,
+        opacity: 0.25,
+        x: 0,
+        y: 0
+      },
+      {
+        color: config.COLOR_NEGATIVE_RED,
+        offset: 99,
+        opacity: 1,
+        x: 1,
+        y: 0
+      },
+      'negativeRed',
+      4,
+      5
+    );
+
+    exponentialGradient(
+      this.svgD3,
+      {
+        color: config.COLOR_POSITIVE_GREEN,
+        offset: 1,
+        opacity: 1,
+        x: 0,
+        y: 0
+      },
+      {
+        color: config.COLOR_POSITIVE_GREEN,
+        offset: 100,
+        opacity: 0.25,
+        x: 1,
+        y: 0
+      },
+      'positiveGreen',
+      0.25,
+      5
     );
 
     this.topbar = new Topbar(this, this.baseElD3, this.visData);

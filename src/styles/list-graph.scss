@@ -251,6 +251,16 @@
     shape-rendering: crispEdges;
   }
 
+  .bar-indicator {
+    fill: url('#negativeRed');
+    fill-opacity: 0;
+    shape-rendering: crispEdges;
+  }
+
+  .bar-indicator.positive {
+    fill: url('#positiveGreen');
+  }
+
   .bar.active .bar-magnitude {
     shape-rendering: auto;
   }
@@ -268,6 +278,15 @@
 
   .node.hovering-directly .bar-magnitude {
     fill: #404040;
+    fill-opacity: 1;
+  }
+
+  .node.hovering-directly .bar.active .bar-indicator {
+    fill: #fff;
+    fill-opacity: 1;
+  }
+
+  .node.hovering-indirectly .bar.copy .bar-indicator {
     fill-opacity: 1;
   }
 

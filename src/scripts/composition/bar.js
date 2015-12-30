@@ -35,17 +35,17 @@ class Bar {
     // Calling a class method from within the consructor is possible but `this`
     // is not available. Thus, we need to create local function and pass in
     // `this` as `that`, which feels very hacky but it works.
-    function setupMagnitude (selection, className) {
+    function setupMagnitude (selection) {
       let currentSorting = that.visData.nodes[that.nodeData.depth].sortBy;
 
       selection
         .attr('d', data => {
           return Bar.generatePath(data, currentSorting, that.visData);
         })
-        .classed(className, true);
+        .classed('bar-magnitude', true);
     }
 
-    function setupBorder (selection, className) {
+    function setupBorder (selection) {
       selection
         .attr('x', 0)
         .attr('y', that.visData.global.row.padding)
@@ -53,19 +53,31 @@ class Bar {
         .attr('height', that.visData.global.row.contentHeight)
         .attr('rx', 2)
         .attr('ry', 2)
-        .classed(className, true);
+        .classed('bar-border', true);
+    }
+
+    function setupIndicator (selection) {
+      selection
+        .attr('d', data => {
+          return Bar.generatePath(data, undefined, that.visData, data.value);
+        })
+        .classed('bar-indicator', true);
     }
 
     this.selection
       .append('rect')
-        .call(setupBorder, 'bar-border');
+        .call(setupBorder);
 
     this.selection
       .append('path')
-        .call(setupMagnitude, 'bar-magnitude');
+        .call(setupMagnitude);
+
+    this.selection
+      .append('path')
+        .call(setupIndicator);
   }
 
-  static generatePath (data, currentSorting, visData) {
+  static generatePath (data, currentSorting, visData, indicator, adjustWidth) {
     let x = 0;
 
     let width = 2;
@@ -77,9 +89,22 @@ class Bar {
       bottomLeft: 2,
     };
 
-    if (data.id !== currentSorting) {
-      x += data.value * visData.global.column.contentWidth - 3;
+    if (indicator) {
       radius = {};
+    }
+
+    if (data.id !== currentSorting && typeof indicator === 'undefined') {
+      x = data.value * visData.global.column.contentWidth - 3;
+      radius = {};
+    } else if (indicator) {
+      x = indicator * visData.global.column.contentWidth;
+      if (adjustWidth) {
+        if (data.value < indicator) {
+          x = data.value * visData.global.column.contentWidth;
+        }
+        width = Math.min(Math.abs(indicator - data.value), 2) *
+          visData.global.column.contentWidth;
+      }
     } else {
       width = visData.global.column.contentWidth * data.value;
     }

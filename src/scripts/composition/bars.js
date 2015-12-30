@@ -30,7 +30,7 @@ class Bars {
       if (el.classed('active')) {
         el.classed('active', false);
       } else {
-        el.classed('active', false);
+        el.classed('active', true);
         // Ensure that the active bars we are places before any other bar,
         // thus placing them in the background
         this.parentNode.insertBefore(
@@ -48,8 +48,34 @@ class Bars {
       });
   }
 
-  inactivate (selection) {
+  updateIndicator (refBars, currentBar, referenceValue) {
+    currentBar
+      .transition()
+      .duration(0)
+      .attr(
+        'd',
+        data => Bar.generatePath(data, undefined, this.visData)
+      );
 
+    refBars
+      .attr('d', data => {
+        return Bar.generatePath(
+          data,
+          undefined,
+          this.visData,
+          referenceValue
+        );
+      })
+      .classed('positive', data => data.value >= referenceValue);
+
+    refBars
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr('d', data => {
+        return Bar.generatePath(
+          data, undefined, this.visData, referenceValue, true
+        );
+      });
   }
 }
 
