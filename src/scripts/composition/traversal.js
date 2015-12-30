@@ -1,20 +1,7 @@
 'use strict';
 
-function collectInclClones (node) {
-  let originalNode = node;
-
-  if (node.clone) {
-    originalNode = node.originalNode;
-  }
-
-  let clones = [originalNode];
-
-  if (originalNode.clones.length) {
-    clones = clones.concat(originalNode.clones);
-  }
-
-  return clones;
-}
+// Internal
+import {collectInclClones} from './utils';
 
 export function up (node, callback, child) {
   let nodesInclClones = collectInclClones(node);
