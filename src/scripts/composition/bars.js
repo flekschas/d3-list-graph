@@ -24,15 +24,23 @@ class Bars {
   }
 
   update (selection, sortBy) {
-    let actualBars = selection
-      .classed('active', true)
-      .selectAll('.bar-magnitude');
+    selection.each(function () {
+      let el = d3.select(this);
 
-    selection.each(data => {
-      // this.bar
+      if (el.classed('active')) {
+        el.classed('active', false);
+      } else {
+        el.classed('active', false);
+        // Ensure that the active bars we are places before any other bar,
+        // thus placing them in the background
+        this.parentNode.insertBefore(
+          this,
+          d3.select(this.parentNode).select('.bar').node()
+        );
+      }
     });
 
-    actualBars
+    selection.selectAll('.bar-magnitude')
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('d', data => {
