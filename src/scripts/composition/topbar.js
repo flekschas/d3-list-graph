@@ -181,6 +181,8 @@ class Topbar {
   }
 
   sortColumn (el, index, type) {
+    let newSortType = false;
+
     if (this.sorting[index].el) {
       if (this.sorting[index].type !== type) {
         this.sorting[index].el.select('.icon-sort-desc')
@@ -189,10 +191,13 @@ class Topbar {
           .classed('visible', false);
         this.sorting[index].el.select('.icon-unsort')
           .classed('visible', true);
-
-        // Reset sort order
-        this.sorting[index].order = 0;
       }
+    }
+
+    if (this.sorting[index].type !== type) {
+      newSortType = true;
+      // Reset sort order
+      this.sorting[index].order = 0;
     }
 
     this.sorting[index].el = d3.select(el);
@@ -216,7 +221,7 @@ class Topbar {
     this.sorting[index].el.select('.icon-unsort')
       .classed('visible', false);
 
-    this.vis.sortColumn(index, type, this.sorting[index].order);
+    this.vis.sortColumn(index, type, this.sorting[index].order, newSortType);
   }
 
   toggleOptions () {

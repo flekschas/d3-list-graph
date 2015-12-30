@@ -13,6 +13,9 @@ class Bar {
     this.nodeData = nodeData;
     this.visData = visData;
 
+    this.data.x = nodeData.x;
+    this.data.level = nodeData.depth;
+
     this.height = this.visData.global.row.contentHeight /
       (this.data.length * 2) -
       this.visData.global.cell.padding * 2;
@@ -25,7 +28,8 @@ class Bar {
       .data(this.data)
       .enter()
       .append('g')
-        .attr('class', data => BAR_CLASS + ' ' + data.id);
+        .attr('class', data => BAR_CLASS + ' ' + data.id)
+        .classed('active', data => data.id === this.visData.nodes[this.nodeData.depth].sortBy);
 
     // Local helper method to avoid code duplication.
     // Calling a class method from within the consructor is possible but `this`
@@ -35,39 +39,15 @@ class Bar {
       let currentSorting = that.visData.nodes[that.nodeData.depth].sortBy;
 
       selection
-        .attr('d', (data, index) => {
-          let x = that.nodeData.x + that.visData.global.column.padding;
-
-          let width = 1;
-
-          let height = that.visData.global.row.contentHeight;
-
-          let radius = {
-            topLeft: 2,
-            bottomLeft: 2,
-          };
-
-          if (data.id !== currentSorting) {
-            x += data.value * that.visData.global.column.contentWidth;
-            radius = {};
-          } else {
-            width = that.visData.global.column.contentWidth * data.value;
-          }
-
-          return roundRect(
-            x,
-            that.visData.global.row.padding,
-            width,
-            height,
-            radius
-          );
+        .attr('d', data => {
+          return Bar.generatePath(data, currentSorting, that.visData);
         })
         .classed(className, true);
     }
 
     function setupBorder (selection, className) {
       selection
-        .attr('x', that.nodeData.x + that.visData.global.column.padding)
+        .attr('x', 0)
         .attr('y', that.visData.global.row.padding)
         .attr('width', that.visData.global.column.contentWidth)
         .attr('height', that.visData.global.row.contentHeight)
@@ -83,6 +63,34 @@ class Bar {
     this.selection
       .append('path')
         .call(setupMagnitude, 'bar-magnitude');
+  }
+
+  static generatePath (data, currentSorting, visData) {
+    let x = 0;
+
+    let width = 2;
+
+    let height = visData.global.row.contentHeight;
+
+    let radius = {
+      topLeft: 2,
+      bottomLeft: 2,
+    };
+
+    if (data.id !== currentSorting) {
+      x += data.value * visData.global.column.contentWidth - 3;
+      radius = {};
+    } else {
+      width = visData.global.column.contentWidth * data.value;
+    }
+
+    return roundRect(
+      x,
+      visData.global.row.padding,
+      width,
+      height,
+      radius
+    );
   }
 }
 

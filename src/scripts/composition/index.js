@@ -262,8 +262,10 @@ class ListGraph {
     return d3.select(this.columns.groups[0][index]).selectAll(selector);
   }
 
-  sortColumn (level, property, sortOrder) {
-    this.nodes.sort(this.layout.sort(level, property, sortOrder).nodes(level));
+  sortColumn (level, property, sortOrder, newSortType) {
+    this.nodes.sort(
+      this.layout.sort(level, property, sortOrder).nodes(level), newSortType
+    );
     this.links.sort(this.layout.links(level - 1, level + 1));
   }
 }

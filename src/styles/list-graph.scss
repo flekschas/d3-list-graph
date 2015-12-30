@@ -246,7 +246,13 @@
   }
 
   .bar-magnitude {
-    fill: #e5e5e5;
+    fill: #000;
+    fill-opacity: 0.1;
+    shape-rendering: crispEdges;
+  }
+
+  .bar.active .bar-magnitude {
+    shape-rendering: auto;
   }
 
   .bar-border {
@@ -262,10 +268,12 @@
 
   .node.hovering-directly .bar-magnitude {
     fill: #404040;
+    fill-opacity: 1;
   }
 
   .bar.highlight .bar-magnitude {
     fill: lighten($colorHighlightRed, 20%);
+    fill-opacity: 1;
   }
 
   .sorting {

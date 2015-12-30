@@ -25,7 +25,7 @@ class Nodes {
       }
 
       selection
-        .attr('x', data => data.x + that.visData.global.column.padding + shrinking)
+        .attr('x', data => shrinking)
         .attr('y', data => that.visData.global.row.padding + shrinking)
         .attr('width', that.visData.global.column.contentWidth - 2 * shrinking)
         .attr('height', that.visData.global.row.contentHeight - 2 * shrinking)
@@ -53,7 +53,8 @@ class Nodes {
       .append('g')
         .classed(NODE_CLASS, true)
         .classed(CLONE_CLASS, data => data.clone)
-        .attr('transform', data => 'translate(0, ' + data.y + ')');
+        .attr('transform', data => 'translate(' +
+          (data.x + this.visData.global.column.padding) + ', ' + data.y + ')');
 
     this.nodes
       .append('rect')
@@ -73,6 +74,8 @@ class Nodes {
 
     this.bars = new Bars(this.nodes, this.visData);
 
+    // this.marker = new Bars(this.nodes, this.visData);
+
     this.nodes
       .append('rect')
         .call(drawFullSizeRect, 'border');
@@ -80,7 +83,7 @@ class Nodes {
     // Add node label
     this.nodes.call(selection => {
       selection.append('foreignObject')
-        .attr('x', data => data.x + this.visData.global.column.padding +
+        .attr('x', data => this.visData.global.column.padding +
           this.visData.global.cell.padding)
         .attr('y', data => this.visData.global.row.padding +
           this.visData.global.cell.padding)
@@ -157,18 +160,24 @@ class Nodes {
     this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
   }
 
-  sort (update) {
+  sort (update, newSortType) {
     for (let i = update.length; i--;) {
       let start = function () { d3.select(this).classed('sorting', true); };
       let end = function () { d3.select(this).classed('sorting', false); };
 
-      this.nodes
-        .data(update[i].rows, data => data.id)
+      let selection = this.nodes.data(update[i].rows, data => data.id);
+
+      selection
         .transition()
         .duration(config.TRANSITION_SEMI_FAST)
-        .attr('transform', data => 'translate(0, ' + data.y + ')')
+        .attr('transform', data => 'translate(' +
+          (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
         .each('start', start)
         .each('end', end);
+
+      if (newSortType) {
+        this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
+      }
     }
   }
 }
