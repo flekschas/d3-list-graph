@@ -147,7 +147,13 @@ class Nodes {
         node.classed('hovering-indirectly', true);
         node.selectAll('.bar.' + currentActiveProperty.id)
           .classed('copy', data => {
-            if (data.id !== currentNodeData.id) {
+            let id = data.id;
+
+            if (data.clone) {
+              id = data.originalNode.id;
+            }
+
+            if (id !== currentNodeData.id) {
               return true;
             }
           });
