@@ -1,4 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="arrow-down" viewBox="0 0 16 16">
+    <path
+      d="M2.539,2.667L0,5.236l8,8.097l8-8.097l-2.538-2.569L8,8.196L2.539,2.667z"
+      fill="currentColor"/>
+  </symbol>
   <symbol id="arrow-left" viewBox="0 0 16 16">
     <path
       d="M13.333,2.539L10.764,0L2.667,8l8.097,8l2.569-2.538L7.804,8L13.333,2.539z"
