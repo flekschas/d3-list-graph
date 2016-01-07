@@ -79,16 +79,30 @@ class ListGraph {
       }
     );
 
+    /**
+     * Stores current sorting, e.g. type, order and a reference to the element.
+     *
+     * @type  {Object}
+     */
+    this.currentSorting = {
+      global: {
+        type: this.sortBy,
+        order: this.sortOrder
+      },
+      local: {}
+    };
+
     exponentialGradient(
       this.svgD3,
       {
         color: config.COLOR_NEGATIVE_RED,
         offset: 0,
-        opacity: 0.25,
+        opacity: 0.2,
         x: 0,
         y: 0
       },
       {
+        afterOffsetOpacity: 1,
         color: config.COLOR_NEGATIVE_RED,
         offset: 99,
         opacity: 1,
@@ -97,12 +111,13 @@ class ListGraph {
       },
       'negativeRed',
       4,
-      5
+      10
     );
 
     exponentialGradient(
       this.svgD3,
       {
+        beforeOffsetOpacity: 1,
         color: config.COLOR_POSITIVE_GREEN,
         offset: 1,
         opacity: 1,
@@ -112,14 +127,17 @@ class ListGraph {
       {
         color: config.COLOR_POSITIVE_GREEN,
         offset: 100,
-        opacity: 0.25,
+        opacity: 0.2,
         x: 1,
         y: 0
       },
       'positiveGreen',
       0.25,
-      5
+      10
     );
+
+    this.barMode = options.barMode || config.DEFAULT_BAR_MODE;
+    this.svgD3.classed(this.barMode + '-bar', true);
 
     this.topbar = new Topbar(this, this.baseElD3, this.visData);
 
@@ -131,7 +149,11 @@ class ListGraph {
 
     this.links = new Links(this.columns.groups, this.visData, this.layout);
     this.nodes = new Nodes(
-      this.columns.groups, this.visData, this.links, this.events
+      this.columns.groups,
+      this.visData,
+      this.links,
+      this.events,
+      options.barMode || config.DEFAULT_BAR_MODE
     );
     this.columns.scrollPreparation(this, this.scrollbarWidth);
     this.scrollbars = new Scrollbars(
@@ -251,6 +273,20 @@ class ListGraph {
     }
   }
 
+  get barMode () {
+    if (this.bars) {
+      return this.nodes.bars.mode;
+    }
+    return this._barMode;
+  }
+
+  set barMode (mode) {
+    if (this.bars) {
+      this.nodes.bars.mode = mode;
+    }
+    this._barMode = mode;
+  }
+
   scrollbarMouseDown (el, event) {
     this.activeScrollbar = d3.select(el).classed('active', true);
     this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
@@ -310,6 +346,12 @@ class ListGraph {
       this.layout.sort(level, property, sortOrder).nodes(level), newSortType
     );
     this.links.sort(this.layout.links(level - 1, level + 1));
+  }
+
+  switchBarMode (mode) {
+    this.svgD3.classed('one-bar', mode === 'one');
+    this.svgD3.classed('two-bar', mode === 'two');
+    this.nodes.bars.switchMode(mode, this.currentSorting);
   }
 }
 

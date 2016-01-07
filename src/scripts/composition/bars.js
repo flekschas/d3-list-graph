@@ -10,16 +10,17 @@ import * as config from './config';
 const BARS_CLASS = 'bars';
 
 class Bars {
-  constructor (selection, visData) {
+  constructor (selection, mode, visData) {
     let that = this;
 
+    this.mode = mode;
     this.visData = visData;
 
     this.selection = selection.append('g')
       .attr('class', BARS_CLASS);
 
     this.selection.each(function (datum) {
-      new Bar(d3.select(this), datum.data.bars, datum, that.visData);
+      new Bar(d3.select(this), datum.data.bars, datum, that.visData, that);
     });
   }
 
@@ -76,6 +77,44 @@ class Bars {
           data, undefined, this.visData, referenceValue, true
         );
       });
+  }
+
+  switchMode (mode, currentSorting) {
+    if (this.mode !== mode) {
+      if (mode === 'one') {
+        if (currentSorting.global.type) {
+          this.selection.selectAll('.bar').selectAll('.bar-magnitude')
+            .transition()
+            .duration(config.TRANSITION_SEMI_FAST)
+            .attr('d', data => {
+              return Bar.generateOneBarPath(
+                data, currentSorting.global.type, this.visData
+              );
+            });
+          console.log('bratzen');
+        } else {
+          console.log('kacken');
+        }
+      }
+
+      if (mode === 'two') {
+        this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude')
+          .transition()
+          .duration(config.TRANSITION_SEMI_FAST)
+          .attr('d', data => {
+            return Bar.generateTwoBarsPath(data, this.visData);
+          });
+
+        this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude')
+          .transition()
+          .duration(config.TRANSITION_SEMI_FAST)
+          .attr('d', data => {
+            return Bar.generateTwoBarsPath(data, this.visData, true);
+          });
+      }
+
+      this.mode = mode;
+    }
   }
 }
 

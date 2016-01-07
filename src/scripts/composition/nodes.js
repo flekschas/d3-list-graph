@@ -15,7 +15,7 @@ const NODE_CLASS = 'node';
 const CLONE_CLASS = 'clone';
 
 class Nodes {
-  constructor (baseSelection, visData, links, events) {
+  constructor (baseSelection, visData, links, events, barMode) {
     let that = this;
 
     // Helper
@@ -72,9 +72,7 @@ class Nodes {
       that.mouseLeave(this, data);
     });
 
-    this.bars = new Bars(this.nodes, this.visData);
-
-    // this.marker = new Bars(this.nodes, this.visData);
+    this.bars = new Bars(this.nodes, barMode, this.visData);
 
     this.nodes
       .append('rect')
@@ -87,15 +85,21 @@ class Nodes {
         .attr('y', data => this.visData.global.row.padding +
           this.visData.global.cell.padding)
         .attr('width', this.visData.global.column.contentWidth)
-        .attr('height', this.visData.global.row.contentHeight / 2 -
+        .attr('height', this.visData.global.row.contentHeight -
           this.visData.global.cell.padding * 2)
         .attr('class', 'label-wrapper')
         .append('xhtml:div')
           .attr('class', 'label')
           .attr('title', data => data.data.name)
+          .style('line-height', (this.visData.global.row.contentHeight -
+            this.visData.global.cell.padding * 2) + 'px')
           .append('xhtml:span')
             .text(data => data.data.name);
     });
+  }
+
+  get barMode () {
+    return this.bars.mode;
   }
 
   mouseClick (el, data) {

@@ -6,12 +6,13 @@ import {roundRect} from './charts';
 const BAR_CLASS = 'bar';
 
 class Bar {
-  constructor (selection, barData, nodeData, visData) {
+  constructor (selection, barData, nodeData, visData, barCollection) {
     let that = this;
 
     this.data = barData;
     this.nodeData = nodeData;
     this.visData = visData;
+    this.barCollection = barCollection;
 
     this.data.x = nodeData.x;
     this.data.level = nodeData.depth;
@@ -77,7 +78,21 @@ class Bar {
         .call(setupIndicator);
   }
 
-  static generatePath (data, currentSorting, visData, indicator, adjustWidth) {
+  static generatePath (
+    data, currentSorting, visData, indicator, adjustWidth, bottom
+  ) {
+    if (this.barCollection.mode === 'two') {
+      return this.generateTwoBarsPath(data, visData, bottom);
+    } else {
+      return this.generateOneBarPath(
+        data, currentSorting, visData, indicator, adjustWidth
+      );
+    }
+  }
+
+  static generateOneBarPath (
+    data, currentSorting, visData, indicator, adjustWidth
+  ) {
     let x = 0;
 
     let width = 2;
@@ -112,6 +127,29 @@ class Bar {
     return roundRect(
       x,
       visData.global.row.padding,
+      width,
+      height,
+      radius
+    );
+  }
+
+  static generateTwoBarsPath (data, visData, bottom) {
+    let height = visData.global.row.contentHeight / 2;
+
+    let width = visData.global.column.contentWidth * data.value;
+
+    let y = visData.global.row.padding;
+
+    let radius = { topLeft: 2 };
+
+    if (bottom) {
+      radius = { bottomLeft: 2 };
+      y += height;
+    }
+
+    return roundRect(
+      0,
+      y,
       width,
       height,
       radius

@@ -15,7 +15,12 @@
     top: 0;
     right: 0;
     height: 100%;
-    background: #eee;
+    background: #efefef;
+
+    &:hover {
+      color: $colorHighlightBlue;
+      cursor: pointer;
+    }
   }
 
   .top-bar .control-switch svg {
@@ -75,7 +80,8 @@
     height: 100%;
     color: #666;
     font-size: 0.75rem;
-    line-height: 1rem;
+    line-height: 1.5rem;
+    text-transform: uppercase;
     overflow: hidden;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -88,19 +94,32 @@
     &:hover,
     &.active {
       color: #000;
-      background: #ccc;
+    }
+
+    &:hover {
+      background: #efefef;
     }
 
     &.active {
-      box-shadow: 0 1px 0 0 #000;
+      font-weight: bold;
+      box-shadow: inset 0 -20px 0 0 #000;
     }
+
+    &.inactive {
+      cursor: default !important;
+      opacity: 0;
+    }
+  }
+
+  .top-bar .global-controls .control-btn .wrapper {
+    position: relative;
   }
 
   .top-bar .global-controls .control-btn {
     position: relative;
     float: left;
     width: 20%;
-    box-shadow: -1px 0 0 0 #efefef;
+    box-shadow: 1px 0 0 0 #efefef;
   }
 
   .top-bar .controls .control-btn {
@@ -110,7 +129,6 @@
 
   .top-bar .controls .expandable-label {
     position: relative;
-    line-height: 1.5rem;
   }
 
   .top-bar .controls .expandable-label .letter {
@@ -133,8 +151,8 @@
     max-width: 1rem;
   }
 
-  .top-bar .controls [class^='icon-'],
-  .top-bar .controls [class*=' icon-'] {
+  .top-bar .control-btn [class^='icon-'],
+  .top-bar .control-btn [class*=' icon-'] {
     position: absolute;
     top: 0.25rem;
     right: 0.25rem;
@@ -159,8 +177,9 @@
     right: 0;
   }
 
-  .top-bar .controls .sort-precision:hover,
-  .top-bar .controls .sort-recall:hover {
+  .top-bar .sort-precision:hover,
+  .top-bar .sort-recall:hover,
+  .top-bar .sort-name:hover {
     z-index: 2;
     color: #fff;
     background: $colorHighlightRed;
@@ -272,7 +291,7 @@
     display: block;
     box-sizing: border-box;
     width: 100%;
-    height: 1em;
+    height: 100%;
     padding: 0 2px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -280,6 +299,7 @@
     color: #666;
     font-size: 12px;
     line-height: 1em;
+    transition: all $transitionFast $easeInOutCubic;
   }
 
   .node.hovering-directly .label {
@@ -292,6 +312,11 @@
 
   .node.highlight-bar .label {
     color: #000;
+  }
+
+  .node.highlight-label .label {
+    color: $colorHighlightRed;
+    text-shadow: 0 0 3px transparentize($colorHighlightRed, 0.75);
   }
 
   .bar-border,
@@ -319,6 +344,14 @@
     shape-rendering: auto;
   }
 
+  .two-bar .bar-magnitude {
+    fill-opacity: 0.05;
+  }
+
+  .two-bar .bar.active .bar-magnitude {
+    fill-opacity: 0.15;
+  }
+
   .bar-border {
     fill: none;
     stroke: mix(lighten($colorHighlightRed, 20%), #fff, 25%);
@@ -332,7 +365,7 @@
 
   .node.hovering-directly .bar-magnitude {
     fill: #404040;
-    fill-opacity: 1;
+    fill-opacity: 1 !important;
   }
 
   .node.hovering-directly .bar.active .bar-indicator {
@@ -346,7 +379,7 @@
 
   .bar.highlight .bar-magnitude {
     fill: lighten($colorHighlightRed, 20%);
-    fill-opacity: 1;
+    fill-opacity: 1 !important;
   }
 
   .sorting {
