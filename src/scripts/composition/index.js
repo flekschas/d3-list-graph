@@ -353,6 +353,10 @@ class ListGraph {
     this.svgD3.classed('two-bar', mode === 'two');
     this.nodes.bars.switchMode(mode, this.currentSorting);
   }
+
+  trigger (event, data) {
+    this.events.trigger(event, data);
+  }
 }
 
 export default ListGraph;

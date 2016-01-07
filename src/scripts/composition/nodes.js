@@ -2,6 +2,7 @@
 
 // External
 import * as d3 from 'd3';
+import isFunction from '../../../node_modules/lodash-es/lang/isFunction';
 
 // Internal
 import * as traverse from './traversal';
@@ -130,21 +131,52 @@ class Nodes {
             .text(data => data.data.name);
     });
 
-    // this.events.on('d3ListGraphNodeEnter', function (e, data) {
-    //   console.log('d3ListGraphNodeEnter', e, data);
-    // });
+    if (isFunction(this.events.on)) {
+      this.events.on('d3ListGraphNodeClick', event => {
+        console.log('d3ListGraphNodeClick', event);
+      });
 
-    // this.events.on('d3ListGraphNodeLeave', function (e, data) {
-    //   console.log('d3ListGraphNodeLeave', e, data);
-    // });
+      this.events.on(
+        'd3ListGraphNodeEnter',
+        event => this.eventHelper(event, this.highlightNodes)
+      );
 
-    // this.events.on('d3ListGraphNodeLock', function (e, data) {
-    //   console.log('d3ListGraphNodeLock', e, data);
-    // });
+      this.events.on(
+        'd3ListGraphNodeLeave',
+        event => this.eventHelper(event, this.dehighlightNodes)
+      );
 
-    // this.events.on('d3ListGraphNodeUnlock', function (e, data) {
-    //   console.log('d3ListGraphNodeUnlock', e, data);
-    // });
+      this.events.on(
+        'd3ListGraphNodeLock',
+        event => this.eventHelper(event, this.toggleLock, [], '.lock')
+      );
+
+      this.events.on(
+        'd3ListGraphNodeUnlock',
+        event => this.eventHelper(event, this.toggleLock, [], '.lock')
+      );
+    }
+  }
+
+  eventHelper (event, callback, optionalParams, subSelectionClass) {
+    let that = this;
+
+    optionalParams = optionalParams ? optionalParams : [];
+
+    if (event.id) {
+      this.nodes.filter(data => data.id === event.id).each(function (data) {
+        let el = this;
+
+        if (subSelectionClass) {
+          el = d3.select(this).select(subSelectionClass).node();
+        }
+
+        callback.apply(
+          that,
+          [el, data].concat(optionalParams)
+        );
+      });
+    }
   }
 
   get barMode () {
@@ -179,6 +211,7 @@ class Nodes {
         this.lockedNode = d3El;
       }
     } else {
+      console.log('luditz', d3El);
       d3El.classed({
         'active': true,
         'inactive': false
