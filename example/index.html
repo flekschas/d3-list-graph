@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" type="text/css" href="../dist/listGraph.css">
+  <link rel="stylesheet" type="text/css" href="styles.css">
+
+  <title>List Graph Prototype</title>
+</head>
+<body>
+  <div id="example" class="list-graph">
+    <div class="top-bar"></div>
+    <div class="wrapper"><svg class="base"></svg></div>
+  </div>
+  <script src="../bower_components/jquery/dist/jquery.js"></script>
+  <script src="../bower_components/jquery-mousewheel/jquery.mousewheel.js"></script>
+  <script src="../bower_components/d3/d3.js"></script>
+  <script src="../dist/d3.layout.listGraph.js"></script>
+  <script src="../dist/listGraph.js"></script>
+  <script>
+    'use strict';
+
+    d3.json('data.json', function(error, data) {
+      if (error) throw error;
+
+      new ListGraph(
+        document.querySelector('#example'),
+        data,
+        [1, 2],
+        {
+          iconPath: '/dist/icons.svg',
+          rows: 8,
+          sortBy: 'precision'
+        }
+      );
+    });
+
+    $('#example').on('d3ListGraphNodeClick', function (e) {
+      console.log('I clicked on ' + e.originalEvent.detail.id);
+    });
+  </script>
+</body>
+</html>

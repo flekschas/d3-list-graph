@@ -1,0 +1,22 @@
+{
+  "name": "d3-list-graph",
+  "version": "0.0.1",
+  "authors": [
+    "Fritz Lekschas"
+  ],
+  "description": "D3 layout for a graph of adjacent lists of nodes",
+  "main": "index.html",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "d3": "~3.5.6",
+    "jquery": "~2.1.4",
+    "jquery-mousewheel": "~3.1.13"
+  }
+}

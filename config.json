@@ -1,0 +1,37 @@
+{
+  "browsers": [
+    "> 1%",
+    "last 2 versions",
+    "Firefox ESR",
+    "Opera 12.1",
+    "Explorer >= 9",
+    "Firefox >= 5"
+  ],
+  "globalPaths": {
+    "dist": "dist",
+    "src": "src"
+  },
+  "js": {
+    "bundles": {
+      "composition": {
+        "banner": "D3 example visualization app using list-based graphs",
+        "name": "ListGraph",
+        "output": "listGraph"
+      },
+      "layout": {
+        "banner": "D3 layout for list-based graphs",
+        "name": "D3LayoutListGraph",
+        "output": "d3.layout.listGraph"
+      }
+    }
+  },
+  "server": {
+    "host": "localhost",
+    "port": "8001"
+  },
+  "sourcePaths": {
+    "images": "/images",
+    "scripts": "/scripts",
+    "styles": "/styles"
+  }
+}

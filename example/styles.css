@@ -1,0 +1,18 @@
+html, body {
+  font-family: 'Source Sans Pro', 'Clear Sans', 'Helvetica Neue', sans-serif;
+}
+
+.list-graph {
+  margin: 1em auto;
+  border: 1px solid #efefef;
+}
+
+.list-graph svg.base {
+  display: block;
+  width: 800px;
+  height: 200px;
+}
+
+#example-two.list-graph svg.base {
+  background: #f4f4f4;
+}
