@@ -149,11 +149,11 @@ class ListGraph {
 
     this.links = new Links(this.columns.groups, this.visData, this.layout);
     this.nodes = new Nodes(
+      this,
       this.columns.groups,
       this.visData,
       this.links,
-      this.events,
-      options.barMode || config.DEFAULT_BAR_MODE
+      this.events
     );
     this.columns.scrollPreparation(this, this.scrollbarWidth);
     this.scrollbars = new Scrollbars(

@@ -37,6 +37,7 @@ class Topbar {
     this.globalControls = this.el.append(TOPBAR_CONTROL_EL)
       .classed(TOPBAR_GLOBAL_CONTROL_CLASS, true);
 
+    // Add button for sorting by precision
     this.globalPrecision = this.globalControls.append('li')
       .attr('class', 'control-btn sort-precision')
       .classed('active', function () {
@@ -82,6 +83,7 @@ class Topbar {
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#sort-desc');
 
+    // Add button for sorting by recall
     this.globalRecall = this.globalControls.append('li')
       .attr('class', 'control-btn sort-recall')
       .classed('active', function () {
@@ -126,6 +128,7 @@ class Topbar {
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#sort-desc');
 
+    // Add button for sorting by name
     this.globalName = this.globalControls.append('li')
       .attr('class', 'control-btn sort-name')
       .classed('active', function () {
@@ -170,7 +173,7 @@ class Topbar {
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#sort-alpha-desc');
 
-    // One bar
+    // Add button for switching to 'one bar'
     this.globalOneBar = this.globalControls.append('li')
       .attr('class', 'control-btn one-bar')
       .classed('active', this.vis.barMode === 'one')
@@ -188,7 +191,7 @@ class Topbar {
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#one-bar');
 
-    // Two bars
+    // Add button for switching to 'two bars'
     this.globalTwoBars = this.globalControls.append('li')
       .attr('class', 'control-btn two-bars')
       .classed('active', this.vis.barMode === 'two')

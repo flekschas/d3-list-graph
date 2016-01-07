@@ -90,6 +90,7 @@
     -ms-user-select: none;
     user-select: none;
     cursor: pointer;
+    transition: all $transitionFast $easeInOutCubic;
 
     &:hover,
     &.active {
@@ -241,6 +242,21 @@
     transition: all $transitionFast $easeInOutCubic;
   }
 
+  .node .bg-border {
+    fill: $colorHighlightRed;
+    stroke: $colorHighlightRed;
+    stroke-width: 6px;
+    opacity: 0;
+  }
+
+  .node.lock-directly .bg-border {
+    opacity: 1;
+  }
+
+  .node.lock-indirectly .bg-border {
+    opacity: 0.66;
+  }
+
   .node .border {
     fill: none;
     stroke: #e5e5e5;
@@ -275,15 +291,35 @@
 
   .link {
     fill: none;
-    stroke: #000;
-    stroke-opacity: 0.2;
-    stroke-width: 2;
     transition: all $transitionFast $easeInOutCubic;
 
-    &.highlight {
+    .link-direct {
+      stroke: #000;
+      stroke-opacity: 0.2;
+      stroke-width: 2;
+    }
+
+    &.hovering .link-direct {
       stroke-opacity: 0.75;
       stroke-width: 4;
-      stroke: #000;
+    }
+
+    &.lock .link-direct {
+      stroke-opacity: 0.75;
+    }
+
+    .link-bg {
+      stroke: $colorHighlightRed;
+      stroke-opacity: 0;
+      stroke-width: 6;
+    }
+
+    &.lock .link-bg {
+      stroke-opacity: 0.75;
+    }
+
+    &.lock.hovering .link-bg {
+      stroke-width: 8;
     }
   }
 
@@ -317,6 +353,47 @@
   .node.highlight-label .label {
     color: $colorHighlightRed;
     text-shadow: 0 0 3px transparentize($colorHighlightRed, 0.75);
+  }
+
+  .node .lock .bg {
+    fill: #fff;
+    fill-opacity: 0;
+    stroke: #fff;
+    stroke-width: 1;
+    stroke-opacity: 0;
+  }
+
+  .node:hover .lock .bg {
+    fill-opacity: 0.66;
+    stroke-opacity: 0.66;
+  }
+
+  .node .lock:hover .bg {
+    fill-opacity: 0.85;
+    stroke-opacity: 1;
+  }
+
+  .node .lock.active .bg {
+    fill-opacity: 0 !important;
+    stroke-opacity: 0 !important;
+  }
+
+  .node .lock [class^='icon-'],
+  .node .lock [class*=' icon-'] {
+    opacity: 0 !important;
+  }
+
+  .node:hover .lock.inactive .icon-unlocked {
+    opacity: 0.5 !important;
+  }
+
+  .node:hover .lock.inactive .icon-unlocked {
+    opacity: 1 !important;
+  }
+
+  .node .lock.active .icon-locked {
+    color: #fff;
+    opacity: 1 !important;
   }
 
   .bar-border,

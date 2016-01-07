@@ -45,7 +45,7 @@ class Bars {
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('d', data => {
-        return Bar.generatePath(data, sortBy, this.visData);
+        return Bar.generatePath(data, this.mode, sortBy, this.visData);
       });
   }
 
@@ -55,13 +55,14 @@ class Bars {
       .duration(0)
       .attr(
         'd',
-        data => Bar.generatePath(data, undefined, this.visData)
+        data => Bar.generatePath(data, this.mode, undefined, this.visData)
       );
 
     refBars
       .attr('d', data => {
         return Bar.generatePath(
           data,
+          this.mode,
           undefined,
           this.visData,
           referenceValue
@@ -74,7 +75,7 @@ class Bars {
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('d', data => {
         return Bar.generatePath(
-          data, undefined, this.visData, referenceValue, true
+          data, this.mode, undefined, this.visData, referenceValue, true
         );
       });
   }

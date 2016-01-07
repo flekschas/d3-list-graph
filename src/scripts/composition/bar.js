@@ -6,13 +6,13 @@ import {roundRect} from './charts';
 const BAR_CLASS = 'bar';
 
 class Bar {
-  constructor (selection, barData, nodeData, visData, barCollection) {
+  constructor (selection, barData, nodeData, visData, bars) {
     let that = this;
 
     this.data = barData;
     this.nodeData = nodeData;
     this.visData = visData;
-    this.barCollection = barCollection;
+    this.bars = bars;
 
     this.data.x = nodeData.x;
     this.data.level = nodeData.depth;
@@ -30,18 +30,21 @@ class Bar {
       .enter()
       .append('g')
         .attr('class', data => BAR_CLASS + ' ' + data.id)
-        .classed('active', data => data.id === this.visData.nodes[this.nodeData.depth].sortBy);
+        .classed('active', data =>
+          data.id === this.visData.nodes[this.nodeData.depth].sortBy);
 
     // Local helper method to avoid code duplication.
     // Calling a class method from within the consructor is possible but `this`
     // is not available. Thus, we need to create local function and pass in
     // `this` as `that`, which feels very hacky but it works.
     function setupMagnitude (selection) {
-      let currentSorting = that.visData.nodes[that.nodeData.depth].sortBy;
+      let currentSorting = this.visData.nodes[this.nodeData.depth].sortBy;
 
       selection
         .attr('d', data => {
-          return Bar.generatePath(data, currentSorting, that.visData);
+          return Bar.generatePath(
+            data, this.bars.mode, currentSorting, this.visData
+          );
         })
         .classed('bar-magnitude', true);
     }
@@ -49,9 +52,9 @@ class Bar {
     function setupBorder (selection) {
       selection
         .attr('x', 0)
-        .attr('y', that.visData.global.row.padding)
-        .attr('width', that.visData.global.column.contentWidth)
-        .attr('height', that.visData.global.row.contentHeight)
+        .attr('y', this.visData.global.row.padding)
+        .attr('width', this.visData.global.column.contentWidth)
+        .attr('height', this.visData.global.row.contentHeight)
         .attr('rx', 2)
         .attr('ry', 2)
         .classed('bar-border', true);
@@ -60,31 +63,33 @@ class Bar {
     function setupIndicator (selection) {
       selection
         .attr('d', data => {
-          return Bar.generatePath(data, undefined, that.visData, data.value);
+          return Bar.generatePath(
+            data, this.bars.mode, undefined, this.visData, data.value
+          );
         })
         .classed('bar-indicator', true);
     }
 
     this.selection
       .append('rect')
-        .call(setupBorder);
+        .call(setupBorder.bind(this));
 
     this.selection
       .append('path')
-        .call(setupMagnitude);
+        .call(setupMagnitude.bind(this));
 
     this.selection
       .append('path')
-        .call(setupIndicator);
+        .call(setupIndicator.bind(this));
   }
 
   static generatePath (
-    data, currentSorting, visData, indicator, adjustWidth, bottom
+    data, mode, currentSorting, visData, indicator, adjustWidth, bottom
   ) {
-    if (this.barCollection.mode === 'two') {
-      return this.generateTwoBarsPath(data, visData, bottom);
+    if (mode === 'two') {
+      return Bar.generateTwoBarsPath(data, visData, bottom);
     } else {
-      return this.generateOneBarPath(
+      return Bar.generateOneBarPath(
         data, currentSorting, visData, indicator, adjustWidth
       );
     }
