@@ -378,7 +378,7 @@
       if (node.data.bars) {
         if (isArray(node.data.bars)) {
           node.data.barRefs = {};
-          for (var i = node.data.bars.length; i--;) {
+          for (var i = 0, len = node.data.bars.length; i < len; i++) {
             node.data.bars[i].value = Math.max(Math.min(node.data.bars[i].value, 1), 0);
             node.data.barRefs[node.data.bars[i].id] = node.data.bars[i].value;
           }
@@ -388,7 +388,7 @@
           // Keep the old object reference for quick access, e.g.
           // `node.data.barRefs.precision`
           node.data.barRefs = {};
-          for (var i = keys.length; i--;) {
+          for (var i = 0, len = keys.length; i < len; i++) {
             node.data.barRefs[keys[i]] = Math.max(Math.min(node.data.bars[keys[i]], 1), 0);
             bars.push({
               id: keys[i],
@@ -678,6 +678,7 @@
       this.columnCache = {};
       this.columns = {};
       this.columnNodeOrder = {};
+      this.columnSorting = {};
     }
 
     /**
@@ -721,7 +722,9 @@
             y: 0,
             x: this.scale.x(i),
             level: i,
-            rows: []
+            rows: [],
+            sortBy: this.columnSorting[i].by,
+            sortOrder: this.columnSorting[i].order
           });
           keys = Object.keys(this.columnCache[i]);
           for (var j = keys.length; j--;) {
@@ -736,7 +739,7 @@
        * Process original data and return an D3 ready Array.
        *
        * @author  Fritz Lekschas
-       * @date  2015-11-16
+       * @date  2015-12-28
        *
        * @method  process
        * @memberOf  ListGraph
@@ -744,12 +747,13 @@
        * @category  Data
        * @param  {Object}  data  Object list of nodes.
        * @param  {Array}  rootIds  Array of node IDs to start traversal.
+       * @param  {Object}  options  Object holding extra options such as sorting.
        * @return  {Array}  Array of Array of nodes.
        */
 
     }, {
       key: 'process',
-      value: function process(data, rootIds) {
+      value: function process(data, rootIds, options) {
         this.data = data || this.data;
         this.rootIds = rootIds || this.rootIds;
 
@@ -763,6 +767,14 @@
 
         traverseGraph(this.data, this.rootIds, this.columnCache, this.columnNodeOrder, this.links, this.scale.x, this.scale.y);
 
+        for (var i = Object.keys(this.columnCache).length; i--;) {
+          this.columnSorting[i] = {};
+        }
+
+        if (options && options.sortBy) {
+          this.sort(undefined, options.sortBy, options.sortOrder || 'desc');
+        }
+
         return {
           global: this.compileGlobalProps(),
           nodes: this.nodesToMatrix()
@@ -770,10 +782,10 @@
       }
 
       /**
-       * Sorts nodes of a all or a specific level according to a property and order.
+       * Sorts nodes of all or a specific level according to a property and order.
        *
        * @description
-       * Currently only nodes can be sorted by _precision_, _recall_ or by name.
+       * Currently nodes can only be sorted by _precision_, _recall_ or by name.
        *
        * @method  sort
        * @author  Fritz Lekschas
@@ -790,10 +802,10 @@
       value: function sort(level, property, sortOrder) {
         var allLinks = [],
             itr = 0,
-            end = this.columnCache.length,
+            end = Object.keys(this.columnCache).length,
             getValue = undefined;
 
-        // 1 = asc, -1 = desc
+        // 1 = asc, -1 = desc [default]
         sortOrder = sortOrder === 1 ? 1 : -1;
 
         switch (property) {
@@ -811,6 +823,7 @@
             getValue = function (obj) {
               return obj.data.name.toLowerCase();
             };
+            property = name;
             break;
         }
 
@@ -825,6 +838,9 @@
             var valueB = getValue(b);
             return valueA > valueB ? sortOrder : valueA < valueB ? -sortOrder : 0;
           });
+
+          this.columnSorting[itr].by = property;
+          this.columnSorting[itr].order = sortOrder;
 
           // Update `y` according to the new position.
           for (var i = this.columnNodeOrder[itr].length; i--;) {
@@ -1043,10 +1059,10 @@
         this._colAbsPadding = this._columnWidth * this._colRelPadding;
         this._colAbsContentWidth = this._columnWidth * (1 - 2 * this._colRelPadding);
 
-        this._rowAbsPadding = this._rowHeight * this._rowRelPadding;
-        this._rowAbsContentHeight = this._rowHeight * (1 - 2 * this._rowRelPadding);
+        this._rowAbsPadding = Math.max(this._rowHeight * this._rowRelPadding, 2);
+        this._rowAbsContentHeight = this._rowHeight - 2 * this._rowAbsPadding;
 
-        this._cellAbsInnerPadding = this._cellRelInnerPadding * Math.min(this._colAbsContentWidth, this._rowAbsContentHeight);
+        this._cellAbsInnerPadding = this._cellRelInnerPadding * Math.min(this._colAbsContentWidth, this._rowAbsContentHeight, 1);
 
         return this;
       }

@@ -114,7 +114,14 @@ var ListGraph = (function ($,d3) { 'use strict';
   // An empty path is equal to inline SVG.
   var ICON_PATH = '';
 
+  var DEFAULT_SORT_ORDER = 'desc';
+
+  var DEFAULT_BAR_MODE = 'one';
+
   var TRANSITION_SEMI_FAST = 250;
+  // Gradient colors
+  var COLOR_NEGATIVE_RED = '#e0001c';
+  var COLOR_POSITIVE_GREEN = '#60bf00';
 
   function arrayToFakeObjs(arrayIds) {
     var fakeObjs = [];
@@ -126,23 +133,54 @@ var ListGraph = (function ($,d3) { 'use strict';
     return fakeObjs;
   }
 
-  function up(node, callback) {
-    function traverse(node, child, callback) {
-      callback(node, child);
-      for (var i = node.parent.length; i--;) {
-        traverse(node.parent[i], node, callback);
-      }
+  /**
+   * Collect all cloned nodes, including the original node.
+   *
+   * @method  collectInclClones
+   * @author  Fritz Lekschas
+   * @date    2015-12-30
+   * @param   {Object}  node  Start node
+   * @return  {Array}         Array of original and cloned nodes.
+   */
+  function collectInclClones(node) {
+    var originalNode = node;
+
+    if (node.clone) {
+      originalNode = node.originalNode;
     }
 
-    for (var i = node.parent.length; i--;) {
-      traverse(node.parent[i], node, callback);
+    var clones = [originalNode];
+
+    if (originalNode.clones.length) {
+      clones = clones.concat(originalNode.clones);
+    }
+
+    return clones;
+  }
+
+  function up(node, callback, child) {
+    var nodesInclClones = collectInclClones(node);
+
+    for (var i = nodesInclClones.length; i--;) {
+      if (child) {
+        callback(nodesInclClones[i], child);
+      }
+
+      for (var j = nodesInclClones[i].parent.length; j--;) {
+        up(nodesInclClones[i].parent[j], callback, nodesInclClones[i]);
+      }
     }
   }
 
   function down(node, callback) {
-    callback(node);
-    for (var i = node.childRefs.length; i--;) {
-      down(node.childRefs[i], callback);
+    var nodesInclClones = collectInclClones(node);
+
+    for (var i = nodesInclClones.length; i--;) {
+      callback(nodesInclClones[i]);
+
+      for (var j = nodesInclClones[i].childRefs.length; j--;) {
+        down(nodesInclClones[i].childRefs[j], callback);
+      }
     }
   }
 
@@ -156,55 +194,239 @@ var ListGraph = (function ($,d3) { 'use strict';
     }
   }
 
+  function roundRect(x, y, width, height, radius) {
+    var topLeft = 0;
+    var topRight = 0;
+    var bottomLeft = 0;
+    var bottomRight = 0;
+
+    try {
+      topLeft = radius.topLeft || 0;
+      topRight = radius.topRight || 0;
+      bottomLeft = radius.bottomLeft || 0;
+      bottomRight = radius.bottomRight || 0;
+    } catch (e) {}
+
+    return 'M' + (x + topLeft) + ',' + y + 'h' + (width - topLeft - topRight) + 'a' + topRight + ',' + topRight + ' 0 0 1 ' + topRight + ',' + topRight + 'v' + (height - (topRight + bottomRight)) + 'a' + bottomRight + ',' + bottomRight + ' 0 0 1 ' + -bottomRight + ',' + bottomRight + 'h' + (bottomLeft - (width - bottomRight)) + 'a' + bottomLeft + ',' + bottomLeft + ' 0 0 1 ' + -bottomLeft + ',' + -bottomLeft + 'v' + (topLeft - (height - bottomLeft)) + 'a' + topLeft + ',' + topLeft + ' 0 0 1 ' + topLeft + ',' + -topLeft + 'z';
+  }
+
   var BAR_CLASS = 'bar';
 
-  var Bar = function Bar(selection, barData, nodeData, visData) {
-    babelHelpers.classCallCheck(this, Bar);
+  var Bar = (function () {
+    function Bar(selection, barData, nodeData, visData, barCollection) {
+      var _this = this;
 
-    var that = this;
+      babelHelpers.classCallCheck(this, Bar);
 
-    this.data = barData;
-    this.nodeData = nodeData;
-    this.visData = visData;
+      var that = this;
 
-    this.height = this.visData.global.row.contentHeight / (this.data.length * 2) - this.visData.global.cell.padding * 2;
+      this.data = barData;
+      this.nodeData = nodeData;
+      this.visData = visData;
+      this.barCollection = barCollection;
 
-    this.selection = selection.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
-      return BAR_CLASS + ' ' + data.id;
-    });
+      this.data.x = nodeData.x;
+      this.data.level = nodeData.depth;
 
-    // Local helper method to avoid code duplication.
-    // Calling a class method from within the consructor is possible but `this`
-    // is not available. Thus, we need to create local function and pass in
-    // `this` as `that`, which feels very hacky but it works.
-    function setup(selection, className, magnitude) {
-      selection.attr('x', that.nodeData.x + that.visData.global.column.padding + that.visData.global.cell.padding).attr('y', function (data, i) {
-        return that.visData.global.row.padding + that.visData.global.row.contentHeight / 2 + that.height * i + that.visData.global.cell.padding * (1 + 2 * i);
-      }).attr('width', function (data) {
-        return (magnitude ? data.value : 1) * (that.visData.global.column.contentWidth - that.visData.global.cell.padding * 2);
-      }).attr('height', that.height).classed(className, true);
+      this.height = this.visData.global.row.contentHeight / (this.data.length * 2) - this.visData.global.cell.padding * 2;
+
+      this.activeHeight = this.visData.global.row.contentHeight - 2;
+
+      this.inactiveheight = this.visData.global.cell.padding * 2 - 1;
+
+      this.selection = selection.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
+        return BAR_CLASS + ' ' + data.id;
+      }).classed('active', function (data) {
+        return data.id === _this.visData.nodes[_this.nodeData.depth].sortBy;
+      });
+
+      // Local helper method to avoid code duplication.
+      // Calling a class method from within the consructor is possible but `this`
+      // is not available. Thus, we need to create local function and pass in
+      // `this` as `that`, which feels very hacky but it works.
+      function setupMagnitude(selection) {
+        var currentSorting = that.visData.nodes[that.nodeData.depth].sortBy;
+
+        selection.attr('d', function (data) {
+          return Bar.generatePath(data, currentSorting, that.visData);
+        }).classed('bar-magnitude', true);
+      }
+
+      function setupBorder(selection) {
+        selection.attr('x', 0).attr('y', that.visData.global.row.padding).attr('width', that.visData.global.column.contentWidth).attr('height', that.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
+      }
+
+      function setupIndicator(selection) {
+        selection.attr('d', function (data) {
+          return Bar.generatePath(data, undefined, that.visData, data.value);
+        }).classed('bar-indicator', true);
+      }
+
+      this.selection.append('rect').call(setupBorder);
+
+      this.selection.append('path').call(setupMagnitude);
+
+      this.selection.append('path').call(setupIndicator);
     }
 
-    this.selection.append('rect').call(setup, 'bar-border');
+    babelHelpers.createClass(Bar, null, [{
+      key: 'generatePath',
+      value: function generatePath(data, currentSorting, visData, indicator, adjustWidth, bottom) {
+        if (this.barCollection.mode === 'two') {
+          return this.generateTwoBarsPath(data, visData, bottom);
+        } else {
+          return this.generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth);
+        }
+      }
+    }, {
+      key: 'generateOneBarPath',
+      value: function generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth) {
+        var x = 0;
 
-    this.selection.append('rect').call(setup, 'bar-magnitude', true);
-  };
+        var width = 2;
+
+        var height = visData.global.row.contentHeight;
+
+        var radius = {
+          topLeft: 2,
+          bottomLeft: 2
+        };
+
+        if (indicator) {
+          radius = {};
+        }
+
+        if (data.id !== currentSorting && typeof indicator === 'undefined') {
+          x = data.value * visData.global.column.contentWidth - 3;
+          radius = {};
+        } else if (indicator) {
+          x = indicator * visData.global.column.contentWidth;
+          if (adjustWidth) {
+            if (data.value < indicator) {
+              x = data.value * visData.global.column.contentWidth;
+            }
+            width = Math.min(Math.abs(indicator - data.value), 2) * visData.global.column.contentWidth;
+          }
+        } else {
+          width = visData.global.column.contentWidth * data.value;
+        }
+
+        return roundRect(x, visData.global.row.padding, width, height, radius);
+      }
+    }, {
+      key: 'generateTwoBarsPath',
+      value: function generateTwoBarsPath(data, visData, bottom) {
+        var height = visData.global.row.contentHeight / 2;
+
+        var width = visData.global.column.contentWidth * data.value;
+
+        var y = visData.global.row.padding;
+
+        var radius = { topLeft: 2 };
+
+        if (bottom) {
+          radius = { bottomLeft: 2 };
+          y += height;
+        }
+
+        return roundRect(0, y, width, height, radius);
+      }
+    }]);
+    return Bar;
+  })();
 
   var BARS_CLASS = 'bars';
 
-  var Bars = function Bars(selection, visData) {
-    babelHelpers.classCallCheck(this, Bars);
+  var Bars = (function () {
+    function Bars(selection, mode, visData) {
+      babelHelpers.classCallCheck(this, Bars);
 
-    var that = this;
+      var that = this;
 
-    this.visData = visData;
+      this.mode = mode;
+      this.visData = visData;
 
-    selection.append('g').attr('class', BARS_CLASS).call(function (selection) {
-      selection.each(function (datum) {
-        new Bar(d3.select(this), datum.data.bars, datum, that.visData);
+      this.selection = selection.append('g').attr('class', BARS_CLASS);
+
+      this.selection.each(function (datum) {
+        new Bar(d3.select(this), datum.data.bars, datum, that.visData, that);
       });
-    });
-  };
+    }
+
+    babelHelpers.createClass(Bars, [{
+      key: 'update',
+      value: function update(selection, sortBy) {
+        var _this = this;
+
+        selection.each(function () {
+          var el = d3.select(this);
+
+          if (el.classed('active')) {
+            el.classed('active', false);
+          } else {
+            el.classed('active', true);
+            // Ensure that the active bars we are places before any other bar,
+            // thus placing them in the background
+            this.parentNode.insertBefore(this, d3.select(this.parentNode).select('.bar').node());
+          }
+        });
+
+        selection.selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+          return Bar.generatePath(data, sortBy, _this.visData);
+        });
+      }
+    }, {
+      key: 'updateIndicator',
+      value: function updateIndicator(refBars, currentBar, referenceValue) {
+        var _this2 = this;
+
+        currentBar.transition().duration(0).attr('d', function (data) {
+          return Bar.generatePath(data, undefined, _this2.visData);
+        });
+
+        refBars.attr('d', function (data) {
+          return Bar.generatePath(data, undefined, _this2.visData, referenceValue);
+        }).classed('positive', function (data) {
+          return data.value >= referenceValue;
+        });
+
+        refBars.transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+          return Bar.generatePath(data, undefined, _this2.visData, referenceValue, true);
+        });
+      }
+    }, {
+      key: 'switchMode',
+      value: function switchMode(mode, currentSorting) {
+        var _this3 = this;
+
+        if (this.mode !== mode) {
+          if (mode === 'one') {
+            if (currentSorting.global.type) {
+              this.selection.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+                return Bar.generateOneBarPath(data, currentSorting.global.type, _this3.visData);
+              });
+              console.log('bratzen');
+            } else {
+              console.log('kacken');
+            }
+          }
+
+          if (mode === 'two') {
+            this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+              return Bar.generateTwoBarsPath(data, _this3.visData);
+            });
+
+            this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+              return Bar.generateTwoBarsPath(data, _this3.visData, true);
+            });
+          }
+
+          this.mode = mode;
+        }
+      }
+    }]);
+    return Bars;
+  })();
 
   var LINKS_CLASS = 'links';
   var LINK_CLASS = 'link';
@@ -283,12 +505,25 @@ var ListGraph = (function ($,d3) { 'use strict';
   var CLONE_CLASS = 'clone';
 
   var Nodes = (function () {
-    function Nodes(baseSelection, visData, links, events) {
+    function Nodes(baseSelection, visData, links, events, barMode) {
       var _this = this;
 
       babelHelpers.classCallCheck(this, Nodes);
 
       var that = this;
+
+      // Helper
+      function drawFullSizeRect(selection, className, shrinking) {
+        if (!shrinking) {
+          shrinking = 0;
+        }
+
+        selection.attr('x', function (data) {
+          return shrinking;
+        }).attr('y', function (data) {
+          return that.visData.global.row.padding + shrinking;
+        }).attr('width', that.visData.global.column.contentWidth - 2 * shrinking).attr('height', that.visData.global.row.contentHeight - 2 * shrinking).attr('rx', 2 - shrinking).attr('ry', 2 - shrinking).classed(className, true);
+      }
 
       this.visData = visData;
       this.links = links;
@@ -305,14 +540,10 @@ var ListGraph = (function ($,d3) { 'use strict';
       }).enter().append('g').classed(NODE_CLASS, true).classed(CLONE_CLASS, function (data) {
         return data.clone;
       }).attr('transform', function (data) {
-        return 'translate(0, ' + data.y + ')';
+        return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
       });
 
-      this.nodes.append('rect').attr('x', function (data) {
-        return data.x + _this.visData.global.column.padding;
-      }).attr('y', function (data) {
-        return _this.visData.global.row.padding;
-      }).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bg', true);
+      this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1);
 
       this.nodes.on('click', function (data) {
         that.mouseClick(this, data);
@@ -326,20 +557,22 @@ var ListGraph = (function ($,d3) { 'use strict';
         that.mouseLeave(this, data);
       });
 
+      this.bars = new Bars(this.nodes, barMode, this.visData);
+
+      this.nodes.append('rect').call(drawFullSizeRect, 'border');
+
       // Add node label
       this.nodes.call(function (selection) {
         selection.append('foreignObject').attr('x', function (data) {
-          return data.x + _this.visData.global.column.padding + _this.visData.global.cell.padding;
+          return _this.visData.global.cell.padding;
         }).attr('y', function (data) {
           return _this.visData.global.row.padding + _this.visData.global.cell.padding;
-        }).attr('width', _this.visData.global.column.contentWidth).attr('height', _this.visData.global.row.contentHeight / 2 - _this.visData.global.cell.padding * 2).attr('class', 'label-wrapper').append('xhtml:div').attr('class', 'label').attr('title', function (data) {
+        }).attr('width', _this.visData.global.column.contentWidth).attr('height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2).attr('class', 'label-wrapper').append('xhtml:div').attr('class', 'label').attr('title', function (data) {
           return data.data.name;
-        }).append('xhtml:span').text(function (data) {
+        }).style('line-height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').text(function (data) {
           return data.data.name;
         });
       });
-
-      this.bars = new Bars(this.nodes, this.visData);
     }
 
     babelHelpers.createClass(Nodes, [{
@@ -352,13 +585,18 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function mouseEnter(el, data) {
         var _this2 = this;
 
+        var that = this;
+        var currentNodeData = data;
+
         // Store link IDs
         this.currentlyHighlightedLinks = [];
+
+        var currentActiveProperty = d3.select(el).selectAll('.bar.active .bar-magnitude').datum();
 
         var traverseCallbackUp = function traverseCallbackUp(data, childData) {
           data.hovering = 2;
           for (var i = data.links.length; i--;) {
-            // Only push direct connection to the node we are coming from. E.g.
+            // Only push direct parent child connections. E.g.
             // Store: (parent)->(child)
             // Ignore: (parent)->(siblings of child)
             if (data.links[i].target.node.id === childData.id) {
@@ -376,16 +614,34 @@ var ListGraph = (function ($,d3) { 'use strict';
         upAndDown(data, traverseCallbackUp, traverseCallbackDown);
 
         if (data.clone) {
-          upAndDown(data.originalNode, traverseCallbackUp, traverseCallbackDown);
           data.originalNode.hovering = 1;
         }
 
         data.hovering = 1;
-        this.nodes.classed('hovering-directly', function (data) {
-          return data.hovering === 1;
-        });
-        this.nodes.classed('hovering-indirectly', function (data) {
-          return data.hovering === 2;
+
+        this.nodes.each(function (data) {
+          var node = d3.select(this);
+
+          if (data.hovering === 1) {
+            node.classed('hovering-directly', true);
+          } else if (data.hovering === 2) {
+            node.classed('hovering-indirectly', true);
+            node.selectAll('.bar.' + currentActiveProperty.id).classed('copy', function (data) {
+              var id = data.id;
+
+              if (data.clone) {
+                id = data.originalNode.id;
+              }
+
+              if (id !== currentNodeData.id) {
+                return true;
+              }
+            });
+
+            var currentBar = d3.select(el).selectAll('.bar.' + currentActiveProperty.id).classed('reference', true);
+
+            that.bars.updateIndicator(node.selectAll('.bar.copy .bar-indicator'), currentBar.selectAll('.bar-indicator'), currentActiveProperty.value);
+          }
         });
 
         this.links.highlight(arrayToFakeObjs(this.currentlyHighlightedLinks));
@@ -404,11 +660,11 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         if (data.clone) {
           data.originalNode.hovering = 0;
-          upAndDown(data.originalNode, traverseCallback);
         }
 
         this.nodes.classed('hovering-directly', false);
         this.nodes.classed('hovering-indirectly', false);
+        this.nodes.selectAll('.bar.reference').classed('reference', false);
 
         this.links.highlight(arrayToFakeObjs(this.currentlyHighlightedLinks), false);
 
@@ -416,7 +672,9 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'sort',
-      value: function sort(update) {
+      value: function sort(update, newSortType) {
+        var _this3 = this;
+
         for (var i = update.length; i--;) {
           var start = function start() {
             d3.select(this).classed('sorting', true);
@@ -425,12 +683,23 @@ var ListGraph = (function ($,d3) { 'use strict';
             d3.select(this).classed('sorting', false);
           };
 
-          this.nodes.data(update[i].rows, function (data) {
+          var selection = this.nodes.data(update[i].rows, function (data) {
             return data.id;
-          }).transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-            return 'translate(0, ' + data.y + ')';
+          });
+
+          selection.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
+            return 'translate(' + (data.x + _this3.visData.global.column.padding) + ', ' + data.y + ')';
           }).each('start', start).each('end', end);
+
+          if (newSortType) {
+            this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
+          }
         }
+      }
+    }, {
+      key: 'barMode',
+      get: function get() {
+        return this.bars.mode;
       }
     }]);
     return Nodes;
@@ -506,6 +775,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
   var TOPBAR_CONTROL_EL = 'ul';
   var TOPBAR_CONTROL_CLASS = 'controls';
+  var TOPBAR_GLOBAL_CONTROL_CLASS = 'global-controls';
 
   var Topbar = (function () {
     function Topbar(vis, selection, visData) {
@@ -524,62 +794,155 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.el = selection.insert(TOPBAR_EL, ':first-child').attr('class', TOPBAR_CLASS);
       }
 
-      this.controls = this.el.selectAll(TOPBAR_CONTROL_CLASS).data(visData.nodes).enter().append(TOPBAR_CONTROL_EL).classed(TOPBAR_CONTROL_CLASS, true).style('width', this.visData.global.column.width + 'px');
+      this.controlSwitch = this.el.append('div').attr('title', 'Toggle global / local topbar').style('width', this.visData.global.column.padding + 'px').classed('control-switch', true).on('click', this.switch.bind(this));
 
-      this.controls.append('li').attr('class', 'toggle').style('width', this.visData.global.column.padding + 'px').on('click', this.toggleColumn);
+      this.switchArrow = this.controlSwitch.append('svg').append('use').attr('xlink:href', this.vis.iconPath + '#arrow-down').attr('class', 'switch-arrow');
 
-      this.controls.append('li').attr('class', 'sort-precision ease-all').style({
-        'width': this.visData.global.column.contentWidth / 2 + 'px',
-        'left': this.visData.global.column.padding + 'px'
-      }).on('click', function (data, index) {
-        that.sortColumn(this, index, 'precision');
+      this.globalControls = this.el.append(TOPBAR_CONTROL_EL).classed(TOPBAR_GLOBAL_CONTROL_CLASS, true);
+
+      this.globalPrecision = this.globalControls.append('li').attr('class', 'control-btn sort-precision').classed('active', function () {
+        if (that.vis.currentSorting.global.type === 'precision') {
+          // Save currently active element. Needed when when re-sorting for the
+          // first time, to be able to de-highlight this element.
+          that.vis.currentSorting.global.el = d3.select(this);
+          return true;
+        }
+      }).on('click', function (data) {
+        that.sortAllColumns(this, 'precision');
       }).on('mouseenter', function () {
-        that.highlightBars(this.parentNode, 'precision');
-        d3.select(this).style('width', that.visData.global.column.contentWidth - 16 + 'px');
+        return _this.highlightBars(undefined, 'precision');
       }).on('mouseleave', function () {
-        that.highlightBars(this.parentNode, 'precision', true);
-        d3.select(this).style('width', that.visData.global.column.contentWidth / 2 + 'px');
-      }).html('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default visible">' + '  <use xlink:href="' + this.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default">' + '  <use xlink:href="' + this.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default">' + '  <use xlink:href="' + this.vis.iconPath + '#sort-desc"></use>' + '</svg>');
+        return _this.highlightBars(undefined, 'precision', true);
+      });
 
-      this.controls.append('li').attr('class', 'sort-recall ease-all').style({
-        'width': this.visData.global.column.contentWidth / 2 + 'px',
-        'left': this.visData.global.column.contentWidth / 2 + this.visData.global.column.padding + 'px'
-      }).on('click', function (data, index) {
-        that.sortColumn(this, index, 'recall');
+      this.globalPrecisionWrapper = this.globalPrecision.append('div').attr('class', 'wrapper').text('Precision').style('margin', '0 ' + this.visData.global.column.padding + 'px');
+
+      this.globalPrecisionWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'precision').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
+
+      this.globalPrecisionWrapper.append('svg').attr('class', 'icon-sort-asc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'precision' && this.vis.currentSorting.global.order === 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-asc');
+
+      this.globalPrecisionWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'precision' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-desc');
+
+      this.globalRecall = this.globalControls.append('li').attr('class', 'control-btn sort-recall').classed('active', function () {
+        if (that.vis.currentSorting.global.type === 'recall') {
+          // See precision
+          that.vis.currentSorting.global.el = d3.select(this);
+          return true;
+        }
+      }).on('click', function (data) {
+        that.sortAllColumns(this, 'recall');
       }).on('mouseenter', function () {
-        that.highlightBars(this.parentNode, 'recall');
-        d3.select(this).style({
-          'width': that.visData.global.column.contentWidth - 16 + 'px',
-          'left': that.visData.global.column.padding + 16 + 'px'
-        });
+        return _this.highlightBars(undefined, 'recall');
       }).on('mouseleave', function () {
-        that.highlightBars(this.parentNode, 'recall', true);
-        d3.select(this).style({
-          'width': that.visData.global.column.contentWidth / 2 + 'px',
-          'left': that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
-        });
-      }).html('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default visible">' + '  <use xlink:href="' + this.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default">' + '  <use xlink:href="' + this.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default">' + '  <use xlink:href="' + this.vis.iconPath + '#sort-desc"></use>' + '</svg>');
+        return _this.highlightBars(undefined, 'recall', true);
+      });
 
-      this.controls.append('li').attr('class', 'options').style('width', this.visData.global.column.padding + 'px').on('click', this.toggleOptions).html('<svg class="icon-gear">' + '  <use xlink:href="' + this.vis.iconPath + '#gear"></use>' + '</svg>');
+      this.globalRecallWrapper = this.globalRecall.append('div').attr('class', 'wrapper').text('Recall').style('margin', '0 ' + this.visData.global.column.padding + 'px');
 
-      /**
-       * Stores current sorting, e.g. type, order and a reference to the element.
-       *
-       * @type  {Object}
-       */
-      this.sorting = {};
-      this.controls.each(function (data, index) {
+      this.globalRecallWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'recall').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
+
+      this.globalRecallWrapper.append('svg').attr('class', 'icon-sort-asc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'recall' && this.vis.currentSorting.global.order === 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-asc');
+
+      this.globalRecallWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'recall' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-desc');
+
+      this.globalName = this.globalControls.append('li').attr('class', 'control-btn sort-name').classed('active', function () {
+        if (that.vis.currentSorting.global.type === 'name') {
+          // See precision
+          that.vis.currentSorting.global.el = d3.select(this);
+          return true;
+        }
+      }).on('click', function (data) {
+        that.sortAllColumns(this, 'name');
+      }).on('mouseenter', function () {
+        return _this.highlightLabels();
+      }).on('mouseleave', function () {
+        return _this.highlightLabels(true);
+      });
+
+      this.globalNameWrapper = this.globalName.append('div').attr('class', 'wrapper').text('Name').style('margin', '0 ' + this.visData.global.column.padding + 'px');
+
+      this.globalNameWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'name').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
+
+      this.globalNameWrapper.append('svg').attr('class', 'icon-sort-asc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'name' && this.vis.currentSorting.global.order === 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-alpha-asc');
+
+      this.globalNameWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'name' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-alpha-desc');
+
+      // One bar
+      this.globalOneBar = this.globalControls.append('li').attr('class', 'control-btn one-bar').classed('active', this.vis.barMode === 'one').on('click', function () {
+        that.switchBarMode(this, 'one');
+      });
+
+      this.globalOneBarWrapper = this.globalOneBar.append('div').attr('class', 'wrapper').text('One bar').style('margin', '0 ' + this.visData.global.column.padding + 'px');
+
+      this.globalOneBarWrapper.append('svg').attr('class', 'icon-one-bar').append('use').attr('xlink:href', this.vis.iconPath + '#one-bar');
+
+      // Two bars
+      this.globalTwoBars = this.globalControls.append('li').attr('class', 'control-btn two-bars').classed('active', this.vis.barMode === 'two').on('click', function () {
+        that.switchBarMode(this, 'two');
+      });
+
+      this.globalTwoBarsWrapper = this.globalTwoBars.append('div').attr('class', 'wrapper').text('Two bars').style('margin', '0 ' + this.visData.global.column.padding + 'px');
+
+      this.globalTwoBarsWrapper.append('svg').attr('class', 'icon-two-bars').append('use').attr('xlink:href', this.vis.iconPath + '#two-bars');
+
+      this.localControlWrapper = this.el.append('div').classed('local-controls', true);
+
+      this.localControls = this.localControlWrapper.selectAll(TOPBAR_CONTROL_CLASS).data(visData.nodes).enter().append(TOPBAR_CONTROL_EL).classed(TOPBAR_CONTROL_CLASS, true).style('width', this.visData.global.column.width + 'px');
+
+      this.localControls.each(function (data, index) {
+        var control = d3.select(this);
+
         /*
          * Order:
          * 0 = unsorted
          * 1 = asc
          * -1 = desc
          */
-        _this.sorting[index] = {
-          type: undefined,
-          order: 0,
+        that.vis.currentSorting.local[index] = {
+          type: data.sortBy,
+          order: data.sortOrder,
           el: undefined
         };
+
+        control.append('li').attr('class', 'control-btn toggle').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleColumn);
+
+        control.append('li').attr('class', 'control-btn sort-precision ease-all').style({
+          'width': that.visData.global.column.contentWidth / 2 + 'px',
+          'left': that.visData.global.column.padding + 'px'
+        }).on('click', function (data) {
+          that.sortColumn(this, data.level, 'precision');
+        }).on('mouseenter', function () {
+          that.highlightBars(this.parentNode, 'precision');
+          d3.select(this).style('width', that.visData.global.column.contentWidth - 16 + 'px');
+        }).on('mouseleave', function () {
+          that.highlightBars(this.parentNode, 'precision', true);
+          d3.select(this).style('width', that.visData.global.column.contentWidth / 2 + 'px');
+        }).html('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'precision' ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
+
+        control.append('li').attr('class', 'control-btn sort-recall ease-all').style({
+          'width': that.visData.global.column.contentWidth / 2 + 'px',
+          'left': that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
+        }).on('click', function (data) {
+          that.sortColumn(this, data.level, 'recall');
+        }).on('mouseenter', function () {
+          that.highlightBars(this.parentNode, 'recall');
+          d3.select(this).style({
+            'width': that.visData.global.column.contentWidth - 16 + 'px',
+            'left': that.visData.global.column.padding + 16 + 'px'
+          });
+        }).on('mouseleave', function () {
+          that.highlightBars(this.parentNode, 'recall', true);
+          d3.select(this).style({
+            'width': that.visData.global.column.contentWidth / 2 + 'px',
+            'left': that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
+          });
+        }).html('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'recall' ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
+
+        control.append('li').attr('class', 'control-btn options').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleOptions).html('<svg class="icon-gear">' + '  <use xlink:href="' + that.vis.iconPath + '#gear"></use>' + '</svg>');
+
+        if (that.vis.currentSorting.local[index].type) {
+          that.vis.currentSorting.local[index].el = control.select('.sort-' + that.vis.currentSorting.local[index].type);
+        }
       });
     }
 
@@ -594,48 +957,169 @@ var ListGraph = (function ($,d3) { 'use strict';
         return this.vis.selectByColumn(d3.select(el).datum().level, '.node');
       }
     }, {
-      key: 'highlightBars',
-      value: function highlightBars(el, type, deHighlight) {
-        var nodes = this.selectNodesColumn(el);
-        nodes.selectAll('.bar.' + type).classed('highlight', !deHighlight);
+      key: 'highlightLabels',
+      value: function highlightLabels(deHighlight) {
+        this.vis.baseElD3.selectAll('.node').classed('highlight-label', !deHighlight);
       }
     }, {
-      key: 'sortColumn',
-      value: function sortColumn(el, index, type) {
-        if (this.sorting[index].el) {
-          if (this.sorting[index].type !== type) {
-            this.sorting[index].el.select('.icon-sort-desc').classed('visible', false);
-            this.sorting[index].el.select('.icon-sort-asc').classed('visible', false);
-            this.sorting[index].el.select('.icon-unsort').classed('visible', true);
+      key: 'highlightBars',
+      value: function highlightBars(el, type, deHighlight) {
+        var nodes = el ? this.selectNodesColumn(el) : this.vis.baseElD3.selectAll('.node');
+
+        nodes.classed('highlight-bar', !deHighlight).selectAll('.bar.' + type).classed('highlight', !deHighlight);
+      }
+    }, {
+      key: 'sortAllColumns',
+      value: function sortAllColumns(el, type) {
+        var newSortType = false;
+
+        if (this.vis.currentSorting.global.type !== type) {
+          newSortType = true;
+
+          // Unset class of previous global sorting element
+          if (this.vis.currentSorting.global.el) {
+            this.resetSortEl(this.vis.currentSorting.global.el);
           }
         }
 
-        this.sorting[index].el = d3.select(el);
-        this.sorting[index].type = type;
+        this.vis.currentSorting.global.el = d3.select(el);
+        this.vis.currentSorting.global.el.classed('active', true);
+        this.vis.currentSorting.global.type = type;
 
-        // -1 = desc, 1 = asc
-        if (this.sorting[index].order === -1) {
-          this.sorting[index].order = 1;
-          this.sorting[index].el.select('.icon-sort-desc').classed('visible', false);
-          this.sorting[index].el.select('.icon-sort-asc').classed('visible', true);
-        } else {
-          this.sorting[index].order = -1;
-          this.sorting[index].el.select('.icon-sort-asc').classed('visible', false);
-          this.sorting[index].el.select('.icon-sort-desc').classed('visible', true);
+        var columnKeys = Object.keys(this.vis.currentSorting.local);
+        for (var i = 0, len = columnKeys.length; i < len; i++) {
+          this.sortColumn(el, columnKeys[i], type, true);
+        }
+      }
+    }, {
+      key: 'sortColumn',
+      value: function sortColumn(el, index, type, global) {
+        // Reset global sorting
+        if (!global) {
+          this.vis.currentSorting.global.type = undefined;
+          this.resetSortEl(this.vis.currentSorting.global.el);
         }
 
-        this.sorting[index].el.select('.icon-unsort').classed('visible', false);
+        var newSortType = false;
 
-        this.vis.sortColumn(index, type, this.sorting[index].order);
+        if (this.vis.currentSorting.local[index].el) {
+          if (this.vis.currentSorting.local[index].type !== type) {
+            this.resetSortEl(this.vis.currentSorting.local[index].el);
+          }
+        }
+
+        if (this.vis.currentSorting.local[index].type !== type) {
+          newSortType = true;
+          // Reset sort order
+          this.vis.currentSorting.local[index].order = 0;
+        }
+
+        this.vis.currentSorting.local[index].el = d3.select(el);
+        this.vis.currentSorting.local[index].type = type;
+
+        // -1 = desc, 1 = asc
+        if (this.vis.currentSorting.local[index].order === -1) {
+          this.vis.currentSorting.local[index].order = 1;
+          this.vis.currentSorting.local[index].el.select('.icon-sort-desc').classed('visible', false);
+          this.vis.currentSorting.local[index].el.select('.icon-sort-asc').classed('visible', true);
+        } else {
+          this.vis.currentSorting.local[index].order = -1;
+          this.vis.currentSorting.local[index].el.select('.icon-sort-asc').classed('visible', false);
+          this.vis.currentSorting.local[index].el.select('.icon-sort-desc').classed('visible', true);
+        }
+
+        this.vis.currentSorting.local[index].el.select('.icon-unsort').classed('visible', false);
+
+        this.vis.sortColumn(index, type, this.vis.currentSorting.local[index].order, newSortType);
+      }
+    }, {
+      key: 'resetSortEl',
+      value: function resetSortEl(el) {
+        el.classed('active', false);
+        el.select('.icon-sort-desc').classed('visible', false);
+        el.select('.icon-sort-asc').classed('visible', false);
+        el.select('.icon-unsort').classed('visible', true);
       }
     }, {
       key: 'toggleOptions',
       value: function toggleOptions() {
         console.log('Toggle options');
       }
+    }, {
+      key: 'switch',
+      value: function _switch() {
+        this.el.classed('details', !this.el.classed('details'));
+      }
+    }, {
+      key: 'switchBarMode',
+      value: function switchBarMode(el, mode) {
+        if (this.vis.nodes.barMode !== mode) {
+          if (mode === 'one') {
+            this.globalOneBar.classed('active', true);
+            this.globalTwoBars.classed('active', false);
+          } else {
+            this.globalOneBar.classed('active', false);
+            this.globalTwoBars.classed('active', true);
+          }
+          this.vis.switchBarMode(mode);
+        }
+      }
     }]);
     return Topbar;
   })();
+
+  /**
+   * Creates and adds an interpolated exponential SVG gradient to an SVG element.
+   *
+   * @example
+   * ```
+   * exponentialGradient(
+   *   d3.select('svg'),
+   *   {
+   *     color: #fff,
+   *     offset: 10,
+   *     opacity: 0.5,
+   *     x: 0,
+   *     y: 0
+   *   },
+   *   {
+   *     color: #000,
+   *     offset: 10,
+   *     opacity: 1,
+   *     x: 1,
+   *     y: 1
+   *   },
+   *   'myFancyGradient',
+   *   3,
+   *   5
+   * );
+   * ```
+   *
+   * @method  exponentialGradient
+   * @author  Fritz Lekschas
+   * @date    2015-12-30
+   * @param   {Object}  el     Element to which the `def` gradient should be
+   *   added to.
+   * @param   {Object}  start  Start properies.
+   * @param   {Object}  end    End properies.
+   * @param   {String}  name   Name of the gradient.
+   * @param   {Number}  power  Exponential power.
+   * @param   {Number}  steps  Interpolation steps.
+   */
+  function exponentialGradient(el, start, end, name, power, steps) {
+    var scale = d3.scale.pow().exponent(power || 2);
+    var stepSize = 1 / ((steps || 0) + 1);
+
+    var gradient = el.append('defs').append('linearGradient').attr('id', name).attr('x1', start.x).attr('y1', start.y).attr('x2', end.x).attr('y2', end.y).attr('spreadMethod', 'pad');
+
+    gradient.append('stop').attr('offset', start.offset + '%').attr('stop-color', start.color).attr('stop-opacity', start.opacity);
+
+    for (var i = 0; i < steps; i++) {
+      gradient.append('stop').attr('offset', start.offset + i * stepSize * (end.offset - start.offset) + '%').attr('stop-color', end.color).attr('stop-opacity', start.opacity + scale(i * stepSize) * (end.opacity - start.opacity));
+    }
+
+    gradient.append('stop').attr('offset', end.offset + '%').attr('stop-color', end.color).attr('stop-opacity', end.opacity);
+  }
 
   var ExtendableError = (function (_Error) {
     babelHelpers.inherits(ExtendableError, _Error);
@@ -741,6 +1225,9 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.rows = options.rows || ROWS;
       this.iconPath = options.iconPath || ICON_PATH;
 
+      this.sortBy = options.sortBy;
+      this.sortOrder = options.sortOrder || DEFAULT_SORT_ORDER;
+
       this.events = new Events(this.baseEl, options.dispatcher);
 
       this.baseElJq.width(this.width).addClass(CLASSNAME);
@@ -748,7 +1235,56 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.layout = new d3.layout.listGraph([this.width, this.height], [this.columns, this.rows]);
 
       this.data = data;
-      this.visData = this.layout.process(this.data, this.rootNodes);
+      this.visData = this.layout.process(this.data, this.rootNodes, {
+        sortBy: this.sortBy,
+        sortOrder: this.sortOrder
+      });
+
+      /**
+       * Stores current sorting, e.g. type, order and a reference to the element.
+       *
+       * @type  {Object}
+       */
+      this.currentSorting = {
+        global: {
+          type: this.sortBy,
+          order: this.sortOrder
+        },
+        local: {}
+      };
+
+      exponentialGradient(this.svgD3, {
+        color: COLOR_NEGATIVE_RED,
+        offset: 0,
+        opacity: 0.2,
+        x: 0,
+        y: 0
+      }, {
+        afterOffsetOpacity: 1,
+        color: COLOR_NEGATIVE_RED,
+        offset: 99,
+        opacity: 1,
+        x: 1,
+        y: 0
+      }, 'negativeRed', 4, 10);
+
+      exponentialGradient(this.svgD3, {
+        beforeOffsetOpacity: 1,
+        color: COLOR_POSITIVE_GREEN,
+        offset: 1,
+        opacity: 1,
+        x: 0,
+        y: 0
+      }, {
+        color: COLOR_POSITIVE_GREEN,
+        offset: 100,
+        opacity: 0.2,
+        x: 1,
+        y: 0
+      }, 'positiveGreen', 0.25, 10);
+
+      this.barMode = options.barMode || DEFAULT_BAR_MODE;
+      this.svgD3.classed(this.barMode + '-bar', true);
 
       this.topbar = new Topbar(this, this.baseElD3, this.visData);
 
@@ -759,7 +1295,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.columns = new Columns(this.container, this.visData);
 
       this.links = new Links(this.columns.groups, this.visData, this.layout);
-      this.nodes = new Nodes(this.columns.groups, this.visData, this.links, this.events);
+      this.nodes = new Nodes(this.columns.groups, this.visData, this.links, this.events, options.barMode || DEFAULT_BAR_MODE);
       this.columns.scrollPreparation(this, this.scrollbarWidth);
       this.scrollbars = new Scrollbars(this.columns.groups, this.visData, this.scrollbarWidth);
 
@@ -862,9 +1398,30 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'sortColumn',
-      value: function sortColumn(level, property, sortOrder) {
-        this.nodes.sort(this.layout.sort(level, property, sortOrder).nodes(level));
+      value: function sortColumn(level, property, sortOrder, newSortType) {
+        this.nodes.sort(this.layout.sort(level, property, sortOrder).nodes(level), newSortType);
         this.links.sort(this.layout.links(level - 1, level + 1));
+      }
+    }, {
+      key: 'switchBarMode',
+      value: function switchBarMode(mode) {
+        this.svgD3.classed('one-bar', mode === 'one');
+        this.svgD3.classed('two-bar', mode === 'two');
+        this.nodes.bars.switchMode(mode, this.currentSorting);
+      }
+    }, {
+      key: 'barMode',
+      get: function get() {
+        if (this.bars) {
+          return this.nodes.bars.mode;
+        }
+        return this._barMode;
+      },
+      set: function set(mode) {
+        if (this.bars) {
+          this.nodes.bars.mode = mode;
+        }
+        this._barMode = mode;
       }
     }], [{
       key: 'scrollY',
