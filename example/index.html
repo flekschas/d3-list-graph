@@ -21,19 +21,32 @@
   <script>
     'use strict';
 
+    var customDispatcher = function (event, data) {
+      console.log('Custom dispatcher: has ' + event, data);
+    };
+
     d3.json('data.json', function(error, data) {
       if (error) throw error;
 
-      new ListGraph(
-        document.querySelector('#example'),
-        data,
-        [1, 2],
-        {
-          iconPath: '/dist/icons.svg',
-          rows: 8,
-          sortBy: 'precision'
-        }
-      );
+      var graph = new ListGraph(
+          document.querySelector('#example'),
+          data,
+          [1, 2],
+          {
+            iconPath: '/dist/icons.svg',
+            rows: 8,
+            sortBy: 'precision',
+            dispatcher: customDispatcher
+          }
+        );
+
+      setTimeout(function () {
+        graph.trigger('d3ListGraphNodeLock', { id: '2-1' });
+      }, 1500);
+
+      setTimeout(function () {
+        graph.trigger('d3ListGraphNodeUnlock', { id: '2-1' });
+      }, 5000);
     });
 
     $('#example').on('d3ListGraphNodeClick', function (e) {
