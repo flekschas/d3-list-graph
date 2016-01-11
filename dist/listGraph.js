@@ -166,8 +166,8 @@ var ListGraph = (function ($,d3) { 'use strict';
         callback(nodesInclClones[i], child);
       }
 
-      for (var j = nodesInclClones[i].parent.length; j--;) {
-        up(nodesInclClones[i].parent[j], callback, nodesInclClones[i]);
+      for (var j = nodesInclClones[i].parents.length; j--;) {
+        up(nodesInclClones[i].parents[j], callback, nodesInclClones[i]);
       }
     }
   }
@@ -444,9 +444,8 @@ var ListGraph = (function ($,d3) { 'use strict';
               this.selection.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
                 return Bar.generateOneBarPath(data, currentSorting.global.type, _this3.visData);
               });
-              console.log('bratzen');
             } else {
-              console.log('kacken');
+              console.error('Switching magnitude visualization after individual sorting is ' + 'not supported yet.');
             }
           }
 
@@ -721,7 +720,6 @@ var ListGraph = (function ($,d3) { 'use strict';
             this.lockedNode = d3El;
           }
         } else {
-          console.log('luditz', d3El);
           d3El.classed({
             'active': true,
             'inactive': false
