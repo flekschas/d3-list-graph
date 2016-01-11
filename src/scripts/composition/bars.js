@@ -92,9 +92,11 @@ class Bars {
                 data, currentSorting.global.type, this.visData
               );
             });
-          console.log('bratzen');
         } else {
-          console.log('kacken');
+          console.error(
+            'Switching magnitude visualization after individual sorting is ' +
+            'not supported yet.'
+          );
         }
       }
 

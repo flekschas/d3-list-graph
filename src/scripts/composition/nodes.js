@@ -211,7 +211,6 @@ class Nodes {
         this.lockedNode = d3El;
       }
     } else {
-      console.log('luditz', d3El);
       d3El.classed({
         'active': true,
         'inactive': false
