@@ -149,11 +149,11 @@ class ListGraph {
 
     this.links = new Links(this.columns.groups, this.visData, this.layout);
     this.nodes = new Nodes(
+      this,
       this.columns.groups,
       this.visData,
       this.links,
-      this.events,
-      options.barMode || config.DEFAULT_BAR_MODE
+      this.events
     );
     this.columns.scrollPreparation(this, this.scrollbarWidth);
     this.scrollbars = new Scrollbars(
@@ -352,6 +352,10 @@ class ListGraph {
     this.svgD3.classed('one-bar', mode === 'one');
     this.svgD3.classed('two-bar', mode === 'two');
     this.nodes.bars.switchMode(mode, this.currentSorting);
+  }
+
+  trigger (event, data) {
+    this.events.trigger(event, data);
   }
 }
 

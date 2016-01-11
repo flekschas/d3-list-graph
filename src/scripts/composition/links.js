@@ -22,14 +22,25 @@ class Links {
         });
       });
 
-    this.links = this.groups.selectAll(LINK_CLASS)
+    this.links = this.groups.selectAll(LINK_CLASS + '-bg')
       .data((data, index) => {
         return this.layout.links(index);
       })
       .enter()
-      .append('path')
-        .attr('class', 'link')
-        .attr('d', this.diagonal);
+      .append('g')
+        .attr('class', LINK_CLASS);
+
+    this.links.append('path')
+      .attr({
+        'class': LINK_CLASS + '-bg',
+        'd': this.diagonal
+      });
+
+    this.links.append('path')
+      .attr({
+        'class': LINK_CLASS + '-direct',
+        'd': this.diagonal
+      });
   }
 
   get diagonal () {
@@ -51,25 +62,31 @@ class Links {
       .projection(data => [data.y, data.x]);
   }
 
-  highlight (nodeIds, highlight) {
+  highlight (nodeIds, highlight, className) {
+    className = className ? className : 'hovering';
+
     this.links
       .data(nodeIds, data => data.id)
-      .classed('highlight', highlight === false ? false : true);
+      .classed(className, highlight === false ? false : true);
   }
 
   scroll (selection, data) {
-    selection
-      .data(data)
-      .attr('d', this.diagonal)
-      .exit().remove();
+    // Update data of `g`.
+    selection.data(data);
+
+    // Next update all paths according to the new data.
+    selection.selectAll('path').attr('d', this.diagonal);
   }
 
   sort (update) {
     let start = function () { d3.select(this).classed('sorting', true); };
     let end = function () { d3.select(this).classed('sorting', false); };
 
-    this.links
-      .data(update, data => data.id)
+    // Update data of `g`.
+    this.links.data(update, data => data.id);
+
+    // Next update all paths according to the new data.
+    this.links.selectAll('path')
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('d', this.diagonal)

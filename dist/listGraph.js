@@ -194,6 +194,41 @@ var ListGraph = (function ($,d3) { 'use strict';
     }
   }
 
+  /** `Object#toString` result references. */
+  var funcTag = '[object Function]';
+
+  /** Used for native method references. */
+  var objectProto = Object.prototype;
+
+  /**
+   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+   * of values.
+   */
+  var objToString = objectProto.toString;
+
+  /**
+   * Checks if `value` is classified as a `Function` object.
+   *
+   * @static
+   * @memberOf _
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+   * @example
+   *
+   * _.isFunction(_);
+   * // => true
+   *
+   * _.isFunction(/abc/);
+   * // => false
+   */
+  function isFunction(value) {
+    // The use of `Object#toString` avoids issues with the `typeof` operator
+    // in older versions of Chrome and Safari which return 'function' for regexes
+    // and Safari 8 which returns 'object' for typed array constructors.
+    return isObject(value) && objToString.call(value) == funcTag;
+  }
+
   function roundRect(x, y, width, height, radius) {
     var topLeft = 0;
     var topRight = 0;
@@ -213,7 +248,7 @@ var ListGraph = (function ($,d3) { 'use strict';
   var BAR_CLASS = 'bar';
 
   var Bar = (function () {
-    function Bar(selection, barData, nodeData, visData, barCollection) {
+    function Bar(selection, barData, nodeData, visData, bars) {
       var _this = this;
 
       babelHelpers.classCallCheck(this, Bar);
@@ -223,7 +258,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.data = barData;
       this.nodeData = nodeData;
       this.visData = visData;
-      this.barCollection = barCollection;
+      this.bars = bars;
 
       this.data.x = nodeData.x;
       this.data.level = nodeData.depth;
@@ -245,37 +280,41 @@ var ListGraph = (function ($,d3) { 'use strict';
       // is not available. Thus, we need to create local function and pass in
       // `this` as `that`, which feels very hacky but it works.
       function setupMagnitude(selection) {
-        var currentSorting = that.visData.nodes[that.nodeData.depth].sortBy;
+        var _this2 = this;
+
+        var currentSorting = this.visData.nodes[this.nodeData.depth].sortBy;
 
         selection.attr('d', function (data) {
-          return Bar.generatePath(data, currentSorting, that.visData);
+          return Bar.generatePath(data, _this2.bars.mode, currentSorting, _this2.visData);
         }).classed('bar-magnitude', true);
       }
 
       function setupBorder(selection) {
-        selection.attr('x', 0).attr('y', that.visData.global.row.padding).attr('width', that.visData.global.column.contentWidth).attr('height', that.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
+        selection.attr('x', 0).attr('y', this.visData.global.row.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
       }
 
       function setupIndicator(selection) {
+        var _this3 = this;
+
         selection.attr('d', function (data) {
-          return Bar.generatePath(data, undefined, that.visData, data.value);
+          return Bar.generatePath(data, _this3.bars.mode, undefined, _this3.visData, data.value);
         }).classed('bar-indicator', true);
       }
 
-      this.selection.append('rect').call(setupBorder);
+      this.selection.append('rect').call(setupBorder.bind(this));
 
-      this.selection.append('path').call(setupMagnitude);
+      this.selection.append('path').call(setupMagnitude.bind(this));
 
-      this.selection.append('path').call(setupIndicator);
+      this.selection.append('path').call(setupIndicator.bind(this));
     }
 
     babelHelpers.createClass(Bar, null, [{
       key: 'generatePath',
-      value: function generatePath(data, currentSorting, visData, indicator, adjustWidth, bottom) {
-        if (this.barCollection.mode === 'two') {
-          return this.generateTwoBarsPath(data, visData, bottom);
+      value: function generatePath(data, mode, currentSorting, visData, indicator, adjustWidth, bottom) {
+        if (mode === 'two') {
+          return Bar.generateTwoBarsPath(data, visData, bottom);
         } else {
-          return this.generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth);
+          return Bar.generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth);
         }
       }
     }, {
@@ -372,7 +411,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         });
 
         selection.selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-          return Bar.generatePath(data, sortBy, _this.visData);
+          return Bar.generatePath(data, _this.mode, sortBy, _this.visData);
         });
       }
     }, {
@@ -381,17 +420,17 @@ var ListGraph = (function ($,d3) { 'use strict';
         var _this2 = this;
 
         currentBar.transition().duration(0).attr('d', function (data) {
-          return Bar.generatePath(data, undefined, _this2.visData);
+          return Bar.generatePath(data, _this2.mode, undefined, _this2.visData);
         });
 
         refBars.attr('d', function (data) {
-          return Bar.generatePath(data, undefined, _this2.visData, referenceValue);
+          return Bar.generatePath(data, _this2.mode, undefined, _this2.visData, referenceValue);
         }).classed('positive', function (data) {
           return data.value >= referenceValue;
         });
 
         refBars.transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-          return Bar.generatePath(data, undefined, _this2.visData, referenceValue, true);
+          return Bar.generatePath(data, _this2.mode, undefined, _this2.visData, referenceValue, true);
         });
       }
     }, {
@@ -446,22 +485,38 @@ var ListGraph = (function ($,d3) { 'use strict';
         });
       });
 
-      this.links = this.groups.selectAll(LINK_CLASS).data(function (data, index) {
+      this.links = this.groups.selectAll(LINK_CLASS + '-bg').data(function (data, index) {
         return _this.layout.links(index);
-      }).enter().append('path').attr('class', 'link').attr('d', this.diagonal);
+      }).enter().append('g').attr('class', LINK_CLASS);
+
+      this.links.append('path').attr({
+        'class': LINK_CLASS + '-bg',
+        'd': this.diagonal
+      });
+
+      this.links.append('path').attr({
+        'class': LINK_CLASS + '-direct',
+        'd': this.diagonal
+      });
     }
 
     babelHelpers.createClass(Links, [{
       key: 'highlight',
-      value: function highlight(nodeIds, _highlight) {
+      value: function highlight(nodeIds, _highlight, className) {
+        className = className ? className : 'hovering';
+
         this.links.data(nodeIds, function (data) {
           return data.id;
-        }).classed('highlight', _highlight === false ? false : true);
+        }).classed(className, _highlight === false ? false : true);
       }
     }, {
       key: 'scroll',
       value: function scroll(selection, data) {
-        selection.data(data).attr('d', this.diagonal).exit().remove();
+        // Update data of `g`.
+        selection.data(data);
+
+        // Next update all paths according to the new data.
+        selection.selectAll('path').attr('d', this.diagonal);
       }
     }, {
       key: 'sort',
@@ -473,9 +528,13 @@ var ListGraph = (function ($,d3) { 'use strict';
           d3.select(this).classed('sorting', false);
         };
 
+        // Update data of `g`.
         this.links.data(update, function (data) {
           return data.id;
-        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal).each('start', start).each('end', end);
+        });
+
+        // Next update all paths according to the new data.
+        this.links.selectAll('path').transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal).each('start', start).each('end', end);
       }
     }, {
       key: 'diagonal',
@@ -505,7 +564,7 @@ var ListGraph = (function ($,d3) { 'use strict';
   var CLONE_CLASS = 'clone';
 
   var Nodes = (function () {
-    function Nodes(baseSelection, visData, links, events, barMode) {
+    function Nodes(vis, baseSelection, visData, links, events) {
       var _this = this;
 
       babelHelpers.classCallCheck(this, Nodes);
@@ -525,9 +584,11 @@ var ListGraph = (function ($,d3) { 'use strict';
         }).attr('width', that.visData.global.column.contentWidth - 2 * shrinking).attr('height', that.visData.global.row.contentHeight - 2 * shrinking).attr('rx', 2 - shrinking).attr('ry', 2 - shrinking).classed(className, true);
       }
 
+      this.vis = vis;
       this.visData = visData;
       this.links = links;
       this.events = events;
+      this.currentLinks = {};
 
       this.groups = baseSelection.append('g').attr('class', NODES_CLASS).call(function (selection) {
         selection.each(function (data, index) {
@@ -543,21 +604,33 @@ var ListGraph = (function ($,d3) { 'use strict';
         return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
       });
 
+      this.nodes.append('rect').call(drawFullSizeRect, 'bg-border');
+
       this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1);
+
+      var nodeLocks = this.nodes.append('g').attr('class', 'lock inactive').on('click', function () {
+        that.toggleLock.call(that, this);
+      });
+
+      nodeLocks.append('circle').call(this.setUpLock.bind(this), 'bg', 'bg');
+
+      nodeLocks.append('svg').call(this.setUpLock.bind(this), 'icon', 'icon-unlocked ease-all invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+
+      nodeLocks.append('svg').call(this.setUpLock.bind(this), 'icon', 'icon-locked ease-all invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
       this.nodes.on('click', function (data) {
         that.mouseClick(this, data);
       });
 
       this.nodes.on('mouseenter', function (data) {
-        that.mouseEnter(this, data);
+        that.highlightNodes(this, data);
       });
 
       this.nodes.on('mouseleave', function (data) {
-        that.mouseLeave(this, data);
+        that.dehighlightNodes(this, data);
       });
 
-      this.bars = new Bars(this.nodes, barMode, this.visData);
+      this.bars = new Bars(this.nodes, this.vis.barMode, this.visData);
 
       this.nodes.append('rect').call(drawFullSizeRect, 'border');
 
@@ -573,23 +646,163 @@ var ListGraph = (function ($,d3) { 'use strict';
           return data.data.name;
         });
       });
+
+      if (isFunction(this.events.on)) {
+        this.events.on('d3ListGraphNodeClick', function (event) {
+          console.log('d3ListGraphNodeClick', event);
+        });
+
+        this.events.on('d3ListGraphNodeEnter', function (event) {
+          return _this.eventHelper(event, _this.highlightNodes);
+        });
+
+        this.events.on('d3ListGraphNodeLeave', function (event) {
+          return _this.eventHelper(event, _this.dehighlightNodes);
+        });
+
+        this.events.on('d3ListGraphNodeLock', function (event) {
+          return _this.eventHelper(event, _this.toggleLock, [], '.lock');
+        });
+
+        this.events.on('d3ListGraphNodeUnlock', function (event) {
+          return _this.eventHelper(event, _this.toggleLock, [], '.lock');
+        });
+      }
     }
 
     babelHelpers.createClass(Nodes, [{
+      key: 'eventHelper',
+      value: function eventHelper(event, callback, optionalParams, subSelectionClass) {
+        var that = this;
+
+        optionalParams = optionalParams ? optionalParams : [];
+
+        if (event.id) {
+          this.nodes.filter(function (data) {
+            return data.id === event.id;
+          }).each(function (data) {
+            var el = this;
+
+            if (subSelectionClass) {
+              el = d3.select(this).select(subSelectionClass).node();
+            }
+
+            callback.apply(that, [el, data].concat(optionalParams));
+          });
+        }
+      }
+    }, {
+      key: 'toggleLock',
+      value: function toggleLock(el) {
+        var d3El = d3.select(el);
+        var data = d3El.datum();
+
+        if (this.lockedNode) {
+          if (this.lockedNode.datum().id === data.id) {
+            this.lockedNode.classed({
+              'active': false,
+              'inactive': true
+            });
+            this.unlockNode(this.lockedNode.datum().id);
+            this.lockedNode = undefined;
+          } else {
+            // Reset previously locked node;
+            this.lockedNode.classed({
+              'active': false,
+              'inactive': true
+            });
+            this.unlockNode(this.lockedNode.datum().id);
+
+            d3El.classed({
+              'active': true,
+              'inactive': false
+            });
+            this.lockNode(data.id);
+            this.lockedNode = d3El;
+          }
+        } else {
+          console.log('luditz', d3El);
+          d3El.classed({
+            'active': true,
+            'inactive': false
+          });
+          this.lockNode(data.id);
+          this.lockedNode = d3El;
+        }
+      }
+    }, {
+      key: 'lockNode',
+      value: function lockNode(id) {
+        var that = this;
+        var els = this.nodes.filter(function (data) {
+          return data.id === id;
+        });
+
+        els.each(function (data) {
+          var el = d3.select(this);
+
+          that.highlightNodes(this, data, 'lock');
+        });
+
+        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', function () {
+          return parseInt(d3.select(this).attr('width')) + that.visData.global.row.height / 2;
+        });
+      }
+    }, {
+      key: 'unlockNode',
+      value: function unlockNode(id) {
+        var that = this;
+        var els = this.nodes.filter(function (data) {
+          return data.id === id;
+        });
+
+        els.each(function (data) {
+          that.dehighlightNodes(this, data, 'lock');
+        });
+
+        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', this.visData.global.column.contentWidth);
+      }
+    }, {
+      key: 'setUpLock',
+      value: function setUpLock(selection, mode, className) {
+        var height = this.visData.global.row.contentHeight / 2 - this.visData.global.cell.padding * 2;
+        var x = this.visData.global.column.contentWidth + 2;
+        var y = this.visData.global.row.padding + (this.visData.global.row.contentHeight - 2 * this.visData.global.cell.padding) / 4;
+
+        if (mode === 'bg') {
+          selection.attr({
+            class: className,
+            cx: x + height / 2,
+            cy: y + height / 2,
+            r: height * 3 / 4
+          });
+        } else {
+          selection.attr({
+            class: className,
+            x: x,
+            y: y,
+            width: height,
+            height: height
+          });
+        }
+      }
+    }, {
       key: 'mouseClick',
       value: function mouseClick(el, data) {
         this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
       }
     }, {
-      key: 'mouseEnter',
-      value: function mouseEnter(el, data) {
+      key: 'highlightNodes',
+      value: function highlightNodes(el, data, className) {
         var _this2 = this;
 
         var that = this;
         var currentNodeData = data;
 
+        className = className ? className : 'hovering';
+
         // Store link IDs
-        this.currentlyHighlightedLinks = [];
+        this.currentLinks[className] = [];
 
         var currentActiveProperty = d3.select(el).selectAll('.bar.active .bar-magnitude').datum();
 
@@ -600,7 +813,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             // Store: (parent)->(child)
             // Ignore: (parent)->(siblings of child)
             if (data.links[i].target.node.id === childData.id) {
-              _this2.currentlyHighlightedLinks.push(data.links[i].id);
+              _this2.currentLinks[className].push(data.links[i].id);
             }
           }
         };
@@ -608,7 +821,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         var traverseCallbackDown = function traverseCallbackDown(data) {
           data.hovering = 2;
           for (var i = data.links.length; i--;) {
-            _this2.currentlyHighlightedLinks.push(data.links[i].id);
+            _this2.currentLinks[className].push(data.links[i].id);
           }
         };
         upAndDown(data, traverseCallbackUp, traverseCallbackDown);
@@ -623,9 +836,9 @@ var ListGraph = (function ($,d3) { 'use strict';
           var node = d3.select(this);
 
           if (data.hovering === 1) {
-            node.classed('hovering-directly', true);
+            node.classed(className + '-directly', true);
           } else if (data.hovering === 2) {
-            node.classed('hovering-indirectly', true);
+            node.classed(className + '-indirectly', true);
             node.selectAll('.bar.' + currentActiveProperty.id).classed('copy', function (data) {
               var id = data.id;
 
@@ -644,16 +857,18 @@ var ListGraph = (function ($,d3) { 'use strict';
           }
         });
 
-        this.links.highlight(arrayToFakeObjs(this.currentlyHighlightedLinks));
+        this.links.highlight(arrayToFakeObjs(this.currentLinks[className]), true, className);
 
         this.events.broadcast('d3ListGraphNodeEnter', { id: data.id });
       }
     }, {
-      key: 'mouseLeave',
-      value: function mouseLeave(el, data) {
+      key: 'dehighlightNodes',
+      value: function dehighlightNodes(el, data, className) {
         var traverseCallback = function traverseCallback(data) {
           return data.hovering = 0;
         };
+
+        className = className ? className : 'hovering';
 
         data.hovering = 0;
         upAndDown(data, traverseCallback);
@@ -662,11 +877,10 @@ var ListGraph = (function ($,d3) { 'use strict';
           data.originalNode.hovering = 0;
         }
 
-        this.nodes.classed('hovering-directly', false);
-        this.nodes.classed('hovering-indirectly', false);
-        this.nodes.selectAll('.bar.reference').classed('reference', false);
+        this.nodes.classed(className + '-directly', false);
+        this.nodes.classed(className + '-indirectly', false);
 
-        this.links.highlight(arrayToFakeObjs(this.currentlyHighlightedLinks), false);
+        this.links.highlight(arrayToFakeObjs(this.currentLinks[className]), false, className);
 
         this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
       }
@@ -800,6 +1014,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.globalControls = this.el.append(TOPBAR_CONTROL_EL).classed(TOPBAR_GLOBAL_CONTROL_CLASS, true);
 
+      // Add button for sorting by precision
       this.globalPrecision = this.globalControls.append('li').attr('class', 'control-btn sort-precision').classed('active', function () {
         if (that.vis.currentSorting.global.type === 'precision') {
           // Save currently active element. Needed when when re-sorting for the
@@ -823,6 +1038,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.globalPrecisionWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'precision' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-desc');
 
+      // Add button for sorting by recall
       this.globalRecall = this.globalControls.append('li').attr('class', 'control-btn sort-recall').classed('active', function () {
         if (that.vis.currentSorting.global.type === 'recall') {
           // See precision
@@ -845,6 +1061,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.globalRecallWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'recall' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-desc');
 
+      // Add button for sorting by name
       this.globalName = this.globalControls.append('li').attr('class', 'control-btn sort-name').classed('active', function () {
         if (that.vis.currentSorting.global.type === 'name') {
           // See precision
@@ -867,7 +1084,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.globalNameWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'name' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-alpha-desc');
 
-      // One bar
+      // Add button for switching to 'one bar'
       this.globalOneBar = this.globalControls.append('li').attr('class', 'control-btn one-bar').classed('active', this.vis.barMode === 'one').on('click', function () {
         that.switchBarMode(this, 'one');
       });
@@ -876,7 +1093,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.globalOneBarWrapper.append('svg').attr('class', 'icon-one-bar').append('use').attr('xlink:href', this.vis.iconPath + '#one-bar');
 
-      // Two bars
+      // Add button for switching to 'two bars'
       this.globalTwoBars = this.globalControls.append('li').attr('class', 'control-btn two-bars').classed('active', this.vis.barMode === 'two').on('click', function () {
         that.switchBarMode(this, 'two');
       });
@@ -1068,6 +1285,69 @@ var ListGraph = (function ($,d3) { 'use strict';
     return Topbar;
   })();
 
+  /** Used to determine if values are of the language type `Object`. */
+  var objectTypes = {
+    'function': true,
+    'object': true
+  };
+
+  /** Detect free variable `exports`. */
+  var freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports;
+
+  /** Detect free variable `module`. */
+  var freeModule = objectTypes[typeof module] && module && !module.nodeType && module;
+
+  /** Detect free variable `global` from Node.js. */
+  var freeGlobal = freeExports && freeModule && typeof global == 'object' && global && global.Object && global;
+
+  /** Detect free variable `self`. */
+  var freeSelf = objectTypes[typeof self] && self && self.Object && self;
+
+  /** Detect free variable `window`. */
+  var freeWindow = objectTypes[typeof window] && window && window.Object && window;
+
+  /**
+   * Used as a reference to the global object.
+   *
+   * The `this` value is used if it's the global object to avoid Greasemonkey's
+   * restricted `window` object, otherwise the `window` object is used.
+   */
+  var root = freeGlobal || ((freeWindow !== (this && this.window)) && freeWindow) || freeSelf || this;
+
+  /* Native method references for those with the same name as other `lodash` methods. */
+  var nativeIsFinite = root.isFinite;
+
+  /**
+   * Checks if `value` is a finite primitive number.
+   *
+   * **Note:** This method is based on [`Number.isFinite`](http://ecma-international.org/ecma-262/6.0/#sec-number.isfinite).
+   *
+   * @static
+   * @memberOf _
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is a finite number, else `false`.
+   * @example
+   *
+   * _.isFinite(10);
+   * // => true
+   *
+   * _.isFinite('10');
+   * // => false
+   *
+   * _.isFinite(true);
+   * // => false
+   *
+   * _.isFinite(Object(10));
+   * // => false
+   *
+   * _.isFinite(Infinity);
+   * // => false
+   */
+  function isFinite(value) {
+    return typeof value == 'number' && nativeIsFinite(value);
+  }
+
   /**
    * Creates and adds an interpolated exponential SVG gradient to an SVG element.
    *
@@ -1121,6 +1401,128 @@ var ListGraph = (function ($,d3) { 'use strict';
     gradient.append('stop').attr('offset', end.offset + '%').attr('stop-color', end.color).attr('stop-opacity', end.opacity);
   }
 
+  /**
+   * Checks if `value` is object-like.
+   *
+   * @private
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+   */
+  function isObjectLike(value) {
+    return !!value && typeof value == 'object';
+  }
+
+  /** Used to detect host constructors (Safari > 5). */
+  var reIsHostCtor = /^\[object .+?Constructor\]$/;
+
+  /** Used for native method references. */
+  var objectProto$2 = Object.prototype;
+
+  /** Used to resolve the decompiled source of functions. */
+  var fnToString = Function.prototype.toString;
+
+  /** Used to check objects for own properties. */
+  var hasOwnProperty = objectProto$2.hasOwnProperty;
+
+  /** Used to detect if a method is native. */
+  var reIsNative = RegExp('^' +
+    fnToString.call(hasOwnProperty).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
+    .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
+  );
+
+  /**
+   * Checks if `value` is a native function.
+   *
+   * @static
+   * @memberOf _
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is a native function, else `false`.
+   * @example
+   *
+   * _.isNative(Array.prototype.push);
+   * // => true
+   *
+   * _.isNative(_);
+   * // => false
+   */
+  function isNative(value) {
+    if (value == null) {
+      return false;
+    }
+    if (isFunction(value)) {
+      return reIsNative.test(fnToString.call(value));
+    }
+    return isObjectLike(value) && reIsHostCtor.test(value);
+  }
+
+  /**
+   * Gets the native function at `key` of `object`.
+   *
+   * @private
+   * @param {Object} object The object to query.
+   * @param {string} key The key of the method to get.
+   * @returns {*} Returns the function if it's native, else `undefined`.
+   */
+  function getNative(object, key) {
+    var value = object == null ? undefined : object[key];
+    return isNative(value) ? value : undefined;
+  }
+
+  /**
+   * Used as the [maximum length](http://ecma-international.org/ecma-262/6.0/#sec-number.max_safe_integer)
+   * of an array-like value.
+   */
+  var MAX_SAFE_INTEGER = 9007199254740991;
+
+  /**
+   * Checks if `value` is a valid array-like length.
+   *
+   * **Note:** This function is based on [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
+   *
+   * @private
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+   */
+  function isLength(value) {
+    return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+  }
+
+  /** `Object#toString` result references. */
+  var arrayTag = '[object Array]';
+
+  /** Used for native method references. */
+  var objectProto$1 = Object.prototype;
+
+  /**
+   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+   * of values.
+   */
+  var objToString$1 = objectProto$1.toString;
+
+  /* Native method references for those with the same name as other `lodash` methods. */
+  var nativeIsArray = getNative(Array, 'isArray');
+
+  /**
+   * Checks if `value` is classified as an `Array` object.
+   *
+   * @static
+   * @memberOf _
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+   * @example
+   *
+   * _.isArray([1, 2, 3]);
+   * // => true
+   *
+   * _.isArray(function() { return arguments; }());
+   * // => false
+   */
+  var isArray = nativeIsArray || function(value) {
+    return isObjectLike(value) && isLength(value.length) && objToString$1.call(value) == arrayTag;
+  };
+
   var ExtendableError = (function (_Error) {
     babelHelpers.inherits(ExtendableError, _Error);
 
@@ -1164,11 +1566,12 @@ var ListGraph = (function ($,d3) { 'use strict';
     function Events(el, broadcast) {
       babelHelpers.classCallCheck(this, Events);
 
-      if (broadcast && typeof broadcast !== 'function') {
+      if (broadcast && !isFunction(broadcast)) {
         throw new EventDispatcherNoFunction();
       }
 
       this.el = el;
+      this._stack = {};
       this.dispatch = broadcast ? broadcast : this._dispatchEvent;
     }
 
@@ -1183,6 +1586,104 @@ var ListGraph = (function ($,d3) { 'use strict';
       key: 'broadcast',
       value: function broadcast(event, data) {
         this.dispatch(event, data);
+      }
+
+      /**
+       * Add a callback function to an event stack.
+       *
+       * @method  on
+       * @author  Fritz Lekschas
+       * @date    2016-01-07
+       *
+       * @param   {String}    event     Event identifier.
+       * @param   {Function}  callback  Function which is called when the event
+       *   stack is triggered.
+       * @param   {Number}    times     Number of times the callback function should
+       *   be triggered before it is removed from the event stack. This is useful
+       *   when an event happens only a certain number of times.
+       * @return  {Number}              Index of callback, which is needed to
+       *   manually remove the callback from the event stack.
+       */
+
+    }, {
+      key: 'on',
+      value: function on(event, callback, times) {
+        if (!isFunction(callback)) {
+          return false;
+        }
+
+        if (isFinite(times)) {
+          times = parseInt(times);
+        } else {
+          times = Infinity;
+        }
+
+        if (isArray(this.stack[event])) {
+          return this.stack[event].push({ callback: callback, times: times }) - 1;
+        } else {
+          this.stack[event] = [{ callback: callback, times: times }];
+          return 0;
+        }
+      }
+    }, {
+      key: 'off',
+
+      /**
+       * Removes a callback function from an event stack given its index.
+       *
+       * @method  off
+       * @author  Fritz Lekschas
+       * @date    2016-01-07
+       *
+       * @param   {String}   event  Event identifier.
+       * @param   {Number}   index  Index of the callback to be removed.
+       * @return  {Boolean}         Returns `true` if event callback was found and
+       *   successfully removed.
+       */
+      value: function off(event, index) {
+        try {
+          this.stack[event].splice(index, 1);
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+    }, {
+      key: 'trigger',
+
+      /**
+       * Trigger an event stack
+       *
+       * @method  trigger
+       * @author  Fritz Lekschas
+       * @date    2016-01-07
+       *
+       * @param   {String}   event  Event identifier.
+       * @return  {Boolean}         Returns `true` if an event stack was found.
+       */
+      value: function trigger(event, data) {
+        if (isArray(this.stack[event])) {
+          // Traversing from the end to the start, which has the advantage that
+          // deletion of events, i.e. calling `Event.off()` doesn't affect the index
+          // of event listeners in the next step.
+          for (var i = this.stack[event].length; i--;) {
+            // Instead of checking whether `stack[event][i]` is a function here,
+            // we do it just once when we add the function to the stack.
+            if (this.stack[event][i].times--) {
+              this.stack[event][i].callback(data);
+            } else {
+              this.off(event, i);
+            }
+          }
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }, {
+      key: 'stack',
+      get: function get() {
+        return this._stack;
       }
     }]);
     return Events;
@@ -1295,7 +1796,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.columns = new Columns(this.container, this.visData);
 
       this.links = new Links(this.columns.groups, this.visData, this.layout);
-      this.nodes = new Nodes(this.columns.groups, this.visData, this.links, this.events, options.barMode || DEFAULT_BAR_MODE);
+      this.nodes = new Nodes(this, this.columns.groups, this.visData, this.links, this.events);
       this.columns.scrollPreparation(this, this.scrollbarWidth);
       this.scrollbars = new Scrollbars(this.columns.groups, this.visData, this.scrollbarWidth);
 
@@ -1408,6 +1909,11 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.svgD3.classed('one-bar', mode === 'one');
         this.svgD3.classed('two-bar', mode === 'two');
         this.nodes.bars.switchMode(mode, this.currentSorting);
+      }
+    }, {
+      key: 'trigger',
+      value: function trigger(event, data) {
+        this.events.trigger(event, data);
       }
     }, {
       key: 'barMode',
