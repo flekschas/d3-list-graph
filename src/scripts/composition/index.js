@@ -55,9 +55,11 @@ class ListGraph {
 
     this.events = new Events(this.baseEl, options.dispatcher);
 
-    this.baseElJq
-      .width(this.width)
-      .addClass(config.CLASSNAME);
+    this.baseElJq.addClass(config.CLASSNAME);
+
+    if (options.forceWidth) {
+      this.baseElJq.width(this.width);
+    }
 
     this.layout = new d3.layout.listGraph(
       [

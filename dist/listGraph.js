@@ -1844,7 +1844,11 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.events = new Events(this.baseEl, options.dispatcher);
 
-      this.baseElJq.width(this.width).addClass(CLASSNAME);
+      this.baseElJq.addClass(CLASSNAME);
+
+      if (options.forceWidth) {
+        this.baseElJq.width(this.width);
+      }
 
       this.layout = new d3.layout.listGraph([this.width, this.height], [this.columns, this.rows]);
 
