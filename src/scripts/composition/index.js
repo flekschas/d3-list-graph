@@ -15,6 +15,7 @@ import Links from './links';
 import Nodes from './nodes';
 import Scrollbars from './scrollbars';
 import Events from './events';
+import {onDragDrop, dragMoveHandler} from '../commons/event-handlers';
 
 class ListGraph {
   constructor (baseEl, data, rootNodes, options) {
@@ -143,7 +144,7 @@ class ListGraph {
 
     this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
 
-    this.container = this.svgD3.append('g');
+    this.container = this.svgD3.append('g').attr('class', 'main-container');
 
     this.columns = new Columns(this.container, this.visData);
 
@@ -180,6 +181,24 @@ class ListGraph {
     d3.select(document)
       .on('mouseup', () => { this.globalMouseUp(d3.event); })
       .on('mousemove', () => { this.globalMouseMove(d3.event); });
+
+    // Enable dragging of the whole graph.
+    this.svgD3.call(
+      onDragDrop,
+      dragMoveHandler,
+      undefined,
+      [
+        this.container,
+        this.topbar.localControlWrapper
+      ],
+      'horizontal',
+      {
+        x: {
+          min: Math.min(0, this.width - this.container.node().getBBox().width),
+          max: 0
+        }
+      }
+    );
   }
 
   static scrollY (el, offset) {

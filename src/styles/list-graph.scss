@@ -59,16 +59,17 @@
   .top-bar .global-controls,
   .top-bar .local-controls {
     width: 100%;
-    transition: all $transitionFast $easeInOutCubic;
+    white-space: nowrap;
+    transition: margin $transitionFast $easeInOutCubic;
   }
 
-  .top-bar.details .global-controls,
-  .top-bar.details .local-controls {
-    transform: translate(0, -1.5rem);
+  .top-bar.details .global-controls {
+    margin-top: -1.5rem;
   }
 
   .top-bar .controls {
-    float: left;
+    display: inline-block;
+    white-space: normal;
     box-shadow: -1px 0 0 0 #efefef;
   }
 
