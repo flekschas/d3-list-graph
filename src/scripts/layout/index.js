@@ -8,7 +8,7 @@ import isObject from '../../../node_modules/lodash-es/lang/isObject';
 
 // Internal
 import {NoRootNodes} from './errors';
-import traverseGraph from './processNodes';
+import traverseGraph from './process-nodes';
 
 /**
  * Default size
