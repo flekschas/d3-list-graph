@@ -44,12 +44,13 @@
   .list-graph .top-bar .global-controls,
   .list-graph .top-bar .local-controls {
     width: 100%;
-    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph .top-bar.details .global-controls,
-  .list-graph .top-bar.details .local-controls {
-    transform: translate(0, -1.5rem); }
+    white-space: nowrap;
+    transition: margin 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .top-bar.details .global-controls {
+    margin-top: -1.5rem; }
   .list-graph .top-bar .controls {
-    float: left;
+    display: inline-block;
+    white-space: normal;
     box-shadow: -1px 0 0 0 #efefef; }
   .list-graph .top-bar .control-btn {
     top: 0;
