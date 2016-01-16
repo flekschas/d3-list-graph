@@ -153,7 +153,7 @@ class Nodes {
 
       this.events.on(
         'd3ListGraphNodeUnlock',
-        event => this.eventHelper(event, this.toggleLock, [], '.lock')
+        event => this.eventHelper(event, this.toggleLock, [true], '.lock')
       );
     }
   }
@@ -183,7 +183,7 @@ class Nodes {
     return this.bars.mode;
   }
 
-  toggleLock (el) {
+  toggleLock (el, nodeData, setFalse) {
     let d3El = d3.select(el);
     let data = d3El.datum();
 
@@ -203,6 +203,17 @@ class Nodes {
         });
         this.unlockNode(this.lockedNode.datum().id);
 
+        if (!setFalse) {
+          d3El.classed({
+            'active': true,
+            'inactive': false
+          });
+          this.lockNode(data.id);
+          this.lockedNode = d3El;
+        }
+      }
+    } else {
+      if (!setFalse) {
         d3El.classed({
           'active': true,
           'inactive': false
@@ -210,13 +221,6 @@ class Nodes {
         this.lockNode(data.id);
         this.lockedNode = d3El;
       }
-    } else {
-      d3El.classed({
-        'active': true,
-        'inactive': false
-      });
-      this.lockNode(data.id);
-      this.lockedNode = d3El;
     }
   }
 
