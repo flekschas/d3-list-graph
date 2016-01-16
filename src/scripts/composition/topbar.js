@@ -212,12 +212,13 @@ class Topbar {
     this.localControlWrapper = this.el.append('div')
       .classed('local-controls', true);
 
-    this.localControls = this.localControlWrapper.selectAll(TOPBAR_CONTROL_CLASS)
-      .data(visData.nodes)
-      .enter()
-      .append(TOPBAR_CONTROL_EL)
-        .classed(TOPBAR_CONTROL_CLASS, true)
-        .style('width', this.visData.global.column.width + 'px');
+    this.localControls = this.localControlWrapper
+      .selectAll(TOPBAR_CONTROL_CLASS)
+        .data(visData.nodes)
+        .enter()
+        .append(TOPBAR_CONTROL_EL)
+          .classed(TOPBAR_CONTROL_CLASS, true)
+          .style('width', this.visData.global.column.width + 'px');
 
 
     this.localControls.each(function (data, index) {

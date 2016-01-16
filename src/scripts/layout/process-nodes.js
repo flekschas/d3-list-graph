@@ -156,11 +156,11 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
 
     _node.id = _id;
 
-    if (!_node.parent) {
-      _node.parent = [];
+    if (!_node.parents) {
+      _node.parents = [];
     }
     if (parent) {
-      _node.parent.push(parent);
+      _node.parents.push(parent);
     }
 
     if (!_node.childRefs) {

@@ -52,6 +52,134 @@ var ListGraph = (function ($,d3) { 'use strict';
   };
 
   babelHelpers;
+  var ExtendableError = (function (_Error) {
+    babelHelpers.inherits(ExtendableError, _Error);
+
+    function ExtendableError(message) {
+      babelHelpers.classCallCheck(this, ExtendableError);
+
+      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
+
+      _this.name = _this.constructor.name;
+      _this.message = message;
+      Error.captureStackTrace(_this, _this.constructor.name);
+      return _this;
+    }
+
+    return ExtendableError;
+  })(Error);
+
+  function mergeSelections(selections) {
+    // Create a new empty selection
+    var mergedSelection = d3.selectAll('.d3-list-graph-not-existent');
+
+    for (var i = selections.length; i--;) {
+      selections[i].each(function () {
+        mergedSelection[0].push(this);
+      });
+    }
+
+    return mergedSelection;
+  }
+
+  var LimitsUnsupportedFormat = (function (_ExtendableError) {
+    babelHelpers.inherits(LimitsUnsupportedFormat, _ExtendableError);
+
+    function LimitsUnsupportedFormat(message) {
+      babelHelpers.classCallCheck(this, LimitsUnsupportedFormat);
+      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LimitsUnsupportedFormat).call(this, message || 'The limits are wrongly formatted. Please provide an ' + 'object of the following format: `{ x: { min: 0, max: 1 }, y: { min: ' + '0, max: 1 } }`'));
+    }
+
+    return LimitsUnsupportedFormat;
+  })(ExtendableError);
+
+  /**
+   * Drap and drop event handler that works via translation.
+   *
+   * @method  onDragDrop
+   * @author  Fritz Lekschas
+   * @date    2016-01-15
+   * @param   {Object}  selection        D3 selection to listen for the drag
+   *   event.
+   * @param   {Object}  dragMoveHandler  Handler for drag-move.
+   * @param   {Object}  dropHandler      Handler for drag-end, i.e. drop.
+   * @param   {Array}   elsToBeDragged   Array of D3 selections to be moved.
+   *   according to the drag event. If empty or undefined `selection` will be
+   * @param   {String}  orientation      Can either be "horizontal", "vertical" or
+   *   `undefined`, i.e. both directions.
+   * @param   {Object}  limits           X and Y drag limits. E.g.
+   *   `{ x: { min: 0, max: 10 } }`.
+   */
+  function onDragDrop(selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits) {
+    limits = limits || {};
+
+    var drag = d3.behavior.drag();
+
+    if (dragMoveHandler) {
+      drag.on('drag', function (data) {
+        dragMoveHandler.call(this, data, elsToBeDragged, orientation, limits);
+      });
+    }
+
+    if (dropHandler) {
+      drag.on('dragend', function (data) {
+        dropHandler.call(this, data, elsToBeDragged, orientation, limits);
+      });
+    }
+
+    selection.each(function (data) {
+      var el = d3.select(this);
+
+      // Set default data if not available.
+      if (!data) {
+        data = {
+          dragX: 0,
+          dragY: 0
+        };
+        el.datum(data);
+      }
+
+      // Add drag event handler
+      el.call(drag);
+    });
+  }
+
+  function dragMoveHandler(data, elsToBeDragged, orientation, limits) {
+    var els = d3.select(this);
+
+    if (elsToBeDragged && elsToBeDragged.length) {
+      els = mergeSelections(elsToBeDragged);
+    }
+
+    function withinLimits(value, limits) {
+      if (limits) {
+        try {
+          value = Math.min(limits.max, Math.max(limits.min, value));
+        } catch (e) {
+          throw new LimitsUnsupportedFormat();
+        }
+      }
+      return value;
+    }
+
+    if (orientation === 'horizontal' || orientation === 'vertical') {
+      if (orientation === 'horizontal') {
+        // data.dragX += d3.event.dx;
+        data.dragX = withinLimits(data.dragX + d3.event.dx, limits.x);
+        els.style('transform', 'translateX(' + data.dragX + 'px)');
+      }
+      if (orientation === 'vertical') {
+        data.dragY += d3.event.dy;
+        data.dragX = withinLimits(data.dragY + d3.event.dy, limits.y);
+        els.style('transform', 'translateY(' + data.dragY + 'px)');
+      }
+    } else {
+      data.dragX += d3.event.dx;
+      data.dragY += d3.event.dy;
+      els.style('transform', 'translate(' + data.dragX + 'px,' + data.dragY + 'px)');
+    }
+  }
+
   /**
    * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
    * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
@@ -166,8 +294,8 @@ var ListGraph = (function ($,d3) { 'use strict';
         callback(nodesInclClones[i], child);
       }
 
-      for (var j = nodesInclClones[i].parent.length; j--;) {
-        up(nodesInclClones[i].parent[j], callback, nodesInclClones[i]);
+      for (var j = nodesInclClones[i].parents.length; j--;) {
+        up(nodesInclClones[i].parents[j], callback, nodesInclClones[i]);
       }
     }
   }
@@ -444,9 +572,8 @@ var ListGraph = (function ($,d3) { 'use strict';
               this.selection.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
                 return Bar.generateOneBarPath(data, currentSorting.global.type, _this3.visData);
               });
-              console.log('bratzen');
             } else {
-              console.log('kacken');
+              console.error('Switching magnitude visualization after individual sorting is ' + 'not supported yet.');
             }
           }
 
@@ -665,7 +792,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         });
 
         this.events.on('d3ListGraphNodeUnlock', function (event) {
-          return _this.eventHelper(event, _this.toggleLock, [], '.lock');
+          return _this.eventHelper(event, _this.toggleLock, [true], '.lock');
         });
       }
     }
@@ -693,7 +820,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'toggleLock',
-      value: function toggleLock(el) {
+      value: function toggleLock(el, nodeData, setFalse) {
         var d3El = d3.select(el);
         var data = d3El.datum();
 
@@ -713,6 +840,17 @@ var ListGraph = (function ($,d3) { 'use strict';
             });
             this.unlockNode(this.lockedNode.datum().id);
 
+            if (!setFalse) {
+              d3El.classed({
+                'active': true,
+                'inactive': false
+              });
+              this.lockNode(data.id);
+              this.lockedNode = d3El;
+            }
+          }
+        } else {
+          if (!setFalse) {
             d3El.classed({
               'active': true,
               'inactive': false
@@ -720,14 +858,6 @@ var ListGraph = (function ($,d3) { 'use strict';
             this.lockNode(data.id);
             this.lockedNode = d3El;
           }
-        } else {
-          console.log('luditz', d3El);
-          d3El.classed({
-            'active': true,
-            'inactive': false
-          });
-          this.lockNode(data.id);
-          this.lockedNode = d3El;
         }
       }
     }, {
@@ -1523,23 +1653,6 @@ var ListGraph = (function ($,d3) { 'use strict';
     return isObjectLike(value) && isLength(value.length) && objToString$1.call(value) == arrayTag;
   };
 
-  var ExtendableError = (function (_Error) {
-    babelHelpers.inherits(ExtendableError, _Error);
-
-    function ExtendableError(message) {
-      babelHelpers.classCallCheck(this, ExtendableError);
-
-      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
-
-      _this.name = _this.constructor.name;
-      _this.message = message;
-      Error.captureStackTrace(_this, _this.constructor.name);
-      return _this;
-    }
-
-    return ExtendableError;
-  })(Error);
-
   var LayoutNotAvailable = (function (_ExtendableError) {
     babelHelpers.inherits(LayoutNotAvailable, _ExtendableError);
 
@@ -1731,7 +1844,11 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.events = new Events(this.baseEl, options.dispatcher);
 
-      this.baseElJq.width(this.width).addClass(CLASSNAME);
+      this.baseElJq.addClass(CLASSNAME);
+
+      if (options.forceWidth) {
+        this.baseElJq.width(this.width);
+      }
 
       this.layout = new d3.layout.listGraph([this.width, this.height], [this.columns, this.rows]);
 
@@ -1791,7 +1908,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
 
-      this.container = this.svgD3.append('g');
+      this.container = this.svgD3.append('g').attr('class', 'main-container');
 
       this.columns = new Columns(this.container, this.visData);
 
@@ -1819,6 +1936,14 @@ var ListGraph = (function ($,d3) { 'use strict';
         _this.globalMouseUp(d3.event);
       }).on('mousemove', function () {
         _this.globalMouseMove(d3.event);
+      });
+
+      // Enable dragging of the whole graph.
+      this.svgD3.call(onDragDrop, dragMoveHandler, undefined, [this.container, this.topbar.localControlWrapper], 'horizontal', {
+        x: {
+          min: Math.min(0, this.width - this.container.node().getBBox().width),
+          max: 0
+        }
       });
     }
 
