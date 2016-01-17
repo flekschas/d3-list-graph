@@ -67,29 +67,61 @@ class Nodes {
       .append('rect')
         .call(drawFullSizeRect, 'bg', 1);
 
+    // Rooting icons
+    let nodeRooted = this.nodes.append('g')
+      .attr('class', 'focus-controls root inactive')
+      .on('click', function () {
+        that.toggleLock.call(that, this);
+      });
+
+    nodeRooted.append('circle')
+      .call(this.setUpFocusControls.bind(this), 'left', 'bg', 'bg');
+
+    nodeRooted.append('svg')
+      .call(
+        this.setUpFocusControls.bind(this),
+        'left',
+        'icon',
+        'ease-all state-inactive invisible-default'
+      )
+      .append('use')
+        .attr('xlink:href', this.vis.iconPath + '#unlocked');
+
+    nodeRooted.append('svg')
+      .call(
+        this.setUpFocusControls.bind(this),
+        'left',
+        'icon',
+        'ease-all state-active invisible-default'
+      )
+      .append('use')
+        .attr('xlink:href', this.vis.iconPath + '#locked');
+
     let nodeLocks = this.nodes.append('g')
-      .attr('class', 'lock inactive')
+      .attr('class', 'focus-controls lock inactive')
       .on('click', function () {
         that.toggleLock.call(that, this);
       });
 
     nodeLocks.append('circle')
-      .call(this.setUpLock.bind(this), 'bg', 'bg');
+      .call(this.setUpFocusControls.bind(this), 'right', 'bg', 'bg');
 
     nodeLocks.append('svg')
       .call(
-        this.setUpLock.bind(this),
+        this.setUpFocusControls.bind(this),
+        'right',
         'icon',
-        'icon-unlocked ease-all invisible-default'
+        'ease-all state-inactive invisible-default'
       )
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#unlocked');
 
     nodeLocks.append('svg')
       .call(
-        this.setUpLock.bind(this),
+        this.setUpFocusControls.bind(this),
+        'right',
         'icon',
-        'icon-locked ease-all invisible-default'
+        'ease-all state-active invisible-default'
       )
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#locked');
@@ -256,12 +288,16 @@ class Nodes {
       .attr('width', this.visData.global.column.contentWidth);
   }
 
-  setUpLock (selection, mode, className) {
+  setUpFocusControls (selection, location, mode, className) {
     let height = (this.visData.global.row.contentHeight / 2 -
       this.visData.global.cell.padding * 2);
-    let x = this.visData.global.column.contentWidth + 2;
+    let x = location === 'left' ?
+      -height - 2 : this.visData.global.column.contentWidth + 2;
     let y = this.visData.global.row.padding +
-      (this.visData.global.row.contentHeight - 2 * this.visData.global.cell.padding) / 4;
+      (
+        this.visData.global.row.contentHeight -
+        2 * this.visData.global.cell.padding
+      ) / 4;
 
     if (mode === 'bg') {
       selection
