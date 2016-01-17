@@ -41,10 +41,6 @@ class Nodes {
     this.events = events;
     this.currentLinks = {};
 
-    // Stores the actively set root nodes. Default root nodes are the global
-    // root nodes set during initialization of the plugin.
-    this.rootNodes = {};
-
     this.groups = baseSelection.append('g')
       .attr('class', NODES_CLASS)
       .call(selection => {
@@ -65,7 +61,8 @@ class Nodes {
 
     this.nodes
       .append('rect')
-        .call(drawFullSizeRect, 'bg-extension');
+        .call(drawFullSizeRect, 'bg-extension')
+        .attr('width', this.visData.global.column.padding + 5);
 
     this.nodes
       .append('rect')
@@ -135,7 +132,7 @@ class Nodes {
         .attr('xlink:href', this.vis.iconPath + '#locked');
 
     this.nodes.on('click', function (data) {
-      that.mouseClick(this, data);
+      that.mouseClickHandler.call(that, this, data);
     });
 
     this.nodes.on('mouseenter', function (data) {
@@ -310,14 +307,25 @@ class Nodes {
     let d3El = d3.select(el);
     let data = d3El.datum();
 
-    if (this.rootNodes[data.id]) {
+    if (this.rootedNode) {
       // Reset current root node
-      this.rootNodes[data.id].classed({
+      this.rootedNode.classed({
         'active': false,
         'inactive': true
       });
-      this.unrootNode(data.id);
-      this.rootNodes[data.id] = undefined;
+      this.unrootNode(this.rootedNode.datum().id);
+
+      // Activate new root
+      if (this.rootedNode.datum().id !== data.id && !setFalse) {
+        d3El.classed({
+          'active': true,
+          'inactive': false
+        });
+        this.rootNode(data.id);
+        this.rootedNode = d3El;
+      } else {
+        this.rootedNode = undefined;
+      }
     } else {
       if (!setFalse) {
         d3El.classed({
@@ -325,7 +333,7 @@ class Nodes {
           'inactive': false
         });
         this.rootNode(data.id);
-        this.rootNodes[data.id] = d3El;
+        this.rootedNode = d3El;
       }
     }
   }
@@ -335,20 +343,15 @@ class Nodes {
     let els = this.nodes.filter(data => data.id === id);
 
     els.each(function (data) {
+      data.rooted = true;
       d3.select(this).classed('rooted', true);
+      that.hideNodes.call(that, this, data, 'downStream');
     });
 
     els.selectAll('.bg-extension')
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
-      .attr({
-        x: -that.visData.global.row.height / 2,
-        width: function () {
-          return parseInt(
-            d3.select(this).attr('width')
-          ) + that.visData.global.row.height / 2;
-        }
-      });
+      .attr('x', -that.visData.global.row.height / 2);
   }
 
   unrootNode (id) {
@@ -356,16 +359,15 @@ class Nodes {
     let els = this.nodes.filter(data => data.id === id);
 
     els.each(function (data) {
+      data.rooted = false;
       d3.select(this).classed('rooted', false);
+      that.showNodes.call(that, this, data, 'downStream');
     });
 
     els.selectAll('.bg-extension')
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
-      .attr({
-        x: 0,
-        width: this.visData.global.column.contentWidth
-      });
+      .attr('x', 0);
   }
 
   setUpFocusControls (selection, location, mode, className) {
@@ -399,8 +401,49 @@ class Nodes {
     }
   }
 
-  mouseClick (el, data) {
+  mouseClickHandler (el, data) {
     this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
+  }
+
+  hideNodes (el, data, direction) {
+    return this.nodesVisibility (el, data, direction);
+  }
+
+  showNodes (el, data, direction) {
+    return this.nodesVisibility (el, data, direction, true);
+  }
+
+  nodesVisibility (el, data, direction, show) {
+    let that = this;
+    let currentNodeData = data;
+
+    if (show) {
+      this.nodes
+        .classed('hidden', false)
+        .each(data => data.hidden = false);
+    } else {
+      // We need to high all children of the other nodes at the same level as
+      // the node related to `data`.
+      let sameLevelNodes = this.vis.selectByLevel(data.depth, '.node')
+        .filter(nodeData => nodeData.id !== data.id);
+
+      sameLevelNodes.each(node => {
+        traverse.down(node, data => data.hidden = true);
+      });
+
+      // We need to make sure that all nodes to the level `data.level` are not
+      // hidden by previous rooting
+      let globalRootNodes = this.vis.selectByLevel(0, '.node');
+
+      globalRootNodes.each(node => {
+        traverse.down(node, data => data.hidden = false, data.depth);
+      });
+
+      traverse.down(data, data=> data.hidden = false);
+
+      this.nodes.classed('hidden', data => data.hidden);
+    }
+    this.updateNodeVisibility();
   }
 
   highlightNodes (el, data, className) {
@@ -433,7 +476,9 @@ class Nodes {
         this.currentLinks[className].push(data.links[i].id);
       }
     };
-    traverse.upAndDown(data, traverseCallbackUp, traverseCallbackDown);
+    traverse.upAndDown(
+      data, traverseCallbackUp, traverseCallbackDown, undefined, true
+    );
 
     if (data.clone) {
       data.originalNode.hovering = 1;
@@ -488,7 +533,7 @@ class Nodes {
     className = className ? className : 'hovering';
 
     data.hovering = 0;
-    traverse.upAndDown(data, traverseCallback);
+    traverse.upAndDown(data, traverseCallback, undefined, undefined, true);
 
     if (data.clone) {
       data.originalNode.hovering = 0;
@@ -525,6 +570,16 @@ class Nodes {
         this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
       }
     }
+  }
+
+  updateNodeVisibility () {
+    this.vis.layout.updateNodeVisibility();
+
+    this.nodes
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr('transform', data => 'translate(' +
+        (data.x + this.visData.global.column.padding) + ', ' + data.y + ')');
   }
 }
 
