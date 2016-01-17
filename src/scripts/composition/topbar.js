@@ -355,7 +355,7 @@ class Topbar {
   }
 
   selectNodesLevel (el) {
-    return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
+    return this.vis.selectByLevel(d3.select(el).datum().depth, '.node');
   }
 
   highlightLabels (deHighlight) {
