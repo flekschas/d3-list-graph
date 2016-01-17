@@ -249,7 +249,8 @@
     opacity: 0;
   }
 
-  .node.rooted .bg-extension {
+  .node.rooted .bg-extension,
+  .node.animating .bg-extension {
     opacity: 1;
   }
 
@@ -260,7 +261,8 @@
     opacity: 0;
   }
 
-  .node.lock-directly .bg-border {
+  .node.lock-directly .bg-border,
+  .node.animating .bg-border {
     opacity: 1;
   }
 
@@ -384,7 +386,8 @@
     stroke-opacity: 1;
   }
 
-  .node .focus-controls.active .bg {
+  .node .focus-controls.active .bg,
+  .node.animating .focus-controls .bg {
     fill-opacity: 0 !important;
     stroke-opacity: 0 !important;
   }

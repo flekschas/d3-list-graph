@@ -53,3 +53,11 @@ export function upAndDown (
     down(node, callbackUp, depth, includeClones);
   }
 }
+
+export function siblings (node, callback) {
+  for (let i = node.parents.length; i--;) {
+    for (let j = node.parents[i].childRefs.length; j--;) {
+      callback(node.parents[i].childRefs[j]);
+    }
+  }
+}

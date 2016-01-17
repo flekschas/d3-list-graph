@@ -292,15 +292,23 @@ class Nodes {
   unlockNode (id) {
     let that = this;
     let els = this.nodes.filter(data => data.id === id);
-
-    els.each(function (data) {
-      that.dehighlightNodes(this, data, 'lock');
-    });
+    let start = function () {
+      d3.select(this.parentNode).classed('animating', true);
+    };
+    let end = function () {
+      d3.select(this.parentNode).classed('animating', false);
+    };
 
     els.selectAll('.bg-border')
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
-      .attr('width', this.visData.global.column.contentWidth);
+      .attr('width', this.visData.global.column.contentWidth)
+      .each('start', start)
+      .each('end', end);
+
+    els.each(function (data) {
+      that.dehighlightNodes(this, data, 'lock');
+    });
   }
 
   toggleRoot (el, nodeData, setFalse) {
@@ -357,17 +365,25 @@ class Nodes {
   unrootNode (id) {
     let that = this;
     let els = this.nodes.filter(data => data.id === id);
+    let start = function () {
+      d3.select(this.parentNode).classed('animating', true);
+    };
+    let end = function () {
+      d3.select(this.parentNode).classed('animating', false);
+    };
+
+    els.selectAll('.bg-extension')
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr('x', 0)
+      .each('start', start)
+      .each('end', end);
 
     els.each(function (data) {
       data.rooted = false;
       d3.select(this).classed('rooted', false);
       that.showNodes.call(that, this, data, 'downStream');
     });
-
-    els.selectAll('.bg-extension')
-      .transition()
-      .duration(config.TRANSITION_SEMI_FAST)
-      .attr('x', 0);
   }
 
   setUpFocusControls (selection, location, mode, className) {
@@ -422,24 +438,14 @@ class Nodes {
         .classed('hidden', false)
         .each(data => data.hidden = false);
     } else {
-      // We need to high all children of the other nodes at the same level as
-      // the node related to `data`.
-      let sameLevelNodes = this.vis.selectByLevel(data.depth, '.node')
-        .filter(nodeData => nodeData.id !== data.id);
+      // First we set all nodes to `hidden`.
+      this.nodes.each(data => data.hidden = true);
 
-      sameLevelNodes.each(node => {
-        traverse.down(node, data => data.hidden = true);
-      });
+      // Then we set direct child and parent nodes of the current node visible.
+      traverse.upAndDown(data, data => data.hidden = false);
 
-      // We need to make sure that all nodes to the level `data.level` are not
-      // hidden by previous rooting
-      let globalRootNodes = this.vis.selectByLevel(0, '.node');
-
-      globalRootNodes.each(node => {
-        traverse.down(node, data => data.hidden = false, data.depth);
-      });
-
-      traverse.down(data, data=> data.hidden = false);
+      // We also show sibling nodes.
+      traverse.siblings(data, data => data.hidden = false);
 
       this.nodes.classed('hidden', data => data.hidden);
     }
