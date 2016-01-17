@@ -180,6 +180,25 @@ var ListGraph = (function ($,d3) { 'use strict';
     }
   }
 
+  var CLASSNAME = 'list-graph';
+
+  var SCROLLBAR_WIDTH = 6;
+  var COLUMNS = 5;
+  var ROWS = 5;
+
+  // An empty path is equal to inline SVG.
+  var ICON_PATH = '';
+
+  var DEFAULT_SORT_ORDER = 'desc';
+
+  var DEFAULT_BAR_MODE = 'one';
+
+  var TRANSITION_LIGHTNING_FAST = 150;
+  var TRANSITION_SEMI_FAST = 250;
+  // Gradient colors
+  var COLOR_NEGATIVE_RED = '#e0001c';
+  var COLOR_POSITIVE_GREEN = '#60bf00';
+
   /**
    * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
    * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
@@ -209,47 +228,46 @@ var ListGraph = (function ($,d3) { 'use strict';
 
   var SCROLLBAR_CLASS = 'scrollbar';
 
-  var Scrollbars = function Scrollbars(baseSelection, visData, width) {
-    var _this = this;
+  var Scrollbars = (function () {
+    function Scrollbars(baseSelection, visData, width) {
+      var _this = this;
 
-    babelHelpers.classCallCheck(this, Scrollbars);
+      babelHelpers.classCallCheck(this, Scrollbars);
 
-    this.visData = visData;
-    this.width = width;
+      this.visData = visData;
+      this.width = width;
 
-    // Add empty scrollbar element
-    this.selection = baseSelection.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
-      selection.each(function (data, index) {
-        d3.select(this.parentNode).datum().scrollbar.el = this;
-      });
-    }).attr('x', function (data) {
-      return data.scrollbar.x;
-    }).attr('y', function (data) {
-      return data.scrollbar.y;
-    }).attr('width', function (data) {
-      return _this.width;
-    }).attr('height', function (data) {
-      return data.scrollbar.height;
-    }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
-  };
+      // Add empty scrollbar element
+      this.all = baseSelection.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
+        selection.each(function (data, index) {
+          d3.select(this.parentNode).datum().scrollbar.el = this;
+        });
+      }).attr('x', function (data) {
+        return data.scrollbar.x;
+      }).attr('y', function (data) {
+        return data.scrollbar.y;
+      }).attr('width', function (data) {
+        return _this.width;
+      }).attr('height', function (data) {
+        return data.scrollbar.height;
+      }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
+    }
 
-  var CLASSNAME = 'list-graph';
-
-  var SCROLLBAR_WIDTH = 6;
-  var COLUMNS = 5;
-  var ROWS = 5;
-
-  // An empty path is equal to inline SVG.
-  var ICON_PATH = '';
-
-  var DEFAULT_SORT_ORDER = 'desc';
-
-  var DEFAULT_BAR_MODE = 'one';
-
-  var TRANSITION_SEMI_FAST = 250;
-  // Gradient colors
-  var COLOR_NEGATIVE_RED = '#e0001c';
-  var COLOR_POSITIVE_GREEN = '#60bf00';
+    babelHelpers.createClass(Scrollbars, [{
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        this.all.transition().duration(TRANSITION_LIGHTNING_FAST).attr({
+          x: function x(data) {
+            return data.scrollbar.x;
+          },
+          height: function height(data) {
+            return data.scrollbar.height;
+          }
+        });
+      }
+    }]);
+    return Scrollbars;
+  })();
 
   function arrayToFakeObjs(arrayIds) {
     var fakeObjs = [];
@@ -1270,8 +1288,22 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         this.vis.layout.updateNodesVisibility();
 
+        var completed = function completed(transition, callback) {
+          if (transition.size() === 0) {
+            callback();
+          }
+          var n = 0;
+          transition.each(function () {
+            return ++n;
+          }).each('end', function () {
+            if (! --n) callback.apply(this, arguments);
+          });
+        };
+
         this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
           return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
+        }).call(completed, function () {
+          return _this4.vis.updateScrollbarVisibility();
         });
 
         this.vis.links.updateVisibility();
@@ -1339,6 +1371,26 @@ var ListGraph = (function ($,d3) { 'use strict';
             heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight])
           };
           data.invertedHeightScale = data.scrollbar.heightScale.invert;
+        });
+      }
+    }, {
+      key: 'updateScrollProperties',
+      value: function updateScrollProperties() {
+        var _this3 = this;
+
+        this.groups.each(function (data, index) {
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this3.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this3.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this3.visData.global.column.height * _this3.visData.global.column.height / contentHeight, 10) : 0;
+
+          data.height = contentHeight;
+          data.scrollHeight = scrollHeight;
+          data.scrollTop = 0;
+          data.scrollbar.y = 0;
+          data.scrollbar.height = scrollbarHeight;
+          data.scrollbar.scrollHeight = _this3.visData.global.column.height - scrollbarHeight;
+          data.scrollbar.scrollTop = 0;
+          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this3.visData.global.column.height - scrollbarHeight]);
         });
       }
     }, {
@@ -2098,7 +2150,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       // Normally we would reference a named methods but since we need to aceess
       // the class' `this` property instead of the DOM element we need to use an
       // arrow function.
-      this.scrollbars.selection.on('mousedown', function () {
+      this.scrollbars.all.on('mousedown', function () {
         that.scrollbarMouseDown(this, d3.event);
       });
 
@@ -2212,6 +2264,12 @@ var ListGraph = (function ($,d3) { 'use strict';
       key: 'trigger',
       value: function trigger(event, data) {
         this.events.trigger(event, data);
+      }
+    }, {
+      key: 'updateScrollbarVisibility',
+      value: function updateScrollbarVisibility() {
+        this.levels.updateScrollProperties();
+        this.scrollbars.updateVisibility();
       }
     }, {
       key: 'barMode',
