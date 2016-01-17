@@ -2,6 +2,7 @@
 
 var autoprefixer  = require('gulp-autoprefixer');
 var babel         = require('rollup-plugin-babel');
+var bump          = require('gulp-bump');
 var changed       = require('gulp-changed');
 var clean         = require('gulp-clean');
 var concat        = require('gulp-concat');
@@ -19,6 +20,7 @@ var rename        = require('gulp-rename');
 var rollup        = require('./scripts/gulp-rollup.js');
 var runSequence   = require('run-sequence');
 var sass          = require('gulp-sass');
+var semver        = require('semver');
 var sourcemaps    = require('gulp-sourcemaps');
 var spawn         = require('child_process').spawn;
 var svgmin        = require('gulp-svgmin');
@@ -71,8 +73,32 @@ gulp.src = function() {
  * -----------------------------------------------------------------------------
  */
 
+gulp.task('bump', function () {
+  var increment;
+
+  if (gulpUtil.env.patch) {
+    increment = 'patch';
+  }
+
+  if (gulpUtil.env.minor) {
+    increment = 'minor';
+  }
+
+  if (gulpUtil.env.major) {
+    increment = 'major';
+  }
+
+  var newVersion = semver.inc(packageJson.version, increment);
+
+  return gulp.src(['./bower.json', './package.json'])
+    .pipe(bump({
+      version: newVersion
+    }))
+    .pipe(gulp.dest('./'));
+});
+
 gulp.task('bundle', function () {
-  gulp
+  return gulp
     .src(
       config.globalPaths.src + config.sourcePaths.scripts + '/**/index.js', {
         read: false

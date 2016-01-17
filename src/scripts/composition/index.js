@@ -10,7 +10,7 @@ import {LayoutNotAvailable} from './errors';
 import {exponentialGradient} from './gradients';
 import * as config from './config';
 import Topbar from './topbar';
-import Columns from './columns';
+import Levels from './levels';
 import Links from './links';
 import Nodes from './nodes';
 import Scrollbars from './scrollbars';
@@ -148,32 +148,32 @@ class ListGraph {
 
     this.container = this.svgD3.append('g').attr('class', 'main-container');
 
-    this.columns = new Columns(this.container, this.visData);
+    this.levels = new Levels(this.container, this.visData);
 
-    this.links = new Links(this.columns.groups, this.visData, this.layout);
+    this.links = new Links(this.levels.groups, this.visData, this.layout);
     this.nodes = new Nodes(
       this,
-      this.columns.groups,
+      this.levels.groups,
       this.visData,
       this.links,
       this.events
     );
-    this.columns.scrollPreparation(this, this.scrollbarWidth);
+    this.levels.scrollPreparation(this, this.scrollbarWidth);
     this.scrollbars = new Scrollbars(
-      this.columns.groups,
+      this.levels.groups,
       this.visData,
       this.scrollbarWidth
     );
 
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
-    this.$levels = $(this.columns.groups[0]).on('mousewheel', function (event) {
+    this.$levels = $(this.levels.groups[0]).on('mousewheel', function (event) {
       that.mousewheelColumn(this, event);
     });
 
     // Normally we would reference a named methods but since we need to aceess
     // the class' `this` property instead of the DOM element we need to use an
     // arrow function.
-    this.scrollbars.selection.on('mousedown', function () {
+    this.scrollbars.all.on('mousedown', function () {
       that.scrollbarMouseDown(this, d3.event);
     });
 
@@ -358,8 +358,8 @@ class ListGraph {
     }
   }
 
-  selectByColumn (index, selector) {
-    return d3.select(this.columns.groups[0][index]).selectAll(selector);
+  selectByLevel (level, selector) {
+    return d3.select(this.levels.groups[0][level]).selectAll(selector);
   }
 
   sortColumn (level, property, sortOrder, newSortType) {
@@ -377,6 +377,11 @@ class ListGraph {
 
   trigger (event, data) {
     this.events.trigger(event, data);
+  }
+
+  updateScrollbarVisibility () {
+    this.levels.updateScrollProperties();
+    this.scrollbars.updateVisibility();
   }
 }
 

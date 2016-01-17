@@ -242,6 +242,18 @@
     transition: all $transitionFast $easeInOutCubic;
   }
 
+  .node .bg-extension {
+    fill: #808080;
+    stroke: #808080;
+    stroke-width: 2px;
+    opacity: 0;
+  }
+
+  .node.rooted .bg-extension,
+  .node.animating .bg-extension {
+    opacity: 1;
+  }
+
   .node .bg-border {
     fill: $colorHighlightRed;
     stroke: $colorHighlightRed;
@@ -249,7 +261,8 @@
     opacity: 0;
   }
 
-  .node.lock-directly .bg-border {
+  .node.lock-directly .bg-border,
+  .node.animating .bg-border {
     opacity: 1;
   }
 
@@ -355,7 +368,7 @@
     text-shadow: 0 0 3px transparentize($colorHighlightRed, 0.75);
   }
 
-  .node .lock .bg {
+  .node .focus-controls .bg {
     fill: #fff;
     fill-opacity: 0;
     stroke: #fff;
@@ -363,35 +376,32 @@
     stroke-opacity: 0;
   }
 
-  .node:hover .lock .bg {
+  .node:hover .focus-controls .bg {
     fill-opacity: 0.66;
     stroke-opacity: 0.66;
   }
 
-  .node .lock:hover .bg {
+  .node .focus-controls:hover .bg {
     fill-opacity: 0.85;
     stroke-opacity: 1;
   }
 
-  .node .lock.active .bg {
+  .node .focus-controls.active .bg,
+  .node.animating .focus-controls .bg {
     fill-opacity: 0 !important;
     stroke-opacity: 0 !important;
   }
 
-  .node .lock [class^='icon-'],
-  .node .lock [class*=' icon-'] {
+  .node .focus-controls [class^='icon-'],
+  .node .focus-controls [class*=' icon-'] {
     opacity: 0 !important;
   }
 
-  .node:hover .lock.inactive .icon-unlocked {
-    opacity: 0.5 !important;
-  }
-
-  .node:hover .lock.inactive .icon-unlocked {
+  .node:hover .focus-controls.inactive .state-inactive {
     opacity: 1 !important;
   }
 
-  .node .lock.active .icon-locked {
+  .node .focus-controls.active .state-active {
     color: #fff;
     opacity: 1 !important;
   }

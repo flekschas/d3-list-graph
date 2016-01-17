@@ -180,6 +180,25 @@ var ListGraph = (function ($,d3) { 'use strict';
     }
   }
 
+  var CLASSNAME = 'list-graph';
+
+  var SCROLLBAR_WIDTH = 6;
+  var COLUMNS = 5;
+  var ROWS = 5;
+
+  // An empty path is equal to inline SVG.
+  var ICON_PATH = '';
+
+  var DEFAULT_SORT_ORDER = 'desc';
+
+  var DEFAULT_BAR_MODE = 'one';
+
+  var TRANSITION_LIGHTNING_FAST = 150;
+  var TRANSITION_SEMI_FAST = 250;
+  // Gradient colors
+  var COLOR_NEGATIVE_RED = '#e0001c';
+  var COLOR_POSITIVE_GREEN = '#60bf00';
+
   /**
    * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
    * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
@@ -209,47 +228,46 @@ var ListGraph = (function ($,d3) { 'use strict';
 
   var SCROLLBAR_CLASS = 'scrollbar';
 
-  var Scrollbars = function Scrollbars(baseSelection, visData, width) {
-    var _this = this;
+  var Scrollbars = (function () {
+    function Scrollbars(baseSelection, visData, width) {
+      var _this = this;
 
-    babelHelpers.classCallCheck(this, Scrollbars);
+      babelHelpers.classCallCheck(this, Scrollbars);
 
-    this.visData = visData;
-    this.width = width;
+      this.visData = visData;
+      this.width = width;
 
-    // Add empty scrollbar element
-    this.selection = baseSelection.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
-      selection.each(function (data, index) {
-        d3.select(this.parentNode).datum().scrollbar.el = this;
-      });
-    }).attr('x', function (data) {
-      return data.scrollbar.x;
-    }).attr('y', function (data) {
-      return data.scrollbar.y;
-    }).attr('width', function (data) {
-      return _this.width;
-    }).attr('height', function (data) {
-      return data.scrollbar.height;
-    }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
-  };
+      // Add empty scrollbar element
+      this.all = baseSelection.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
+        selection.each(function (data, index) {
+          d3.select(this.parentNode).datum().scrollbar.el = this;
+        });
+      }).attr('x', function (data) {
+        return data.scrollbar.x;
+      }).attr('y', function (data) {
+        return data.scrollbar.y;
+      }).attr('width', function (data) {
+        return _this.width;
+      }).attr('height', function (data) {
+        return data.scrollbar.height;
+      }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
+    }
 
-  var CLASSNAME = 'list-graph';
-
-  var SCROLLBAR_WIDTH = 6;
-  var COLUMNS = 5;
-  var ROWS = 5;
-
-  // An empty path is equal to inline SVG.
-  var ICON_PATH = '';
-
-  var DEFAULT_SORT_ORDER = 'desc';
-
-  var DEFAULT_BAR_MODE = 'one';
-
-  var TRANSITION_SEMI_FAST = 250;
-  // Gradient colors
-  var COLOR_NEGATIVE_RED = '#e0001c';
-  var COLOR_POSITIVE_GREEN = '#60bf00';
+    babelHelpers.createClass(Scrollbars, [{
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        this.all.transition().duration(TRANSITION_LIGHTNING_FAST).attr({
+          x: function x(data) {
+            return data.scrollbar.x;
+          },
+          height: function height(data) {
+            return data.scrollbar.height;
+          }
+        });
+      }
+    }]);
+    return Scrollbars;
+  })();
 
   function arrayToFakeObjs(arrayIds) {
     var fakeObjs = [];
@@ -286,39 +304,114 @@ var ListGraph = (function ($,d3) { 'use strict';
     return clones;
   }
 
-  function up(node, callback, child) {
-    var nodesInclClones = collectInclClones(node);
+  /** Used to determine if values are of the language type `Object`. */
+  var objectTypes = {
+    'function': true,
+    'object': true
+  };
+
+  /** Detect free variable `exports`. */
+  var freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports;
+
+  /** Detect free variable `module`. */
+  var freeModule = objectTypes[typeof module] && module && !module.nodeType && module;
+
+  /** Detect free variable `global` from Node.js. */
+  var freeGlobal = freeExports && freeModule && typeof global == 'object' && global && global.Object && global;
+
+  /** Detect free variable `self`. */
+  var freeSelf = objectTypes[typeof self] && self && self.Object && self;
+
+  /** Detect free variable `window`. */
+  var freeWindow = objectTypes[typeof window] && window && window.Object && window;
+
+  /**
+   * Used as a reference to the global object.
+   *
+   * The `this` value is used if it's the global object to avoid Greasemonkey's
+   * restricted `window` object, otherwise the `window` object is used.
+   */
+  var root = freeGlobal || ((freeWindow !== (this && this.window)) && freeWindow) || freeSelf || this;
+
+  /* Native method references for those with the same name as other `lodash` methods. */
+  var nativeIsFinite = root.isFinite;
+
+  /**
+   * Checks if `value` is a finite primitive number.
+   *
+   * **Note:** This method is based on [`Number.isFinite`](http://ecma-international.org/ecma-262/6.0/#sec-number.isfinite).
+   *
+   * @static
+   * @memberOf _
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is a finite number, else `false`.
+   * @example
+   *
+   * _.isFinite(10);
+   * // => true
+   *
+   * _.isFinite('10');
+   * // => false
+   *
+   * _.isFinite(true);
+   * // => false
+   *
+   * _.isFinite(Object(10));
+   * // => false
+   *
+   * _.isFinite(Infinity);
+   * // => false
+   */
+  function isFinite(value) {
+    return typeof value == 'number' && nativeIsFinite(value);
+  }
+
+  function up(node, callback, depth, includeClones, child) {
+    var nodesInclClones = includeClones ? collectInclClones(node) : [node];
 
     for (var i = nodesInclClones.length; i--;) {
       if (child) {
         callback(nodesInclClones[i], child);
       }
 
-      for (var j = nodesInclClones[i].parents.length; j--;) {
-        up(nodesInclClones[i].parents[j], callback, nodesInclClones[i]);
+      if (!isFinite(depth) || depth > 0) {
+        for (var j = nodesInclClones[i].parents.length; j--;) {
+          up(nodesInclClones[i].parents[j], callback, --depth, includeClones, nodesInclClones[i]);
+        }
       }
     }
   }
 
-  function down(node, callback) {
-    var nodesInclClones = collectInclClones(node);
+  function down(node, callback, depth, includeClones) {
+    var nodesInclClones = includeClones ? collectInclClones(node) : [node];
 
     for (var i = nodesInclClones.length; i--;) {
       callback(nodesInclClones[i]);
 
-      for (var j = nodesInclClones[i].childRefs.length; j--;) {
-        down(nodesInclClones[i].childRefs[j], callback);
+      if (!isFinite(depth) || depth > 0) {
+        for (var j = nodesInclClones[i].childRefs.length; j--;) {
+          down(nodesInclClones[i].childRefs[j], callback, --depth, includeClones);
+        }
       }
     }
   }
 
-  function upAndDown(node, callbackUp, callbackDown) {
+  function upAndDown(node, callbackUp, callbackDown, depth, includeClones) {
     if (callbackDown) {
-      up(node, callbackUp);
-      down(node, callbackDown);
+      up(node, callbackUp, depth, includeClones);
+      down(node, callbackDown, depth, includeClones);
     } else {
-      up(node, callbackUp);
-      down(node, callbackUp);
+      up(node, callbackUp, depth, includeClones);
+      down(node, callbackUp, depth, includeClones);
+    }
+  }
+
+  function siblings(node, callback) {
+    for (var i = node.parents.length; i--;) {
+      for (var j = node.parents[i].childRefs.length; j--;) {
+        callback(node.parents[i].childRefs[j]);
+      }
     }
   }
 
@@ -664,6 +757,13 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.links.selectAll('path').transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal).each('start', start).each('end', end);
       }
     }, {
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        this.links.selectAll('path').classed('hidden', function (data) {
+          return data.target.node.hidden || data.source.node.hidden;
+        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal);
+      }
+    }, {
       key: 'diagonal',
       get: function get() {
         var _this2 = this;
@@ -731,22 +831,35 @@ var ListGraph = (function ($,d3) { 'use strict';
         return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
       });
 
+      this.nodes.append('rect').call(drawFullSizeRect, 'bg-extension').attr('width', this.visData.global.column.padding + 5);
+
       this.nodes.append('rect').call(drawFullSizeRect, 'bg-border');
 
       this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1);
 
-      var nodeLocks = this.nodes.append('g').attr('class', 'lock inactive').on('click', function () {
+      // Rooting icons
+      var nodeRooted = this.nodes.append('g').attr('class', 'focus-controls root inactive').on('click', function () {
+        that.toggleRoot.call(that, this);
+      });
+
+      nodeRooted.append('circle').call(this.setUpFocusControls.bind(this), 'left', 'bg', 'bg');
+
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 'icon', 'ease-all state-inactive invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 'icon', 'ease-all state-active invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+
+      var nodeLocks = this.nodes.append('g').attr('class', 'focus-controls lock inactive').on('click', function () {
         that.toggleLock.call(that, this);
       });
 
-      nodeLocks.append('circle').call(this.setUpLock.bind(this), 'bg', 'bg');
+      nodeLocks.append('circle').call(this.setUpFocusControls.bind(this), 'right', 'bg', 'bg');
 
-      nodeLocks.append('svg').call(this.setUpLock.bind(this), 'icon', 'icon-unlocked ease-all invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 'icon', 'ease-all state-inactive invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
 
-      nodeLocks.append('svg').call(this.setUpLock.bind(this), 'icon', 'icon-locked ease-all invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 'icon', 'ease-all state-active invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
       this.nodes.on('click', function (data) {
-        that.mouseClick(this, data);
+        that.mouseClickHandler.call(that, this, data);
       });
 
       this.nodes.on('mouseenter', function (data) {
@@ -793,6 +906,14 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         this.events.on('d3ListGraphNodeUnlock', function (event) {
           return _this.eventHelper(event, _this.toggleLock, [true], '.lock');
+        });
+
+        this.events.on('d3ListGraphNodeRoot', function (event) {
+          return _this.eventHelper(event, _this.toggleRoot, [], '.root');
+        });
+
+        this.events.on('d3ListGraphNodeUnroot', function (event) {
+          return _this.eventHelper(event, _this.toggleRoot, [true], '.root');
         });
       }
     }
@@ -869,8 +990,6 @@ var ListGraph = (function ($,d3) { 'use strict';
         });
 
         els.each(function (data) {
-          var el = d3.select(this);
-
           that.highlightNodes(this, data, 'lock');
         });
 
@@ -885,18 +1004,98 @@ var ListGraph = (function ($,d3) { 'use strict';
         var els = this.nodes.filter(function (data) {
           return data.id === id;
         });
+        var start = function start() {
+          d3.select(this.parentNode).classed('animating', true);
+        };
+        var end = function end() {
+          d3.select(this.parentNode).classed('animating', false);
+        };
+
+        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', this.visData.global.column.contentWidth).each('start', start).each('end', end);
 
         els.each(function (data) {
           that.dehighlightNodes(this, data, 'lock');
         });
-
-        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', this.visData.global.column.contentWidth);
       }
     }, {
-      key: 'setUpLock',
-      value: function setUpLock(selection, mode, className) {
+      key: 'toggleRoot',
+      value: function toggleRoot(el, nodeData, setFalse) {
+        var d3El = d3.select(el);
+        var data = d3El.datum();
+
+        if (this.rootedNode) {
+          // Reset current root node
+          this.rootedNode.classed({
+            'active': false,
+            'inactive': true
+          });
+          this.unrootNode(this.rootedNode.datum().id);
+
+          // Activate new root
+          if (this.rootedNode.datum().id !== data.id && !setFalse) {
+            d3El.classed({
+              'active': true,
+              'inactive': false
+            });
+            this.rootNode(data.id);
+            this.rootedNode = d3El;
+          } else {
+            this.rootedNode = undefined;
+          }
+        } else {
+          if (!setFalse) {
+            d3El.classed({
+              'active': true,
+              'inactive': false
+            });
+            this.rootNode(data.id);
+            this.rootedNode = d3El;
+          }
+        }
+      }
+    }, {
+      key: 'rootNode',
+      value: function rootNode(id) {
+        var that = this;
+        var els = this.nodes.filter(function (data) {
+          return data.id === id;
+        });
+
+        els.each(function (data) {
+          data.rooted = true;
+          d3.select(this).classed('rooted', true);
+          that.hideNodes.call(that, this, data, 'downStream');
+        });
+
+        els.selectAll('.bg-extension').transition().duration(TRANSITION_SEMI_FAST).attr('x', -that.visData.global.row.height / 2);
+      }
+    }, {
+      key: 'unrootNode',
+      value: function unrootNode(id) {
+        var that = this;
+        var els = this.nodes.filter(function (data) {
+          return data.id === id;
+        });
+        var start = function start() {
+          d3.select(this.parentNode).classed('animating', true);
+        };
+        var end = function end() {
+          d3.select(this.parentNode).classed('animating', false);
+        };
+
+        els.selectAll('.bg-extension').transition().duration(TRANSITION_SEMI_FAST).attr('x', 0).each('start', start).each('end', end);
+
+        els.each(function (data) {
+          data.rooted = false;
+          d3.select(this).classed('rooted', false);
+          that.showNodes.call(that, this, data, 'downStream');
+        });
+      }
+    }, {
+      key: 'setUpFocusControls',
+      value: function setUpFocusControls(selection, location, mode, className) {
         var height = this.visData.global.row.contentHeight / 2 - this.visData.global.cell.padding * 2;
-        var x = this.visData.global.column.contentWidth + 2;
+        var x = location === 'left' ? -height - 2 : this.visData.global.column.contentWidth + 2;
         var y = this.visData.global.row.padding + (this.visData.global.row.contentHeight - 2 * this.visData.global.cell.padding) / 4;
 
         if (mode === 'bg') {
@@ -917,9 +1116,51 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
       }
     }, {
-      key: 'mouseClick',
-      value: function mouseClick(el, data) {
+      key: 'mouseClickHandler',
+      value: function mouseClickHandler(el, data) {
         this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
+      }
+    }, {
+      key: 'hideNodes',
+      value: function hideNodes(el, data, direction) {
+        return this.nodesVisibility(el, data, direction);
+      }
+    }, {
+      key: 'showNodes',
+      value: function showNodes(el, data, direction) {
+        return this.nodesVisibility(el, data, direction, true);
+      }
+    }, {
+      key: 'nodesVisibility',
+      value: function nodesVisibility(el, data, direction, show) {
+        var that = this;
+        var currentNodeData = data;
+
+        if (show) {
+          this.nodes.classed('hidden', false).each(function (data) {
+            return data.hidden = false;
+          });
+        } else {
+          // First we set all nodes to `hidden`.
+          this.nodes.each(function (data) {
+            return data.hidden = true;
+          });
+
+          // Then we set direct child and parent nodes of the current node visible.
+          upAndDown(data, function (data) {
+            return data.hidden = false;
+          });
+
+          // We also show sibling nodes.
+          siblings(data, function (data) {
+            return data.hidden = false;
+          });
+
+          this.nodes.classed('hidden', function (data) {
+            return data.hidden;
+          });
+        }
+        this.updateVisibility();
       }
     }, {
       key: 'highlightNodes',
@@ -954,7 +1195,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             _this2.currentLinks[className].push(data.links[i].id);
           }
         };
-        upAndDown(data, traverseCallbackUp, traverseCallbackDown);
+        upAndDown(data, traverseCallbackUp, traverseCallbackDown, undefined, true);
 
         if (data.clone) {
           data.originalNode.hovering = 1;
@@ -1001,7 +1242,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         className = className ? className : 'hovering';
 
         data.hovering = 0;
-        upAndDown(data, traverseCallback);
+        upAndDown(data, traverseCallback, undefined, undefined, true);
 
         if (data.clone) {
           data.originalNode.hovering = 0;
@@ -1041,6 +1282,33 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
       }
     }, {
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        var _this4 = this;
+
+        this.vis.layout.updateNodesVisibility();
+
+        var completed = function completed(transition, callback) {
+          if (transition.size() === 0) {
+            callback();
+          }
+          var n = 0;
+          transition.each(function () {
+            return ++n;
+          }).each('end', function () {
+            if (! --n) callback.apply(this, arguments);
+          });
+        };
+
+        this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
+          return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
+        }).call(completed, function () {
+          return _this4.vis.updateScrollbarVisibility();
+        });
+
+        this.vis.links.updateVisibility();
+      }
+    }, {
       key: 'barMode',
       get: function get() {
         return this.bars.mode;
@@ -1052,11 +1320,11 @@ var ListGraph = (function ($,d3) { 'use strict';
   var COLUMN_CLASS = 'column';
   var SCROLL_CONTAINER_CLASS = 'scroll-container';
 
-  var Columns = (function () {
-    function Columns(selection, visData) {
+  var Levels = (function () {
+    function Levels(selection, visData) {
       var _this = this;
 
-      babelHelpers.classCallCheck(this, Columns);
+      babelHelpers.classCallCheck(this, Levels);
 
       this.visData = visData;
       this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS);
@@ -1075,7 +1343,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
     }
 
-    babelHelpers.createClass(Columns, [{
+    babelHelpers.createClass(Levels, [{
       key: 'scrollPreparation',
       value: function scrollPreparation(vis, scrollbarWidth) {
         var _this2 = this;
@@ -1087,8 +1355,8 @@ var ListGraph = (function ($,d3) { 'use strict';
 
           data.height = contentHeight;
           data.linkSelections = {
-            incoming: index > 0 ? vis.selectByColumn(index - 1, '.link') : null,
-            outgoing: vis.selectByColumn(index, '.link')
+            incoming: index > 0 ? vis.selectByLevel(index - 1, '.link') : null,
+            outgoing: vis.selectByLevel(index, '.link')
           };
           data.scrollHeight = scrollHeight;
           data.scrollTop = 0;
@@ -1106,12 +1374,32 @@ var ListGraph = (function ($,d3) { 'use strict';
         });
       }
     }, {
+      key: 'updateScrollProperties',
+      value: function updateScrollProperties() {
+        var _this3 = this;
+
+        this.groups.each(function (data, index) {
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this3.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this3.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this3.visData.global.column.height * _this3.visData.global.column.height / contentHeight, 10) : 0;
+
+          data.height = contentHeight;
+          data.scrollHeight = scrollHeight;
+          data.scrollTop = 0;
+          data.scrollbar.y = 0;
+          data.scrollbar.height = scrollbarHeight;
+          data.scrollbar.scrollHeight = _this3.visData.global.column.height - scrollbarHeight;
+          data.scrollbar.scrollTop = 0;
+          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this3.visData.global.column.height - scrollbarHeight]);
+        });
+      }
+    }, {
       key: 'height',
       get: function get() {
         return this.visData.global.column.height;
       }
     }]);
-    return Columns;
+    return Levels;
   })();
 
   var TOPBAR_EL = 'div';
@@ -1299,9 +1587,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         console.log('Toggle column');
       }
     }, {
-      key: 'selectNodesColumn',
-      value: function selectNodesColumn(el) {
-        return this.vis.selectByColumn(d3.select(el).datum().level, '.node');
+      key: 'selectNodesLevel',
+      value: function selectNodesLevel(el) {
+        return this.vis.selectByLevel(d3.select(el).datum().depth, '.node');
       }
     }, {
       key: 'highlightLabels',
@@ -1311,7 +1599,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'highlightBars',
       value: function highlightBars(el, type, deHighlight) {
-        var nodes = el ? this.selectNodesColumn(el) : this.vis.baseElD3.selectAll('.node');
+        var nodes = el ? this.selectNodesLevel(el) : this.vis.baseElD3.selectAll('.node');
 
         nodes.classed('highlight-bar', !deHighlight).selectAll('.bar.' + type).classed('highlight', !deHighlight);
       }
@@ -1414,69 +1702,6 @@ var ListGraph = (function ($,d3) { 'use strict';
     }]);
     return Topbar;
   })();
-
-  /** Used to determine if values are of the language type `Object`. */
-  var objectTypes = {
-    'function': true,
-    'object': true
-  };
-
-  /** Detect free variable `exports`. */
-  var freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports;
-
-  /** Detect free variable `module`. */
-  var freeModule = objectTypes[typeof module] && module && !module.nodeType && module;
-
-  /** Detect free variable `global` from Node.js. */
-  var freeGlobal = freeExports && freeModule && typeof global == 'object' && global && global.Object && global;
-
-  /** Detect free variable `self`. */
-  var freeSelf = objectTypes[typeof self] && self && self.Object && self;
-
-  /** Detect free variable `window`. */
-  var freeWindow = objectTypes[typeof window] && window && window.Object && window;
-
-  /**
-   * Used as a reference to the global object.
-   *
-   * The `this` value is used if it's the global object to avoid Greasemonkey's
-   * restricted `window` object, otherwise the `window` object is used.
-   */
-  var root = freeGlobal || ((freeWindow !== (this && this.window)) && freeWindow) || freeSelf || this;
-
-  /* Native method references for those with the same name as other `lodash` methods. */
-  var nativeIsFinite = root.isFinite;
-
-  /**
-   * Checks if `value` is a finite primitive number.
-   *
-   * **Note:** This method is based on [`Number.isFinite`](http://ecma-international.org/ecma-262/6.0/#sec-number.isfinite).
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a finite number, else `false`.
-   * @example
-   *
-   * _.isFinite(10);
-   * // => true
-   *
-   * _.isFinite('10');
-   * // => false
-   *
-   * _.isFinite(true);
-   * // => false
-   *
-   * _.isFinite(Object(10));
-   * // => false
-   *
-   * _.isFinite(Infinity);
-   * // => false
-   */
-  function isFinite(value) {
-    return typeof value == 'number' && nativeIsFinite(value);
-  }
 
   /**
    * Creates and adds an interpolated exponential SVG gradient to an SVG element.
@@ -1910,22 +2135,22 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.container = this.svgD3.append('g').attr('class', 'main-container');
 
-      this.columns = new Columns(this.container, this.visData);
+      this.levels = new Levels(this.container, this.visData);
 
-      this.links = new Links(this.columns.groups, this.visData, this.layout);
-      this.nodes = new Nodes(this, this.columns.groups, this.visData, this.links, this.events);
-      this.columns.scrollPreparation(this, this.scrollbarWidth);
-      this.scrollbars = new Scrollbars(this.columns.groups, this.visData, this.scrollbarWidth);
+      this.links = new Links(this.levels.groups, this.visData, this.layout);
+      this.nodes = new Nodes(this, this.levels.groups, this.visData, this.links, this.events);
+      this.levels.scrollPreparation(this, this.scrollbarWidth);
+      this.scrollbars = new Scrollbars(this.levels.groups, this.visData, this.scrollbarWidth);
 
       // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
-      this.$levels = $(this.columns.groups[0]).on('mousewheel', function (event) {
+      this.$levels = $(this.levels.groups[0]).on('mousewheel', function (event) {
         that.mousewheelColumn(this, event);
       });
 
       // Normally we would reference a named methods but since we need to aceess
       // the class' `this` property instead of the DOM element we need to use an
       // arrow function.
-      this.scrollbars.selection.on('mousedown', function () {
+      this.scrollbars.all.on('mousedown', function () {
         that.scrollbarMouseDown(this, d3.event);
       });
 
@@ -2018,9 +2243,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
       }
     }, {
-      key: 'selectByColumn',
-      value: function selectByColumn(index, selector) {
-        return d3.select(this.columns.groups[0][index]).selectAll(selector);
+      key: 'selectByLevel',
+      value: function selectByLevel(level, selector) {
+        return d3.select(this.levels.groups[0][level]).selectAll(selector);
       }
     }, {
       key: 'sortColumn',
@@ -2039,6 +2264,12 @@ var ListGraph = (function ($,d3) { 'use strict';
       key: 'trigger',
       value: function trigger(event, data) {
         this.events.trigger(event, data);
+      }
+    }, {
+      key: 'updateScrollbarVisibility',
+      value: function updateScrollbarVisibility() {
+        this.levels.updateScrollProperties();
+        this.scrollbars.updateVisibility();
       }
     }, {
       key: 'barMode',

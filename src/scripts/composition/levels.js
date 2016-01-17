@@ -5,7 +5,7 @@ import * as d3 from 'd3';
 const COLUMN_CLASS = 'column';
 const SCROLL_CONTAINER_CLASS = 'scroll-container';
 
-class Columns {
+class Levels {
   constructor (selection, visData) {
     this.visData = visData;
     this.groups = selection
@@ -45,8 +45,8 @@ class Columns {
       data.height = contentHeight;
       data.linkSelections = {
         incoming: index > 0 ?
-          vis.selectByColumn(index - 1, '.link') : null,
-        outgoing: vis.selectByColumn(index, '.link')
+          vis.selectByLevel(index - 1, '.link') : null,
+        outgoing: vis.selectByLevel(index, '.link')
       };
       data.scrollHeight = scrollHeight;
       data.scrollTop = 0;
@@ -66,9 +66,38 @@ class Columns {
     });
   }
 
+  updateScrollProperties () {
+    this.groups.each((data, index) => {
+      let contentHeight = data.nodes.getBoundingClientRect().height +
+        2 * this.visData.global.row.padding;
+      let scrollHeight = contentHeight - this.visData.global.column.height;
+      let scrollbarHeight = scrollHeight > 0 ?
+        Math.max(
+          (
+            this.visData.global.column.height *
+            this.visData.global.column.height /
+            contentHeight
+          ),
+          10
+        ) : 0;
+
+      data.height = contentHeight;
+      data.scrollHeight = scrollHeight;
+      data.scrollTop = 0;
+      data.scrollbar.y = 0;
+      data.scrollbar.height = scrollbarHeight;
+      data.scrollbar.scrollHeight = this.visData.global.column.height -
+        scrollbarHeight;
+      data.scrollbar.scrollTop = 0;
+      data.scrollbar.heightScale = d3.scale.linear()
+        .domain([0, scrollHeight])
+        .range([0, this.visData.global.column.height - scrollbarHeight]);
+    });
+  }
+
   get height () {
     return this.visData.global.column.height;
   }
 }
 
-export default Columns;
+export default Levels;
