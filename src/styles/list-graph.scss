@@ -242,6 +242,17 @@
     transition: all $transitionFast $easeInOutCubic;
   }
 
+  .node .bg-extension {
+    fill: #bfbfbf;
+    stroke: #bfbfbf;
+    stroke-width: 2px;
+    opacity: 0;
+  }
+
+  .node.rooted .bg-extension {
+    opacity: 1;
+  }
+
   .node .bg-border {
     fill: $colorHighlightRed;
     stroke: $colorHighlightRed;
@@ -388,8 +399,11 @@
   }
 
   .node .focus-controls.active .state-active {
-    color: #fff;
     opacity: 1 !important;
+  }
+
+  .node .lock.active .state-active {
+    color: #fff;
   }
 
   .bar-border,

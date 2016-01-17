@@ -41,6 +41,10 @@ class Nodes {
     this.events = events;
     this.currentLinks = {};
 
+    // Stores the actively set root nodes. Default root nodes are the global
+    // root nodes set during initialization of the plugin.
+    this.rootNodes = {};
+
     this.groups = baseSelection.append('g')
       .attr('class', NODES_CLASS)
       .call(selection => {
@@ -61,6 +65,10 @@ class Nodes {
 
     this.nodes
       .append('rect')
+        .call(drawFullSizeRect, 'bg-extension');
+
+    this.nodes
+      .append('rect')
         .call(drawFullSizeRect, 'bg-border');
 
     this.nodes
@@ -71,7 +79,7 @@ class Nodes {
     let nodeRooted = this.nodes.append('g')
       .attr('class', 'focus-controls root inactive')
       .on('click', function () {
-        that.toggleLock.call(that, this);
+        that.toggleRoot.call(that, this);
       });
 
     nodeRooted.append('circle')
@@ -187,6 +195,16 @@ class Nodes {
         'd3ListGraphNodeUnlock',
         event => this.eventHelper(event, this.toggleLock, [true], '.lock')
       );
+
+      this.events.on(
+        'd3ListGraphNodeRoot',
+        event => this.eventHelper(event, this.toggleRoot, [], '.root')
+      );
+
+      this.events.on(
+        'd3ListGraphNodeUnroot',
+        event => this.eventHelper(event, this.toggleRoot, [true], '.root')
+      );
     }
   }
 
@@ -261,8 +279,6 @@ class Nodes {
     let els = this.nodes.filter(data => data.id === id);
 
     els.each(function (data) {
-      let el = d3.select(this);
-
       that.highlightNodes(this, data, 'lock');
     });
 
@@ -270,7 +286,9 @@ class Nodes {
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('width', function () {
-        return parseInt(d3.select(this).attr('width')) + that.visData.global.row.height / 2;
+        return parseInt(
+          d3.select(this).attr('width')
+        ) + that.visData.global.row.height / 2;
       });
   }
 
@@ -286,6 +304,69 @@ class Nodes {
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('width', this.visData.global.column.contentWidth);
+  }
+
+  toggleRoot (el, nodeData, setFalse) {
+    let d3El = d3.select(el);
+    let data = d3El.datum();
+
+    if (this.rootNodes[data.id]) {
+      // Reset current root node
+      this.rootNodes[data.id].classed({
+        'active': false,
+        'inactive': true
+      });
+      this.unrootNode(data.id);
+      this.rootNodes[data.id] = undefined;
+    } else {
+      if (!setFalse) {
+        d3El.classed({
+          'active': true,
+          'inactive': false
+        });
+        this.rootNode(data.id);
+        this.rootNodes[data.id] = d3El;
+      }
+    }
+  }
+
+  rootNode (id) {
+    let that = this;
+    let els = this.nodes.filter(data => data.id === id);
+
+    els.each(function (data) {
+      d3.select(this).classed('rooted', true);
+    });
+
+    els.selectAll('.bg-extension')
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr({
+        x: -that.visData.global.row.height / 2,
+        width: function () {
+          return parseInt(
+            d3.select(this).attr('width')
+          ) + that.visData.global.row.height / 2;
+        }
+      });
+  }
+
+  unrootNode (id) {
+    let that = this;
+    let els = this.nodes.filter(data => data.id === id);
+
+    els.each(function (data) {
+      d3.select(this).classed('rooted', false);
+    });
+
+    console.log('hurz');
+    els.selectAll('.bg-extension')
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr({
+        x: 0,
+        width: this.visData.global.column.contentWidth
+      });
   }
 
   setUpFocusControls (selection, location, mode, className) {
@@ -381,8 +462,9 @@ class Nodes {
             }
           });
 
-        let currentBar = d3.select(el).selectAll('.bar.' + currentActiveProperty.id)
-          .classed('reference', true);
+        let currentBar = d3.select(el)
+          .selectAll('.bar.' + currentActiveProperty.id)
+            .classed('reference', true);
 
         that.bars.updateIndicator(
           node.selectAll('.bar.copy .bar-indicator'),
