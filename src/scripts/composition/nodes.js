@@ -443,7 +443,7 @@ class Nodes {
 
       this.nodes.classed('hidden', data => data.hidden);
     }
-    this.updateNodeVisibility();
+    this.updateVisibility();
   }
 
   highlightNodes (el, data, className) {
@@ -572,14 +572,16 @@ class Nodes {
     }
   }
 
-  updateNodeVisibility () {
-    this.vis.layout.updateNodeVisibility();
+  updateVisibility () {
+    this.vis.layout.updateNodesVisibility();
 
     this.nodes
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('transform', data => 'translate(' +
         (data.x + this.visData.global.column.padding) + ', ' + data.y + ')');
+
+    this.vis.links.updateVisibility();
   }
 }
 

@@ -93,6 +93,16 @@ class Links {
       .each('start', start)
       .each('end', end);
   }
+
+  updateVisibility () {
+    this.links.selectAll('path')
+      .classed(
+        'hidden', data => data.target.node.hidden || data.source.node.hidden
+      )
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr('d', this.diagonal);
+  }
 }
 
 export default Links;

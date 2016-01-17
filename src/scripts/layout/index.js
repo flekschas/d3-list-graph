@@ -230,8 +230,7 @@ class ListGraphLayout {
    * @return  {Object}  Self.
    */
   sort (level, property, sortOrder) {
-    let allLinks = [],
-        itr = 0,
+    let itr = 0,
         end = Object.keys(this.columnCache).length,
         getValue;
 
@@ -453,7 +452,7 @@ class ListGraphLayout {
    * @author  Fritz Lekschas
    * @date    2016-01-17
    */
-  updateNodeVisibility () {
+  updateNodesVisibility () {
     let skipped = {};
 
     for (let i = Object.keys(this.columnCache).length; i--;) {
