@@ -800,8 +800,7 @@
     }, {
       key: 'sort',
       value: function sort(level, property, sortOrder) {
-        var allLinks = [],
-            itr = 0,
+        var itr = 0,
             end = Object.keys(this.columnCache).length,
             getValue = undefined;
 
@@ -1032,6 +1031,31 @@
         }
 
         return this;
+      }
+
+      /**
+       * Update vertical position when filtering, i.e. hiding, nodes.
+       *
+       * @method  updateNodeVisibility
+       * @author  Fritz Lekschas
+       * @date    2016-01-17
+       */
+
+    }, {
+      key: 'updateNodesVisibility',
+      value: function updateNodesVisibility() {
+        var skipped = {};
+
+        for (var i = Object.keys(this.columnCache).length; i--;) {
+          skipped[i] = 0;
+          // Update `y` according to the number of previously skipped nodes.
+          for (var j = 0, len = this.columnNodeOrder[i].length; j < len; j++) {
+            if (this.columnNodeOrder[i][j].hidden) {
+              skipped[i]++;
+            }
+            this.columnNodeOrder[i][j].y = this.scale.y(j - skipped[i]);
+          }
+        }
       }
 
       /**

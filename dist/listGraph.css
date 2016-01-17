@@ -166,12 +166,21 @@
   .list-graph .node .bg {
     fill: #fff;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .node .bg-extension {
+    fill: #808080;
+    stroke: #808080;
+    stroke-width: 2px;
+    opacity: 0; }
+  .list-graph .node.rooted .bg-extension,
+  .list-graph .node.animating .bg-extension {
+    opacity: 1; }
   .list-graph .node .bg-border {
     fill: #f23e00;
     stroke: #f23e00;
     stroke-width: 6px;
     opacity: 0; }
-  .list-graph .node.lock-directly .bg-border {
+  .list-graph .node.lock-directly .bg-border,
+  .list-graph .node.animating .bg-border {
     opacity: 1; }
   .list-graph .node.lock-indirectly .bg-border {
     opacity: 0.66; }
@@ -235,29 +244,28 @@
   .list-graph .node.highlight-label .label {
     color: #f23e00;
     text-shadow: 0 0 3px rgba(242, 62, 0, 0.25); }
-  .list-graph .node .lock .bg {
+  .list-graph .node .focus-controls .bg {
     fill: #fff;
     fill-opacity: 0;
     stroke: #fff;
     stroke-width: 1;
     stroke-opacity: 0; }
-  .list-graph .node:hover .lock .bg {
+  .list-graph .node:hover .focus-controls .bg {
     fill-opacity: 0.66;
     stroke-opacity: 0.66; }
-  .list-graph .node .lock:hover .bg {
+  .list-graph .node .focus-controls:hover .bg {
     fill-opacity: 0.85;
     stroke-opacity: 1; }
-  .list-graph .node .lock.active .bg {
+  .list-graph .node .focus-controls.active .bg,
+  .list-graph .node.animating .focus-controls .bg {
     fill-opacity: 0 !important;
     stroke-opacity: 0 !important; }
-  .list-graph .node .lock [class^='icon-'],
-  .list-graph .node .lock [class*=' icon-'] {
+  .list-graph .node .focus-controls [class^='icon-'],
+  .list-graph .node .focus-controls [class*=' icon-'] {
     opacity: 0 !important; }
-  .list-graph .node:hover .lock.inactive .icon-unlocked {
-    opacity: 0.5 !important; }
-  .list-graph .node:hover .lock.inactive .icon-unlocked {
+  .list-graph .node:hover .focus-controls.inactive .state-inactive {
     opacity: 1 !important; }
-  .list-graph .node .lock.active .icon-locked {
+  .list-graph .node .focus-controls.active .state-active {
     color: #fff;
     opacity: 1 !important; }
   .list-graph .bar-border,
