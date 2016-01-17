@@ -43,11 +43,19 @@
 
       setTimeout(function () {
         graph.trigger('d3ListGraphNodeLock', { id: '2-1' });
-      }, 1500);
+      }, 1000);
 
       setTimeout(function () {
         graph.trigger('d3ListGraphNodeUnlock', { id: '2-1' });
-      }, 5000);
+      }, 10000);
+
+      setTimeout(function () {
+        graph.trigger('d3ListGraphNodeRoot', { id: '1-2' });
+      }, 3000);
+
+      setTimeout(function () {
+        graph.trigger('d3ListGraphNodeUnroot', { id: '1-2' });
+      }, 6000);
     });
 
     $('#example').on('d3ListGraphNodeClick', function (e) {
