@@ -5,7 +5,7 @@ import * as d3 from 'd3';
 const COLUMN_CLASS = 'column';
 const SCROLL_CONTAINER_CLASS = 'scroll-container';
 
-class Columns {
+class Levels {
   constructor (selection, visData) {
     this.visData = visData;
     this.groups = selection
@@ -45,8 +45,8 @@ class Columns {
       data.height = contentHeight;
       data.linkSelections = {
         incoming: index > 0 ?
-          vis.selectByColumn(index - 1, '.link') : null,
-        outgoing: vis.selectByColumn(index, '.link')
+          vis.selectByLevel(index - 1, '.link') : null,
+        outgoing: vis.selectByLevel(index, '.link')
       };
       data.scrollHeight = scrollHeight;
       data.scrollTop = 0;
@@ -71,4 +71,4 @@ class Columns {
   }
 }
 
-export default Columns;
+export default Levels;

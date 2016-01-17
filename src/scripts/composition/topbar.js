@@ -354,8 +354,8 @@ class Topbar {
     console.log('Toggle column');
   }
 
-  selectNodesColumn (el) {
-    return this.vis.selectByColumn(d3.select(el).datum().level, '.node');
+  selectNodesLevel (el) {
+    return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
   }
 
   highlightLabels (deHighlight) {
@@ -365,7 +365,7 @@ class Topbar {
 
   highlightBars (el, type, deHighlight) {
     let nodes = el ?
-      this.selectNodesColumn(el) : this.vis.baseElD3.selectAll('.node');
+      this.selectNodesLevel(el) : this.vis.baseElD3.selectAll('.node');
 
     nodes.classed('highlight-bar', !deHighlight)
       .selectAll('.bar.' + type)
