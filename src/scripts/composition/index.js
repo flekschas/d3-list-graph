@@ -358,8 +358,8 @@ class ListGraph {
     }
   }
 
-  selectByLevel (index, selector) {
-    return d3.select(this.levels.groups[0][index]).selectAll(selector);
+  selectByLevel (level, selector) {
+    return d3.select(this.levels.groups[0][level]).selectAll(selector);
   }
 
   sortColumn (level, property, sortOrder, newSortType) {
