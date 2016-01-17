@@ -359,7 +359,6 @@ class Nodes {
       d3.select(this).classed('rooted', false);
     });
 
-    console.log('hurz');
     els.selectAll('.bg-extension')
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
