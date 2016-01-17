@@ -581,11 +581,24 @@ class Nodes {
   updateVisibility () {
     this.vis.layout.updateNodesVisibility();
 
+    let completed = (transition, callback) => {
+      if (transition.size() === 0) {
+        callback();
+      }
+      let n = 0;
+      transition
+        .each(() => ++n)
+        .each('end', function () {
+          if (!--n) callback.apply(this, arguments);
+        });
+    };
+
     this.nodes
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('transform', data => 'translate(' +
-        (data.x + this.visData.global.column.padding) + ', ' + data.y + ')');
+        (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
+      .call(completed, () => this.vis.updateScrollbarVisibility());
 
     this.vis.links.updateVisibility();
   }

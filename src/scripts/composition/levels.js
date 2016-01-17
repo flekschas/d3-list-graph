@@ -66,6 +66,35 @@ class Levels {
     });
   }
 
+  updateScrollProperties () {
+    this.groups.each((data, index) => {
+      let contentHeight = data.nodes.getBoundingClientRect().height +
+        2 * this.visData.global.row.padding;
+      let scrollHeight = contentHeight - this.visData.global.column.height;
+      let scrollbarHeight = scrollHeight > 0 ?
+        Math.max(
+          (
+            this.visData.global.column.height *
+            this.visData.global.column.height /
+            contentHeight
+          ),
+          10
+        ) : 0;
+
+      data.height = contentHeight;
+      data.scrollHeight = scrollHeight;
+      data.scrollTop = 0;
+      data.scrollbar.y = 0;
+      data.scrollbar.height = scrollbarHeight;
+      data.scrollbar.scrollHeight = this.visData.global.column.height -
+        scrollbarHeight;
+      data.scrollbar.scrollTop = 0;
+      data.scrollbar.heightScale = d3.scale.linear()
+        .domain([0, scrollHeight])
+        .range([0, this.visData.global.column.height - scrollbarHeight]);
+    });
+  }
+
   get height () {
     return this.visData.global.column.height;
   }

@@ -173,7 +173,7 @@ class ListGraph {
     // Normally we would reference a named methods but since we need to aceess
     // the class' `this` property instead of the DOM element we need to use an
     // arrow function.
-    this.scrollbars.selection.on('mousedown', function () {
+    this.scrollbars.all.on('mousedown', function () {
       that.scrollbarMouseDown(this, d3.event);
     });
 
@@ -377,6 +377,11 @@ class ListGraph {
 
   trigger (event, data) {
     this.events.trigger(event, data);
+  }
+
+  updateScrollbarVisibility () {
+    this.levels.updateScrollProperties();
+    this.scrollbars.updateVisibility();
   }
 }
 
