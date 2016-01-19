@@ -179,43 +179,43 @@ class Nodes {
 
       this.events.on(
         'd3ListGraphNodeEnter',
-        dataSetIds => this.eventHelper(
-          dataSetIds, this.highlightNodes
+        nodeIds => this.eventHelper(
+          nodeIds, this.highlightNodes
         )
       );
 
       this.events.on(
         'd3ListGraphNodeLeave',
-        dataSetIds => this.eventHelper(
-          dataSetIds, this.unhighlightNodes
+        nodeIds => this.eventHelper(
+          nodeIds, this.unhighlightNodes
         )
       );
 
       this.events.on(
         'd3ListGraphNodeLock',
-        dataSetIds => this.eventHelper(
-          dataSetIds, this.toggleLock, [], '.lock'
+        nodeIds => this.eventHelper(
+          nodeIds, this.toggleLock, [], '.lock'
         )
       );
 
       this.events.on(
         'd3ListGraphNodeUnlock',
-        dataSetIds => this.eventHelper(
-          dataSetIds, this.toggleLock, [true], '.lock'
+        nodeIds => this.eventHelper(
+          nodeIds, this.toggleLock, [true], '.lock'
         )
       );
 
       this.events.on(
         'd3ListGraphNodeRoot',
-        dataSetIds => this.eventHelper(
-          dataSetIds, this.toggleRoot, [], '.root'
+        nodeIds => this.eventHelper(
+          nodeIds, this.toggleRoot, [], '.root'
         )
       );
 
       this.events.on(
         'd3ListGraphNodeUnroot',
-        dataSetIds => this.eventHelper(
-          dataSetIds, this.toggleRoot, [true], '.root'
+        nodeIds => this.eventHelper(
+          nodeIds, this.toggleRoot, [true], '.root'
         )
       );
     }
@@ -279,13 +279,13 @@ class Nodes {
     }
   }
 
-  eventHelper (dataSetIds, callback, optionalParams, subSelectionClass) {
+  eventHelper (nodeIds, callback, optionalParams, subSelectionClass) {
     let that = this;
 
     optionalParams = optionalParams ? optionalParams : [];
 
-    for (let i = dataSetIds.length; i--;) {
-      this.nodes.filter(data => data.id === dataSetIds[i]).each(
+    for (let i = nodeIds.length; i--;) {
+      this.nodes.filter(data => data.id === nodeIds[i]).each(
         function (data) {
           let el = this;
 
