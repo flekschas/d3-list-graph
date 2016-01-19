@@ -73,7 +73,9 @@ gulp.src = function() {
  * -----------------------------------------------------------------------------
  */
 
-gulp.task('bump', function () {
+// Shorthand
+gulp.task('bv', ['bump-version']);
+gulp.task('bump-version', function () {
   var increment;
 
   if (gulpUtil.env.patch) {

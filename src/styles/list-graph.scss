@@ -270,6 +270,10 @@
     opacity: 0.66;
   }
 
+  .node.focus-indirectly .bg-border {
+    opacity: 0.5;
+  }
+
   .node .border {
     fill: none;
     stroke: #e5e5e5;
@@ -290,12 +294,20 @@
     fill: #000;
   }
 
+  .node.focus-directly .bg {
+    fill: $colorHighlightRed;
+  }
+
   .node.hovering-directly .border {
     stroke: #000;
   }
 
   .node.hovering-indirectly .border {
     stroke: #000;
+  }
+
+  .node.focus-directly .border {
+    stroke: $colorHighlightRed;
   }
 
   .node.highlight-bar .border {
@@ -321,6 +333,10 @@
       stroke-opacity: 0.75;
     }
 
+    &.focus .link-direct {
+      stroke-opacity: 0.5;
+    }
+
     .link-bg {
       stroke: $colorHighlightRed;
       stroke-opacity: 0;
@@ -329,6 +345,10 @@
 
     &.lock .link-bg {
       stroke-opacity: 0.75;
+    }
+
+    &.focus .link-bg {
+      stroke-opacity: 0.5;
     }
 
     &.lock.hovering .link-bg {
@@ -351,7 +371,8 @@
     transition: all $transitionFast $easeInOutCubic;
   }
 
-  .node.hovering-directly .label {
+  .node.hovering-directly .label,
+  .node.focus-directly .label {
     color: #fff;
   }
 
@@ -415,6 +436,10 @@
     fill: #000;
     fill-opacity: 0.1;
     shape-rendering: crispEdges;
+  }
+
+  .node.focus-directly .bar-magnitude {
+    fill-opacity: 0.2;
   }
 
   .bar-indicator {

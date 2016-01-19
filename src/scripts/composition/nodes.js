@@ -75,8 +75,8 @@ class Nodes {
     // Rooting icons
     let nodeRooted = this.nodes.append('g')
       .attr('class', 'focus-controls root inactive')
-      .on('click', function () {
-        that.toggleRoot.call(that, this);
+      .on('click', function (data) {
+        that.rootHandler.call(that, this, data);
       });
 
     nodeRooted.append('circle')
@@ -104,8 +104,8 @@ class Nodes {
 
     let nodeLocks = this.nodes.append('g')
       .attr('class', 'focus-controls lock inactive')
-      .on('click', function () {
-        that.toggleLock.call(that, this);
+      .on('click', function (data) {
+        that.lockHandler.call(that, this, data);
       });
 
     nodeLocks.append('circle')
@@ -132,15 +132,15 @@ class Nodes {
         .attr('xlink:href', this.vis.iconPath + '#locked');
 
     this.nodes.on('click', function (data) {
-      that.mouseClickHandler.call(that, this, data);
+      that.clickHandler.call(that, this, data);
     });
 
     this.nodes.on('mouseenter', function (data) {
-      that.highlightNodes(this, data);
+      that.enterHandler.call(that, this, data);
     });
 
     this.nodes.on('mouseleave', function (data) {
-      that.dehighlightNodes(this, data);
+      that.leaveHandler.call(that, this, data);
     });
 
     this.bars = new Bars(this.nodes, this.vis.barMode, this.visData);
@@ -169,60 +169,136 @@ class Nodes {
     });
 
     if (isFunction(this.events.on)) {
-      this.events.on('d3ListGraphNodeClick', event => {
-        console.log('d3ListGraphNodeClick', event);
+      this.events.on('d3ListGraphNodeClick', dataSetIds => {
+        console.log('d3ListGraphNodeClick', dataSetIds);
       });
+
+      this.events.on('d3ListGraphFocusNodes', event => this.focusNodes(event));
+
+      this.events.on('d3ListGraphBlurNodes', event => this.blurNodes(event));
 
       this.events.on(
         'd3ListGraphNodeEnter',
-        event => this.eventHelper(event, this.highlightNodes)
+        dataSetIds => this.eventHelper(
+          dataSetIds, this.highlightNodes
+        )
       );
 
       this.events.on(
         'd3ListGraphNodeLeave',
-        event => this.eventHelper(event, this.dehighlightNodes)
+        dataSetIds => this.eventHelper(
+          dataSetIds, this.unhighlightNodes
+        )
       );
 
       this.events.on(
         'd3ListGraphNodeLock',
-        event => this.eventHelper(event, this.toggleLock, [], '.lock')
+        dataSetIds => this.eventHelper(
+          dataSetIds, this.toggleLock, [], '.lock'
+        )
       );
 
       this.events.on(
         'd3ListGraphNodeUnlock',
-        event => this.eventHelper(event, this.toggleLock, [true], '.lock')
+        dataSetIds => this.eventHelper(
+          dataSetIds, this.toggleLock, [true], '.lock'
+        )
       );
 
       this.events.on(
         'd3ListGraphNodeRoot',
-        event => this.eventHelper(event, this.toggleRoot, [], '.root')
+        dataSetIds => this.eventHelper(
+          dataSetIds, this.toggleRoot, [], '.root'
+        )
       );
 
       this.events.on(
         'd3ListGraphNodeUnroot',
-        event => this.eventHelper(event, this.toggleRoot, [true], '.root')
+        dataSetIds => this.eventHelper(
+          dataSetIds, this.toggleRoot, [true], '.root'
+        )
       );
     }
   }
 
-  eventHelper (event, callback, optionalParams, subSelectionClass) {
+  clickHandler (el, data) {
+    this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
+  }
+
+  enterHandler (el, data) {
+    this.highlightNodes(el, data);
+    this.events.broadcast('d3ListGraphNodeEnter', { id: data.id });
+  }
+
+  leaveHandler (el, data) {
+    this.unhighlightNodes(el, data);
+    this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
+  }
+
+  lockHandler (el, data) {
+    let events = this.toggleLock(el);
+
+    if (events.locked) {
+      this.events.broadcast('d3ListGraphNodeLock', { id: events.locked });
+    }
+    if (events.unlocked) {
+      this.events.broadcast('d3ListGraphNodeUnlock', { id: events.unlocked });
+    }
+  }
+
+  rootHandler (el, data) {
+    let events = this.toggleRoot(el);
+
+    if (events.rooted) {
+      this.events.broadcast('d3ListGraphNodeRoot', { id: events.rooted });
+    }
+    if (events.unrooted) {
+      this.events.broadcast('d3ListGraphNodeUnroot', { id: events.unrooted });
+    }
+  }
+
+  focusNodes (event) {
+    this.eventHelper(
+      event.nodeIds,
+      this.highlightNodes,
+      ['focus', 'directParentsOnly', true]
+    );
+    if (event.zoomOut) {
+      this.vis.globalView();
+    }
+  }
+
+  blurNodes (event) {
+    this.eventHelper(
+      event.nodeIds,
+      this.unhighlightNodes,
+      ['focus', 'directParentsOnly', true]
+    );
+    if (event.zoomIn) {
+      this.vis.zoomedView();
+    }
+  }
+
+  eventHelper (dataSetIds, callback, optionalParams, subSelectionClass) {
     let that = this;
 
     optionalParams = optionalParams ? optionalParams : [];
 
-    if (event.id) {
-      this.nodes.filter(data => data.id === event.id).each(function (data) {
-        let el = this;
+    for (let i = dataSetIds.length; i--;) {
+      this.nodes.filter(data => data.id === dataSetIds[i]).each(
+        function (data) {
+          let el = this;
 
-        if (subSelectionClass) {
-          el = d3.select(this).select(subSelectionClass).node();
+          if (subSelectionClass) {
+            el = d3.select(this).select(subSelectionClass).node();
+          }
+
+          callback.apply(
+            that,
+            [el, data].concat(optionalParams)
+          );
         }
-
-        callback.apply(
-          that,
-          [el, data].concat(optionalParams)
-        );
-      });
+      );
     }
   }
 
@@ -233,6 +309,7 @@ class Nodes {
   toggleLock (el, nodeData, setFalse) {
     let d3El = d3.select(el);
     let data = d3El.datum();
+    let events = { locked: false, unlocked: false };
 
     if (this.lockedNode) {
       if (this.lockedNode.datum().id === data.id) {
@@ -241,6 +318,7 @@ class Nodes {
           'inactive': true
         });
         this.unlockNode(this.lockedNode.datum().id);
+        events.unlocked = this.lockedNode.datum().id;
         this.lockedNode = undefined;
       } else {
         // Reset previously locked node;
@@ -249,6 +327,7 @@ class Nodes {
           'inactive': true
         });
         this.unlockNode(this.lockedNode.datum().id);
+        events.unlocked = this.lockedNode.datum().id;
 
         if (!setFalse) {
           d3El.classed({
@@ -256,6 +335,7 @@ class Nodes {
             'inactive': false
           });
           this.lockNode(data.id);
+          events.locked = data.id;
           this.lockedNode = d3El;
         }
       }
@@ -266,9 +346,12 @@ class Nodes {
           'inactive': false
         });
         this.lockNode(data.id);
+        events.locked = data.id;
         this.lockedNode = d3El;
       }
     }
+
+    return events;
   }
 
   lockNode (id) {
@@ -276,7 +359,7 @@ class Nodes {
     let els = this.nodes.filter(data => data.id === id);
 
     els.each(function (data) {
-      that.highlightNodes(this, data, 'lock');
+      that.highlightNodes(this, data, 'lock', undefined);
     });
 
     els.selectAll('.bg-border')
@@ -307,13 +390,14 @@ class Nodes {
       .each('end', end);
 
     els.each(function (data) {
-      that.dehighlightNodes(this, data, 'lock');
+      that.unhighlightNodes(this, data, 'lock', undefined);
     });
   }
 
   toggleRoot (el, nodeData, setFalse) {
     let d3El = d3.select(el);
     let data = d3El.datum();
+    let events = { rooted: false, unrooted: false };
 
     if (this.rootedNode) {
       // Reset current root node
@@ -322,6 +406,7 @@ class Nodes {
         'inactive': true
       });
       this.unrootNode(this.rootedNode.datum().id);
+      events.unrooted = this.rootedNode.datum().id;
 
       // Activate new root
       if (this.rootedNode.datum().id !== data.id && !setFalse) {
@@ -331,6 +416,7 @@ class Nodes {
         });
         this.rootNode(data.id);
         this.rootedNode = d3El;
+        events.rooted = data.id;
       } else {
         this.rootedNode = undefined;
       }
@@ -341,9 +427,12 @@ class Nodes {
           'inactive': false
         });
         this.rootNode(data.id);
+        events.rooted = data.id;
         this.rootedNode = d3El;
       }
     }
+
+    return events;
   }
 
   rootNode (id) {
@@ -417,10 +506,6 @@ class Nodes {
     }
   }
 
-  mouseClickHandler (el, data) {
-    this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
-  }
-
   hideNodes (el, data, direction) {
     return this.nodesVisibility (el, data, direction);
   }
@@ -452,14 +537,26 @@ class Nodes {
     this.updateVisibility();
   }
 
-  highlightNodes (el, data, className) {
+  highlightNodes (el, data, className, restriction) {
     let that = this;
+    let nodeId = data.id;
     let currentNodeData = data;
+    let includeClones = true;
+    let includeParents = true;
+    let includeChildren = true;
 
     className = className ? className : 'hovering';
 
+    if (restriction === 'directParentsOnly') {
+      includeClones = false;
+      includeChildren = false;
+    }
+
     // Store link IDs
-    this.currentLinks[className] = [];
+    if (!this.currentLinks[className]) {
+      this.currentLinks[className] = {};
+    }
+    this.currentLinks[className][nodeId] = [];
 
     let currentActiveProperty = d3.select(el)
       .selectAll('.bar.active .bar-magnitude').datum();
@@ -471,7 +568,7 @@ class Nodes {
         // Store: (parent)->(child)
         // Ignore: (parent)->(siblings of child)
         if (data.links[i].target.node.id === childData.id) {
-          this.currentLinks[className].push(data.links[i].id);
+          this.currentLinks[className][nodeId].push(data.links[i].id);
         }
       }
     };
@@ -479,12 +576,21 @@ class Nodes {
     let traverseCallbackDown = data => {
       data.hovering = 2;
       for (let i = data.links.length; i--;) {
-        this.currentLinks[className].push(data.links[i].id);
+        this.currentLinks[className][nodeId].push(data.links[i].id);
       }
     };
-    traverse.upAndDown(
-      data, traverseCallbackUp, traverseCallbackDown, undefined, true
-    );
+
+    if (includeParents && includeChildren) {
+      traverse.upAndDown(
+        data, traverseCallbackUp, traverseCallbackDown, undefined, includeClones
+      );
+    }
+    if (includeParents && !includeChildren) {
+      traverse.up(data, traverseCallbackUp, undefined, includeClones);
+    }
+    if (!includeParents && includeChildren) {
+      traverse.down(data, traverseCallbackUp, undefined, includeClones);
+    }
 
     if (data.clone) {
       data.originalNode.hovering = 1;
@@ -525,21 +631,39 @@ class Nodes {
     });
 
     this.links.highlight(
-      arrayToFakeObjs(this.currentLinks[className]),
+      arrayToFakeObjs(this.currentLinks[className][data.id]),
       true,
       className
     );
-
-    this.events.broadcast('d3ListGraphNodeEnter', { id: data.id });
   }
 
-  dehighlightNodes (el, data, className) {
+  unhighlightNodes (el, data, className, restriction) {
     let traverseCallback = data => data.hovering = 0;
+    let includeClones = true;
+    let includeParents = true;
+    let includeChildren = true;
+
+    className = className ? className : 'hovering';
+
+    if (restriction === 'directParentsOnly') {
+      includeClones = false;
+      includeChildren = false;
+    }
 
     className = className ? className : 'hovering';
 
     data.hovering = 0;
-    traverse.upAndDown(data, traverseCallback, undefined, undefined, true);
+    if (includeParents && includeChildren) {
+      traverse.upAndDown(
+        data, traverseCallback, undefined, undefined, includeClones
+      );
+    }
+    if (includeParents && !includeChildren) {
+      traverse.up(data, traverseCallback, undefined, includeClones);
+    }
+    if (!includeParents && includeChildren) {
+      traverse.down(data, traverseCallback, undefined, includeClones);
+    }
 
     if (data.clone) {
       data.originalNode.hovering = 0;
@@ -549,12 +673,10 @@ class Nodes {
     this.nodes.classed(className + '-indirectly', false);
 
     this.links.highlight(
-      arrayToFakeObjs(this.currentLinks[className]),
+      arrayToFakeObjs(this.currentLinks[className][data.id]),
       false,
       className
     );
-
-    this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
   }
 
   sort (update, newSortType) {

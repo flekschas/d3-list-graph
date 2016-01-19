@@ -184,6 +184,8 @@
     opacity: 1; }
   .list-graph .node.lock-indirectly .bg-border {
     opacity: 0.66; }
+  .list-graph .node.focus-indirectly .bg-border {
+    opacity: 0.5; }
   .list-graph .node .border {
     fill: none;
     stroke: #e5e5e5;
@@ -196,10 +198,14 @@
     cursor: pointer; }
   .list-graph .node.hovering-directly .bg {
     fill: #000; }
+  .list-graph .node.focus-directly .bg {
+    fill: #f23e00; }
   .list-graph .node.hovering-directly .border {
     stroke: #000; }
   .list-graph .node.hovering-indirectly .border {
     stroke: #000; }
+  .list-graph .node.focus-directly .border {
+    stroke: #f23e00; }
   .list-graph .node.highlight-bar .border {
     stroke-opacity: 0; }
   .list-graph .link {
@@ -214,12 +220,16 @@
       stroke-width: 4; }
     .list-graph .link.lock .link-direct {
       stroke-opacity: 0.75; }
+    .list-graph .link.focus .link-direct {
+      stroke-opacity: 0.5; }
     .list-graph .link .link-bg {
       stroke: #f23e00;
       stroke-opacity: 0;
       stroke-width: 6; }
     .list-graph .link.lock .link-bg {
       stroke-opacity: 0.75; }
+    .list-graph .link.focus .link-bg {
+      stroke-opacity: 0.5; }
     .list-graph .link.lock.hovering .link-bg {
       stroke-width: 8; }
   .list-graph .node .label {
@@ -235,7 +245,8 @@
     font-size: 12px;
     line-height: 1em;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph .node.hovering-directly .label {
+  .list-graph .node.hovering-directly .label,
+  .list-graph .node.focus-directly .label {
     color: #fff; }
   .list-graph .node.hovering-indirectly .label {
     color: #000; }
@@ -275,6 +286,8 @@
     fill: #000;
     fill-opacity: 0.1;
     shape-rendering: crispEdges; }
+  .list-graph .node.focus-directly .bar-magnitude {
+    fill-opacity: 0.2; }
   .list-graph .bar-indicator {
     fill: url("#negativeRed");
     fill-opacity: 0;
