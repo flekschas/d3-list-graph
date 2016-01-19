@@ -52,6 +52,25 @@ var ListGraph = (function ($,d3) { 'use strict';
   };
 
   babelHelpers;
+  var CLASSNAME = 'list-graph';
+
+  var SCROLLBAR_WIDTH = 6;
+  var COLUMNS = 5;
+  var ROWS = 5;
+
+  // An empty path is equal to inline SVG.
+  var ICON_PATH = '';
+
+  var DEFAULT_SORT_ORDER = 'desc';
+
+  var DEFAULT_BAR_MODE = 'one';
+
+  var TRANSITION_LIGHTNING_FAST = 150;
+  var TRANSITION_SEMI_FAST = 250;
+  // Gradient colors
+  var COLOR_NEGATIVE_RED = '#e0001c';
+  var COLOR_POSITIVE_GREEN = '#60bf00';
+
   var ExtendableError = (function (_Error) {
     babelHelpers.inherits(ExtendableError, _Error);
 
@@ -179,25 +198,6 @@ var ListGraph = (function ($,d3) { 'use strict';
       els.style('transform', 'translate(' + data.dragX + 'px,' + data.dragY + 'px)');
     }
   }
-
-  var CLASSNAME = 'list-graph';
-
-  var SCROLLBAR_WIDTH = 6;
-  var COLUMNS = 5;
-  var ROWS = 5;
-
-  // An empty path is equal to inline SVG.
-  var ICON_PATH = '';
-
-  var DEFAULT_SORT_ORDER = 'desc';
-
-  var DEFAULT_BAR_MODE = 'one';
-
-  var TRANSITION_LIGHTNING_FAST = 150;
-  var TRANSITION_SEMI_FAST = 250;
-  // Gradient colors
-  var COLOR_NEGATIVE_RED = '#e0001c';
-  var COLOR_POSITIVE_GREEN = '#60bf00';
 
   /**
    * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
@@ -892,12 +892,12 @@ var ListGraph = (function ($,d3) { 'use strict';
           console.log('d3ListGraphNodeClick', dataSetIds);
         });
 
-        this.events.on('d3ListGraphFocusNodes', function (dataSetIds) {
-          return _this.eventHelper(dataSetIds, _this.highlightNodes, ['focus', 'directParentsOnly', true]);
+        this.events.on('d3ListGraphFocusNodes', function (event) {
+          return _this.focusNodes(event);
         });
 
-        this.events.on('d3ListGraphBlurNodes', function (dataSetIds) {
-          return _this.eventHelper(dataSetIds, _this.unhighlightNodes, ['focus', 'directParentsOnly', true]);
+        this.events.on('d3ListGraphBlurNodes', function (event) {
+          return _this.blurNodes(event);
         });
 
         this.events.on('d3ListGraphNodeEnter', function (dataSetIds) {
@@ -965,6 +965,22 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
         if (events.unrooted) {
           this.events.broadcast('d3ListGraphNodeUnroot', { id: events.unrooted });
+        }
+      }
+    }, {
+      key: 'focusNodes',
+      value: function focusNodes(event) {
+        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', true]);
+        if (event.zoomOut) {
+          this.vis.globalView();
+        }
+      }
+    }, {
+      key: 'blurNodes',
+      value: function blurNodes(event) {
+        this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', true]);
+        if (event.zoomIn) {
+          this.vis.zoomedView();
         }
       }
     }, {
@@ -2368,6 +2384,20 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function updateScrollbarVisibility() {
         this.levels.updateScrollProperties();
         this.scrollbars.updateVisibility();
+      }
+    }, {
+      key: 'globalView',
+      value: function globalView() {
+        var bBox = this.container.node().getBBox();
+        var width = this.width > bBox.width ? this.width : bBox.width;
+        var height = this.height > bBox.height ? this.height : bBox.height;
+
+        this.svgD3.transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + width + ' ' + height);
+      }
+    }, {
+      key: 'zoomedView',
+      value: function zoomedView() {
+        this.svgD3.transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
       }
     }, {
       key: 'barMode',
