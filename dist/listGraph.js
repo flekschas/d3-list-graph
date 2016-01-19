@@ -838,8 +838,8 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1);
 
       // Rooting icons
-      var nodeRooted = this.nodes.append('g').attr('class', 'focus-controls root inactive').on('click', function () {
-        that.toggleRoot.call(that, this);
+      var nodeRooted = this.nodes.append('g').attr('class', 'focus-controls root inactive').on('click', function (data) {
+        that.rootHandler.call(that, this, data);
       });
 
       nodeRooted.append('circle').call(this.setUpFocusControls.bind(this), 'left', 'bg', 'bg');
@@ -848,8 +848,8 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 'icon', 'ease-all state-active invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
-      var nodeLocks = this.nodes.append('g').attr('class', 'focus-controls lock inactive').on('click', function () {
-        that.toggleLock.call(that, this);
+      var nodeLocks = this.nodes.append('g').attr('class', 'focus-controls lock inactive').on('click', function (data) {
+        that.lockHandler.call(that, this, data);
       });
 
       nodeLocks.append('circle').call(this.setUpFocusControls.bind(this), 'right', 'bg', 'bg');
@@ -859,15 +859,15 @@ var ListGraph = (function ($,d3) { 'use strict';
       nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 'icon', 'ease-all state-active invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
       this.nodes.on('click', function (data) {
-        that.mouseClickHandler.call(that, this, data);
+        that.clickHandler.call(that, this, data);
       });
 
       this.nodes.on('mouseenter', function (data) {
-        that.highlightNodes(this, data);
+        that.enterHandler.call(that, this, data);
       });
 
       this.nodes.on('mouseleave', function (data) {
-        that.dehighlightNodes(this, data);
+        that.leaveHandler.call(that, this, data);
       });
 
       this.bars = new Bars(this.nodes, this.vis.barMode, this.visData);
@@ -888,46 +888,97 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
 
       if (isFunction(this.events.on)) {
-        this.events.on('d3ListGraphNodeClick', function (event) {
-          console.log('d3ListGraphNodeClick', event);
+        this.events.on('d3ListGraphNodeClick', function (dataSetIds) {
+          console.log('d3ListGraphNodeClick', dataSetIds);
         });
 
-        this.events.on('d3ListGraphNodeEnter', function (event) {
-          return _this.eventHelper(event, _this.highlightNodes);
+        this.events.on('d3ListGraphFocusNodes', function (dataSetIds) {
+          return _this.eventHelper(dataSetIds, _this.highlightNodes, ['focus', 'directParentsOnly', true]);
         });
 
-        this.events.on('d3ListGraphNodeLeave', function (event) {
-          return _this.eventHelper(event, _this.dehighlightNodes);
+        this.events.on('d3ListGraphBlurNodes', function (dataSetIds) {
+          return _this.eventHelper(dataSetIds, _this.unhighlightNodes, ['focus', 'directParentsOnly', true]);
         });
 
-        this.events.on('d3ListGraphNodeLock', function (event) {
-          return _this.eventHelper(event, _this.toggleLock, [], '.lock');
+        this.events.on('d3ListGraphNodeEnter', function (dataSetIds) {
+          return _this.eventHelper(dataSetIds, _this.highlightNodes);
         });
 
-        this.events.on('d3ListGraphNodeUnlock', function (event) {
-          return _this.eventHelper(event, _this.toggleLock, [true], '.lock');
+        this.events.on('d3ListGraphNodeLeave', function (dataSetIds) {
+          return _this.eventHelper(dataSetIds, _this.unhighlightNodes);
         });
 
-        this.events.on('d3ListGraphNodeRoot', function (event) {
-          return _this.eventHelper(event, _this.toggleRoot, [], '.root');
+        this.events.on('d3ListGraphNodeLock', function (dataSetIds) {
+          return _this.eventHelper(dataSetIds, _this.toggleLock, [], '.lock');
         });
 
-        this.events.on('d3ListGraphNodeUnroot', function (event) {
-          return _this.eventHelper(event, _this.toggleRoot, [true], '.root');
+        this.events.on('d3ListGraphNodeUnlock', function (dataSetIds) {
+          return _this.eventHelper(dataSetIds, _this.toggleLock, [true], '.lock');
+        });
+
+        this.events.on('d3ListGraphNodeRoot', function (dataSetIds) {
+          return _this.eventHelper(dataSetIds, _this.toggleRoot, [], '.root');
+        });
+
+        this.events.on('d3ListGraphNodeUnroot', function (dataSetIds) {
+          return _this.eventHelper(dataSetIds, _this.toggleRoot, [true], '.root');
         });
       }
     }
 
     babelHelpers.createClass(Nodes, [{
+      key: 'clickHandler',
+      value: function clickHandler(el, data) {
+        this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
+      }
+    }, {
+      key: 'enterHandler',
+      value: function enterHandler(el, data) {
+        this.highlightNodes(el, data);
+        this.events.broadcast('d3ListGraphNodeEnter', { id: data.id });
+      }
+    }, {
+      key: 'leaveHandler',
+      value: function leaveHandler(el, data) {
+        this.unhighlightNodes(el, data);
+        this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
+      }
+    }, {
+      key: 'lockHandler',
+      value: function lockHandler(el, data) {
+        var events = this.toggleLock(el);
+
+        if (events.locked) {
+          this.events.broadcast('d3ListGraphNodeLock', { id: events.locked });
+        }
+        if (events.unlocked) {
+          this.events.broadcast('d3ListGraphNodeUnlock', { id: events.unlocked });
+        }
+      }
+    }, {
+      key: 'rootHandler',
+      value: function rootHandler(el, data) {
+        var events = this.toggleRoot(el);
+
+        if (events.rooted) {
+          this.events.broadcast('d3ListGraphNodeRoot', { id: events.rooted });
+        }
+        if (events.unrooted) {
+          this.events.broadcast('d3ListGraphNodeUnroot', { id: events.unrooted });
+        }
+      }
+    }, {
       key: 'eventHelper',
-      value: function eventHelper(event, callback, optionalParams, subSelectionClass) {
+      value: function eventHelper(dataSetIds, callback, optionalParams, subSelectionClass) {
+        var _this2 = this;
+
         var that = this;
 
         optionalParams = optionalParams ? optionalParams : [];
 
-        if (event.id) {
-          this.nodes.filter(function (data) {
-            return data.id === event.id;
+        var _loop = function _loop(i) {
+          _this2.nodes.filter(function (data) {
+            return data.id === dataSetIds[i];
           }).each(function (data) {
             var el = this;
 
@@ -937,6 +988,10 @@ var ListGraph = (function ($,d3) { 'use strict';
 
             callback.apply(that, [el, data].concat(optionalParams));
           });
+        };
+
+        for (var i = dataSetIds.length; i--;) {
+          _loop(i);
         }
       }
     }, {
@@ -944,6 +999,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function toggleLock(el, nodeData, setFalse) {
         var d3El = d3.select(el);
         var data = d3El.datum();
+        var events = { locked: false, unlocked: false };
 
         if (this.lockedNode) {
           if (this.lockedNode.datum().id === data.id) {
@@ -952,6 +1008,7 @@ var ListGraph = (function ($,d3) { 'use strict';
               'inactive': true
             });
             this.unlockNode(this.lockedNode.datum().id);
+            events.unlocked = this.lockedNode.datum().id;
             this.lockedNode = undefined;
           } else {
             // Reset previously locked node;
@@ -960,6 +1017,7 @@ var ListGraph = (function ($,d3) { 'use strict';
               'inactive': true
             });
             this.unlockNode(this.lockedNode.datum().id);
+            events.unlocked = this.lockedNode.datum().id;
 
             if (!setFalse) {
               d3El.classed({
@@ -967,6 +1025,7 @@ var ListGraph = (function ($,d3) { 'use strict';
                 'inactive': false
               });
               this.lockNode(data.id);
+              events.locked = data.id;
               this.lockedNode = d3El;
             }
           }
@@ -977,9 +1036,12 @@ var ListGraph = (function ($,d3) { 'use strict';
               'inactive': false
             });
             this.lockNode(data.id);
+            events.locked = data.id;
             this.lockedNode = d3El;
           }
         }
+
+        return events;
       }
     }, {
       key: 'lockNode',
@@ -990,7 +1052,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         });
 
         els.each(function (data) {
-          that.highlightNodes(this, data, 'lock');
+          that.highlightNodes(this, data, 'lock', undefined);
         });
 
         els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', function () {
@@ -1014,7 +1076,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', this.visData.global.column.contentWidth).each('start', start).each('end', end);
 
         els.each(function (data) {
-          that.dehighlightNodes(this, data, 'lock');
+          that.unhighlightNodes(this, data, 'lock', undefined);
         });
       }
     }, {
@@ -1022,6 +1084,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function toggleRoot(el, nodeData, setFalse) {
         var d3El = d3.select(el);
         var data = d3El.datum();
+        var events = { rooted: false, unrooted: false };
 
         if (this.rootedNode) {
           // Reset current root node
@@ -1030,6 +1093,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             'inactive': true
           });
           this.unrootNode(this.rootedNode.datum().id);
+          events.unrooted = this.rootedNode.datum().id;
 
           // Activate new root
           if (this.rootedNode.datum().id !== data.id && !setFalse) {
@@ -1039,6 +1103,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             });
             this.rootNode(data.id);
             this.rootedNode = d3El;
+            events.rooted = data.id;
           } else {
             this.rootedNode = undefined;
           }
@@ -1049,9 +1114,12 @@ var ListGraph = (function ($,d3) { 'use strict';
               'inactive': false
             });
             this.rootNode(data.id);
+            events.rooted = data.id;
             this.rootedNode = d3El;
           }
         }
+
+        return events;
       }
     }, {
       key: 'rootNode',
@@ -1116,11 +1184,6 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
       }
     }, {
-      key: 'mouseClickHandler',
-      value: function mouseClickHandler(el, data) {
-        this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
-      }
-    }, {
       key: 'hideNodes',
       value: function hideNodes(el, data, direction) {
         return this.nodesVisibility(el, data, direction);
@@ -1164,16 +1227,28 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'highlightNodes',
-      value: function highlightNodes(el, data, className) {
-        var _this2 = this;
+      value: function highlightNodes(el, data, className, restriction) {
+        var _this3 = this;
 
         var that = this;
+        var nodeId = data.id;
         var currentNodeData = data;
+        var includeClones = true;
+        var includeParents = true;
+        var includeChildren = true;
 
         className = className ? className : 'hovering';
 
+        if (restriction === 'directParentsOnly') {
+          includeClones = false;
+          includeChildren = false;
+        }
+
         // Store link IDs
-        this.currentLinks[className] = [];
+        if (!this.currentLinks[className]) {
+          this.currentLinks[className] = {};
+        }
+        this.currentLinks[className][nodeId] = [];
 
         var currentActiveProperty = d3.select(el).selectAll('.bar.active .bar-magnitude').datum();
 
@@ -1184,7 +1259,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             // Store: (parent)->(child)
             // Ignore: (parent)->(siblings of child)
             if (data.links[i].target.node.id === childData.id) {
-              _this2.currentLinks[className].push(data.links[i].id);
+              _this3.currentLinks[className][nodeId].push(data.links[i].id);
             }
           }
         };
@@ -1192,10 +1267,19 @@ var ListGraph = (function ($,d3) { 'use strict';
         var traverseCallbackDown = function traverseCallbackDown(data) {
           data.hovering = 2;
           for (var i = data.links.length; i--;) {
-            _this2.currentLinks[className].push(data.links[i].id);
+            _this3.currentLinks[className][nodeId].push(data.links[i].id);
           }
         };
-        upAndDown(data, traverseCallbackUp, traverseCallbackDown, undefined, true);
+
+        if (includeParents && includeChildren) {
+          upAndDown(data, traverseCallbackUp, traverseCallbackDown, undefined, includeClones);
+        }
+        if (includeParents && !includeChildren) {
+          up(data, traverseCallbackUp, undefined, includeClones);
+        }
+        if (!includeParents && includeChildren) {
+          down(data, traverseCallbackUp, undefined, includeClones);
+        }
 
         if (data.clone) {
           data.originalNode.hovering = 1;
@@ -1228,21 +1312,37 @@ var ListGraph = (function ($,d3) { 'use strict';
           }
         });
 
-        this.links.highlight(arrayToFakeObjs(this.currentLinks[className]), true, className);
-
-        this.events.broadcast('d3ListGraphNodeEnter', { id: data.id });
+        this.links.highlight(arrayToFakeObjs(this.currentLinks[className][data.id]), true, className);
       }
     }, {
-      key: 'dehighlightNodes',
-      value: function dehighlightNodes(el, data, className) {
+      key: 'unhighlightNodes',
+      value: function unhighlightNodes(el, data, className, restriction) {
         var traverseCallback = function traverseCallback(data) {
           return data.hovering = 0;
         };
+        var includeClones = true;
+        var includeParents = true;
+        var includeChildren = true;
+
+        className = className ? className : 'hovering';
+
+        if (restriction === 'directParentsOnly') {
+          includeClones = false;
+          includeChildren = false;
+        }
 
         className = className ? className : 'hovering';
 
         data.hovering = 0;
-        upAndDown(data, traverseCallback, undefined, undefined, true);
+        if (includeParents && includeChildren) {
+          upAndDown(data, traverseCallback, undefined, undefined, includeClones);
+        }
+        if (includeParents && !includeChildren) {
+          up(data, traverseCallback, undefined, includeClones);
+        }
+        if (!includeParents && includeChildren) {
+          down(data, traverseCallback, undefined, includeClones);
+        }
 
         if (data.clone) {
           data.originalNode.hovering = 0;
@@ -1251,14 +1351,12 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.nodes.classed(className + '-directly', false);
         this.nodes.classed(className + '-indirectly', false);
 
-        this.links.highlight(arrayToFakeObjs(this.currentLinks[className]), false, className);
-
-        this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
+        this.links.highlight(arrayToFakeObjs(this.currentLinks[className][data.id]), false, className);
       }
     }, {
       key: 'sort',
       value: function sort(update, newSortType) {
-        var _this3 = this;
+        var _this4 = this;
 
         for (var i = update.length; i--;) {
           var start = function start() {
@@ -1273,7 +1371,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           });
 
           selection.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-            return 'translate(' + (data.x + _this3.visData.global.column.padding) + ', ' + data.y + ')';
+            return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
           }).each('start', start).each('end', end);
 
           if (newSortType) {
@@ -1284,7 +1382,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'updateVisibility',
       value: function updateVisibility() {
-        var _this4 = this;
+        var _this5 = this;
 
         this.vis.layout.updateNodesVisibility();
 
@@ -1301,9 +1399,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         };
 
         this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-          return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
+          return 'translate(' + (data.x + _this5.visData.global.column.padding) + ', ' + data.y + ')';
         }).call(completed, function () {
-          return _this4.vis.updateScrollbarVisibility();
+          return _this5.vis.updateScrollbarVisibility();
         });
 
         this.vis.links.updateVisibility();
