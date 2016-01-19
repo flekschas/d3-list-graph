@@ -42,11 +42,17 @@
         );
 
       setTimeout(function () {
-        graph.trigger('d3ListGraphFocusNodes', ['2-1-1-1', '2-1-4', '1-2']);
+        graph.trigger('d3ListGraphFocusNodes', {
+          nodeIds: ['2-1-1-1', '2-1-4', '1-2'],
+          zoomOut: true
+        });
       }, 5000);
 
       setTimeout(function () {
-        graph.trigger('d3ListGraphBlurNodes', ['2-1-1-1', '2-1-4', '1-2']);
+        graph.trigger('d3ListGraphBlurNodes', {
+          nodeIds: ['2-1-1-1', '2-1-4', '1-2'],
+          zoomIn: true
+        });
       }, 6000);
 
       setTimeout(function () {

@@ -173,23 +173,9 @@ class Nodes {
         console.log('d3ListGraphNodeClick', dataSetIds);
       });
 
-      this.events.on(
-        'd3ListGraphFocusNodes',
-        dataSetIds => this.eventHelper(
-          dataSetIds,
-          this.highlightNodes,
-          ['focus', 'directParentsOnly', true]
-        )
-      );
+      this.events.on('d3ListGraphFocusNodes', event => this.focusNodes(event));
 
-      this.events.on(
-        'd3ListGraphBlurNodes',
-        dataSetIds => this.eventHelper(
-          dataSetIds,
-          this.unhighlightNodes,
-          ['focus', 'directParentsOnly', true]
-        )
-      );
+      this.events.on('d3ListGraphBlurNodes', event => this.blurNodes(event));
 
       this.events.on(
         'd3ListGraphNodeEnter',
@@ -268,6 +254,28 @@ class Nodes {
     }
     if (events.unrooted) {
       this.events.broadcast('d3ListGraphNodeUnroot', { id: events.unrooted });
+    }
+  }
+
+  focusNodes (event) {
+    this.eventHelper(
+      event.nodeIds,
+      this.highlightNodes,
+      ['focus', 'directParentsOnly', true]
+    );
+    if (event.zoomOut) {
+      this.vis.globalView();
+    }
+  }
+
+  blurNodes (event) {
+    this.eventHelper(
+      event.nodeIds,
+      this.unhighlightNodes,
+      ['focus', 'directParentsOnly', true]
+    );
+    if (event.zoomIn) {
+      this.vis.zoomedView();
     }
   }
 

@@ -383,6 +383,24 @@ class ListGraph {
     this.levels.updateScrollProperties();
     this.scrollbars.updateVisibility();
   }
+
+  globalView () {
+    let bBox = this.container.node().getBBox();
+    let width = this.width > bBox.width ? this.width : bBox.width;
+    let height = this.height > bBox.height ? this.height : bBox.height;
+
+    this.svgD3
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr('viewBox', '0 0 ' + width + ' ' + height);
+  }
+
+  zoomedView () {
+    this.svgD3
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
+  }
 }
 
 export default ListGraph;
