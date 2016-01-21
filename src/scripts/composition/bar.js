@@ -60,14 +60,25 @@ class Bar {
         .classed('bar-border', true);
     }
 
-    function setupIndicator (selection) {
+    function setupIndicatorBg (selection) {
       selection
         .attr('d', data => {
           return Bar.generatePath(
             data, this.bars.mode, undefined, this.visData, data.value
           );
         })
-        .classed('bar-indicator', true);
+        .classed('bar-indicator-bg', true);
+    }
+
+    function setupIndicator (selection) {
+      selection
+        .attr({
+          class: 'bar-indicator',
+          x: 0,
+          y: this.visData.global.row.padding,
+          width: 2,
+          height: this.visData.global.row.contentHeight
+        });
     }
 
     this.selection
@@ -80,7 +91,17 @@ class Bar {
 
     this.selection
       .append('path')
+        .call(setupIndicatorBg.bind(this));
+
+    this.selection
+      .append('rect')
         .call(setupIndicator.bind(this));
+  }
+
+  static updateIndicator (selection, x, referenceValue) {
+    selection
+      .attr('x', x - 1)
+      .classed('positive', data => data.value >= referenceValue);
   }
 
   static generatePath (

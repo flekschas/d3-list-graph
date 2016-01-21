@@ -10,9 +10,10 @@ import * as config from './config';
 const BARS_CLASS = 'bars';
 
 class Bars {
-  constructor (selection, mode, visData) {
+  constructor (vis, selection, mode, visData) {
     let that = this;
 
+    this.vis = vis;
     this.mode = mode;
     this.visData = visData;
 
@@ -49,16 +50,20 @@ class Bars {
       });
   }
 
-  updateIndicator (refBars, currentBar, referenceValue) {
-    currentBar
-      .transition()
-      .duration(0)
-      .attr(
-        'd',
-        data => Bar.generatePath(data, this.mode, undefined, this.visData)
-      );
+  updateIndicator (refBars, refBarsBg, currentBar, referenceValue) {
+    Bar.updateIndicator(
+      currentBar,
+      this.visData.global.column.contentWidth * referenceValue,
+      referenceValue
+    );
 
-    refBars
+    Bar.updateIndicator(
+      refBars,
+      this.visData.global.column.contentWidth * referenceValue,
+      referenceValue
+    );
+
+    refBarsBg
       .attr('d', data => {
         return Bar.generatePath(
           data,
@@ -70,9 +75,11 @@ class Bars {
       })
       .classed('positive', data => data.value >= referenceValue);
 
-    refBars
-      .transition()
-      .duration(config.TRANSITION_SEMI_FAST)
+    if (!this.vis.lessAnimations) {
+      refBarsBg = refBarsBg.transition().duration(config.TRANSITION_SEMI_FAST);
+    }
+
+    refBarsBg
       .attr('d', data => {
         return Bar.generatePath(
           data, this.mode, undefined, this.visData, referenceValue, true

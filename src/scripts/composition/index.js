@@ -50,6 +50,9 @@ class ListGraph {
     this.rows = options.rows || config.ROWS;
     this.iconPath = options.iconPath || config.ICON_PATH;
 
+    this.lessAnimations = !!options.lessAnimations;
+    this.baseElD3.classed('less-animations', this.lessAnimations);
+
     this.sortBy = options.sortBy;
     this.sortOrder = options.sortOrder || config.DEFAULT_SORT_ORDER;
 

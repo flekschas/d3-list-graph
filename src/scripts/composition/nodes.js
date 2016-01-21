@@ -143,7 +143,7 @@ class Nodes {
       that.leaveHandler.call(that, this, data);
     });
 
-    this.bars = new Bars(this.nodes, this.vis.barMode, this.visData);
+    this.bars = new Bars(this.vis, this.nodes, this.vis.barMode, this.visData);
 
     this.nodes
       .append('rect')
@@ -624,6 +624,7 @@ class Nodes {
 
         that.bars.updateIndicator(
           node.selectAll('.bar.copy .bar-indicator'),
+          node.selectAll('.bar.copy .bar-indicator-bg'),
           currentBar.selectAll('.bar-indicator'),
           currentActiveProperty.value
         );
