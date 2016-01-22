@@ -650,10 +650,7 @@ class Nodes {
     this.nodes.classed(appliedClassName + '-directly', false);
     this.nodes.classed(appliedClassName + '-indirectly', false);
 
-    if (
-      this.currentLinks[appliedClassName] &&
-      this.currentLinks[appliedClassName].length
-    ) {
+    if (this.currentLinks[appliedClassName]) {
       this.links.highlight(
         arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]),
         false,
