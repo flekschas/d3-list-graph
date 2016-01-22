@@ -202,7 +202,8 @@ class ListGraph {
           min: Math.min(0, this.width - this.container.node().getBBox().width),
           max: 0
         }
-      }
+      },
+      [this.scrollbarDragging.bind(this)]
     );
   }
 
@@ -211,6 +212,10 @@ class ListGraph {
       'transform',
       'translate(0, ' + offset + ')'
     );
+  }
+
+  scrollbarDragging () {
+    return !!this.activeScrollbar;
   }
 
   globalMouseUp (event) {

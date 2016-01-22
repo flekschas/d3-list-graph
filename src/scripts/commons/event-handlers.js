@@ -21,7 +21,7 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  *
  * @method  onDragDrop
  * @author  Fritz Lekschas
- * @date    2016-01-15
+ * @date    2016-01-21
  * @param   {Object}  selection        D3 selection to listen for the drag
  *   event.
  * @param   {Object}  dragMoveHandler  Handler for drag-move.
@@ -32,9 +32,12 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  *   `undefined`, i.e. both directions.
  * @param   {Object}  limits           X and Y drag limits. E.g.
  *   `{ x: { min: 0, max: 10 } }`.
+ * @param   {Array}    notWhenTrue     List if function returning a Boolean
+ *   value which should prevent the dragMoveHandler from working.
  */
 export function onDragDrop (
-  selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits
+  selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits,
+  notWhenTrue
 ) {
   limits = limits || {};
 
@@ -42,13 +45,17 @@ export function onDragDrop (
 
   if (dragMoveHandler) {
     drag.on('drag', function (data) {
-      dragMoveHandler.call(this, data, elsToBeDragged, orientation, limits);
+      dragMoveHandler.call(
+        this, data, elsToBeDragged, orientation, limits, notWhenTrue
+      );
     });
   }
 
   if (dropHandler) {
     drag.on('dragend', function (data) {
-      dropHandler.call(this, data, elsToBeDragged, orientation, limits);
+      dropHandler.call(
+        this, data, elsToBeDragged, orientation, limits, notWhenTrue
+      );
     });
   }
 
@@ -69,7 +76,15 @@ export function onDragDrop (
   });
 }
 
-export function dragMoveHandler (data, elsToBeDragged, orientation, limits) {
+export function dragMoveHandler (
+  data, elsToBeDragged, orientation, limits, notWhenTrue
+) {
+  for (let i = notWhenTrue.length; i--;) {
+    if (notWhenTrue[i]) {
+      return;
+    }
+  }
+
   let els = d3.select(this);
 
   if (elsToBeDragged && elsToBeDragged.length) {
