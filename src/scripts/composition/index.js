@@ -1,13 +1,11 @@
-'use strict';
-
 // External
 import * as $ from '$';
 import * as d3 from 'd3';
 import isObject from '../../../node_modules/lodash-es/lang/isObject';
 
 // Internal
-import {LayoutNotAvailable} from './errors';
-import {exponentialGradient} from './gradients';
+import { LayoutNotAvailable } from './errors';
+import { exponentialGradient } from './gradients';
 import * as config from './config';
 import Topbar from './topbar';
 import Levels from './levels';
@@ -15,7 +13,7 @@ import Links from './links';
 import Nodes from './nodes';
 import Scrollbars from './scrollbars';
 import Events from './events';
-import {onDragDrop, dragMoveHandler} from '../commons/event-handlers';
+import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 
 class ListGraph {
   constructor (baseEl, data, rootNodes, options) {
@@ -24,10 +22,10 @@ class ListGraph {
     }
 
     if (!isObject(options)) {
-      options = {};
+      options = {};  // eslint-disable-line no-param-reassign
     }
 
-    let that = this;
+    const that = this;
 
     this.baseEl = baseEl;
     this.baseElD3 = d3.select(baseEl);
@@ -64,14 +62,14 @@ class ListGraph {
       this.baseElJq.width(this.width);
     }
 
-    this.layout = new d3.layout.listGraph(
+    this.layout = new d3.layout.listGraph( // eslint-disable-line new-cap
       [
         this.width,
-        this.height
+        this.height,
       ],
       [
         this.columns,
-        this.rows
+        this.rows,
       ]
     );
 
@@ -81,7 +79,7 @@ class ListGraph {
       this.rootNodes,
       {
         sortBy: this.sortBy,
-        sortOrder: this.sortOrder
+        sortOrder: this.sortOrder,
       }
     );
 
@@ -93,9 +91,9 @@ class ListGraph {
     this.currentSorting = {
       global: {
         type: this.sortBy,
-        order: this.sortOrder
+        order: this.sortOrder,
       },
-      local: {}
+      local: {},
     };
 
     exponentialGradient(
@@ -105,7 +103,7 @@ class ListGraph {
         offset: 0,
         opacity: 0.2,
         x: 0,
-        y: 0
+        y: 0,
       },
       {
         afterOffsetOpacity: 1,
@@ -113,7 +111,7 @@ class ListGraph {
         offset: 99,
         opacity: 1,
         x: 1,
-        y: 0
+        y: 0,
       },
       'negativeRed',
       4,
@@ -128,14 +126,14 @@ class ListGraph {
         offset: 1,
         opacity: 1,
         x: 0,
-        y: 0
+        y: 0,
       },
       {
         color: config.COLOR_POSITIVE_GREEN,
         offset: 100,
         opacity: 0.2,
         x: 1,
-        y: 0
+        y: 0,
       },
       'positiveGreen',
       0.25,
@@ -194,14 +192,14 @@ class ListGraph {
       undefined,
       [
         this.container,
-        this.topbar.localControlWrapper
+        this.topbar.localControlWrapper,
       ],
       'horizontal',
       {
         x: {
           min: Math.min(0, this.width - this.container.node().getBBox().width),
-          max: 0
-        }
+          max: 0,
+        },
       },
       [this.scrollbarDragging.bind(this)]
     );
@@ -220,8 +218,8 @@ class ListGraph {
 
   globalMouseUp (event) {
     if (this.activeScrollbar) {
-      let data = this.activeScrollbar.datum();
-      let deltaY = data.scrollbar.clientY - event.clientY;
+      const data = this.activeScrollbar.datum();
+      const deltaY = data.scrollbar.clientY - event.clientY;
 
       // Save final vertical position
       // Scrollbar
@@ -251,8 +249,8 @@ class ListGraph {
 
   globalMouseMove (event) {
     if (this.activeScrollbar) {
-      let data = this.activeScrollbar.datum();
-      let deltaY = data.scrollbar.clientY - event.clientY;
+      const data = this.activeScrollbar.datum();
+      const deltaY = data.scrollbar.clientY - event.clientY;
 
       // Scroll scrollbar
       ListGraph.scrollY(
@@ -267,7 +265,7 @@ class ListGraph {
       );
 
       // Scroll content
-      let contentScrollTop = Math.max(
+      const contentScrollTop = Math.max(
         Math.min(
           data.scrollTop +
           data.invertedHeightScale(deltaY),
@@ -324,7 +322,7 @@ class ListGraph {
   mousewheelColumn (el, event) {
     event.preventDefault();
 
-    let data = d3.select(el).datum();
+    const data = d3.select(el).datum();
 
     if (data.scrollHeight > 0) {
       // Scroll nodes
@@ -393,9 +391,9 @@ class ListGraph {
   }
 
   globalView () {
-    let bBox = this.container.node().getBBox();
-    let width = this.width > bBox.width ? this.width : bBox.width;
-    let height = this.height > bBox.height ? this.height : bBox.height;
+    const bBox = this.container.node().getBBox();
+    const width = this.width > bBox.width ? this.width : bBox.width;
+    const height = this.height > bBox.height ? this.height : bBox.height;
 
     this.svgD3
       .transition()

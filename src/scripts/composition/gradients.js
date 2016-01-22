@@ -1,11 +1,8 @@
-'use strict';
-
 // External
 import * as d3 from 'd3';
-import isFinite from '../../../node_modules/lodash-es/lang/isFinite';
 
 export function linearGradient (el, start, end, name) {
-  let gradient = el.append('defs')
+  const gradient = el.append('defs')
     .append('linearGradient')
       .attr('id', name)
       .attr('x1', start.x)
@@ -64,10 +61,10 @@ export function linearGradient (el, start, end, name) {
  * @param   {Number}  steps  Interpolation steps.
  */
 export function exponentialGradient (el, start, end, name, power, steps) {
-  let scale = d3.scale.pow().exponent(power || 2);
-  let stepSize = 1 / ((steps || 0) + 1);
+  const scale = d3.scale.pow().exponent(power || 2);
+  const stepSize = 1 / ((steps || 0) + 1);
 
-  let gradient = el.append('defs')
+  const gradient = el.append('defs')
     .append('linearGradient')
       .attr('id', name)
       .attr('x1', start.x)

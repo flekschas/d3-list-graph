@@ -1,14 +1,10 @@
-'use strict';
-
 // Internal
-import {roundRect} from './charts';
+import { roundRect } from './charts';
 
 const BAR_CLASS = 'bar';
 
 class Bar {
-  constructor (selection, barData, nodeData, visData, bars) {
-    let that = this;
-
+  constructor (barGroup, barData, nodeData, visData, bars) {
     this.data = barData;
     this.nodeData = nodeData;
     this.visData = visData;
@@ -25,7 +21,7 @@ class Bar {
 
     this.inactiveheight = this.visData.global.cell.padding * 2 - 1;
 
-    this.selection = selection.selectAll(BAR_CLASS)
+    this.selection = barGroup.selectAll(BAR_CLASS)
       .data(this.data)
       .enter()
       .append('g')
@@ -38,7 +34,7 @@ class Bar {
     // is not available. Thus, we need to create local function and pass in
     // `this` as `that`, which feels very hacky but it works.
     function setupMagnitude (selection) {
-      let currentSorting = this.visData.nodes[this.nodeData.depth].sortBy;
+      const currentSorting = this.visData.nodes[this.nodeData.depth].sortBy;
 
       selection
         .attr('d', data => {
@@ -77,7 +73,7 @@ class Bar {
           x: 0,
           y: this.visData.global.row.padding,
           width: 2,
-          height: this.visData.global.row.contentHeight
+          height: this.visData.global.row.contentHeight,
         });
     }
 
@@ -109,11 +105,10 @@ class Bar {
   ) {
     if (mode === 'two') {
       return Bar.generateTwoBarsPath(data, visData, bottom);
-    } else {
-      return Bar.generateOneBarPath(
-        data, currentSorting, visData, indicator, adjustWidth
-      );
     }
+    return Bar.generateOneBarPath(
+      data, currentSorting, visData, indicator, adjustWidth
+    );
   }
 
   static generateOneBarPath (
@@ -123,7 +118,7 @@ class Bar {
 
     let width = 2;
 
-    let height = visData.global.row.contentHeight;
+    const height = visData.global.row.contentHeight;
 
     let radius = {
       topLeft: 2,
@@ -160,9 +155,9 @@ class Bar {
   }
 
   static generateTwoBarsPath (data, visData, bottom) {
-    let height = visData.global.row.contentHeight / 2;
+    const height = visData.global.row.contentHeight / 2;
 
-    let width = visData.global.column.contentWidth * data.value;
+    const width = visData.global.column.contentWidth * data.value;
 
     let y = visData.global.row.padding;
 

@@ -1,5 +1,3 @@
-'use strict';
-
 // External
 import * as d3 from 'd3';
 
@@ -11,14 +9,13 @@ const BARS_CLASS = 'bars';
 
 class Bars {
   constructor (vis, selection, mode, visData) {
-    let that = this;
+    const that = this;
 
     this.vis = vis;
     this.mode = mode;
     this.visData = visData;
 
-    this.selection = selection.append('g')
-      .attr('class', BARS_CLASS);
+    this.selection = selection.append('g').attr('class', BARS_CLASS);
 
     this.selection.each(function (datum) {
       new Bar(d3.select(this), datum.data.bars, datum, that.visData, that);
@@ -27,7 +24,7 @@ class Bars {
 
   update (selection, sortBy) {
     selection.each(function () {
-      let el = d3.select(this);
+      const el = d3.select(this);
 
       if (el.classed('active')) {
         el.classed('active', false);
@@ -75,11 +72,13 @@ class Bars {
       })
       .classed('positive', data => data.value >= referenceValue);
 
+    let transition = refBarsBg;
+
     if (!this.vis.lessAnimations) {
-      refBarsBg = refBarsBg.transition().duration(config.TRANSITION_SEMI_FAST);
+      transition = refBarsBg.transition().duration(config.TRANSITION_SEMI_FAST);
     }
 
-    refBarsBg
+    transition
       .attr('d', data => {
         return Bar.generatePath(
           data, this.mode, undefined, this.visData, referenceValue, true
@@ -100,10 +99,10 @@ class Bars {
               );
             });
         } else {
-          console.error(
-            'Switching magnitude visualization after individual sorting is ' +
-            'not supported yet.'
-          );
+          // console.error(
+          //   'Switching magnitude visualization after individual sorting is ' +
+          //   'not supported yet.'
+          // );
         }
       }
 

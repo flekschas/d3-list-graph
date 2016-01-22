@@ -1,11 +1,11 @@
-'use strict';
+/* eslint no-shadow: 0 */
 
 // External
 import * as d3 from 'd3';
 
 // Internal
-import {ExtendableError} from './error';
-import {mergeSelections} from './d3-utils';
+import { ExtendableError } from './error';
+import { mergeSelections } from './d3-utils';
 
 export class LimitsUnsupportedFormat extends ExtendableError {
   constructor (message) {
@@ -39,9 +39,9 @@ export function onDragDrop (
   selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits,
   notWhenTrue
 ) {
-  limits = limits || {};
+  const drag = d3.behavior.drag();
 
-  let drag = d3.behavior.drag();
+  limits = limits || {};  // eslint-disable-line no-param-reassign
 
   if (dragMoveHandler) {
     drag.on('drag', function (data) {
@@ -60,14 +60,11 @@ export function onDragDrop (
   }
 
   selection.each(function (data) {
-    let el = d3.select(this);
+    const el = d3.select(this);
 
     // Set default data if not available.
     if (!data) {
-      data = {
-        dragX: 0,
-        dragY: 0
-      };
+      data = { dragX: 0, dragY: 0 };  // eslint-disable-line no-param-reassign
       el.datum(data);
     }
 
@@ -80,7 +77,7 @@ export function dragMoveHandler (
   data, elsToBeDragged, orientation, limits, notWhenTrue
 ) {
   for (let i = notWhenTrue.length; i--;) {
-    if (notWhenTrue[i]) {
+    if (notWhenTrue[i]()) {
       return;
     }
   }
@@ -91,13 +88,15 @@ export function dragMoveHandler (
     els = mergeSelections(elsToBeDragged);
   }
 
-  function withinLimits (value, limits) {
-    if (limits) {
+  function withinLimits (value, applyingLimits) {
+    let restrictedValue;
+
+    if (applyingLimits) {
       try {
-        value = Math.min(
-          limits.max,
+        restrictedValue = Math.min(
+          applyingLimits.max,
           Math.max(
-            limits.min,
+            applyingLimits.min,
             value
           )
         );
@@ -105,12 +104,12 @@ export function dragMoveHandler (
         throw new LimitsUnsupportedFormat();
       }
     }
-    return value;
+    return restrictedValue;
   }
 
   if (orientation === 'horizontal' || orientation === 'vertical') {
     if (orientation === 'horizontal') {
-      // data.dragX += d3.event.dx;
+      data.dragX += d3.event.dx;
       data.dragX = withinLimits(data.dragX + d3.event.dx, limits.x);
       els.style('transform', 'translateX(' + data.dragX + 'px)');
     }

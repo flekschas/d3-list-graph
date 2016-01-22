@@ -1,5 +1,3 @@
-'use strict';
-
 class ExtendableError extends Error {
   constructor (message) {
     super(message);
@@ -9,4 +7,4 @@ class ExtendableError extends Error {
   }
 }
 
-export {ExtendableError};
+export { ExtendableError };

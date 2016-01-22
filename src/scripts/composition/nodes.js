@@ -1,5 +1,3 @@
-'use strict';
-
 // External
 import * as d3 from 'd3';
 import isFunction from '../../../node_modules/lodash-es/lang/isFunction';
@@ -8,8 +6,7 @@ import isFunction from '../../../node_modules/lodash-es/lang/isFunction';
 import * as traverse from './traversal';
 import * as config from './config';
 import Bars from './bars';
-import Links from './links';
-import {arrayToFakeObjs} from './utils';
+import { arrayToFakeObjs } from './utils';
 
 const NODES_CLASS = 'nodes';
 const NODE_CLASS = 'node';
@@ -17,21 +14,25 @@ const CLONE_CLASS = 'clone';
 
 class Nodes {
   constructor (vis, baseSelection, visData, links, events) {
-    let that = this;
+    const that = this;
 
     // Helper
     function drawFullSizeRect (selection, className, shrinking) {
-      if (!shrinking) {
-        shrinking = 0;
-      }
+      const shrinkingAmount = shrinking ? shrinking : 0;
 
       selection
-        .attr('x', data => shrinking)
-        .attr('y', data => that.visData.global.row.padding + shrinking)
-        .attr('width', that.visData.global.column.contentWidth - 2 * shrinking)
-        .attr('height', that.visData.global.row.contentHeight - 2 * shrinking)
-        .attr('rx', 2 - shrinking)
-        .attr('ry', 2 - shrinking)
+        .attr('x', shrinkingAmount)
+        .attr('y', that.visData.global.row.padding + shrinkingAmount)
+        .attr(
+          'width',
+          that.visData.global.column.contentWidth - 2 * shrinkingAmount
+        )
+        .attr(
+          'height',
+          that.visData.global.row.contentHeight - 2 * shrinkingAmount
+        )
+        .attr('rx', 2 - shrinkingAmount)
+        .attr('ry', 2 - shrinkingAmount)
         .classed(className, true);
     }
 
@@ -44,7 +45,7 @@ class Nodes {
     this.groups = baseSelection.append('g')
       .attr('class', NODES_CLASS)
       .call(selection => {
-        selection.each(function (data, index) {
+        selection.each(function storeLinkToGroupNode () {
           d3.select(this.parentNode).datum().nodes = this;
         });
       });
@@ -73,9 +74,9 @@ class Nodes {
         .call(drawFullSizeRect, 'bg', 1);
 
     // Rooting icons
-    let nodeRooted = this.nodes.append('g')
+    const nodeRooted = this.nodes.append('g')
       .attr('class', 'focus-controls root inactive')
-      .on('click', function (data) {
+      .on('click', function clickHandler (data) {
         that.rootHandler.call(that, this, data);
       });
 
@@ -102,9 +103,9 @@ class Nodes {
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#locked');
 
-    let nodeLocks = this.nodes.append('g')
+    const nodeLocks = this.nodes.append('g')
       .attr('class', 'focus-controls lock inactive')
-      .on('click', function (data) {
+      .on('click', function clickHandler (data) {
         that.lockHandler.call(that, this, data);
       });
 
@@ -131,17 +132,17 @@ class Nodes {
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#locked');
 
-    this.nodes.on('click', function (data) {
+    this.nodes.on('click', function clickHandler (data) {
       that.clickHandler.call(that, this, data);
     });
 
-    this.nodes.on('mouseenter', function (data) {
+    this.nodes.on('mouseenter', function mouseEnterHandler (data) {
       if (!!!that.vis.activeScrollbar) {
         that.enterHandler.call(that, this, data);
       }
     });
 
-    this.nodes.on('mouseleave', function (data) {
+    this.nodes.on('mouseleave', function mouseLeaveHandler (data) {
       if (!!!that.vis.activeScrollbar) {
         that.leaveHandler.call(that, this, data);
       }
@@ -156,8 +157,8 @@ class Nodes {
     // Add node label
     this.nodes.call(selection => {
       selection.append('foreignObject')
-        .attr('x', data => this.visData.global.cell.padding)
-        .attr('y', data => this.visData.global.row.padding +
+        .attr('x', this.visData.global.cell.padding)
+        .attr('y', this.visData.global.row.padding +
           this.visData.global.cell.padding)
         .attr('width', this.visData.global.column.contentWidth)
         .attr('height', this.visData.global.row.contentHeight -
@@ -173,9 +174,9 @@ class Nodes {
     });
 
     if (isFunction(this.events.on)) {
-      this.events.on('d3ListGraphNodeClick', dataSetIds => {
-        console.log('d3ListGraphNodeClick', dataSetIds);
-      });
+      // this.events.on('d3ListGraphNodeClick', dataSetIds => {
+      //   console.log('d3ListGraphNodeClick', dataSetIds);
+      // });
 
       this.events.on('d3ListGraphFocusNodes', event => this.focusNodes(event));
 
@@ -239,8 +240,8 @@ class Nodes {
     this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
   }
 
-  lockHandler (el, data) {
-    let events = this.toggleLock(el);
+  lockHandler (el) {
+    const events = this.toggleLock(el);
 
     if (events.locked) {
       this.events.broadcast('d3ListGraphNodeLock', { id: events.locked });
@@ -250,8 +251,8 @@ class Nodes {
     }
   }
 
-  rootHandler (el, data) {
-    let events = this.toggleRoot(el);
+  rootHandler (el) {
+    const events = this.toggleRoot(el);
 
     if (events.rooted) {
       this.events.broadcast('d3ListGraphNodeRoot', { id: events.rooted });
@@ -284,26 +285,22 @@ class Nodes {
   }
 
   eventHelper (nodeIds, callback, optionalParams, subSelectionClass) {
-    let that = this;
+    const that = this;
 
-    optionalParams = optionalParams ? optionalParams : [];
+    this.nodes
+      .filter(data => !!nodeIds.indexOf(data.id))
+      .each(function triggerCallback (data) {
+        let el = this;
 
-    for (let i = nodeIds.length; i--;) {
-      this.nodes.filter(data => data.id === nodeIds[i]).each(
-        function (data) {
-          let el = this;
-
-          if (subSelectionClass) {
-            el = d3.select(this).select(subSelectionClass).node();
-          }
-
-          callback.apply(
-            that,
-            [el, data].concat(optionalParams)
-          );
+        if (subSelectionClass) {
+          el = d3.select(this).select(subSelectionClass).node();
         }
-      );
-    }
+
+        callback.apply(
+          that,
+          [el, data].concat(optionalParams ? optionalParams : [])
+        );
+      });
   }
 
   get barMode () {
@@ -311,33 +308,24 @@ class Nodes {
   }
 
   toggleLock (el, nodeData, setFalse) {
-    let d3El = d3.select(el);
-    let data = d3El.datum();
-    let events = { locked: false, unlocked: false };
+    const d3El = d3.select(el);
+    const data = d3El.datum();
+    const events = { locked: false, unlocked: false };
 
     if (this.lockedNode) {
       if (this.lockedNode.datum().id === data.id) {
-        this.lockedNode.classed({
-          'active': false,
-          'inactive': true
-        });
+        this.lockedNode.classed({ active: false, inactive: true });
         this.unlockNode(this.lockedNode.datum().id);
         events.unlocked = this.lockedNode.datum().id;
         this.lockedNode = undefined;
       } else {
         // Reset previously locked node;
-        this.lockedNode.classed({
-          'active': false,
-          'inactive': true
-        });
+        this.lockedNode.classed({ active: false, inactive: true });
         this.unlockNode(this.lockedNode.datum().id);
         events.unlocked = this.lockedNode.datum().id;
 
         if (!setFalse) {
-          d3El.classed({
-            'active': true,
-            'inactive': false
-          });
+          d3El.classed({ active: true, inactive: false });
           this.lockNode(data.id);
           events.locked = data.id;
           this.lockedNode = d3El;
@@ -345,10 +333,7 @@ class Nodes {
       }
     } else {
       if (!setFalse) {
-        d3El.classed({
-          'active': true,
-          'inactive': false
-        });
+        d3El.classed({ active: true, inactive: false });
         this.lockNode(data.id);
         events.locked = data.id;
         this.lockedNode = d3El;
@@ -359,30 +344,30 @@ class Nodes {
   }
 
   lockNode (id) {
-    let that = this;
-    let els = this.nodes.filter(data => data.id === id);
+    const that = this;
+    const els = this.nodes.filter(data => data.id === id);
 
-    els.each(function (data) {
+    els.each(function triggerHighlighter (data) {
       that.highlightNodes(this, data, 'lock', undefined);
     });
 
     els.selectAll('.bg-border')
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
-      .attr('width', function () {
+      .attr('width', function width () {
         return parseInt(
-          d3.select(this).attr('width')
+          d3.select(this).attr('width'), 10
         ) + that.visData.global.row.height / 2;
       });
   }
 
   unlockNode (id) {
-    let that = this;
-    let els = this.nodes.filter(data => data.id === id);
-    let start = function () {
+    const that = this;
+    const els = this.nodes.filter(data => data.id === id);
+    const start = function animationStart () {
       d3.select(this.parentNode).classed('animating', true);
     };
-    let end = function () {
+    const end = function animationEnd () {
       d3.select(this.parentNode).classed('animating', false);
     };
 
@@ -399,25 +384,19 @@ class Nodes {
   }
 
   toggleRoot (el, nodeData, setFalse) {
-    let d3El = d3.select(el);
-    let data = d3El.datum();
-    let events = { rooted: false, unrooted: false };
+    const d3El = d3.select(el);
+    const data = d3El.datum();
+    const events = { rooted: false, unrooted: false };
 
     if (this.rootedNode) {
       // Reset current root node
-      this.rootedNode.classed({
-        'active': false,
-        'inactive': true
-      });
+      this.rootedNode.classed({ active: false, inactive: true });
       this.unrootNode(this.rootedNode.datum().id);
       events.unrooted = this.rootedNode.datum().id;
 
       // Activate new root
       if (this.rootedNode.datum().id !== data.id && !setFalse) {
-        d3El.classed({
-          'active': true,
-          'inactive': false
-        });
+        d3El.classed({ active: true, inactive: false });
         this.rootNode(data.id);
         this.rootedNode = d3El;
         events.rooted = data.id;
@@ -426,10 +405,7 @@ class Nodes {
       }
     } else {
       if (!setFalse) {
-        d3El.classed({
-          'active': true,
-          'inactive': false
-        });
+        d3El.classed({ active: true, inactive: false });
         this.rootNode(data.id);
         events.rooted = data.id;
         this.rootedNode = d3El;
@@ -440,8 +416,8 @@ class Nodes {
   }
 
   rootNode (id) {
-    let that = this;
-    let els = this.nodes.filter(data => data.id === id);
+    const that = this;
+    const els = this.nodes.filter(data => data.id === id);
 
     els.each(function (data) {
       data.rooted = true;
@@ -456,12 +432,12 @@ class Nodes {
   }
 
   unrootNode (id) {
-    let that = this;
-    let els = this.nodes.filter(data => data.id === id);
-    let start = function () {
+    const that = this;
+    const els = this.nodes.filter(data => data.id === id);
+    const start = function () {
       d3.select(this.parentNode).classed('animating', true);
     };
-    let end = function () {
+    const end = function () {
       d3.select(this.parentNode).classed('animating', false);
     };
 
@@ -480,11 +456,11 @@ class Nodes {
   }
 
   setUpFocusControls (selection, location, mode, className) {
-    let height = (this.visData.global.row.contentHeight / 2 -
+    const height = (this.visData.global.row.contentHeight / 2 -
       this.visData.global.cell.padding * 2);
-    let x = location === 'left' ?
+    const x = location === 'left' ?
       -height - 2 : this.visData.global.column.contentWidth + 2;
-    let y = this.visData.global.row.padding +
+    const y = this.visData.global.row.padding +
       (
         this.visData.global.row.contentHeight -
         2 * this.visData.global.cell.padding
@@ -502,54 +478,51 @@ class Nodes {
       selection
         .attr({
           class: className,
-          x: x,
-          y: y,
+          x,
+          y,
           width: height,
-          height: height
+          height,
         });
     }
   }
 
   hideNodes (el, data, direction) {
-    return this.nodesVisibility (el, data, direction);
+    return this.nodesVisibility(el, data, direction);
   }
 
   showNodes (el, data, direction) {
-    return this.nodesVisibility (el, data, direction, true);
+    return this.nodesVisibility(el, data, direction, true);
   }
 
   nodesVisibility (el, data, direction, show) {
-    let that = this;
-    let currentNodeData = data;
-
     if (show) {
       this.nodes
         .classed('hidden', false)
-        .each(data => data.hidden = false);
+        .each(nodeData => nodeData.hidden = false);
     } else {
       // First we set all nodes to `hidden`.
-      this.nodes.each(data => data.hidden = true);
+      this.nodes.each(nodeData => nodeData.hidden = true);
 
       // Then we set direct child and parent nodes of the current node visible.
-      traverse.upAndDown(data, data => data.hidden = false);
+      traverse.upAndDown(data, nodeData => nodeData.hidden = false);
 
       // We also show sibling nodes.
-      traverse.siblings(data, data => data.hidden = false);
+      traverse.siblings(data, nodeData => nodeData.hidden = false);
 
-      this.nodes.classed('hidden', data => data.hidden);
+      this.nodes.classed('hidden', nodeData => nodeData.hidden);
     }
     this.updateVisibility();
   }
 
   highlightNodes (el, data, className, restriction) {
-    let that = this;
-    let nodeId = data.id;
-    let currentNodeData = data;
+    const that = this;
+    const nodeId = data.id;
+    const currentNodeData = data;
     let includeClones = true;
-    let includeParents = true;
+    const includeParents = true;
     let includeChildren = true;
 
-    className = className ? className : 'hovering';
+    const appliedClassName = className ? className : 'hovering';
 
     if (restriction === 'directParentsOnly') {
       includeClones = false;
@@ -557,30 +530,32 @@ class Nodes {
     }
 
     // Store link IDs
-    if (!this.currentLinks[className]) {
-      this.currentLinks[className] = {};
+    if (!this.currentLinks[appliedClassName]) {
+      this.currentLinks[appliedClassName] = {};
     }
-    this.currentLinks[className][nodeId] = [];
+    this.currentLinks[appliedClassName][nodeId] = [];
 
-    let currentActiveProperty = d3.select(el)
+    const currentActiveProperty = d3.select(el)
       .selectAll('.bar.active .bar-magnitude').datum();
 
-    let traverseCallbackUp = (data, childData) => {
-      data.hovering = 2;
-      for (let i = data.links.length; i--;) {
+    const traverseCallbackUp = (nodeData, childData) => {
+      nodeData.hovering = 2;
+      for (let i = nodeData.links.length; i--;) {
         // Only push direct parent child connections. E.g.
         // Store: (parent)->(child)
         // Ignore: (parent)->(siblings of child)
-        if (data.links[i].target.node.id === childData.id) {
-          this.currentLinks[className][nodeId].push(data.links[i].id);
+        if (nodeData.links[i].target.node.id === childData.id) {
+          this.currentLinks[appliedClassName][nodeId].push(
+            nodeData.links[i].id
+          );
         }
       }
     };
 
-    let traverseCallbackDown = data => {
-      data.hovering = 2;
-      for (let i = data.links.length; i--;) {
-        this.currentLinks[className][nodeId].push(data.links[i].id);
+    const traverseCallbackDown = nodeData => {
+      nodeData.hovering = 2;
+      for (let i = nodeData.links.length; i--;) {
+        this.currentLinks[appliedClassName][nodeId].push(nodeData.links[i].id);
       }
     };
 
@@ -602,19 +577,19 @@ class Nodes {
 
     data.hovering = 1;
 
-    this.nodes.each(function (data) {
-      let node = d3.select(this);
+    this.nodes.each(function (nodeData) {
+      const node = d3.select(this);
 
-      if (data.hovering === 1) {
-        node.classed(className + '-directly', true);
-      } else if (data.hovering === 2) {
-        node.classed(className + '-indirectly', true);
+      if (nodeData.hovering === 1) {
+        node.classed(appliedClassName + '-directly', true);
+      } else if (nodeData.hovering === 2) {
+        node.classed(appliedClassName + '-indirectly', true);
         node.selectAll('.bar.' + currentActiveProperty.id)
-          .classed('copy', data => {
-            let id = data.id;
+          .classed('copy', barData => {
+            let id = barData.id;
 
-            if (data.clone) {
-              id = data.originalNode.id;
+            if (barData.clone) {
+              id = barData.originalNode.id;
             }
 
             if (id !== currentNodeData.id) {
@@ -622,7 +597,7 @@ class Nodes {
             }
           });
 
-        let currentBar = d3.select(el)
+        const currentBar = d3.select(el)
           .selectAll('.bar.' + currentActiveProperty.id)
             .classed('reference', true);
 
@@ -636,26 +611,24 @@ class Nodes {
     });
 
     this.links.highlight(
-      arrayToFakeObjs(this.currentLinks[className][data.id]),
+      arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]),
       true,
-      className
+      appliedClassName
     );
   }
 
   unhighlightNodes (el, data, className, restriction) {
-    let traverseCallback = data => data.hovering = 0;
-    let includeClones = true;
-    let includeParents = true;
-    let includeChildren = true;
+    const traverseCallback = nodeData => nodeData.hovering = 0;
+    const includeParents = true;
+    const appliedClassName = className ? className : 'hovering';
 
-    className = className ? className : 'hovering';
+    let includeClones = true;
+    let includeChildren = true;
 
     if (restriction === 'directParentsOnly') {
       includeClones = false;
       includeChildren = false;
     }
-
-    className = className ? className : 'hovering';
 
     data.hovering = 0;
     if (includeParents && includeChildren) {
@@ -674,22 +647,27 @@ class Nodes {
       data.originalNode.hovering = 0;
     }
 
-    this.nodes.classed(className + '-directly', false);
-    this.nodes.classed(className + '-indirectly', false);
+    this.nodes.classed(appliedClassName + '-directly', false);
+    this.nodes.classed(appliedClassName + '-indirectly', false);
 
-    this.links.highlight(
-      arrayToFakeObjs(this.currentLinks[className][data.id]),
-      false,
-      className
-    );
+    if (
+      this.currentLinks[appliedClassName] &&
+      this.currentLinks[appliedClassName].length
+    ) {
+      this.links.highlight(
+        arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]),
+        false,
+        appliedClassName
+      );
+    }
   }
 
   sort (update, newSortType) {
-    for (let i = update.length; i--;) {
-      let start = function () { d3.select(this).classed('sorting', true); };
-      let end = function () { d3.select(this).classed('sorting', false); };
+    const start = function () { d3.select(this).classed('sorting', true); };
+    const end = function () { d3.select(this).classed('sorting', false); };
 
-      let selection = this.nodes.data(update[i].rows, data => data.id);
+    for (let i = update.length; i--;) {
+      const selection = this.nodes.data(update[i].rows, data => data.id);
 
       selection
         .transition()
@@ -708,7 +686,7 @@ class Nodes {
   updateVisibility () {
     this.vis.layout.updateNodesVisibility();
 
-    let completed = (transition, callback) => {
+    const completed = (transition, callback) => {
       if (transition.size() === 0) {
         callback();
       }

@@ -1,5 +1,3 @@
-'use strict';
-
 import isArray from '../../../node_modules/lodash-es/lang/isArray.js';
 import isObject from '../../../node_modules/lodash-es/lang/isObject.js';
 
@@ -22,13 +20,14 @@ import isObject from '../../../node_modules/lodash-es/lang/isObject.js';
  */
 function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
   scaleY) {
+  const visited = {};
+  const queue = [];
+
   let j;
   let child;
   let childId;
   let clone;
   let node;
-  let visited = {};
-  let queue = [];
   let cloneId;
 
   /**
@@ -79,7 +78,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    * @memberOf  traverseGraph
    * @param  {Object}  node  Node to be processed.
    */
-  function processBars (node) {
+  function processBars (node) {  // eslint-disable-line no-shadow
     if (node.data.bars) {
       if (isArray(node.data.bars)) {
         node.data.barRefs = {};
@@ -91,8 +90,8 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
           node.data.barRefs[node.data.bars[i].id] = node.data.bars[i].value;
         }
       } else if (isObject(node.data.bars)) {
-        let bars = [];
-        let keys = Object.keys(node.data.bars);
+        const bars = [];
+        const keys = Object.keys(node.data.bars);
         // Keep the old object reference for quick access, e.g.
         // `node.data.barRefs.precision`
         node.data.barRefs = {};
@@ -103,12 +102,40 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
           );
           bars.push({
             id: keys[i],
-            value: node.data.barRefs[keys[i]]
+            value: node.data.barRefs[keys[i]],
           });
         }
         node.data.bars = bars;
       }
     }
+  }
+
+  /**
+   * Process outgoing links and add them to the source
+   *
+   * @author  Fritz Lekschas
+   * @date    2015-11-17
+   *
+   * @method  processLink
+   * @private
+   * @memberOf  traverseGraph
+   * @param  {Object}  source  Source node.
+   * @param  {Object}  target  Target node.
+   */
+  function processLink (source, target) {
+    source.links.push({
+      id: '(' + source.id + ')->(' + target.id + ')',
+      source: {
+        node: source,
+        offsetX: 0,
+        offsetY: 0,
+      },
+      target: {
+        node: target,
+        offsetX: 0,
+        offsetY: 0,
+      },
+    });
   }
 
   /**
@@ -128,7 +155,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    * @param  {Object}  parent  Parent node.
    * @param  {Boolean}  duplication  If `true` node is a duplication.
    */
-  function processNode (id, node, parent, duplication) {
+  function processNode (id, node, parent, duplication) {  // eslint-disable-line no-shadow
     let _id = id;
     let _node = node;
 
@@ -151,7 +178,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
         node.clones.push(_node);
       }
     } else {
-      _node['clones'] = [];
+      _node.clones = [];
     }
 
     _node.id = _id;
@@ -197,34 +224,6 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     }
   }
 
-  /**
-   * Process outgoing links and add them to the source
-   *
-   * @author  Fritz Lekschas
-   * @date    2015-11-17
-   *
-   * @method  processLink
-   * @private
-   * @memberOf  traverseGraph
-   * @param  {Object}  source  Source node.
-   * @param  {Object}  target  Target node.
-   */
-  function processLink (source, target) {
-    source.links.push({
-      id: '(' + source.id + ')->(' + target.id + ')',
-      source: {
-        node: source,
-        offsetX: 0,
-        offsetY: 0
-      },
-      target: {
-        node: target,
-        offsetX: 0,
-        offsetY: 0
-      }
-    });
-  }
-
   // BFS for each start node.
   for (let i = starts.length; i--;) {
     if (!graph[starts[i]]) {
@@ -264,4 +263,4 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
   }
 }
 
-export {traverseGraph as default};
+export { traverseGraph as default };
