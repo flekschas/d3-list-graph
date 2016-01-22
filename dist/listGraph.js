@@ -117,7 +117,7 @@ var ListGraph = (function ($,d3) { 'use strict';
    *
    * @method  onDragDrop
    * @author  Fritz Lekschas
-   * @date    2016-01-15
+   * @date    2016-01-21
    * @param   {Object}  selection        D3 selection to listen for the drag
    *   event.
    * @param   {Object}  dragMoveHandler  Handler for drag-move.
@@ -128,21 +128,23 @@ var ListGraph = (function ($,d3) { 'use strict';
    *   `undefined`, i.e. both directions.
    * @param   {Object}  limits           X and Y drag limits. E.g.
    *   `{ x: { min: 0, max: 10 } }`.
+   * @param   {Array}    notWhenTrue     List if function returning a Boolean
+   *   value which should prevent the dragMoveHandler from working.
    */
-  function onDragDrop(selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits) {
+  function onDragDrop(selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue) {
     limits = limits || {};
 
     var drag = d3.behavior.drag();
 
     if (dragMoveHandler) {
       drag.on('drag', function (data) {
-        dragMoveHandler.call(this, data, elsToBeDragged, orientation, limits);
+        dragMoveHandler.call(this, data, elsToBeDragged, orientation, limits, notWhenTrue);
       });
     }
 
     if (dropHandler) {
       drag.on('dragend', function (data) {
-        dropHandler.call(this, data, elsToBeDragged, orientation, limits);
+        dropHandler.call(this, data, elsToBeDragged, orientation, limits, notWhenTrue);
       });
     }
 
@@ -163,7 +165,13 @@ var ListGraph = (function ($,d3) { 'use strict';
     });
   }
 
-  function dragMoveHandler(data, elsToBeDragged, orientation, limits) {
+  function dragMoveHandler(data, elsToBeDragged, orientation, limits, notWhenTrue) {
+    for (var i = notWhenTrue.length; i--;) {
+      if (notWhenTrue[i]) {
+        return;
+      }
+    }
+
     var els = d3.select(this);
 
     if (elsToBeDragged && elsToBeDragged.length) {
@@ -887,11 +895,15 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
 
       this.nodes.on('mouseenter', function (data) {
-        that.enterHandler.call(that, this, data);
+        if (!!!that.vis.activeScrollbar) {
+          that.enterHandler.call(that, this, data);
+        }
       });
 
       this.nodes.on('mouseleave', function (data) {
-        that.leaveHandler.call(that, this, data);
+        if (!!!that.vis.activeScrollbar) {
+          that.leaveHandler.call(that, this, data);
+        }
       });
 
       this.bars = new Bars(this.vis, this.nodes, this.vis.barMode, this.visData);
@@ -2310,10 +2322,15 @@ var ListGraph = (function ($,d3) { 'use strict';
           min: Math.min(0, this.width - this.container.node().getBBox().width),
           max: 0
         }
-      });
+      }, [this.scrollbarDragging.bind(this)]);
     }
 
     babelHelpers.createClass(ListGraph, [{
+      key: 'scrollbarDragging',
+      value: function scrollbarDragging() {
+        return !!this.activeScrollbar;
+      }
+    }, {
       key: 'globalMouseUp',
       value: function globalMouseUp(event) {
         if (this.activeScrollbar) {
