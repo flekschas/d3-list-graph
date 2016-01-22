@@ -6,6 +6,7 @@ var bump          = require('gulp-bump');
 var changed       = require('gulp-changed');
 var clean         = require('gulp-clean');
 var concat        = require('gulp-concat');
+var eslint        = require('gulp-eslint');
 var flatten       = require('gulp-flatten');
 var gulp          = require('gulp');
 var gulpIf        = require('gulp-if');
@@ -159,6 +160,18 @@ gulp.task('clean', function () {
     .pipe(clean());
 });
 
+gulp.task('lint', function() {
+  return gulp
+    .src(config.globalPaths.src + config.sourcePaths.scripts + '/**/*.js')
+    .pipe(eslint({
+      rules: {
+        'no-console': 2,
+      }
+    }))
+    .pipe(eslint.format())
+    .pipe(eslint.failOnError());
+});
+
 gulp.task('sass', function () {
   return gulp
     .src(config.globalPaths.src + config.sourcePaths.styles + '/main.scss')
@@ -244,6 +257,7 @@ gulp.task('open', function() {
 
 gulp.task('build', function(callback) {
   runSequence(
+    'lint',
     'clean',
     [
       'bundle', 'sass', 'svg'
