@@ -1,11 +1,11 @@
-'use strict';
+/* eslint no-shadow: 0 */
 
 // External
 import * as d3 from 'd3';
 
 // Internal
-import {ExtendableError} from './error';
-import {mergeSelections} from './d3-utils';
+import { ExtendableError } from './error';
+import { mergeSelections } from './d3-utils';
 
 export class LimitsUnsupportedFormat extends ExtendableError {
   constructor (message) {
@@ -21,7 +21,7 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  *
  * @method  onDragDrop
  * @author  Fritz Lekschas
- * @date    2016-01-15
+ * @date    2016-01-21
  * @param   {Object}  selection        D3 selection to listen for the drag
  *   event.
  * @param   {Object}  dragMoveHandler  Handler for drag-move.
@@ -32,35 +32,39 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  *   `undefined`, i.e. both directions.
  * @param   {Object}  limits           X and Y drag limits. E.g.
  *   `{ x: { min: 0, max: 10 } }`.
+ * @param   {Array}    notWhenTrue     List if function returning a Boolean
+ *   value which should prevent the dragMoveHandler from working.
  */
 export function onDragDrop (
-  selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits
+  selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits,
+  notWhenTrue
 ) {
-  limits = limits || {};
+  const drag = d3.behavior.drag();
 
-  let drag = d3.behavior.drag();
+  limits = limits || {};  // eslint-disable-line no-param-reassign
 
   if (dragMoveHandler) {
     drag.on('drag', function (data) {
-      dragMoveHandler.call(this, data, elsToBeDragged, orientation, limits);
+      dragMoveHandler.call(
+        this, data, elsToBeDragged, orientation, limits, notWhenTrue
+      );
     });
   }
 
   if (dropHandler) {
     drag.on('dragend', function (data) {
-      dropHandler.call(this, data, elsToBeDragged, orientation, limits);
+      dropHandler.call(
+        this, data, elsToBeDragged, orientation, limits, notWhenTrue
+      );
     });
   }
 
   selection.each(function (data) {
-    let el = d3.select(this);
+    const el = d3.select(this);
 
     // Set default data if not available.
     if (!data) {
-      data = {
-        dragX: 0,
-        dragY: 0
-      };
+      data = { dragX: 0, dragY: 0 };  // eslint-disable-line no-param-reassign
       el.datum(data);
     }
 
@@ -69,20 +73,30 @@ export function onDragDrop (
   });
 }
 
-export function dragMoveHandler (data, elsToBeDragged, orientation, limits) {
+export function dragMoveHandler (
+  data, elsToBeDragged, orientation, limits, notWhenTrue
+) {
+  for (let i = notWhenTrue.length; i--;) {
+    if (notWhenTrue[i]()) {
+      return;
+    }
+  }
+
   let els = d3.select(this);
 
   if (elsToBeDragged && elsToBeDragged.length) {
     els = mergeSelections(elsToBeDragged);
   }
 
-  function withinLimits (value, limits) {
-    if (limits) {
+  function withinLimits (value, applyingLimits) {
+    let restrictedValue;
+
+    if (applyingLimits) {
       try {
-        value = Math.min(
-          limits.max,
+        restrictedValue = Math.min(
+          applyingLimits.max,
           Math.max(
-            limits.min,
+            applyingLimits.min,
             value
           )
         );
@@ -90,12 +104,12 @@ export function dragMoveHandler (data, elsToBeDragged, orientation, limits) {
         throw new LimitsUnsupportedFormat();
       }
     }
-    return value;
+    return restrictedValue;
   }
 
   if (orientation === 'horizontal' || orientation === 'vertical') {
     if (orientation === 'horizontal') {
-      // data.dragX += d3.event.dx;
+      data.dragX += d3.event.dx;
       data.dragX = withinLimits(data.dragX + d3.event.dx, limits.x);
       els.style('transform', 'translateX(' + data.dragX + 'px)');
     }

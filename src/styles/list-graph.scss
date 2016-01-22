@@ -443,12 +443,26 @@
   }
 
   .bar-indicator {
+    fill: $colorNegativeRed;
+    opacity: 0;
+  }
+
+  .bar-indicator-bg {
     fill: url('#negativeRed');
-    fill-opacity: 0;
+    // fill: $colorNegativeRed;
+    opacity: 0;
     shape-rendering: crispEdges;
   }
 
+  &.less-animations .bar-indicator-bg {
+    transition: opacity $transitionFast $easeInOutCubic;
+  }
+
   .bar-indicator.positive {
+    fill: $colorPositiveGreen;
+  }
+
+  .bar-indicator-bg.positive {
     fill: url('#positiveGreen');
   }
 
@@ -482,11 +496,15 @@
 
   .node.hovering-directly .bar.active .bar-indicator {
     fill: #fff;
-    fill-opacity: 1;
+    opacity: 1;
+  }
+
+  .node.hovering-indirectly .bar.copy .bar-indicator-bg {
+    opacity: 0.66;
   }
 
   .node.hovering-indirectly .bar.copy .bar-indicator {
-    fill-opacity: 1;
+    opacity: 1;
   }
 
   .bar.highlight .bar-magnitude {

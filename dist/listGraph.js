@@ -92,10 +92,14 @@ var ListGraph = (function ($,d3) { 'use strict';
     // Create a new empty selection
     var mergedSelection = d3.selectAll('.d3-list-graph-not-existent');
 
-    for (var i = selections.length; i--;) {
-      selections[i].each(function () {
+    function pushSelection(selection) {
+      selection.each(function pushDomNode() {
         mergedSelection[0].push(this);
       });
+    }
+
+    for (var i = selections.length; i--;) {
+      pushSelection(selections[i]);
     }
 
     return mergedSelection;
@@ -117,7 +121,7 @@ var ListGraph = (function ($,d3) { 'use strict';
    *
    * @method  onDragDrop
    * @author  Fritz Lekschas
-   * @date    2016-01-15
+   * @date    2016-01-21
    * @param   {Object}  selection        D3 selection to listen for the drag
    *   event.
    * @param   {Object}  dragMoveHandler  Handler for drag-move.
@@ -128,21 +132,23 @@ var ListGraph = (function ($,d3) { 'use strict';
    *   `undefined`, i.e. both directions.
    * @param   {Object}  limits           X and Y drag limits. E.g.
    *   `{ x: { min: 0, max: 10 } }`.
+   * @param   {Array}    notWhenTrue     List if function returning a Boolean
+   *   value which should prevent the dragMoveHandler from working.
    */
-  function onDragDrop(selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits) {
-    limits = limits || {};
-
+  function onDragDrop(selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue) {
     var drag = d3.behavior.drag();
+
+    limits = limits || {}; // eslint-disable-line no-param-reassign
 
     if (dragMoveHandler) {
       drag.on('drag', function (data) {
-        dragMoveHandler.call(this, data, elsToBeDragged, orientation, limits);
+        dragMoveHandler.call(this, data, elsToBeDragged, orientation, limits, notWhenTrue);
       });
     }
 
     if (dropHandler) {
       drag.on('dragend', function (data) {
-        dropHandler.call(this, data, elsToBeDragged, orientation, limits);
+        dropHandler.call(this, data, elsToBeDragged, orientation, limits, notWhenTrue);
       });
     }
 
@@ -151,10 +157,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       // Set default data if not available.
       if (!data) {
-        data = {
-          dragX: 0,
-          dragY: 0
-        };
+        data = { dragX: 0, dragY: 0 }; // eslint-disable-line no-param-reassign
         el.datum(data);
       }
 
@@ -163,27 +166,35 @@ var ListGraph = (function ($,d3) { 'use strict';
     });
   }
 
-  function dragMoveHandler(data, elsToBeDragged, orientation, limits) {
+  function dragMoveHandler(data, elsToBeDragged, orientation, limits, notWhenTrue) {
+    for (var i = notWhenTrue.length; i--;) {
+      if (notWhenTrue[i]()) {
+        return;
+      }
+    }
+
     var els = d3.select(this);
 
     if (elsToBeDragged && elsToBeDragged.length) {
       els = mergeSelections(elsToBeDragged);
     }
 
-    function withinLimits(value, limits) {
-      if (limits) {
+    function withinLimits(value, applyingLimits) {
+      var restrictedValue = undefined;
+
+      if (applyingLimits) {
         try {
-          value = Math.min(limits.max, Math.max(limits.min, value));
+          restrictedValue = Math.min(applyingLimits.max, Math.max(applyingLimits.min, value));
         } catch (e) {
           throw new LimitsUnsupportedFormat();
         }
       }
-      return value;
+      return restrictedValue;
     }
 
     if (orientation === 'horizontal' || orientation === 'vertical') {
       if (orientation === 'horizontal') {
-        // data.dragX += d3.event.dx;
+        data.dragX += d3.event.dx;
         data.dragX = withinLimits(data.dragX + d3.event.dx, limits.x);
         els.style('transform', 'translateX(' + data.dragX + 'px)');
       }
@@ -199,39 +210,10 @@ var ListGraph = (function ($,d3) { 'use strict';
     }
   }
 
-  /**
-   * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
-   * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is an object, else `false`.
-   * @example
-   *
-   * _.isObject({});
-   * // => true
-   *
-   * _.isObject([1, 2, 3]);
-   * // => true
-   *
-   * _.isObject(1);
-   * // => false
-   */
-  function isObject(value) {
-    // Avoid a V8 JIT bug in Chrome 19-20.
-    // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
-    var type = typeof value;
-    return !!value && (type == 'object' || type == 'function');
-  }
-
   var SCROLLBAR_CLASS = 'scrollbar';
 
   var Scrollbars = (function () {
     function Scrollbars(baseSelection, visData, width) {
-      var _this = this;
-
       babelHelpers.classCallCheck(this, Scrollbars);
 
       this.visData = visData;
@@ -239,16 +221,14 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       // Add empty scrollbar element
       this.all = baseSelection.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
-        selection.each(function (data, index) {
+        selection.each(function setScrollBarDomElement() {
           d3.select(this.parentNode).datum().scrollbar.el = this;
         });
       }).attr('x', function (data) {
         return data.scrollbar.x;
       }).attr('y', function (data) {
         return data.scrollbar.y;
-      }).attr('width', function (data) {
-        return _this.width;
-      }).attr('height', function (data) {
+      }).attr('width', this.width).attr('height', function (data) {
         return data.scrollbar.height;
       }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
     }
@@ -269,6 +249,29 @@ var ListGraph = (function ($,d3) { 'use strict';
     return Scrollbars;
   })();
 
+  /**
+   * Turns an array of IDs into an array of objects holding the ID.
+   *
+   * @description
+   * We need to translate the array of objects into an array of fake objects in
+   * order to easily match the links to be highlighted.
+   *
+   * Using this method selection can be matched easily via the array of fake
+   * objects:
+   *
+   * ```
+   * this.links
+   *   .data(arrayToFakeObjs([1, 2, 3]), data => data)
+   *   .classed('highlight', highlight === false ? false : true);
+   * ```
+   *
+   * @method  arrayToFakeObjs
+   * @author  Fritz Lekschas
+   * @date    2015-12-23
+   * @param   {Array}  arrayIds  Array of IDs.
+   * @return  {Array}            Array of objects holding the ID. E.g. `[1]` will
+   *   be translated into `[{ id: 1 }]`.
+   */
   function arrayToFakeObjs(arrayIds) {
     var fakeObjs = [];
 
@@ -377,7 +380,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       if (!isFinite(depth) || depth > 0) {
         for (var j = nodesInclClones[i].parents.length; j--;) {
-          up(nodesInclClones[i].parents[j], callback, --depth, includeClones, nodesInclClones[i]);
+          up(nodesInclClones[i].parents[j], callback, depth - 1, includeClones, nodesInclClones[i]);
         }
       }
     }
@@ -391,7 +394,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       if (!isFinite(depth) || depth > 0) {
         for (var j = nodesInclClones[i].childRefs.length; j--;) {
-          down(nodesInclClones[i].childRefs[j], callback, --depth, includeClones);
+          down(nodesInclClones[i].childRefs[j], callback, depth - 1, includeClones);
         }
       }
     }
@@ -413,6 +416,33 @@ var ListGraph = (function ($,d3) { 'use strict';
         callback(node.parents[i].childRefs[j]);
       }
     }
+  }
+
+  /**
+   * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
+   * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+   *
+   * @static
+   * @memberOf _
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+   * @example
+   *
+   * _.isObject({});
+   * // => true
+   *
+   * _.isObject([1, 2, 3]);
+   * // => true
+   *
+   * _.isObject(1);
+   * // => false
+   */
+  function isObject(value) {
+    // Avoid a V8 JIT bug in Chrome 19-20.
+    // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
+    var type = typeof value;
+    return !!value && (type == 'object' || type == 'function');
   }
 
   /** `Object#toString` result references. */
@@ -450,18 +480,12 @@ var ListGraph = (function ($,d3) { 'use strict';
     return isObject(value) && objToString.call(value) == funcTag;
   }
 
+  // Credits go to Mike Bostock: http://bl.ocks.org/mbostock/3468167
   function roundRect(x, y, width, height, radius) {
-    var topLeft = 0;
-    var topRight = 0;
-    var bottomLeft = 0;
-    var bottomRight = 0;
-
-    try {
-      topLeft = radius.topLeft || 0;
-      topRight = radius.topRight || 0;
-      bottomLeft = radius.bottomLeft || 0;
-      bottomRight = radius.bottomRight || 0;
-    } catch (e) {}
+    var topLeft = radius.topLeft || 0;
+    var topRight = radius.topRight || 0;
+    var bottomLeft = radius.bottomLeft || 0;
+    var bottomRight = radius.bottomRight || 0;
 
     return 'M' + (x + topLeft) + ',' + y + 'h' + (width - topLeft - topRight) + 'a' + topRight + ',' + topRight + ' 0 0 1 ' + topRight + ',' + topRight + 'v' + (height - (topRight + bottomRight)) + 'a' + bottomRight + ',' + bottomRight + ' 0 0 1 ' + -bottomRight + ',' + bottomRight + 'h' + (bottomLeft - (width - bottomRight)) + 'a' + bottomLeft + ',' + bottomLeft + ' 0 0 1 ' + -bottomLeft + ',' + -bottomLeft + 'v' + (topLeft - (height - bottomLeft)) + 'a' + topLeft + ',' + topLeft + ' 0 0 1 ' + topLeft + ',' + -topLeft + 'z';
   }
@@ -469,12 +493,10 @@ var ListGraph = (function ($,d3) { 'use strict';
   var BAR_CLASS = 'bar';
 
   var Bar = (function () {
-    function Bar(selection, barData, nodeData, visData, bars) {
+    function Bar(barGroup, barData, nodeData, visData, bars) {
       var _this = this;
 
       babelHelpers.classCallCheck(this, Bar);
-
-      var that = this;
 
       this.data = barData;
       this.nodeData = nodeData;
@@ -490,7 +512,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.inactiveheight = this.visData.global.cell.padding * 2 - 1;
 
-      this.selection = selection.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
+      this.selection = barGroup.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
         return BAR_CLASS + ' ' + data.id;
       }).classed('active', function (data) {
         return data.id === _this.visData.nodes[_this.nodeData.depth].sortBy;
@@ -514,29 +536,47 @@ var ListGraph = (function ($,d3) { 'use strict';
         selection.attr('x', 0).attr('y', this.visData.global.row.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
       }
 
-      function setupIndicator(selection) {
+      function setupIndicatorBg(selection) {
         var _this3 = this;
 
         selection.attr('d', function (data) {
           return Bar.generatePath(data, _this3.bars.mode, undefined, _this3.visData, data.value);
-        }).classed('bar-indicator', true);
+        }).classed('bar-indicator-bg', true);
+      }
+
+      function setupIndicator(selection) {
+        selection.attr({
+          class: 'bar-indicator',
+          x: 0,
+          y: this.visData.global.row.padding,
+          width: 2,
+          height: this.visData.global.row.contentHeight
+        });
       }
 
       this.selection.append('rect').call(setupBorder.bind(this));
 
       this.selection.append('path').call(setupMagnitude.bind(this));
 
-      this.selection.append('path').call(setupIndicator.bind(this));
+      this.selection.append('path').call(setupIndicatorBg.bind(this));
+
+      this.selection.append('rect').call(setupIndicator.bind(this));
     }
 
     babelHelpers.createClass(Bar, null, [{
+      key: 'updateIndicator',
+      value: function updateIndicator(selection, x, referenceValue) {
+        selection.attr('x', x - 1).classed('positive', function (data) {
+          return data.value >= referenceValue;
+        });
+      }
+    }, {
       key: 'generatePath',
       value: function generatePath(data, mode, currentSorting, visData, indicator, adjustWidth, bottom) {
         if (mode === 'two') {
           return Bar.generateTwoBarsPath(data, visData, bottom);
-        } else {
-          return Bar.generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth);
         }
+        return Bar.generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth);
       }
     }, {
       key: 'generateOneBarPath',
@@ -598,11 +638,12 @@ var ListGraph = (function ($,d3) { 'use strict';
   var BARS_CLASS = 'bars';
 
   var Bars = (function () {
-    function Bars(selection, mode, visData) {
+    function Bars(vis, selection, mode, visData) {
       babelHelpers.classCallCheck(this, Bars);
 
       var that = this;
 
+      this.vis = vis;
       this.mode = mode;
       this.visData = visData;
 
@@ -637,20 +678,26 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'updateIndicator',
-      value: function updateIndicator(refBars, currentBar, referenceValue) {
+      value: function updateIndicator(refBars, refBarsBg, currentBar, referenceValue) {
         var _this2 = this;
 
-        currentBar.transition().duration(0).attr('d', function (data) {
-          return Bar.generatePath(data, _this2.mode, undefined, _this2.visData);
-        });
+        Bar.updateIndicator(currentBar, this.visData.global.column.contentWidth * referenceValue, referenceValue);
 
-        refBars.attr('d', function (data) {
+        Bar.updateIndicator(refBars, this.visData.global.column.contentWidth * referenceValue, referenceValue);
+
+        refBarsBg.attr('d', function (data) {
           return Bar.generatePath(data, _this2.mode, undefined, _this2.visData, referenceValue);
         }).classed('positive', function (data) {
           return data.value >= referenceValue;
         });
 
-        refBars.transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+        var transition = refBarsBg;
+
+        if (!this.vis.lessAnimations) {
+          transition = refBarsBg.transition().duration(TRANSITION_SEMI_FAST);
+        }
+
+        transition.attr('d', function (data) {
           return Bar.generatePath(data, _this2.mode, undefined, _this2.visData, referenceValue, true);
         });
       }
@@ -666,7 +713,10 @@ var ListGraph = (function ($,d3) { 'use strict';
                 return Bar.generateOneBarPath(data, currentSorting.global.type, _this3.visData);
               });
             } else {
-              console.error('Switching magnitude visualization after individual sorting is ' + 'not supported yet.');
+              // console.error(
+              //   'Switching magnitude visualization after individual sorting is ' +
+              //   'not supported yet.'
+              // );
             }
           }
 
@@ -687,105 +737,6 @@ var ListGraph = (function ($,d3) { 'use strict';
     return Bars;
   })();
 
-  var LINKS_CLASS = 'links';
-  var LINK_CLASS = 'link';
-
-  var Links = (function () {
-    function Links(selection, visData, layout) {
-      var _this = this;
-
-      babelHelpers.classCallCheck(this, Links);
-
-      this.visData = visData;
-      this.layout = layout;
-
-      this.groups = selection.append('g').attr('class', LINKS_CLASS).call(function (selection) {
-        selection.each(function (data, index) {
-          d3.select(this.parentNode).datum().links = this;
-        });
-      });
-
-      this.links = this.groups.selectAll(LINK_CLASS + '-bg').data(function (data, index) {
-        return _this.layout.links(index);
-      }).enter().append('g').attr('class', LINK_CLASS);
-
-      this.links.append('path').attr({
-        'class': LINK_CLASS + '-bg',
-        'd': this.diagonal
-      });
-
-      this.links.append('path').attr({
-        'class': LINK_CLASS + '-direct',
-        'd': this.diagonal
-      });
-    }
-
-    babelHelpers.createClass(Links, [{
-      key: 'highlight',
-      value: function highlight(nodeIds, _highlight, className) {
-        className = className ? className : 'hovering';
-
-        this.links.data(nodeIds, function (data) {
-          return data.id;
-        }).classed(className, _highlight === false ? false : true);
-      }
-    }, {
-      key: 'scroll',
-      value: function scroll(selection, data) {
-        // Update data of `g`.
-        selection.data(data);
-
-        // Next update all paths according to the new data.
-        selection.selectAll('path').attr('d', this.diagonal);
-      }
-    }, {
-      key: 'sort',
-      value: function sort(update) {
-        var start = function start() {
-          d3.select(this).classed('sorting', true);
-        };
-        var end = function end() {
-          d3.select(this).classed('sorting', false);
-        };
-
-        // Update data of `g`.
-        this.links.data(update, function (data) {
-          return data.id;
-        });
-
-        // Next update all paths according to the new data.
-        this.links.selectAll('path').transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal).each('start', start).each('end', end);
-      }
-    }, {
-      key: 'updateVisibility',
-      value: function updateVisibility() {
-        this.links.selectAll('path').classed('hidden', function (data) {
-          return data.target.node.hidden || data.source.node.hidden;
-        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal);
-      }
-    }, {
-      key: 'diagonal',
-      get: function get() {
-        var _this2 = this;
-
-        return d3.svg.diagonal().source(function (data) {
-          return {
-            x: data.source.node.y + data.source.offsetY + _this2.visData.global.row.height / 2,
-            y: data.source.node.x + data.source.offsetX + _this2.visData.global.column.contentWidth + _this2.visData.global.column.padding
-          };
-        }).target(function (data) {
-          return {
-            x: data.target.node.y + data.target.offsetY + _this2.visData.global.row.height / 2,
-            y: data.target.node.x + data.target.offsetX + _this2.visData.global.column.padding
-          };
-        }).projection(function (data) {
-          return [data.y, data.x];
-        });
-      }
-    }]);
-    return Links;
-  })();
-
   var NODES_CLASS = 'nodes';
   var NODE_CLASS = 'node';
   var CLONE_CLASS = 'clone';
@@ -800,15 +751,9 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       // Helper
       function drawFullSizeRect(selection, className, shrinking) {
-        if (!shrinking) {
-          shrinking = 0;
-        }
+        var shrinkingAmount = shrinking ? shrinking : 0;
 
-        selection.attr('x', function (data) {
-          return shrinking;
-        }).attr('y', function (data) {
-          return that.visData.global.row.padding + shrinking;
-        }).attr('width', that.visData.global.column.contentWidth - 2 * shrinking).attr('height', that.visData.global.row.contentHeight - 2 * shrinking).attr('rx', 2 - shrinking).attr('ry', 2 - shrinking).classed(className, true);
+        selection.attr('x', shrinkingAmount).attr('y', that.visData.global.row.padding + shrinkingAmount).attr('width', that.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', that.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', 2 - shrinkingAmount).attr('ry', 2 - shrinkingAmount).classed(className, true);
       }
 
       this.vis = vis;
@@ -818,7 +763,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.currentLinks = {};
 
       this.groups = baseSelection.append('g').attr('class', NODES_CLASS).call(function (selection) {
-        selection.each(function (data, index) {
+        selection.each(function storeLinkToGroupNode() {
           d3.select(this.parentNode).datum().nodes = this;
         });
       });
@@ -838,7 +783,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1);
 
       // Rooting icons
-      var nodeRooted = this.nodes.append('g').attr('class', 'focus-controls root inactive').on('click', function (data) {
+      var nodeRooted = this.nodes.append('g').attr('class', 'focus-controls root inactive').on('click', function clickHandler(data) {
         that.rootHandler.call(that, this, data);
       });
 
@@ -848,7 +793,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 'icon', 'ease-all state-active invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
-      var nodeLocks = this.nodes.append('g').attr('class', 'focus-controls lock inactive').on('click', function (data) {
+      var nodeLocks = this.nodes.append('g').attr('class', 'focus-controls lock inactive').on('click', function clickHandler(data) {
         that.lockHandler.call(that, this, data);
       });
 
@@ -858,29 +803,29 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 'icon', 'ease-all state-active invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
-      this.nodes.on('click', function (data) {
+      this.nodes.on('click', function clickHandler(data) {
         that.clickHandler.call(that, this, data);
       });
 
-      this.nodes.on('mouseenter', function (data) {
-        that.enterHandler.call(that, this, data);
+      this.nodes.on('mouseenter', function mouseEnterHandler(data) {
+        if (!!!that.vis.activeScrollbar) {
+          that.enterHandler.call(that, this, data);
+        }
       });
 
-      this.nodes.on('mouseleave', function (data) {
-        that.leaveHandler.call(that, this, data);
+      this.nodes.on('mouseleave', function mouseLeaveHandler(data) {
+        if (!!!that.vis.activeScrollbar) {
+          that.leaveHandler.call(that, this, data);
+        }
       });
 
-      this.bars = new Bars(this.nodes, this.vis.barMode, this.visData);
+      this.bars = new Bars(this.vis, this.nodes, this.vis.barMode, this.visData);
 
       this.nodes.append('rect').call(drawFullSizeRect, 'border');
 
       // Add node label
       this.nodes.call(function (selection) {
-        selection.append('foreignObject').attr('x', function (data) {
-          return _this.visData.global.cell.padding;
-        }).attr('y', function (data) {
-          return _this.visData.global.row.padding + _this.visData.global.cell.padding;
-        }).attr('width', _this.visData.global.column.contentWidth).attr('height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2).attr('class', 'label-wrapper').append('xhtml:div').attr('class', 'label').attr('title', function (data) {
+        selection.append('foreignObject').attr('x', _this.visData.global.cell.padding).attr('y', _this.visData.global.row.padding + _this.visData.global.cell.padding).attr('width', _this.visData.global.column.contentWidth).attr('height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2).attr('class', 'label-wrapper').append('xhtml:div').attr('class', 'label').attr('title', function (data) {
           return data.data.name;
         }).style('line-height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').text(function (data) {
           return data.data.name;
@@ -888,9 +833,9 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
 
       if (isFunction(this.events.on)) {
-        this.events.on('d3ListGraphNodeClick', function (dataSetIds) {
-          console.log('d3ListGraphNodeClick', dataSetIds);
-        });
+        // this.events.on('d3ListGraphNodeClick', dataSetIds => {
+        //   console.log('d3ListGraphNodeClick', dataSetIds);
+        // });
 
         this.events.on('d3ListGraphFocusNodes', function (event) {
           return _this.focusNodes(event);
@@ -900,28 +845,28 @@ var ListGraph = (function ($,d3) { 'use strict';
           return _this.blurNodes(event);
         });
 
-        this.events.on('d3ListGraphNodeEnter', function (dataSetIds) {
-          return _this.eventHelper(dataSetIds, _this.highlightNodes);
+        this.events.on('d3ListGraphNodeEnter', function (nodeIds) {
+          return _this.eventHelper(nodeIds, _this.highlightNodes);
         });
 
-        this.events.on('d3ListGraphNodeLeave', function (dataSetIds) {
-          return _this.eventHelper(dataSetIds, _this.unhighlightNodes);
+        this.events.on('d3ListGraphNodeLeave', function (nodeIds) {
+          return _this.eventHelper(nodeIds, _this.unhighlightNodes);
         });
 
-        this.events.on('d3ListGraphNodeLock', function (dataSetIds) {
-          return _this.eventHelper(dataSetIds, _this.toggleLock, [], '.lock');
+        this.events.on('d3ListGraphNodeLock', function (nodeIds) {
+          return _this.eventHelper(nodeIds, _this.toggleLock, [], '.lock');
         });
 
-        this.events.on('d3ListGraphNodeUnlock', function (dataSetIds) {
-          return _this.eventHelper(dataSetIds, _this.toggleLock, [true], '.lock');
+        this.events.on('d3ListGraphNodeUnlock', function (nodeIds) {
+          return _this.eventHelper(nodeIds, _this.toggleLock, [true], '.lock');
         });
 
-        this.events.on('d3ListGraphNodeRoot', function (dataSetIds) {
-          return _this.eventHelper(dataSetIds, _this.toggleRoot, [], '.root');
+        this.events.on('d3ListGraphNodeRoot', function (nodeIds) {
+          return _this.eventHelper(nodeIds, _this.toggleRoot, [], '.root');
         });
 
-        this.events.on('d3ListGraphNodeUnroot', function (dataSetIds) {
-          return _this.eventHelper(dataSetIds, _this.toggleRoot, [true], '.root');
+        this.events.on('d3ListGraphNodeUnroot', function (nodeIds) {
+          return _this.eventHelper(nodeIds, _this.toggleRoot, [true], '.root');
         });
       }
     }
@@ -945,7 +890,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'lockHandler',
-      value: function lockHandler(el, data) {
+      value: function lockHandler(el) {
         var events = this.toggleLock(el);
 
         if (events.locked) {
@@ -957,7 +902,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'rootHandler',
-      value: function rootHandler(el, data) {
+      value: function rootHandler(el) {
         var events = this.toggleRoot(el);
 
         if (events.rooted) {
@@ -985,30 +930,22 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'eventHelper',
-      value: function eventHelper(dataSetIds, callback, optionalParams, subSelectionClass) {
-        var _this2 = this;
-
+      value: function eventHelper(nodeIds, callback, optionalParams, subSelectionClass) {
         var that = this;
 
-        optionalParams = optionalParams ? optionalParams : [];
+        this.nodes
+        // Filter by node ID
+        .filter(function (data) {
+          return !! ~nodeIds.indexOf(data.id);
+        }).each(function triggerCallback(data) {
+          var el = this;
 
-        var _loop = function _loop(i) {
-          _this2.nodes.filter(function (data) {
-            return data.id === dataSetIds[i];
-          }).each(function (data) {
-            var el = this;
+          if (subSelectionClass) {
+            el = d3.select(this).select(subSelectionClass).node();
+          }
 
-            if (subSelectionClass) {
-              el = d3.select(this).select(subSelectionClass).node();
-            }
-
-            callback.apply(that, [el, data].concat(optionalParams));
-          });
-        };
-
-        for (var i = dataSetIds.length; i--;) {
-          _loop(i);
-        }
+          callback.apply(that, [el, data].concat(optionalParams ? optionalParams : []));
+        });
       }
     }, {
       key: 'toggleLock',
@@ -1019,27 +956,18 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         if (this.lockedNode) {
           if (this.lockedNode.datum().id === data.id) {
-            this.lockedNode.classed({
-              'active': false,
-              'inactive': true
-            });
+            this.lockedNode.classed({ active: false, inactive: true });
             this.unlockNode(this.lockedNode.datum().id);
             events.unlocked = this.lockedNode.datum().id;
             this.lockedNode = undefined;
           } else {
             // Reset previously locked node;
-            this.lockedNode.classed({
-              'active': false,
-              'inactive': true
-            });
+            this.lockedNode.classed({ active: false, inactive: true });
             this.unlockNode(this.lockedNode.datum().id);
             events.unlocked = this.lockedNode.datum().id;
 
             if (!setFalse) {
-              d3El.classed({
-                'active': true,
-                'inactive': false
-              });
+              d3El.classed({ active: true, inactive: false });
               this.lockNode(data.id);
               events.locked = data.id;
               this.lockedNode = d3El;
@@ -1047,10 +975,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           }
         } else {
           if (!setFalse) {
-            d3El.classed({
-              'active': true,
-              'inactive': false
-            });
+            d3El.classed({ active: true, inactive: false });
             this.lockNode(data.id);
             events.locked = data.id;
             this.lockedNode = d3El;
@@ -1067,12 +992,12 @@ var ListGraph = (function ($,d3) { 'use strict';
           return data.id === id;
         });
 
-        els.each(function (data) {
+        els.each(function triggerHighlighter(data) {
           that.highlightNodes(this, data, 'lock', undefined);
         });
 
-        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', function () {
-          return parseInt(d3.select(this).attr('width')) + that.visData.global.row.height / 2;
+        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', function width() {
+          return parseInt(d3.select(this).attr('width'), 10) + that.visData.global.row.height / 2;
         });
       }
     }, {
@@ -1082,10 +1007,10 @@ var ListGraph = (function ($,d3) { 'use strict';
         var els = this.nodes.filter(function (data) {
           return data.id === id;
         });
-        var start = function start() {
+        var start = function animationStart() {
           d3.select(this.parentNode).classed('animating', true);
         };
-        var end = function end() {
+        var end = function animationEnd() {
           d3.select(this.parentNode).classed('animating', false);
         };
 
@@ -1104,19 +1029,13 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         if (this.rootedNode) {
           // Reset current root node
-          this.rootedNode.classed({
-            'active': false,
-            'inactive': true
-          });
+          this.rootedNode.classed({ active: false, inactive: true });
           this.unrootNode(this.rootedNode.datum().id);
           events.unrooted = this.rootedNode.datum().id;
 
           // Activate new root
           if (this.rootedNode.datum().id !== data.id && !setFalse) {
-            d3El.classed({
-              'active': true,
-              'inactive': false
-            });
+            d3El.classed({ active: true, inactive: false });
             this.rootNode(data.id);
             this.rootedNode = d3El;
             events.rooted = data.id;
@@ -1125,10 +1044,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           }
         } else {
           if (!setFalse) {
-            d3El.classed({
-              'active': true,
-              'inactive': false
-            });
+            d3El.classed({ active: true, inactive: false });
             this.rootNode(data.id);
             events.rooted = data.id;
             this.rootedNode = d3El;
@@ -1212,31 +1128,28 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'nodesVisibility',
       value: function nodesVisibility(el, data, direction, show) {
-        var that = this;
-        var currentNodeData = data;
-
         if (show) {
-          this.nodes.classed('hidden', false).each(function (data) {
-            return data.hidden = false;
+          this.nodes.classed('hidden', false).each(function (nodeData) {
+            return nodeData.hidden = false;
           });
         } else {
           // First we set all nodes to `hidden`.
-          this.nodes.each(function (data) {
-            return data.hidden = true;
+          this.nodes.each(function (nodeData) {
+            return nodeData.hidden = true;
           });
 
           // Then we set direct child and parent nodes of the current node visible.
-          upAndDown(data, function (data) {
-            return data.hidden = false;
+          upAndDown(data, function (nodeData) {
+            return nodeData.hidden = false;
           });
 
           // We also show sibling nodes.
-          siblings(data, function (data) {
-            return data.hidden = false;
+          siblings(data, function (nodeData) {
+            return nodeData.hidden = false;
           });
 
-          this.nodes.classed('hidden', function (data) {
-            return data.hidden;
+          this.nodes.classed('hidden', function (nodeData) {
+            return nodeData.hidden;
           });
         }
         this.updateVisibility();
@@ -1244,7 +1157,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'highlightNodes',
       value: function highlightNodes(el, data, className, restriction) {
-        var _this3 = this;
+        var _this2 = this;
 
         var that = this;
         var nodeId = data.id;
@@ -1253,7 +1166,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         var includeParents = true;
         var includeChildren = true;
 
-        className = className ? className : 'hovering';
+        var appliedClassName = className ? className : 'hovering';
 
         if (restriction === 'directParentsOnly') {
           includeClones = false;
@@ -1261,29 +1174,29 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
 
         // Store link IDs
-        if (!this.currentLinks[className]) {
-          this.currentLinks[className] = {};
+        if (!this.currentLinks[appliedClassName]) {
+          this.currentLinks[appliedClassName] = {};
         }
-        this.currentLinks[className][nodeId] = [];
+        this.currentLinks[appliedClassName][nodeId] = [];
 
         var currentActiveProperty = d3.select(el).selectAll('.bar.active .bar-magnitude').datum();
 
-        var traverseCallbackUp = function traverseCallbackUp(data, childData) {
-          data.hovering = 2;
-          for (var i = data.links.length; i--;) {
+        var traverseCallbackUp = function traverseCallbackUp(nodeData, childData) {
+          nodeData.hovering = 2;
+          for (var i = nodeData.links.length; i--;) {
             // Only push direct parent child connections. E.g.
             // Store: (parent)->(child)
             // Ignore: (parent)->(siblings of child)
-            if (data.links[i].target.node.id === childData.id) {
-              _this3.currentLinks[className][nodeId].push(data.links[i].id);
+            if (nodeData.links[i].target.node.id === childData.id) {
+              _this2.currentLinks[appliedClassName][nodeId].push(nodeData.links[i].id);
             }
           }
         };
 
-        var traverseCallbackDown = function traverseCallbackDown(data) {
-          data.hovering = 2;
-          for (var i = data.links.length; i--;) {
-            _this3.currentLinks[className][nodeId].push(data.links[i].id);
+        var traverseCallbackDown = function traverseCallbackDown(nodeData) {
+          nodeData.hovering = 2;
+          for (var i = nodeData.links.length; i--;) {
+            _this2.currentLinks[appliedClassName][nodeId].push(nodeData.links[i].id);
           }
         };
 
@@ -1303,18 +1216,18 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         data.hovering = 1;
 
-        this.nodes.each(function (data) {
+        this.nodes.each(function (nodeData) {
           var node = d3.select(this);
 
-          if (data.hovering === 1) {
-            node.classed(className + '-directly', true);
-          } else if (data.hovering === 2) {
-            node.classed(className + '-indirectly', true);
-            node.selectAll('.bar.' + currentActiveProperty.id).classed('copy', function (data) {
-              var id = data.id;
+          if (nodeData.hovering === 1) {
+            node.classed(appliedClassName + '-directly', true);
+          } else if (nodeData.hovering === 2) {
+            node.classed(appliedClassName + '-indirectly', true);
+            node.selectAll('.bar.' + currentActiveProperty.id).classed('copy', function (barData) {
+              var id = barData.id;
 
-              if (data.clone) {
-                id = data.originalNode.id;
+              if (barData.clone) {
+                id = barData.originalNode.id;
               }
 
               if (id !== currentNodeData.id) {
@@ -1324,30 +1237,28 @@ var ListGraph = (function ($,d3) { 'use strict';
 
             var currentBar = d3.select(el).selectAll('.bar.' + currentActiveProperty.id).classed('reference', true);
 
-            that.bars.updateIndicator(node.selectAll('.bar.copy .bar-indicator'), currentBar.selectAll('.bar-indicator'), currentActiveProperty.value);
+            that.bars.updateIndicator(node.selectAll('.bar.copy .bar-indicator'), node.selectAll('.bar.copy .bar-indicator-bg'), currentBar.selectAll('.bar-indicator'), currentActiveProperty.value);
           }
         });
 
-        this.links.highlight(arrayToFakeObjs(this.currentLinks[className][data.id]), true, className);
+        this.links.highlight(arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]), true, appliedClassName);
       }
     }, {
       key: 'unhighlightNodes',
       value: function unhighlightNodes(el, data, className, restriction) {
-        var traverseCallback = function traverseCallback(data) {
-          return data.hovering = 0;
+        var traverseCallback = function traverseCallback(nodeData) {
+          return nodeData.hovering = 0;
         };
-        var includeClones = true;
         var includeParents = true;
-        var includeChildren = true;
+        var appliedClassName = className ? className : 'hovering';
 
-        className = className ? className : 'hovering';
+        var includeClones = true;
+        var includeChildren = true;
 
         if (restriction === 'directParentsOnly') {
           includeClones = false;
           includeChildren = false;
         }
-
-        className = className ? className : 'hovering';
 
         data.hovering = 0;
         if (includeParents && includeChildren) {
@@ -1364,30 +1275,32 @@ var ListGraph = (function ($,d3) { 'use strict';
           data.originalNode.hovering = 0;
         }
 
-        this.nodes.classed(className + '-directly', false);
-        this.nodes.classed(className + '-indirectly', false);
+        this.nodes.classed(appliedClassName + '-directly', false);
+        this.nodes.classed(appliedClassName + '-indirectly', false);
 
-        this.links.highlight(arrayToFakeObjs(this.currentLinks[className][data.id]), false, className);
+        if (this.currentLinks[appliedClassName]) {
+          this.links.highlight(arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]), false, appliedClassName);
+        }
       }
     }, {
       key: 'sort',
       value: function sort(update, newSortType) {
-        var _this4 = this;
+        var _this3 = this;
+
+        var start = function start() {
+          d3.select(this).classed('sorting', true);
+        };
+        var end = function end() {
+          d3.select(this).classed('sorting', false);
+        };
 
         for (var i = update.length; i--;) {
-          var start = function start() {
-            d3.select(this).classed('sorting', true);
-          };
-          var end = function end() {
-            d3.select(this).classed('sorting', false);
-          };
-
           var selection = this.nodes.data(update[i].rows, function (data) {
             return data.id;
           });
 
           selection.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-            return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
+            return 'translate(' + (data.x + _this3.visData.global.column.padding) + ', ' + data.y + ')';
           }).each('start', start).each('end', end);
 
           if (newSortType) {
@@ -1398,7 +1311,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'updateVisibility',
       value: function updateVisibility() {
-        var _this5 = this;
+        var _this4 = this;
 
         this.vis.layout.updateNodesVisibility();
 
@@ -1415,9 +1328,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         };
 
         this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-          return 'translate(' + (data.x + _this5.visData.global.column.padding) + ', ' + data.y + ')';
+          return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
         }).call(completed, function () {
-          return _this5.vis.updateScrollbarVisibility();
+          return _this4.vis.updateScrollbarVisibility();
         });
 
         this.vis.links.updateVisibility();
@@ -1431,13 +1344,108 @@ var ListGraph = (function ($,d3) { 'use strict';
     return Nodes;
   })();
 
+  var LINKS_CLASS = 'links';
+  var LINK_CLASS = 'link';
+
+  var Links = (function () {
+    function Links(levels, visData, layout) {
+      var _this = this;
+
+      babelHelpers.classCallCheck(this, Links);
+
+      this.visData = visData;
+      this.layout = layout;
+
+      this.groups = levels.append('g').attr('class', LINKS_CLASS).call(function (selection) {
+        selection.each(function () {
+          d3.select(this.parentNode).datum().links = this;
+        });
+      });
+
+      this.links = this.groups.selectAll(LINK_CLASS + '-bg').data(function (data, index) {
+        return _this.layout.links(index);
+      }).enter().append('g').attr('class', LINK_CLASS);
+
+      this.links.append('path').attr({
+        class: LINK_CLASS + '-bg',
+        d: this.diagonal
+      });
+
+      this.links.append('path').attr({
+        class: LINK_CLASS + '-direct',
+        d: this.diagonal
+      });
+    }
+
+    babelHelpers.createClass(Links, [{
+      key: 'highlight',
+      value: function highlight(nodeIds, _highlight, className) {
+        this.links.data(nodeIds, function (data) {
+          return data.id;
+        }).classed(className ? className : 'hovering', _highlight === false ? false : true);
+      }
+    }, {
+      key: 'scroll',
+      value: function scroll(selection, data) {
+        // Update data of `g`.
+        selection.data(data);
+
+        // Next update all paths according to the new data.
+        selection.selectAll('path').attr('d', this.diagonal);
+      }
+    }, {
+      key: 'sort',
+      value: function sort(update) {
+        var start = function start() {
+          d3.select(this).classed('sorting', true);
+        };
+        var end = function end() {
+          d3.select(this).classed('sorting', false);
+        };
+
+        // Update data of `g`.
+        this.links.data(update, function (data) {
+          return data.id;
+        });
+
+        // Next update all paths according to the new data.
+        this.links.selectAll('path').transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal).each('start', start).each('end', end);
+      }
+    }, {
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        this.links.selectAll('path').classed('hidden', function (data) {
+          return data.target.node.hidden || data.source.node.hidden;
+        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal);
+      }
+    }, {
+      key: 'diagonal',
+      get: function get() {
+        var _this2 = this;
+
+        return d3.svg.diagonal().source(function (data) {
+          return {
+            x: data.source.node.y + data.source.offsetY + _this2.visData.global.row.height / 2,
+            y: data.source.node.x + data.source.offsetX + _this2.visData.global.column.contentWidth + _this2.visData.global.column.padding
+          };
+        }).target(function (data) {
+          return {
+            x: data.target.node.y + data.target.offsetY + _this2.visData.global.row.height / 2,
+            y: data.target.node.x + data.target.offsetX + _this2.visData.global.column.padding
+          };
+        }).projection(function (data) {
+          return [data.y, data.x];
+        });
+      }
+    }]);
+    return Links;
+  })();
+
   var COLUMN_CLASS = 'column';
   var SCROLL_CONTAINER_CLASS = 'scroll-container';
 
   var Levels = (function () {
     function Levels(selection, visData) {
-      var _this = this;
-
       babelHelpers.classCallCheck(this, Levels);
 
       this.visData = visData;
@@ -1450,22 +1458,18 @@ var ListGraph = (function ($,d3) { 'use strict';
         return data.x;
       }).attr('y', function (data) {
         return data.y;
-      }).attr('width', function (data) {
-        return _this.visData.global.column.width;
-      }).attr('height', function (data) {
-        return _this.visData.global.column.height;
-      });
+      }).attr('width', this.visData.global.column.width).attr('height', this.visData.global.column.height);
     }
 
     babelHelpers.createClass(Levels, [{
       key: 'scrollPreparation',
       value: function scrollPreparation(vis, scrollbarWidth) {
-        var _this2 = this;
+        var _this = this;
 
         this.groups.each(function (data, index) {
-          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this2.visData.global.row.padding;
-          var scrollHeight = contentHeight - _this2.visData.global.column.height;
-          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this2.visData.global.column.height * _this2.visData.global.column.height / contentHeight, 10) : 0;
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this.visData.global.column.height * _this.visData.global.column.height / contentHeight, 10) : 0;
 
           data.height = contentHeight;
           data.linkSelections = {
@@ -1476,13 +1480,13 @@ var ListGraph = (function ($,d3) { 'use strict';
           data.scrollTop = 0;
           data.scrollbar = {
             el: undefined,
-            x: data.x + _this2.visData.global.column.width - scrollbarWidth,
+            x: data.x + _this.visData.global.column.width - scrollbarWidth,
             y: 0,
             width: scrollbarWidth,
             height: scrollbarHeight,
-            scrollHeight: _this2.visData.global.column.height - scrollbarHeight,
+            scrollHeight: _this.visData.global.column.height - scrollbarHeight,
             scrollTop: 0,
-            heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight])
+            heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this.visData.global.column.height - scrollbarHeight])
           };
           data.invertedHeightScale = data.scrollbar.heightScale.invert;
         });
@@ -1490,21 +1494,21 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'updateScrollProperties',
       value: function updateScrollProperties() {
-        var _this3 = this;
+        var _this2 = this;
 
-        this.groups.each(function (data, index) {
-          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this3.visData.global.row.padding;
-          var scrollHeight = contentHeight - _this3.visData.global.column.height;
-          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this3.visData.global.column.height * _this3.visData.global.column.height / contentHeight, 10) : 0;
+        this.groups.each(function (data) {
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this2.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this2.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this2.visData.global.column.height * _this2.visData.global.column.height / contentHeight, 10) : 0;
 
           data.height = contentHeight;
           data.scrollHeight = scrollHeight;
           data.scrollTop = 0;
           data.scrollbar.y = 0;
           data.scrollbar.height = scrollbarHeight;
-          data.scrollbar.scrollHeight = _this3.visData.global.column.height - scrollbarHeight;
+          data.scrollbar.scrollHeight = _this2.visData.global.column.height - scrollbarHeight;
           data.scrollbar.scrollTop = 0;
-          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this3.visData.global.column.height - scrollbarHeight]);
+          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight]);
         });
       }
     }, {
@@ -1554,7 +1558,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           that.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
-      }).on('click', function (data) {
+      }).on('click', function () {
         that.sortAllColumns(this, 'precision');
       }).on('mouseenter', function () {
         return _this.highlightBars(undefined, 'precision');
@@ -1577,7 +1581,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           that.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
-      }).on('click', function (data) {
+      }).on('click', function () {
         that.sortAllColumns(this, 'recall');
       }).on('mouseenter', function () {
         return _this.highlightBars(undefined, 'recall');
@@ -1600,7 +1604,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           that.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
-      }).on('click', function (data) {
+      }).on('click', function () {
         that.sortAllColumns(this, 'name');
       }).on('mouseenter', function () {
         return _this.highlightLabels();
@@ -1656,36 +1660,42 @@ var ListGraph = (function ($,d3) { 'use strict';
         control.append('li').attr('class', 'control-btn toggle').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleColumn);
 
         control.append('li').attr('class', 'control-btn sort-precision ease-all').style({
-          'width': that.visData.global.column.contentWidth / 2 + 'px',
-          'left': that.visData.global.column.padding + 'px'
-        }).on('click', function (data) {
-          that.sortColumn(this, data.level, 'precision');
+          width: that.visData.global.column.contentWidth / 2 + 'px',
+          left: that.visData.global.column.padding + 'px'
+        }).on('click', function (controlData) {
+          that.sortColumn(this, controlData.level, 'precision');
         }).on('mouseenter', function () {
           that.highlightBars(this.parentNode, 'precision');
           d3.select(this).style('width', that.visData.global.column.contentWidth - 16 + 'px');
         }).on('mouseleave', function () {
           that.highlightBars(this.parentNode, 'precision', true);
           d3.select(this).style('width', that.visData.global.column.contentWidth / 2 + 'px');
-        }).html('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'precision' ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
+        }).html('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'precision' ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
 
         control.append('li').attr('class', 'control-btn sort-recall ease-all').style({
-          'width': that.visData.global.column.contentWidth / 2 + 'px',
-          'left': that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
-        }).on('click', function (data) {
-          that.sortColumn(this, data.level, 'recall');
+          width: that.visData.global.column.contentWidth / 2 + 'px',
+          left: that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
+        }).on('click', function (controlData) {
+          that.sortColumn(this, controlData.level, 'recall');
         }).on('mouseenter', function () {
           that.highlightBars(this.parentNode, 'recall');
           d3.select(this).style({
-            'width': that.visData.global.column.contentWidth - 16 + 'px',
-            'left': that.visData.global.column.padding + 16 + 'px'
+            width: that.visData.global.column.contentWidth - 16 + 'px',
+            left: that.visData.global.column.padding + 16 + 'px'
           });
         }).on('mouseleave', function () {
           that.highlightBars(this.parentNode, 'recall', true);
           d3.select(this).style({
-            'width': that.visData.global.column.contentWidth / 2 + 'px',
-            'left': that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
+            width: that.visData.global.column.contentWidth / 2 + 'px',
+            left: that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
           });
-        }).html('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'recall' ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
+        }).html('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'recall' ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
 
         control.append('li').attr('class', 'control-btn options').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleOptions).html('<svg class="icon-gear">' + '  <use xlink:href="' + that.vis.iconPath + '#gear"></use>' + '</svg>');
 
@@ -1695,12 +1705,11 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
     }
 
+    // toggleColumn () {
+    //   console.log('Toggle column');
+    // }
+
     babelHelpers.createClass(Topbar, [{
-      key: 'toggleColumn',
-      value: function toggleColumn() {
-        console.log('Toggle column');
-      }
-    }, {
       key: 'selectNodesLevel',
       value: function selectNodesLevel(el) {
         return this.vis.selectByLevel(d3.select(el).datum().depth, '.node');
@@ -1720,11 +1729,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'sortAllColumns',
       value: function sortAllColumns(el, type) {
-        var newSortType = false;
-
         if (this.vis.currentSorting.global.type !== type) {
-          newSortType = true;
-
           // Unset class of previous global sorting element
           if (this.vis.currentSorting.global.el) {
             this.resetSortEl(this.vis.currentSorting.global.el);
@@ -1789,11 +1794,11 @@ var ListGraph = (function ($,d3) { 'use strict';
         el.select('.icon-sort-asc').classed('visible', false);
         el.select('.icon-unsort').classed('visible', true);
       }
-    }, {
-      key: 'toggleOptions',
-      value: function toggleOptions() {
-        console.log('Toggle options');
-      }
+
+      // toggleOptions () {
+      //   console.log('Toggle options');
+      // }
+
     }, {
       key: 'switch',
       value: function _switch() {
@@ -2064,21 +2069,14 @@ var ListGraph = (function ($,d3) { 'use strict';
           return false;
         }
 
-        if (isFinite(times)) {
-          times = parseInt(times);
-        } else {
-          times = Infinity;
-        }
+        var normTimes = isFinite(times) ? parseInt(times, 10) : Infinity;
 
         if (isArray(this.stack[event])) {
-          return this.stack[event].push({ callback: callback, times: times }) - 1;
-        } else {
-          this.stack[event] = [{ callback: callback, times: times }];
-          return 0;
+          return this.stack[event].push({ callback: callback, times: normTimes }) - 1;
         }
+        this.stack[event] = [{ callback: callback, times: normTimes }];
+        return 0;
       }
-    }, {
-      key: 'off',
 
       /**
        * Removes a callback function from an event stack given its index.
@@ -2092,6 +2090,9 @@ var ListGraph = (function ($,d3) { 'use strict';
        * @return  {Boolean}         Returns `true` if event callback was found and
        *   successfully removed.
        */
+
+    }, {
+      key: 'off',
       value: function off(event, index) {
         try {
           this.stack[event].splice(index, 1);
@@ -2100,8 +2101,6 @@ var ListGraph = (function ($,d3) { 'use strict';
           return false;
         }
       }
-    }, {
-      key: 'trigger',
 
       /**
        * Trigger an event stack
@@ -2113,6 +2112,9 @@ var ListGraph = (function ($,d3) { 'use strict';
        * @param   {String}   event  Event identifier.
        * @return  {Boolean}         Returns `true` if an event stack was found.
        */
+
+    }, {
+      key: 'trigger',
       value: function trigger(event, data) {
         if (isArray(this.stack[event])) {
           // Traversing from the end to the start, which has the advantage that
@@ -2128,9 +2130,8 @@ var ListGraph = (function ($,d3) { 'use strict';
             }
           }
           return true;
-        } else {
-          return false;
         }
+        return false;
       }
     }, {
       key: 'stack',
@@ -2152,7 +2153,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
 
       if (!isObject(options)) {
-        options = {};
+        options = {}; // eslint-disable-line no-param-reassign
       }
 
       var that = this;
@@ -2178,6 +2179,9 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.rows = options.rows || ROWS;
       this.iconPath = options.iconPath || ICON_PATH;
 
+      this.lessAnimations = !!options.lessAnimations;
+      this.baseElD3.classed('less-animations', this.lessAnimations);
+
       this.sortBy = options.sortBy;
       this.sortOrder = options.sortOrder || DEFAULT_SORT_ORDER;
 
@@ -2189,7 +2193,8 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.baseElJq.width(this.width);
       }
 
-      this.layout = new d3.layout.listGraph([this.width, this.height], [this.columns, this.rows]);
+      this.layout = new d3.layout.listGraph( // eslint-disable-line new-cap
+      [this.width, this.height], [this.columns, this.rows]);
 
       this.data = data;
       this.visData = this.layout.process(this.data, this.rootNodes, {
@@ -2283,10 +2288,15 @@ var ListGraph = (function ($,d3) { 'use strict';
           min: Math.min(0, this.width - this.container.node().getBBox().width),
           max: 0
         }
-      });
+      }, [this.scrollbarDragging.bind(this)]);
     }
 
     babelHelpers.createClass(ListGraph, [{
+      key: 'scrollbarDragging',
+      value: function scrollbarDragging() {
+        return !!this.activeScrollbar;
+      }
+    }, {
       key: 'globalMouseUp',
       value: function globalMouseUp(event) {
         if (this.activeScrollbar) {

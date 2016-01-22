@@ -317,13 +317,14 @@
    *    y-axis, e.g. rows.
    */
   function traverseGraph(graph, starts, columnCache, nodeOrder, links, scaleX, scaleY) {
+    var visited = {};
+    var queue = [];
+
     var j = undefined;
     var child = undefined;
     var childId = undefined;
     var clone = undefined;
     var node = undefined;
-    var visited = {};
-    var queue = [];
     var cloneId = undefined;
 
     /**
@@ -375,6 +376,7 @@
      * @param  {Object}  node  Node to be processed.
      */
     function processBars(node) {
+      // eslint-disable-line no-shadow
       if (node.data.bars) {
         if (isArray(node.data.bars)) {
           node.data.barRefs = {};
@@ -401,6 +403,34 @@
     }
 
     /**
+     * Process outgoing links and add them to the source
+     *
+     * @author  Fritz Lekschas
+     * @date    2015-11-17
+     *
+     * @method  processLink
+     * @private
+     * @memberOf  traverseGraph
+     * @param  {Object}  source  Source node.
+     * @param  {Object}  target  Target node.
+     */
+    function processLink(source, target) {
+      source.links.push({
+        id: '(' + source.id + ')->(' + target.id + ')',
+        source: {
+          node: source,
+          offsetX: 0,
+          offsetY: 0
+        },
+        target: {
+          node: target,
+          offsetX: 0,
+          offsetY: 0
+        }
+      });
+    }
+
+    /**
      * Process a node, e.g. assign `x` and `y`, clone node etc.
      *
      * @description
@@ -418,6 +448,7 @@
      * @param  {Boolean}  duplication  If `true` node is a duplication.
      */
     function processNode(id, node, parent, duplication) {
+      // eslint-disable-line no-shadow
       var _id = id;
       var _node = node;
 
@@ -440,7 +471,7 @@
           node.clones.push(_node);
         }
       } else {
-        _node['clones'] = [];
+        _node.clones = [];
       }
 
       _node.id = _id;
@@ -484,34 +515,6 @@
       if (parent) {
         processLink(parent, _node);
       }
-    }
-
-    /**
-     * Process outgoing links and add them to the source
-     *
-     * @author  Fritz Lekschas
-     * @date    2015-11-17
-     *
-     * @method  processLink
-     * @private
-     * @memberOf  traverseGraph
-     * @param  {Object}  source  Source node.
-     * @param  {Object}  target  Target node.
-     */
-    function processLink(source, target) {
-      source.links.push({
-        id: '(' + source.id + ')->(' + target.id + ')',
-        source: {
-          node: source,
-          offsetX: 0,
-          offsetY: 0
-        },
-        target: {
-          node: target,
-          offsetX: 0,
-          offsetY: 0
-        }
-      });
     }
 
     // BFS for each start node.
@@ -708,6 +711,7 @@
       key: 'nodesToMatrix',
       value: function nodesToMatrix(level) {
         var arr = [];
+
         var keys = undefined;
         var start = 0;
         var end = Object.keys(this.columnCache).length;
@@ -800,20 +804,23 @@
     }, {
       key: 'sort',
       value: function sort(level, property, sortOrder) {
-        var itr = 0,
-            end = Object.keys(this.columnCache).length,
-            getValue = undefined;
+        var itr = 0;
+        var end = Object.keys(this.columnCache).length;
+        var getValue = undefined;
+        var sortProperty = undefined;
 
         // 1 = asc, -1 = desc [default]
-        sortOrder = sortOrder === 1 ? 1 : -1;
+        var numericSortOrder = sortOrder === 1 ? 1 : -1;
 
         switch (property) {
           case 'precision':
+            sortProperty = 'precision';
             getValue = function (obj) {
               return obj.data.barRefs.precision;
             };
             break;
           case 'recall':
+            sortProperty = 'recall';
             getValue = function (obj) {
               return obj.data.barRefs.recall;
             };
@@ -822,7 +829,7 @@
             getValue = function (obj) {
               return obj.data.name.toLowerCase();
             };
-            property = name;
+            sortProperty = 'name';
             break;
         }
 
@@ -833,13 +840,21 @@
 
         for (itr; itr < end; itr++) {
           this.columnNodeOrder[itr].sort(function (a, b) {
+            // eslint-disable-line no-loop-func
             var valueA = getValue(a);
             var valueB = getValue(b);
-            return valueA > valueB ? sortOrder : valueA < valueB ? -sortOrder : 0;
+
+            if (valueA > valueB) {
+              return numericSortOrder;
+            }
+            if (valueA < valueB) {
+              return -numericSortOrder;
+            }
+            return 0;
           });
 
-          this.columnSorting[itr].by = property;
-          this.columnSorting[itr].order = sortOrder;
+          this.columnSorting[itr].by = sortProperty;
+          this.columnSorting[itr].order = numericSortOrder;
 
           // Update `y` according to the new position.
           for (var i = this.columnNodeOrder[itr].length; i--;) {
@@ -935,17 +950,20 @@
     }, {
       key: 'links',
       value: function links(startLevel, endLevel) {
-        var allLinks = [],
-            keys = [],
-            nodeLinks = undefined;
+        var allLinks = [];
+
+        var keys = [];
+        var nodeLinks = undefined;
+        var normStartLevel = undefined;
+        var normEndLevel = undefined;
 
         if (!isFinite(startLevel)) {
           keys = Object.keys(this.data);
         } else {
-          startLevel = Math.max(startLevel, 0);
-          endLevel = isFinite(endLevel) ? Math.min(endLevel, Object.keys(this.columnCache).length) : startLevel + 1;
+          normStartLevel = Math.max(startLevel, 0);
+          normEndLevel = isFinite(endLevel) ? Math.min(endLevel, Object.keys(this.columnCache).length) : normStartLevel + 1;
 
-          for (var i = startLevel; i < endLevel; i++) {
+          for (var i = normStartLevel; i < normEndLevel; i++) {
             keys = keys.concat(Object.keys(this.columnCache[i]));
           }
         }
@@ -1019,14 +1037,14 @@
         }
 
         if (isArray(newGrid)) {
-          this._grid.columns = parseInt(newGrid[0]) || this._grid.columns;
-          this._grid.rows = parseInt(newGrid[1]) || this._grid.rows;
+          this._grid.columns = parseInt(newGrid[0], 10) || this._grid.columns;
+          this._grid.rows = parseInt(newGrid[1], 10) || this._grid.rows;
           this.updateScaling();
         }
 
         if (isObject(newGrid)) {
-          this._grid.columns = parseInt(newGrid.columns) || this._grid.columns;
-          this._grid.rows = parseInt(newGrid.rows) || this._grid.rows;
+          this._grid.columns = parseInt(newGrid.columns, 10) || this._grid.columns;
+          this._grid.rows = parseInt(newGrid.rows, 10) || this._grid.rows;
           this.updateScaling();
         }
 
@@ -1114,14 +1132,14 @@
         }
 
         if (isArray(newSize)) {
-          this._size.width = parseInt(newSize[0]) || this._size.width;
-          this._size.height = parseInt(newSize[1]) || this._size.height;
+          this._size.width = parseInt(newSize[0], 10) || this._size.width;
+          this._size.height = parseInt(newSize[1], 10) || this._size.height;
           this.updateScaling();
         }
 
         if (isObject(newSize)) {
-          this._size.width = parseInt(newSize.width) || this._size.width;
-          this._size.height = parseInt(newSize.height) || this._size.height;
+          this._size.width = parseInt(newSize.width, 10) || this._size.width;
+          this._size.height = parseInt(newSize.height, 10) || this._size.height;
           this.updateScaling();
         }
 
@@ -1153,10 +1171,11 @@
         }
 
         if (isFinite(padding)) {
+          var relPadding = padding;
           if (absolute && isFinite(this._columnWidth)) {
-            padding = padding / this._columnWidth;
+            relPadding = padding / this._columnWidth;
           }
-          this._colRelPadding = Math.max(Math.min(padding, 0.66), 0.1);
+          this._colRelPadding = Math.max(Math.min(relPadding, 0.66), 0.1);
           this.updateScaling();
         }
 
@@ -1188,10 +1207,11 @@
         }
 
         if (isFinite(padding)) {
+          var relPadding = padding;
           if (absolute && isFinite(this._rowHeight)) {
-            padding = padding / this._rowHeight;
+            relPadding = padding / this._rowHeight;
           }
-          this._rowRelPadding = Math.max(Math.min(padding, 0.5), 0);
+          this._rowRelPadding = Math.max(Math.min(relPadding, 0.5), 0);
           this.updateScaling();
         }
 

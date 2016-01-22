@@ -1,5 +1,3 @@
-'use strict';
-
 // External
 import * as d3 from 'd3';
 
@@ -10,14 +8,14 @@ const LINKS_CLASS = 'links';
 const LINK_CLASS = 'link';
 
 class Links {
-  constructor (selection, visData, layout) {
+  constructor (levels, visData, layout) {
     this.visData = visData;
     this.layout = layout;
 
-    this.groups = selection.append('g')
+    this.groups = levels.append('g')
       .attr('class', LINKS_CLASS)
       .call(selection => {
-        selection.each(function (data, index) {
+        selection.each(function () {
           d3.select(this.parentNode).datum().links = this;
         });
       });
@@ -32,14 +30,14 @@ class Links {
 
     this.links.append('path')
       .attr({
-        'class': LINK_CLASS + '-bg',
-        'd': this.diagonal
+        class: LINK_CLASS + '-bg',
+        d: this.diagonal,
       });
 
     this.links.append('path')
       .attr({
-        'class': LINK_CLASS + '-direct',
-        'd': this.diagonal
+        class: LINK_CLASS + '-direct',
+        d: this.diagonal,
       });
   }
 
@@ -51,23 +49,24 @@ class Links {
             this.visData.global.row.height / 2,
           y: data.source.node.x + data.source.offsetX +
             this.visData.global.column.contentWidth +
-            this.visData.global.column.padding
+            this.visData.global.column.padding,
         };})
       .target(data => ({
         x: data.target.node.y + data.target.offsetY +
           this.visData.global.row.height / 2,
         y: data.target.node.x + data.target.offsetX +
-          this.visData.global.column.padding
+          this.visData.global.column.padding,
       }))
       .projection(data => [data.y, data.x]);
   }
 
   highlight (nodeIds, highlight, className) {
-    className = className ? className : 'hovering';
-
     this.links
       .data(nodeIds, data => data.id)
-      .classed(className, highlight === false ? false : true);
+      .classed(
+        className ? className : 'hovering',
+        highlight === false ? false : true
+      );
   }
 
   scroll (selection, data) {
@@ -79,8 +78,8 @@ class Links {
   }
 
   sort (update) {
-    let start = function () { d3.select(this).classed('sorting', true); };
-    let end = function () { d3.select(this).classed('sorting', false); };
+    const start = function () { d3.select(this).classed('sorting', true); };
+    const end = function () { d3.select(this).classed('sorting', false); };
 
     // Update data of `g`.
     this.links.data(update, data => data.id);

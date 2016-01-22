@@ -1,5 +1,4 @@
-'use strict';
-
+// External
 import * as d3 from 'd3';
 
 const COLUMN_CLASS = 'column';
@@ -23,16 +22,16 @@ class Levels {
         .attr('class', SCROLL_CONTAINER_CLASS)
         .attr('x', data => data.x)
         .attr('y', data => data.y)
-        .attr('width', data => this.visData.global.column.width)
-        .attr('height', data => this.visData.global.column.height);
+        .attr('width', this.visData.global.column.width)
+        .attr('height', this.visData.global.column.height);
   }
 
   scrollPreparation (vis, scrollbarWidth) {
     this.groups.each((data, index) => {
-      let contentHeight = data.nodes.getBoundingClientRect().height +
+      const contentHeight = data.nodes.getBoundingClientRect().height +
         2 * this.visData.global.row.padding;
-      let scrollHeight = contentHeight - this.visData.global.column.height;
-      let scrollbarHeight = scrollHeight > 0 ?
+      const scrollHeight = contentHeight - this.visData.global.column.height;
+      const scrollbarHeight = scrollHeight > 0 ?
         Math.max(
           (
             this.visData.global.column.height *
@@ -46,7 +45,7 @@ class Levels {
       data.linkSelections = {
         incoming: index > 0 ?
           vis.selectByLevel(index - 1, '.link') : null,
-        outgoing: vis.selectByLevel(index, '.link')
+        outgoing: vis.selectByLevel(index, '.link'),
       };
       data.scrollHeight = scrollHeight;
       data.scrollTop = 0;
@@ -60,18 +59,18 @@ class Levels {
         scrollTop: 0,
         heightScale: d3.scale.linear()
           .domain([0, scrollHeight])
-          .range([0, this.visData.global.column.height - scrollbarHeight])
+          .range([0, this.visData.global.column.height - scrollbarHeight]),
       };
       data.invertedHeightScale = data.scrollbar.heightScale.invert;
     });
   }
 
   updateScrollProperties () {
-    this.groups.each((data, index) => {
-      let contentHeight = data.nodes.getBoundingClientRect().height +
+    this.groups.each(data => {
+      const contentHeight = data.nodes.getBoundingClientRect().height +
         2 * this.visData.global.row.padding;
-      let scrollHeight = contentHeight - this.visData.global.column.height;
-      let scrollbarHeight = scrollHeight > 0 ?
+      const scrollHeight = contentHeight - this.visData.global.column.height;
+      const scrollbarHeight = scrollHeight > 0 ?
         Math.max(
           (
             this.visData.global.column.height *

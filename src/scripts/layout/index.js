@@ -1,5 +1,3 @@
-'use strict';
-
 // External
 import * as d3 from 'd3';
 import isArray from '../../../node_modules/lodash-es/lang/isArray';
@@ -7,7 +5,7 @@ import isFinite from '../../../node_modules/lodash-es/lang/isFinite';
 import isObject from '../../../node_modules/lodash-es/lang/isObject';
 
 // Internal
-import {NoRootNodes} from './errors';
+import { NoRootNodes } from './errors';
 import traverseGraph from './process-nodes';
 
 /**
@@ -19,7 +17,7 @@ import traverseGraph from './process-nodes';
  */
 const SIZE = {
   width: 300,
-  height: 300
+  height: 300,
 };
 
 /**
@@ -31,7 +29,7 @@ const SIZE = {
  */
 const GRID = {
   columns: 3,
-  rows: 3
+  rows: 3,
 };
 
 /**
@@ -86,7 +84,7 @@ class ListGraphLayout {
   constructor (size, grid) {
     this.scale = {
       x: d3.scale.linear(),
-      y: d3.scale.linear()
+      y: d3.scale.linear(),
     };
 
     this._colRelPadding = COL_REL_PADDING;
@@ -95,12 +93,12 @@ class ListGraphLayout {
 
     this._grid = {
       columns: GRID.columns,
-      rows: GRID.rows
+      rows: GRID.rows,
     };
 
     this._size = {
       width: SIZE.width,
-      height: SIZE.height
+      height: SIZE.height,
     };
 
     this.grid(grid);
@@ -135,7 +133,8 @@ class ListGraphLayout {
    * @return  {Array}  Fat array of arrays of nodes.
    */
   nodesToMatrix (level) {
-    let arr = [];
+    const arr = [];
+
     let keys;
     let start = 0;
     let end = Object.keys(this.columnCache).length;
@@ -152,7 +151,7 @@ class ListGraphLayout {
         level: i,
         rows: [],
         sortBy: this.columnSorting[i].by,
-        sortOrder: this.columnSorting[i].order
+        sortOrder: this.columnSorting[i].order,
       });
       keys = Object.keys(this.columnCache[i]);
       for (let j = keys.length; j--;) {
@@ -210,7 +209,7 @@ class ListGraphLayout {
 
     return {
       global: this.compileGlobalProps(),
-      nodes: this.nodesToMatrix()
+      nodes: this.nodesToMatrix(),
     };
   }
 
@@ -230,23 +229,26 @@ class ListGraphLayout {
    * @return  {Object}  Self.
    */
   sort (level, property, sortOrder) {
-    let itr = 0,
-        end = Object.keys(this.columnCache).length,
-        getValue;
+    let itr = 0;
+    let end = Object.keys(this.columnCache).length;
+    let getValue;
+    let sortProperty;
 
     // 1 = asc, -1 = desc [default]
-    sortOrder = sortOrder === 1 ? 1 : -1;
+    const numericSortOrder = sortOrder === 1 ? 1 : -1;
 
     switch (property) {
       case 'precision':
+        sortProperty = 'precision';
         getValue = obj => obj.data.barRefs.precision;
         break;
       case 'recall':
+        sortProperty = 'recall';
         getValue = obj => obj.data.barRefs.recall;
         break;
       default:
         getValue = obj => obj.data.name.toLowerCase();
-        property = name;
+        sortProperty = 'name';
         break;
     }
 
@@ -256,14 +258,21 @@ class ListGraphLayout {
     }
 
     for (itr; itr < end; itr++) {
-      this.columnNodeOrder[itr].sort((a, b) => {
-        let valueA = getValue(a);
-        let valueB = getValue(b);
-        return valueA > valueB ? sortOrder : (valueA < valueB ? -sortOrder : 0);
+      this.columnNodeOrder[itr].sort((a, b) => {  // eslint-disable-line no-loop-func
+        const valueA = getValue(a);
+        const valueB = getValue(b);
+
+        if (valueA > valueB) {
+          return numericSortOrder;
+        }
+        if (valueA < valueB) {
+          return -numericSortOrder;
+        }
+        return 0;
       });
 
-      this.columnSorting[itr].by = property;
-      this.columnSorting[itr].order = sortOrder;
+      this.columnSorting[itr].by = sortProperty;
+      this.columnSorting[itr].order = numericSortOrder;
 
       // Update `y` according to the new position.
       for (let i = this.columnNodeOrder[itr].length; i--;) {
@@ -297,16 +306,16 @@ class ListGraphLayout {
         width: this._columnWidth,
         height: this._size.height,
         padding: this._colAbsPadding,
-        contentWidth: this._colAbsContentWidth
+        contentWidth: this._colAbsContentWidth,
       },
       row: {
         height: this._rowHeight,
         padding: this._rowAbsPadding,
-        contentHeight: this._rowAbsContentHeight
+        contentHeight: this._rowAbsContentHeight,
       },
       cell: {
-        padding: this._cellAbsInnerPadding
-      }
+        padding: this._cellAbsInnerPadding,
+      },
     };
   }
 
@@ -350,17 +359,22 @@ class ListGraphLayout {
    *   links.
    */
   links (startLevel, endLevel) {
-    let allLinks = [], keys = [], nodeLinks;
+    const allLinks = [];
+
+    let keys = [];
+    let nodeLinks;
+    let normStartLevel;
+    let normEndLevel;
 
     if (!isFinite(startLevel)) {
       keys = Object.keys(this.data);
     } else {
-      startLevel = Math.max(startLevel, 0);
-      endLevel = isFinite(endLevel) ?
+      normStartLevel = Math.max(startLevel, 0);
+      normEndLevel = isFinite(endLevel) ?
         Math.min(endLevel, Object.keys(this.columnCache).length) :
-        startLevel + 1;
+        normStartLevel + 1;
 
-      for (let i = startLevel; i < endLevel; i++) {
+      for (let i = normStartLevel; i < normEndLevel; i++) {
         keys = keys.concat(Object.keys(this.columnCache[i]));
       }
     }
@@ -396,7 +410,7 @@ class ListGraphLayout {
    *   modified outgoing links.
    */
   offsetLinks (level, offsetY, nodeType) {
-    let links = this.links(level);
+    const links = this.links(level);
 
     if (
       (nodeType === 'source' || nodeType === 'target') &&
@@ -431,14 +445,14 @@ class ListGraphLayout {
     }
 
     if (isArray(newGrid)) {
-      this._grid.columns = parseInt(newGrid[0]) || this._grid.columns;
-      this._grid.rows = parseInt(newGrid[1]) || this._grid.rows;
+      this._grid.columns = parseInt(newGrid[0], 10) || this._grid.columns;
+      this._grid.rows = parseInt(newGrid[1], 10) || this._grid.rows;
       this.updateScaling();
     }
 
     if (isObject(newGrid)) {
-      this._grid.columns = parseInt(newGrid.columns)|| this._grid.columns;
-      this._grid.rows = parseInt(newGrid.rows)|| this._grid.rows;
+      this._grid.columns = parseInt(newGrid.columns, 10) || this._grid.columns;
+      this._grid.rows = parseInt(newGrid.rows, 10) || this._grid.rows;
       this.updateScaling();
     }
 
@@ -453,7 +467,7 @@ class ListGraphLayout {
    * @date    2016-01-17
    */
   updateNodesVisibility () {
-    let skipped = {};
+    const skipped = {};
 
     for (let i = Object.keys(this.columnCache).length; i--;) {
       skipped[i] = 0;
@@ -523,14 +537,14 @@ class ListGraphLayout {
     }
 
     if (isArray(newSize)) {
-      this._size.width = parseInt(newSize[0]) || this._size.width;
-      this._size.height = parseInt(newSize[1]) || this._size.height;
+      this._size.width = parseInt(newSize[0], 10) || this._size.width;
+      this._size.height = parseInt(newSize[1], 10) || this._size.height;
       this.updateScaling();
     }
 
     if (isObject(newSize)) {
-      this._size.width = parseInt(newSize.width) || this._size.width;
-      this._size.height = parseInt(newSize.height) || this._size.height;
+      this._size.width = parseInt(newSize.width, 10) || this._size.width;
+      this._size.height = parseInt(newSize.height, 10) || this._size.height;
       this.updateScaling();
     }
 
@@ -559,10 +573,11 @@ class ListGraphLayout {
     }
 
     if (isFinite(padding)) {
+      let relPadding = padding;
       if (absolute && isFinite(this._columnWidth)) {
-        padding = padding / this._columnWidth;
+        relPadding = padding / this._columnWidth;
       }
-      this._colRelPadding = Math.max(Math.min(padding, 0.66), 0.1);
+      this._colRelPadding = Math.max(Math.min(relPadding, 0.66), 0.1);
       this.updateScaling();
     }
 
@@ -591,10 +606,11 @@ class ListGraphLayout {
     }
 
     if (isFinite(padding)) {
+      let relPadding = padding;
       if (absolute && isFinite(this._rowHeight)) {
-        padding = padding / this._rowHeight;
+        relPadding = padding / this._rowHeight;
       }
-      this._rowRelPadding = Math.max(Math.min(padding, 0.5), 0);
+      this._rowRelPadding = Math.max(Math.min(relPadding, 0.5), 0);
       this.updateScaling();
     }
 

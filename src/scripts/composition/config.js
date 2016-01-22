@@ -1,5 +1,3 @@
-'use strict';
-
 export const CLASSNAME = 'list-graph';
 
 export const SCROLLBAR_WIDTH = 6;

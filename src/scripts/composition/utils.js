@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Turns an array of IDs into an array of objects holding the ID.
  *
@@ -24,7 +22,7 @@
  *   be translated into `[{ id: 1 }]`.
  */
 export function arrayToFakeObjs (arrayIds) {
-  let fakeObjs = [];
+  const fakeObjs = [];
 
   for (let i = arrayIds.length; i--;) {
     fakeObjs.push({ id: arrayIds[i] });

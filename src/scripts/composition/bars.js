@@ -1,5 +1,3 @@
-'use strict';
-
 // External
 import * as d3 from 'd3';
 
@@ -10,14 +8,14 @@ import * as config from './config';
 const BARS_CLASS = 'bars';
 
 class Bars {
-  constructor (selection, mode, visData) {
-    let that = this;
+  constructor (vis, selection, mode, visData) {
+    const that = this;
 
+    this.vis = vis;
     this.mode = mode;
     this.visData = visData;
 
-    this.selection = selection.append('g')
-      .attr('class', BARS_CLASS);
+    this.selection = selection.append('g').attr('class', BARS_CLASS);
 
     this.selection.each(function (datum) {
       new Bar(d3.select(this), datum.data.bars, datum, that.visData, that);
@@ -26,7 +24,7 @@ class Bars {
 
   update (selection, sortBy) {
     selection.each(function () {
-      let el = d3.select(this);
+      const el = d3.select(this);
 
       if (el.classed('active')) {
         el.classed('active', false);
@@ -49,16 +47,20 @@ class Bars {
       });
   }
 
-  updateIndicator (refBars, currentBar, referenceValue) {
-    currentBar
-      .transition()
-      .duration(0)
-      .attr(
-        'd',
-        data => Bar.generatePath(data, this.mode, undefined, this.visData)
-      );
+  updateIndicator (refBars, refBarsBg, currentBar, referenceValue) {
+    Bar.updateIndicator(
+      currentBar,
+      this.visData.global.column.contentWidth * referenceValue,
+      referenceValue
+    );
 
-    refBars
+    Bar.updateIndicator(
+      refBars,
+      this.visData.global.column.contentWidth * referenceValue,
+      referenceValue
+    );
+
+    refBarsBg
       .attr('d', data => {
         return Bar.generatePath(
           data,
@@ -70,9 +72,13 @@ class Bars {
       })
       .classed('positive', data => data.value >= referenceValue);
 
-    refBars
-      .transition()
-      .duration(config.TRANSITION_SEMI_FAST)
+    let transition = refBarsBg;
+
+    if (!this.vis.lessAnimations) {
+      transition = refBarsBg.transition().duration(config.TRANSITION_SEMI_FAST);
+    }
+
+    transition
       .attr('d', data => {
         return Bar.generatePath(
           data, this.mode, undefined, this.visData, referenceValue, true
@@ -93,10 +99,10 @@ class Bars {
               );
             });
         } else {
-          console.error(
-            'Switching magnitude visualization after individual sorting is ' +
-            'not supported yet.'
-          );
+          // console.error(
+          //   'Switching magnitude visualization after individual sorting is ' +
+          //   'not supported yet.'
+          // );
         }
       }
 

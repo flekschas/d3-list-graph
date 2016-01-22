@@ -1,12 +1,10 @@
-'use strict';
-
 // External
 import isArray from '../../../node_modules/lodash-es/lang/isArray';
 import isFinite from '../../../node_modules/lodash-es/lang/isFinite';
 import isFunction from '../../../node_modules/lodash-es/lang/isFunction';
 
 // Internal
-import {EventDispatcherNoFunction} from './errors';
+import { EventDispatcherNoFunction } from './errors';
 
 class Events {
   constructor (el, broadcast) {
@@ -24,7 +22,7 @@ class Events {
   }
 
   _dispatchEvent (eventName, data) {
-    let event = document.createEvent('CustomEvent');
+    const event = document.createEvent('CustomEvent');
     event.initCustomEvent(eventName, false, false, data);
     this.el.dispatchEvent(event);
   }
@@ -54,19 +52,15 @@ class Events {
       return false;
     }
 
-    if (isFinite(times)) {
-      times = parseInt(times);
-    } else {
-      times = Infinity;
-    }
+    const normTimes = isFinite(times) ? parseInt(times, 10) : Infinity;
 
     if (isArray(this.stack[event])) {
-      return this.stack[event].push({callback: callback, times: times}) - 1;
-    } else {
-      this.stack[event] = [{callback: callback, times: times}];
-      return 0;
+      return this.stack[event]
+        .push({ callback, times: normTimes }) - 1;
     }
-  };
+    this.stack[event] = [{ callback, times: normTimes }];
+    return 0;
+  }
 
   /**
    * Removes a callback function from an event stack given its index.
@@ -87,7 +81,7 @@ class Events {
     } catch (e) {
       return false;
     }
-  };
+  }
 
   /**
    * Trigger an event stack
@@ -114,10 +108,9 @@ class Events {
         }
       }
       return true;
-    } else {
-      return false;
     }
-  };
+    return false;
+  }
 }
 
 export default Events;

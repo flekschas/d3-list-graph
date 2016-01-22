@@ -1,13 +1,11 @@
-'use strict';
-
 // External
 import isFinite from '../../../node_modules/lodash-es/lang/isFinite';
 
 // Internal
-import {collectInclClones} from './utils';
+import { collectInclClones } from './utils';
 
 export function up (node, callback, depth, includeClones, child) {
-  let nodesInclClones = includeClones ? collectInclClones(node) : [node];
+  const nodesInclClones = includeClones ? collectInclClones(node) : [node];
 
   for (let i = nodesInclClones.length; i--;) {
     if (child) {
@@ -19,7 +17,7 @@ export function up (node, callback, depth, includeClones, child) {
         up(
           nodesInclClones[i].parents[j],
           callback,
-          --depth,
+          depth - 1,
           includeClones,
           nodesInclClones[i]
         );
@@ -29,14 +27,16 @@ export function up (node, callback, depth, includeClones, child) {
 }
 
 export function down (node, callback, depth, includeClones) {
-  let nodesInclClones = includeClones ? collectInclClones(node) : [node];
+  const nodesInclClones = includeClones ? collectInclClones(node) : [node];
 
   for (let i = nodesInclClones.length; i--;) {
     callback(nodesInclClones[i]);
 
     if (!isFinite(depth) || depth > 0) {
       for (let j = nodesInclClones[i].childRefs.length; j--;) {
-        down(nodesInclClones[i].childRefs[j], callback, --depth, includeClones);
+        down(
+          nodesInclClones[i].childRefs[j], callback, depth - 1, includeClones
+        );
       }
     }
   }

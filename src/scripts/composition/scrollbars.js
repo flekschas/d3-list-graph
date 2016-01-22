@@ -1,8 +1,5 @@
-'use strict';
-
 // External
 import * as d3 from 'd3';
-import isObject from '../../../node_modules/lodash-es/lang/isObject.js';
 
 // Internal
 import * as config from './config';
@@ -19,13 +16,13 @@ class Scrollbars {
       .append('rect')
         .attr('class', SCROLLBAR_CLASS)
         .call(selection => {
-          selection.each(function (data, index) {
+          selection.each(function setScrollBarDomElement () {
             d3.select(this.parentNode).datum().scrollbar.el = this;
           });
         })
         .attr('x', data => data.scrollbar.x)
         .attr('y', data => data.scrollbar.y)
-        .attr('width', data => this.width)
+        .attr('width', this.width)
         .attr('height', data => data.scrollbar.height)
         .attr('rx', this.width / 2)
         .attr('ry', this.width / 2)
@@ -38,7 +35,7 @@ class Scrollbars {
       .duration(config.TRANSITION_LIGHTNING_FAST)
       .attr({
         x: data => data.scrollbar.x,
-        height: data => data.scrollbar.height
+        height: data => data.scrollbar.height,
       });
   }
 }

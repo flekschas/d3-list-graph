@@ -289,10 +289,17 @@
   .list-graph .node.focus-directly .bar-magnitude {
     fill-opacity: 0.2; }
   .list-graph .bar-indicator {
+    fill: #e0001c;
+    opacity: 0; }
+  .list-graph .bar-indicator-bg {
     fill: url("#negativeRed");
-    fill-opacity: 0;
+    opacity: 0;
     shape-rendering: crispEdges; }
+  .list-graph.less-animations .bar-indicator-bg {
+    transition: opacity 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .bar-indicator.positive {
+    fill: #60bf00; }
+  .list-graph .bar-indicator-bg.positive {
     fill: url("#positiveGreen"); }
   .list-graph .bar.active .bar-magnitude {
     shape-rendering: auto; }
@@ -312,9 +319,11 @@
     fill-opacity: 1 !important; }
   .list-graph .node.hovering-directly .bar.active .bar-indicator {
     fill: #fff;
-    fill-opacity: 1; }
+    opacity: 1; }
+  .list-graph .node.hovering-indirectly .bar.copy .bar-indicator-bg {
+    opacity: 0.66; }
   .list-graph .node.hovering-indirectly .bar.copy .bar-indicator {
-    fill-opacity: 1; }
+    opacity: 1; }
   .list-graph .bar.highlight .bar-magnitude {
     fill: #ff8459;
     fill-opacity: 1 !important; }
