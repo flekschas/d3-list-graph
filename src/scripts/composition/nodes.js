@@ -288,7 +288,8 @@ class Nodes {
     const that = this;
 
     this.nodes
-      .filter(data => !!nodeIds.indexOf(data.id))
+      // Filter by node ID
+      .filter(data => !!~nodeIds.indexOf(data.id))
       .each(function triggerCallback (data) {
         let el = this;
 
