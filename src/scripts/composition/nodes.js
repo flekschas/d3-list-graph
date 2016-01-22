@@ -136,11 +136,15 @@ class Nodes {
     });
 
     this.nodes.on('mouseenter', function (data) {
-      that.enterHandler.call(that, this, data);
+      if (!!!that.vis.activeScrollbar) {
+        that.enterHandler.call(that, this, data);
+      }
     });
 
     this.nodes.on('mouseleave', function (data) {
-      that.leaveHandler.call(that, this, data);
+      if (!!!that.vis.activeScrollbar) {
+        that.leaveHandler.call(that, this, data);
+      }
     });
 
     this.bars = new Bars(this.vis, this.nodes, this.vis.barMode, this.visData);
