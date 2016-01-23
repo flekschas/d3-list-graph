@@ -449,7 +449,7 @@
      */
     function processNode(id, node, parent, duplication) {
       // eslint-disable-line no-shadow
-      var _id = id;
+      var _id = id.toString();
       var _node = node;
 
       if (duplication) {
@@ -461,7 +461,7 @@
             cloneId: node.clones.length + 1,
             // Data will be referenced rather than copied to avoid inconsistencies
             data: node.data,
-            originalId: id,
+            originalId: id.toString(),
             // Reference to the original node
             originalNode: node
           };

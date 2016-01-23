@@ -156,7 +156,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    * @param  {Boolean}  duplication  If `true` node is a duplication.
    */
   function processNode (id, node, parent, duplication) {  // eslint-disable-line no-shadow
-    let _id = id;
+    let _id = id.toString();
     let _node = node;
 
     if (duplication) {
@@ -168,7 +168,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
           cloneId: node.clones.length + 1,
           // Data will be referenced rather than copied to avoid inconsistencies
           data: node.data,
-          originalId: id,
+          originalId: id.toString(),
           // Reference to the original node
           originalNode: node,
         };

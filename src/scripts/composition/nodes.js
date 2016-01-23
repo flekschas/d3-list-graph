@@ -269,7 +269,9 @@ class Nodes {
       ['focus', 'directParentsOnly', true]
     );
     if (event.zoomOut) {
-      this.vis.globalView();
+      this.vis.globalView(this.nodes.filter(data => data.hovering > 0));
+    } else {
+      this.vis.zoomedView();
     }
   }
 
@@ -519,11 +521,11 @@ class Nodes {
     const that = this;
     const nodeId = data.id;
     const currentNodeData = data;
-    let includeClones = true;
     const includeParents = true;
-    let includeChildren = true;
-
     const appliedClassName = className ? className : 'hovering';
+
+    let includeClones = true;
+    let includeChildren = true;
 
     if (restriction === 'directParentsOnly') {
       includeClones = false;
@@ -651,7 +653,7 @@ class Nodes {
     this.nodes.classed(appliedClassName + '-directly', false);
     this.nodes.classed(appliedClassName + '-indirectly', false);
 
-    if (this.currentLinks[appliedClassName]) {
+    if (this.currentLinks[appliedClassName][data.id]) {
       this.links.highlight(
         arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]),
         false,
@@ -701,7 +703,10 @@ class Nodes {
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('transform', data => 'translate(' +
         (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
-      .call(completed, () => this.vis.updateScrollbarVisibility());
+      .call(completed, () => {
+        this.vis.updateLevelsVisibility();
+        this.vis.updateScrollbarVisibility();
+      });
 
     this.vis.links.updateVisibility();
   }

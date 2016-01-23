@@ -21,19 +21,20 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  *
  * @method  onDragDrop
  * @author  Fritz Lekschas
- * @date    2016-01-21
+ * @date    2016-01-23
  * @param   {Object}  selection        D3 selection to listen for the drag
  *   event.
- * @param   {Object}  dragMoveHandler  Handler for drag-move.
- * @param   {Object}  dropHandler      Handler for drag-end, i.e. drop.
- * @param   {Array}   elsToBeDragged   Array of D3 selections to be moved.
- *   according to the drag event. If empty or undefined `selection` will be
- * @param   {String}  orientation      Can either be "horizontal", "vertical" or
- *   `undefined`, i.e. both directions.
- * @param   {Object}  limits           X and Y drag limits. E.g.
+ * @param   {Object}           dragMoveHandler  Handler for drag-move.
+ * @param   {Object}           dropHandler      Handler for drag-end, i.e. drop.
+ * @param   {Array}            elsToBeDragged   Array of D3 selections to be
+ *   moved according to the drag event. If empty or undefined `selection` will
+ *   be used.
+ * @param   {String}           orientation      Can either be "horizontal",
+ *   "vertical" or `undefined`, i.e. both directions.
+ * @param   {Object|Function}  limits           X and Y drag limits. E.g.
  *   `{ x: { min: 0, max: 10 } }`.
- * @param   {Array}    notWhenTrue     List if function returning a Boolean
- *   value which should prevent the dragMoveHandler from working.
+ * @param   {Array}             notWhenTrue     List if function returning a
+ *   Boolean value which should prevent the dragMoveHandler from working.
  */
 export function onDragDrop (
   selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits,
@@ -41,12 +42,15 @@ export function onDragDrop (
 ) {
   const drag = d3.behavior.drag();
 
-  limits = limits || {};  // eslint-disable-line no-param-reassign
+  let appliedLimits = limits || {};  // eslint-disable-line no-param-reassign
 
   if (dragMoveHandler) {
     drag.on('drag', function (data) {
+      if (typeof limits === 'function') {
+        appliedLimits = limits();
+      }
       dragMoveHandler.call(
-        this, data, elsToBeDragged, orientation, limits, notWhenTrue
+        this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue
       );
     });
   }
@@ -54,7 +58,7 @@ export function onDragDrop (
   if (dropHandler) {
     drag.on('dragend', function (data) {
       dropHandler.call(
-        this, data, elsToBeDragged, orientation, limits, notWhenTrue
+        this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue
       );
     });
   }

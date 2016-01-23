@@ -121,34 +121,38 @@ var ListGraph = (function ($,d3) { 'use strict';
    *
    * @method  onDragDrop
    * @author  Fritz Lekschas
-   * @date    2016-01-21
+   * @date    2016-01-23
    * @param   {Object}  selection        D3 selection to listen for the drag
    *   event.
-   * @param   {Object}  dragMoveHandler  Handler for drag-move.
-   * @param   {Object}  dropHandler      Handler for drag-end, i.e. drop.
-   * @param   {Array}   elsToBeDragged   Array of D3 selections to be moved.
-   *   according to the drag event. If empty or undefined `selection` will be
-   * @param   {String}  orientation      Can either be "horizontal", "vertical" or
-   *   `undefined`, i.e. both directions.
-   * @param   {Object}  limits           X and Y drag limits. E.g.
+   * @param   {Object}           dragMoveHandler  Handler for drag-move.
+   * @param   {Object}           dropHandler      Handler for drag-end, i.e. drop.
+   * @param   {Array}            elsToBeDragged   Array of D3 selections to be
+   *   moved according to the drag event. If empty or undefined `selection` will
+   *   be used.
+   * @param   {String}           orientation      Can either be "horizontal",
+   *   "vertical" or `undefined`, i.e. both directions.
+   * @param   {Object|Function}  limits           X and Y drag limits. E.g.
    *   `{ x: { min: 0, max: 10 } }`.
-   * @param   {Array}    notWhenTrue     List if function returning a Boolean
-   *   value which should prevent the dragMoveHandler from working.
+   * @param   {Array}             notWhenTrue     List if function returning a
+   *   Boolean value which should prevent the dragMoveHandler from working.
    */
   function onDragDrop(selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue) {
     var drag = d3.behavior.drag();
 
-    limits = limits || {}; // eslint-disable-line no-param-reassign
+    var appliedLimits = limits || {}; // eslint-disable-line no-param-reassign
 
     if (dragMoveHandler) {
       drag.on('drag', function (data) {
-        dragMoveHandler.call(this, data, elsToBeDragged, orientation, limits, notWhenTrue);
+        if (typeof limits === 'function') {
+          appliedLimits = limits();
+        }
+        dragMoveHandler.call(this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue);
       });
     }
 
     if (dropHandler) {
       drag.on('dragend', function (data) {
-        dropHandler.call(this, data, elsToBeDragged, orientation, limits, notWhenTrue);
+        dropHandler.call(this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue);
       });
     }
 
@@ -917,7 +921,11 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function focusNodes(event) {
         this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', true]);
         if (event.zoomOut) {
-          this.vis.globalView();
+          this.vis.globalView(this.nodes.filter(function (data) {
+            return data.hovering > 0;
+          }));
+        } else {
+          this.vis.zoomedView();
         }
       }
     }, {
@@ -1162,11 +1170,11 @@ var ListGraph = (function ($,d3) { 'use strict';
         var that = this;
         var nodeId = data.id;
         var currentNodeData = data;
-        var includeClones = true;
         var includeParents = true;
-        var includeChildren = true;
-
         var appliedClassName = className ? className : 'hovering';
+
+        var includeClones = true;
+        var includeChildren = true;
 
         if (restriction === 'directParentsOnly') {
           includeClones = false;
@@ -1278,7 +1286,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.nodes.classed(appliedClassName + '-directly', false);
         this.nodes.classed(appliedClassName + '-indirectly', false);
 
-        if (this.currentLinks[appliedClassName]) {
+        if (this.currentLinks[appliedClassName][data.id]) {
           this.links.highlight(arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]), false, appliedClassName);
         }
       }
@@ -1330,7 +1338,8 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
           return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
         }).call(completed, function () {
-          return _this4.vis.updateScrollbarVisibility();
+          _this4.vis.updateLevelsVisibility();
+          _this4.vis.updateScrollbarVisibility();
         });
 
         this.vis.links.updateVisibility();
@@ -1509,6 +1518,17 @@ var ListGraph = (function ($,d3) { 'use strict';
           data.scrollbar.scrollHeight = _this2.visData.global.column.height - scrollbarHeight;
           data.scrollbar.scrollTop = 0;
           data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight]);
+        });
+      }
+    }, {
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        this.groups.each(function () {
+          var group = d3.select(this);
+
+          group.classed('hidden', group.selectAll('.node').filter(function (data) {
+            return !data.hidden;
+          }).empty());
         });
       }
     }, {
@@ -2283,15 +2303,20 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
 
       // Enable dragging of the whole graph.
-      this.svgD3.call(onDragDrop, dragMoveHandler, undefined, [this.container, this.topbar.localControlWrapper], 'horizontal', {
-        x: {
-          min: Math.min(0, this.width - this.container.node().getBBox().width),
-          max: 0
-        }
-      }, [this.scrollbarDragging.bind(this)]);
+      this.svgD3.call(onDragDrop, dragMoveHandler, undefined, [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), [this.scrollbarDragging.bind(this)]);
     }
 
     babelHelpers.createClass(ListGraph, [{
+      key: 'getDragLimits',
+      value: function getDragLimits() {
+        return {
+          x: {
+            min: this.dragMinX,
+            max: 0
+          }
+        };
+      }
+    }, {
       key: 'scrollbarDragging',
       value: function scrollbarDragging() {
         return !!this.activeScrollbar;
@@ -2396,11 +2421,34 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.scrollbars.updateVisibility();
       }
     }, {
+      key: 'updateLevelsVisibility',
+      value: function updateLevelsVisibility() {
+        this.levels.updateVisibility();
+      }
+    }, {
       key: 'globalView',
-      value: function globalView() {
-        var bBox = this.container.node().getBBox();
-        var width = this.width > bBox.width ? this.width : bBox.width;
-        var height = this.height > bBox.height ? this.height : bBox.height;
+      value: function globalView(selectionInterst) {
+        var width = 0;
+        var height = 0;
+        var bBox = undefined;
+        var cRect = undefined;
+
+        var globalCRect = this.svgD3.node().getBoundingClientRect();
+
+        if (selectionInterst && !selectionInterst.empty()) {
+          selectionInterst.each(function () {
+            bBox = this.getBBox();
+            cRect = this.getBoundingClientRect();
+            width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
+            height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
+          });
+          width = this.width > width ? this.width : width;
+          height = this.height > height ? this.height : height;
+        } else {
+          bBox = this.container.node().getBBox();
+          width = this.width > bBox.width ? this.width : bBox.width;
+          height = this.height > bBox.height ? this.height : bBox.height;
+        }
 
         this.svgD3.transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + width + ' ' + height);
       }
@@ -2408,6 +2456,16 @@ var ListGraph = (function ($,d3) { 'use strict';
       key: 'zoomedView',
       value: function zoomedView() {
         this.svgD3.transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
+      }
+    }, {
+      key: 'area',
+      get: function get() {
+        return this.container.node().getBoundingClientRect();
+      }
+    }, {
+      key: 'dragMinX',
+      get: function get() {
+        return Math.min(0, this.width - this.area.width);
       }
     }, {
       key: 'barMode',
