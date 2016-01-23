@@ -270,6 +270,8 @@ class Nodes {
     );
     if (event.zoomOut) {
       this.vis.globalView();
+    } else {
+      this.vis.zoomedView();
     }
   }
 
