@@ -1,6 +1,5 @@
 language: node_js
 node_js:
-  - "4"
   - "5"
 
 before_install:
@@ -11,4 +10,4 @@ before_script:
   - npm install
   - bower install
 
-script: gulp --production
+script: gulp build --production
