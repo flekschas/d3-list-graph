@@ -94,6 +94,15 @@ class Levels {
     });
   }
 
+  updateVisibility () {
+    this.groups.each(function () {
+      const group = d3.select(this);
+
+      group.classed('hidden', group.selectAll('.node')
+        .filter(data => !data.hidden).empty());
+    });
+  }
+
   get height () {
     return this.visData.global.column.height;
   }

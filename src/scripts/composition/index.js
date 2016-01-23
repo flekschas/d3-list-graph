@@ -195,14 +195,26 @@ class ListGraph {
         this.topbar.localControlWrapper,
       ],
       'horizontal',
-      {
-        x: {
-          min: Math.min(0, this.width - this.container.node().getBBox().width),
-          max: 0,
-        },
-      },
+      this.getDragLimits.bind(this),
       [this.scrollbarDragging.bind(this)]
     );
+  }
+
+  get area () {
+    return this.container.node().getBoundingClientRect();
+  }
+
+  get dragMinX () {
+    return Math.min(0, this.width - this.area.width);
+  }
+
+  getDragLimits () {
+    return {
+      x: {
+        min: this.dragMinX,
+        max: 0,
+      },
+    };
   }
 
   static scrollY (el, offset) {
@@ -390,10 +402,32 @@ class ListGraph {
     this.scrollbars.updateVisibility();
   }
 
-  globalView () {
-    const bBox = this.container.node().getBBox();
-    const width = this.width > bBox.width ? this.width : bBox.width;
-    const height = this.height > bBox.height ? this.height : bBox.height;
+  updateLevelsVisibility () {
+    this.levels.updateVisibility();
+  }
+
+  globalView (selectionInterst) {
+    let width = 0;
+    let height = 0;
+    let bBox;
+    let cRect;
+
+    const globalCRect = this.svgD3.node().getBoundingClientRect();
+
+    if (selectionInterst && !selectionInterst.empty()) {
+      selectionInterst.each(function () {
+        bBox = this.getBBox();
+        cRect = this.getBoundingClientRect();
+        width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
+        height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
+      });
+      width = this.width > width ? this.width : width;
+      height = this.height > height ? this.height : height;
+    } else {
+      bBox = this.container.node().getBBox();
+      width = this.width > bBox.width ? this.width : bBox.width;
+      height = this.height > bBox.height ? this.height : bBox.height;
+    }
 
     this.svgD3
       .transition()
