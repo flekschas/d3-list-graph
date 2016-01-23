@@ -1,6 +1,10 @@
 {
   "1": {
-    "children": ["1-1", "1-2"],
+    "children": [
+      "1-1",
+      "1-2",
+      "X-Z"
+    ],
     "data": {
       "name": "one",
       "bars": {
@@ -13,7 +17,8 @@
     "children": [
       "2-1",
       "2-2",
-      "2-3"
+      "2-3",
+      "X-Z"
     ],
     "data": {
       "name": "two",
@@ -295,6 +300,16 @@
       "bars": {
         "precision": 0.29,
         "recall": 0.36
+      }
+    }
+  },
+  "X-Z": {
+    "children": [],
+    "data": {
+      "name": "X to the Z",
+      "bars": {
+        "precision": 0.71,
+        "recall": 0.29
       }
     }
   }
