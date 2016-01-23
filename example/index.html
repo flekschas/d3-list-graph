@@ -47,30 +47,37 @@
           nodeIds: ['2-1-1-1', '2-1-4', '1-2'],
           zoomOut: true
         });
-      }, 5000);
-
-      setTimeout(function () {
-        graph.trigger('d3ListGraphBlurNodes', {
-          nodeIds: ['2-1-1-1', '2-1-4', '1-2'],
-          zoomIn: true
-        });
-      }, 6000);
-
-      setTimeout(function () {
-        graph.trigger('d3ListGraphNodeLock', ['2-1']);
       }, 1000);
 
       setTimeout(function () {
-        graph.trigger('d3ListGraphNodeUnlock', ['2-1']);
-      }, 4000);
-
-      setTimeout(function () {
-        graph.trigger('d3ListGraphNodeRoot', ['1-2']);
+        graph.trigger('d3ListGraphFocusNodes', {
+          nodeIds: ['2-1-1-1', '2-1-4', '2-3-1'],
+          zoomOut: true
+        });
       }, 2000);
 
       setTimeout(function () {
+        graph.trigger('d3ListGraphBlurNodes', {
+          nodeIds: ['2-1-1-1', '2-1-4', '1-2', '2-3-1'],
+          zoomIn: true
+        });
+      }, 4000);
+
+      setTimeout(function () {
+        graph.trigger('d3ListGraphNodeLock', ['2-1']);
+      }, 5000);
+
+      setTimeout(function () {
+        graph.trigger('d3ListGraphNodeUnlock', ['2-1']);
+      }, 6000);
+
+      setTimeout(function () {
+        graph.trigger('d3ListGraphNodeRoot', ['1-2']);
+      }, 7000);
+
+      setTimeout(function () {
         graph.trigger('d3ListGraphNodeUnroot', ['1-2']);
-      }, 3000);
+      }, 8000);
     });
 
     $('#example').on('d3ListGraphNodeClick', function (e) {
