@@ -1216,11 +1216,11 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         if (data.clone) {
           data.originalNode.hovering = 1;
-        }
-
-        if (includeClones) {
-          for (var i = data.clones.length; i--;) {
-            data.clones[i].hovering = 1;
+        } else {
+          if (includeClones) {
+            for (var i = data.clones.length; i--;) {
+              data.clones[i].hovering = 1;
+            }
           }
         }
 
@@ -1277,11 +1277,11 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         if (data.clone) {
           data.originalNode.hovering = 0;
-        }
-
-        if (includeClones) {
-          for (var i = data.clones.length; i--;) {
-            data.clones[i].hovering = 0;
+        } else {
+          if (includeClones) {
+            for (var i = data.clones.length; i--;) {
+              data.clones[i].hovering = 0;
+            }
           }
         }
 
