@@ -13,9 +13,10 @@ export function up (node, callback, depth, includeClones, child) {
     }
 
     if (!isFinite(depth) || depth > 0) {
-      for (let j = nodesInclClones[i].parents.length; j--;) {
+      const parentsId = Object.keys(nodesInclClones[i].parents);
+      for (let j = parentsId.length; j--;) {
         up(
-          nodesInclClones[i].parents[j],
+          nodesInclClones[i].parents[parentsId[j]],
           callback,
           depth - 1,
           includeClones,
@@ -55,9 +56,10 @@ export function upAndDown (
 }
 
 export function siblings (node, callback) {
-  for (let i = node.parents.length; i--;) {
-    for (let j = node.parents[i].childRefs.length; j--;) {
-      callback(node.parents[i].childRefs[j]);
+  const parentsId = Object.keys(node.parents);
+  for (let i = parentsId.length; i--;) {
+    for (let j = node.parents[parentsId[i]].childRefs.length; j--;) {
+      callback(node.parents[parentsId[i]].childRefs[j]);
     }
   }
 }

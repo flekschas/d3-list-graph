@@ -176,6 +176,9 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
         _node = graph[cloneId];
         // Add a reference to the original node that points to the clone.
         node.clones.push(_node);
+        // Remove parent
+        node.parents[parent.id] = undefined;
+        delete node.parents[parent.id];
       }
     } else {
       _node.clones = [];
@@ -184,10 +187,10 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     _node.id = _id;
 
     if (!_node.parents) {
-      _node.parents = [];
+      _node.parents = {};
     }
     if (parent) {
-      _node.parents.push(parent);
+      _node.parents[parent.id] = parent;
     }
 
     if (!_node.childRefs) {

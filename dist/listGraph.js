@@ -383,8 +383,9 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
 
       if (!isFinite(depth) || depth > 0) {
-        for (var j = nodesInclClones[i].parents.length; j--;) {
-          up(nodesInclClones[i].parents[j], callback, depth - 1, includeClones, nodesInclClones[i]);
+        var parentsId = Object.keys(nodesInclClones[i].parents);
+        for (var j = parentsId.length; j--;) {
+          up(nodesInclClones[i].parents[parentsId[j]], callback, depth - 1, includeClones, nodesInclClones[i]);
         }
       }
     }
@@ -415,9 +416,10 @@ var ListGraph = (function ($,d3) { 'use strict';
   }
 
   function siblings(node, callback) {
-    for (var i = node.parents.length; i--;) {
-      for (var j = node.parents[i].childRefs.length; j--;) {
-        callback(node.parents[i].childRefs[j]);
+    var parentsId = Object.keys(node.parents);
+    for (var i = parentsId.length; i--;) {
+      for (var j = node.parents[parentsId[i]].childRefs.length; j--;) {
+        callback(node.parents[parentsId[i]].childRefs[j]);
       }
     }
   }
