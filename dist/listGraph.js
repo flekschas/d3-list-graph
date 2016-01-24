@@ -1766,7 +1766,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     babelHelpers.createClass(Topbar, [{
       key: 'selectNodesLevel',
       value: function selectNodesLevel(el) {
-        return this.vis.selectByLevel(d3.select(el).datum().depth, '.node');
+        return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
       }
     }, {
       key: 'highlightLabels',
