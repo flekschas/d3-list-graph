@@ -484,6 +484,8 @@
       }
       if (parent) {
         _node.parents[parent.id] = parent;
+      } else {
+        _node.parents = {};
       }
 
       if (!_node.childRefs) {

@@ -867,12 +867,12 @@ var ListGraph = (function ($,d3) { 'use strict';
           return _this.eventHelper(nodeIds, _this.toggleLock, [true], '.lock');
         });
 
-        this.events.on('d3ListGraphNodeRoot', function (nodeIds) {
-          return _this.eventHelper(nodeIds, _this.toggleRoot, [], '.root');
+        this.events.on('d3ListGraphNodeRoot', function (data) {
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [false, data.focusNextLevel], '.root');
         });
 
-        this.events.on('d3ListGraphNodeUnroot', function (nodeIds) {
-          return _this.eventHelper(nodeIds, _this.toggleRoot, [true], '.root');
+        this.events.on('d3ListGraphNodeUnroot', function (data) {
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true, data.focusNextLevel], '.root');
         });
       }
     }
@@ -1032,7 +1032,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'toggleRoot',
-      value: function toggleRoot(el, nodeData, setFalse) {
+      value: function toggleRoot(el, nodeData, setFalse, focusNextLevel) {
         var d3El = d3.select(el);
         var data = d3El.datum();
         var events = { rooted: false, unrooted: false };
@@ -1049,7 +1049,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           // Activate new root
           if (this.rootedNode.datum().id !== data.id && !setFalse) {
             d3El.classed({ active: true, inactive: false });
-            this.rootNode(data.id);
+            this.rootNode(data.id, focusNextLevel);
             this.rootedNode = d3El;
             events.rooted = data.id;
           } else {
@@ -1060,7 +1060,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         } else {
           if (!setFalse) {
             d3El.classed({ active: true, inactive: false });
-            this.rootNode(data.id);
+            this.rootNode(data.id, focusNextLevel);
             events.rooted = data.id;
             this.rootedNode = d3El;
           }
@@ -1070,7 +1070,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'rootNode',
-      value: function rootNode(id) {
+      value: function rootNode(id, focusNextLevel) {
         var that = this;
         var els = this.nodes.filter(function (data) {
           return data.id === id;
@@ -1089,7 +1089,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         els.selectAll('.bg-extension').transition().duration(TRANSITION_SEMI_FAST).attr('x', -that.visData.global.row.height / 2);
 
         // Highlight level
-        this.vis.levels.focus(datum.depth);
+        this.vis.levels.focus(datum.depth + (focusNextLevel ? focusNextLevel : 0));
       }
     }, {
       key: 'unrootNode',
