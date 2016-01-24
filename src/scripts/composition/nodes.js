@@ -570,11 +570,11 @@ class Nodes {
 
     if (data.clone) {
       data.originalNode.hovering = 1;
-    }
-
-    if (includeClones) {
-      for (let i = data.clones.length; i--;) {
-        data.clones[i].hovering = 1;
+    } else {
+      if (includeClones) {
+        for (let i = data.clones.length; i--;) {
+          data.clones[i].hovering = 1;
+        }
       }
     }
 
@@ -642,11 +642,11 @@ class Nodes {
 
     if (data.clone) {
       data.originalNode.hovering = 0;
-    }
-
-    if (includeClones) {
-      for (let i = data.clones.length; i--;) {
-        data.clones[i].hovering = 0;
+    } else {
+      if (includeClones) {
+        for (let i = data.clones.length; i--;) {
+          data.clones[i].hovering = 0;
+        }
       }
     }
 
