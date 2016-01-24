@@ -212,15 +212,15 @@ class Nodes {
 
       this.events.on(
         'd3ListGraphNodeRoot',
-        nodeIds => this.eventHelper(
-          nodeIds, this.toggleRoot, [], '.root'
+        data => this.eventHelper(
+          data.nodeIds, this.toggleRoot, [false, data.focusNextLevel], '.root'
         )
       );
 
       this.events.on(
         'd3ListGraphNodeUnroot',
-        nodeIds => this.eventHelper(
-          nodeIds, this.toggleRoot, [true], '.root'
+        data => this.eventHelper(
+          data.nodeIds, this.toggleRoot, [true, data.focusNextLevel], '.root'
         )
       );
     }
@@ -386,7 +386,7 @@ class Nodes {
     });
   }
 
-  toggleRoot (el, nodeData, setFalse) {
+  toggleRoot (el, nodeData, setFalse, focusNextLevel) {
     const d3El = d3.select(el);
     const data = d3El.datum();
     const events = { rooted: false, unrooted: false };
@@ -403,7 +403,7 @@ class Nodes {
       // Activate new root
       if (this.rootedNode.datum().id !== data.id && !setFalse) {
         d3El.classed({ active: true, inactive: false });
-        this.rootNode(data.id);
+        this.rootNode(data.id, focusNextLevel);
         this.rootedNode = d3El;
         events.rooted = data.id;
       } else {
@@ -414,7 +414,7 @@ class Nodes {
     } else {
       if (!setFalse) {
         d3El.classed({ active: true, inactive: false });
-        this.rootNode(data.id);
+        this.rootNode(data.id, focusNextLevel);
         events.rooted = data.id;
         this.rootedNode = d3El;
       }
@@ -423,7 +423,7 @@ class Nodes {
     return events;
   }
 
-  rootNode (id) {
+  rootNode (id, focusNextLevel) {
     const that = this;
     const els = this.nodes.filter(data => data.id === id);
 
@@ -443,7 +443,7 @@ class Nodes {
       .attr('x', -that.visData.global.row.height / 2);
 
     // Highlight level
-    this.vis.levels.focus(datum.depth);
+    this.vis.levels.focus(datum.depth + (focusNextLevel ? focusNextLevel : 0));
   }
 
   unrootNode (id) {

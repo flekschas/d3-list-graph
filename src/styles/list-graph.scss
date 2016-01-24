@@ -206,6 +206,7 @@
      * element is actually needed below.
      */
     fill-opacity: 0;
+    transition: all $transitionFast $easeInOutCubic;
   }
 
   .column.active .scroll-container {
