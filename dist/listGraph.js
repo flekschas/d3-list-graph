@@ -921,7 +921,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'focusNodes',
       value: function focusNodes(event) {
-        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', true]);
+        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]);
         if (event.zoomOut) {
           this.vis.globalView(this.nodes.filter(function (data) {
             return data.hovering > 0;
@@ -933,7 +933,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'blurNodes',
       value: function blurNodes(event) {
-        this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', true]);
+        this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]);
         if (event.zoomIn) {
           this.vis.zoomedView();
         }
@@ -1166,7 +1166,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'highlightNodes',
-      value: function highlightNodes(el, data, className, restriction) {
+      value: function highlightNodes(el, data, className, restriction, excludeClones) {
         var _this2 = this;
 
         var that = this;
@@ -1174,14 +1174,8 @@ var ListGraph = (function ($,d3) { 'use strict';
         var currentNodeData = data;
         var includeParents = true;
         var appliedClassName = className ? className : 'hovering';
-
-        var includeClones = true;
-        var includeChildren = true;
-
-        if (restriction === 'directParentsOnly') {
-          includeClones = false;
-          includeChildren = false;
-        }
+        var includeClones = excludeClones ? false : true;
+        var includeChildren = restriction === 'directParentsOnly' ? false : true;
 
         // Store link IDs
         if (!this.currentLinks[appliedClassName]) {
@@ -1255,20 +1249,14 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'unhighlightNodes',
-      value: function unhighlightNodes(el, data, className, restriction) {
+      value: function unhighlightNodes(el, data, className, restriction, excludeClones) {
         var traverseCallback = function traverseCallback(nodeData) {
           return nodeData.hovering = 0;
         };
         var includeParents = true;
         var appliedClassName = className ? className : 'hovering';
-
-        var includeClones = true;
-        var includeChildren = true;
-
-        if (restriction === 'directParentsOnly') {
-          includeClones = false;
-          includeChildren = false;
-        }
+        var includeClones = excludeClones ? false : true;
+        var includeChildren = restriction === 'directParentsOnly' ? false : true;
 
         data.hovering = 0;
         if (includeParents && includeChildren) {

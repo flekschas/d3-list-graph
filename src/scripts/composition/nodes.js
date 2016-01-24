@@ -266,7 +266,7 @@ class Nodes {
     this.eventHelper(
       event.nodeIds,
       this.highlightNodes,
-      ['focus', 'directParentsOnly', true]
+      ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]
     );
     if (event.zoomOut) {
       this.vis.globalView(this.nodes.filter(data => data.hovering > 0));
@@ -279,7 +279,7 @@ class Nodes {
     this.eventHelper(
       event.nodeIds,
       this.unhighlightNodes,
-      ['focus', 'directParentsOnly', true]
+      ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]
     );
     if (event.zoomIn) {
       this.vis.zoomedView();
@@ -517,20 +517,14 @@ class Nodes {
     this.updateVisibility();
   }
 
-  highlightNodes (el, data, className, restriction) {
+  highlightNodes (el, data, className, restriction, excludeClones) {
     const that = this;
     const nodeId = data.id;
     const currentNodeData = data;
     const includeParents = true;
     const appliedClassName = className ? className : 'hovering';
-
-    let includeClones = true;
-    let includeChildren = true;
-
-    if (restriction === 'directParentsOnly') {
-      includeClones = false;
-      includeChildren = false;
-    }
+    const includeClones = excludeClones ? false : true;
+    const includeChildren = restriction === 'directParentsOnly' ? false : true;
 
     // Store link IDs
     if (!this.currentLinks[appliedClassName]) {
@@ -620,18 +614,12 @@ class Nodes {
     );
   }
 
-  unhighlightNodes (el, data, className, restriction) {
+  unhighlightNodes (el, data, className, restriction, excludeClones) {
     const traverseCallback = nodeData => nodeData.hovering = 0;
     const includeParents = true;
     const appliedClassName = className ? className : 'hovering';
-
-    let includeClones = true;
-    let includeChildren = true;
-
-    if (restriction === 'directParentsOnly') {
-      includeClones = false;
-      includeChildren = false;
-    }
+    const includeClones = excludeClones ? false : true;
+    const includeChildren = restriction === 'directParentsOnly' ? false : true;
 
     data.hovering = 0;
     if (includeParents && includeChildren) {
