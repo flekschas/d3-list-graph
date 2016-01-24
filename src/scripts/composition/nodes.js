@@ -391,6 +391,9 @@ class Nodes {
     const data = d3El.datum();
     const events = { rooted: false, unrooted: false };
 
+    // Blur current levels
+    this.vis.levels.blur();
+
     if (this.rootedNode) {
       // Reset current root node
       this.rootedNode.classed({ active: false, inactive: true });
@@ -405,6 +408,8 @@ class Nodes {
         events.rooted = data.id;
       } else {
         this.rootedNode = undefined;
+        // Highlight first level
+        this.vis.levels.focus(0);
       }
     } else {
       if (!setFalse) {
@@ -422,16 +427,23 @@ class Nodes {
     const that = this;
     const els = this.nodes.filter(data => data.id === id);
 
+    let datum;
+
+    // Only **one** node should be rooted.
     els.each(function (data) {
       data.rooted = true;
       d3.select(this).classed('rooted', true);
       that.hideNodes.call(that, this, data, 'downStream');
+      datum = data;
     });
 
     els.selectAll('.bg-extension')
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('x', -that.visData.global.row.height / 2);
+
+    // Highlight level
+    this.vis.levels.focus(datum.depth);
   }
 
   unrootNode (id) {

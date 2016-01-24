@@ -229,7 +229,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           d3.select(this.parentNode).datum().scrollbar.el = this;
         });
       }).attr('x', function (data) {
-        return data.scrollbar.x;
+        return data.scrollbar.x - 2;
       }).attr('y', function (data) {
         return data.scrollbar.y;
       }).attr('width', this.width).attr('height', function (data) {
@@ -1037,6 +1037,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         var data = d3El.datum();
         var events = { rooted: false, unrooted: false };
 
+        // Blur current levels
+        this.vis.levels.blur();
+
         if (this.rootedNode) {
           // Reset current root node
           this.rootedNode.classed({ active: false, inactive: true });
@@ -1051,6 +1054,8 @@ var ListGraph = (function ($,d3) { 'use strict';
             events.rooted = data.id;
           } else {
             this.rootedNode = undefined;
+            // Highlight first level
+            this.vis.levels.focus(0);
           }
         } else {
           if (!setFalse) {
@@ -1071,13 +1076,20 @@ var ListGraph = (function ($,d3) { 'use strict';
           return data.id === id;
         });
 
+        var datum = undefined;
+
+        // Only **one** node should be rooted.
         els.each(function (data) {
           data.rooted = true;
           d3.select(this).classed('rooted', true);
           that.hideNodes.call(that, this, data, 'downStream');
+          datum = data;
         });
 
         els.selectAll('.bg-extension').transition().duration(TRANSITION_SEMI_FAST).attr('x', -that.visData.global.row.height / 2);
+
+        // Highlight level
+        this.vis.levels.focus(datum.depth);
       }
     }, {
       key: 'unrootNode',
@@ -1460,7 +1472,9 @@ var ListGraph = (function ($,d3) { 'use strict';
       babelHelpers.classCallCheck(this, Levels);
 
       this.visData = visData;
-      this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS);
+      this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS).classed('active', function (data, index) {
+        return index === 0;
+      });
 
       // We need to add an empty rectangle that fills up the whole column to ensure
       // that the `g`'s size is at a maximum, otherwise scrolling will be halted
@@ -1469,7 +1483,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         return data.x;
       }).attr('y', function (data) {
         return data.y;
-      }).attr('width', this.visData.global.column.width).attr('height', this.visData.global.column.height);
+      }).attr('width', this.visData.global.column.width + 1).attr('height', this.visData.global.column.height);
     }
 
     babelHelpers.createClass(Levels, [{
@@ -1532,6 +1546,24 @@ var ListGraph = (function ($,d3) { 'use strict';
             return !data.hidden;
           }).empty());
         });
+      }
+    }, {
+      key: 'focus',
+      value: function focus(level) {
+        this.groups.filter(function (data) {
+          return data.level === level;
+        }).classed('active', true);
+      }
+    }, {
+      key: 'blur',
+      value: function blur(level) {
+        if (level) {
+          this.groups.filter(function (data) {
+            return data.level === level;
+          }).classed('active', false);
+        } else {
+          this.groups.classed('active', false);
+        }
       }
     }, {
       key: 'height',
@@ -2306,6 +2338,10 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       // Enable dragging of the whole graph.
       this.svgD3.call(onDragDrop, dragMoveHandler, undefined, [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), [this.scrollbarDragging.bind(this)]);
+
+      this.events.on('d3ListGraphLevelFocus', function (levelId) {
+        return _this.levels.focus(levelId);
+      });
     }
 
     babelHelpers.createClass(ListGraph, [{

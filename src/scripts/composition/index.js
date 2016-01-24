@@ -198,6 +198,11 @@ class ListGraph {
       this.getDragLimits.bind(this),
       [this.scrollbarDragging.bind(this)]
     );
+
+    this.events.on(
+      'd3ListGraphLevelFocus',
+      levelId => this.levels.focus(levelId)
+    );
   }
 
   get area () {

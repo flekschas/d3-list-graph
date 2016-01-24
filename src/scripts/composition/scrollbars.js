@@ -20,7 +20,7 @@ class Scrollbars {
             d3.select(this.parentNode).datum().scrollbar.el = this;
           });
         })
-        .attr('x', data => data.scrollbar.x)
+        .attr('x', data => data.scrollbar.x - 2)
         .attr('y', data => data.scrollbar.y)
         .attr('width', this.width)
         .attr('height', data => data.scrollbar.height)

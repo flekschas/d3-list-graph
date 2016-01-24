@@ -12,7 +12,8 @@ class Levels {
       .data(this.visData.nodes)
       .enter()
       .append('g')
-        .attr('class', COLUMN_CLASS);
+        .attr('class', COLUMN_CLASS)
+        .classed('active', (data, index) => index === 0);
 
     // We need to add an empty rectangle that fills up the whole column to ensure
     // that the `g`'s size is at a maximum, otherwise scrolling will be halted
@@ -22,7 +23,7 @@ class Levels {
         .attr('class', SCROLL_CONTAINER_CLASS)
         .attr('x', data => data.x)
         .attr('y', data => data.y)
-        .attr('width', this.visData.global.column.width)
+        .attr('width', this.visData.global.column.width + 1)
         .attr('height', this.visData.global.column.height);
   }
 
@@ -105,6 +106,18 @@ class Levels {
 
   get height () {
     return this.visData.global.column.height;
+  }
+
+  focus (level) {
+    this.groups.filter(data => data.level === level).classed('active', true);
+  }
+
+  blur (level) {
+    if (level) {
+      this.groups.filter(data => data.level === level).classed('active', false);
+    } else {
+      this.groups.classed('active', false);
+    }
   }
 }
 
