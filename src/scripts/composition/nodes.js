@@ -572,6 +572,12 @@ class Nodes {
       data.originalNode.hovering = 1;
     }
 
+    if (includeClones) {
+      for (let i = data.clones.length; i--;) {
+        data.clones[i].hovering = 1;
+      }
+    }
+
     data.hovering = 1;
 
     this.nodes.each(function (nodeData) {
@@ -636,6 +642,12 @@ class Nodes {
 
     if (data.clone) {
       data.originalNode.hovering = 0;
+    }
+
+    if (includeClones) {
+      for (let i = data.clones.length; i--;) {
+        data.clones[i].hovering = 0;
+      }
     }
 
     this.nodes.classed(appliedClassName + '-directly', false);

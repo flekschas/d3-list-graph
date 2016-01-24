@@ -1218,6 +1218,12 @@ var ListGraph = (function ($,d3) { 'use strict';
           data.originalNode.hovering = 1;
         }
 
+        if (includeClones) {
+          for (var i = data.clones.length; i--;) {
+            data.clones[i].hovering = 1;
+          }
+        }
+
         data.hovering = 1;
 
         this.nodes.each(function (nodeData) {
@@ -1271,6 +1277,12 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         if (data.clone) {
           data.originalNode.hovering = 0;
+        }
+
+        if (includeClones) {
+          for (var i = data.clones.length; i--;) {
+            data.clones[i].hovering = 0;
+          }
         }
 
         this.nodes.classed(appliedClassName + '-directly', false);
