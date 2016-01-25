@@ -598,11 +598,12 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'generateOneBarPath',
       value: function generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth) {
-        var x = 0;
-
-        var width = 2;
-
         var height = visData.global.row.contentHeight;
+        var normValue = Math.min(data.value, 1);
+        var normIndicator = Math.min(indicator, 1);
+
+        var x = 0;
+        var width = 2;
 
         var radius = {
           topLeft: 2,
@@ -614,18 +615,18 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
 
         if (data.id !== currentSorting && typeof indicator === 'undefined') {
-          x = data.value * visData.global.column.contentWidth - 3;
+          x = normValue * visData.global.column.contentWidth - 3;
           radius = {};
         } else if (indicator) {
-          x = indicator * visData.global.column.contentWidth;
+          x = normIndicator * visData.global.column.contentWidth;
           if (adjustWidth) {
-            if (data.value < indicator) {
-              x = data.value * visData.global.column.contentWidth;
+            if (normValue < normIndicator) {
+              x = normValue * visData.global.column.contentWidth;
             }
-            width = Math.min(Math.min(Math.abs(indicator - data.value), 1) * visData.global.column.contentWidth, 2);
+            width = Math.max(Math.abs(normIndicator - normValue) * visData.global.column.contentWidth, 2);
           }
         } else {
-          width = visData.global.column.contentWidth * Math.min(data.value, 1);
+          width = visData.global.column.contentWidth * normValue;
         }
 
         return roundRect(x, visData.global.row.padding, width, height, radius);
@@ -633,12 +634,11 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'generateTwoBarsPath',
       value: function generateTwoBarsPath(data, visData, bottom) {
+        var normValue = Math.min(data.value, 1);
         var height = visData.global.row.contentHeight / 2;
-
-        var width = visData.global.column.contentWidth * Math.min(data.value, 1);
+        var width = visData.global.column.contentWidth * normValue;
 
         var y = visData.global.row.padding;
-
         var radius = { topLeft: 2 };
 
         if (bottom) {
