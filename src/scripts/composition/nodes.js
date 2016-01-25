@@ -213,14 +213,14 @@ class Nodes {
       this.events.on(
         'd3ListGraphNodeRoot',
         data => this.eventHelper(
-          data.nodeIds, this.toggleRoot, [false, data.focusNextLevel], '.root'
+          data.nodeIds, this.toggleRoot, [], '.root'
         )
       );
 
       this.events.on(
         'd3ListGraphNodeUnroot',
         data => this.eventHelper(
-          data.nodeIds, this.toggleRoot, [true, data.focusNextLevel], '.root'
+          data.nodeIds, this.toggleRoot, [true], '.root'
         )
       );
     }
@@ -389,7 +389,7 @@ class Nodes {
     });
   }
 
-  toggleRoot (el, nodeData, setFalse, focusNextLevel) {
+  toggleRoot (el, nodeData, setFalse) {
     const d3El = d3.select(el);
     const data = d3El.datum();
     const events = { rooted: false, unrooted: false };
@@ -406,18 +406,18 @@ class Nodes {
       // Activate new root
       if (this.rootedNode.datum().id !== data.id && !setFalse) {
         d3El.classed({ active: true, inactive: false });
-        this.rootNode(data.id, focusNextLevel);
+        this.rootNode(data.id);
         this.rootedNode = d3El;
         events.rooted = data.id;
       } else {
         this.rootedNode = undefined;
         // Highlight first level
-        this.vis.levels.focus(0);
+        this.vis.levels.focus(this.vis.activeLevelNumber);
       }
     } else {
       if (!setFalse) {
         d3El.classed({ active: true, inactive: false });
-        this.rootNode(data.id, focusNextLevel);
+        this.rootNode(data.id);
         events.rooted = data.id;
         this.rootedNode = d3El;
       }
@@ -426,7 +426,7 @@ class Nodes {
     return events;
   }
 
-  rootNode (id, focusNextLevel) {
+  rootNode (id) {
     const that = this;
     const els = this.nodes.filter(data => data.id === id);
 
@@ -446,7 +446,7 @@ class Nodes {
       .attr('x', -that.visData.global.row.height / 2);
 
     // Highlight level
-    this.vis.levels.focus(datum.depth + (focusNextLevel ? focusNextLevel : 0));
+    this.vis.levels.focus(datum.depth + this.vis.activeLevelNumber);
   }
 
   unrootNode (id) {

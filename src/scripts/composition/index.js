@@ -47,6 +47,14 @@ class ListGraph {
     this.columns = options.columns || config.COLUMNS;
     this.rows = options.rows || config.ROWS;
     this.iconPath = options.iconPath || config.ICON_PATH;
+    this.highlightActiveLevel = config.HIGHLIGHT_ACTIVE_LEVEL;
+    if (typeof options.highlightActiveLevel !== 'undefined') {
+      this.highlightActiveLevel = options.highlightActiveLevel;
+    }
+
+    // Determines which level from the rooted node will be regarded as active.
+    // Zero means that the level of the rooted node is regarded.
+    this.activeLevelNumber = 0;
 
     this.lessAnimations = !!options.lessAnimations;
     this.baseElD3.classed('less-animations', this.lessAnimations);
@@ -149,7 +157,7 @@ class ListGraph {
 
     this.container = this.svgD3.append('g').attr('class', 'main-container');
 
-    this.levels = new Levels(this.container, this.visData);
+    this.levels = new Levels(this.container, this, this.visData);
 
     this.links = new Links(this.levels.groups, this.visData, this.layout);
     this.nodes = new Nodes(
@@ -228,6 +236,22 @@ class ListGraph {
         this.nodes.bars.updateAll(
           this.layout.updateBars(this.data), this.currentSorting.global.type
         );
+      }
+    );
+
+    this.events.on(
+      'd3ListGraphActiveLevel',
+      nextLevel => {
+        const oldLevel = this.activeLevelNumber;
+        this.activeLevelNumber = Math.max(nextLevel, 0);
+        if (this.nodes.rootedNode) {
+          const rootNodeDepth = this.nodes.rootedNode.datum().depth;
+          this.levels.blur(rootNodeDepth + oldLevel);
+          this.levels.focus(rootNodeDepth + this.activeLevelNumber);
+        } else {
+          this.levels.blur(oldLevel);
+          this.levels.focus(this.activeLevelNumber);
+        }
       }
     );
   }

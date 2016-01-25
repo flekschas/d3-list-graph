@@ -65,6 +65,8 @@ var ListGraph = (function ($,d3) { 'use strict';
 
   var DEFAULT_BAR_MODE = 'one';
 
+  var HIGHLIGHT_ACTIVE_LEVEL = true;
+
   var TRANSITION_LIGHTNING_FAST = 150;
   var TRANSITION_SEMI_FAST = 250;
   // Gradient colors
@@ -886,11 +888,11 @@ var ListGraph = (function ($,d3) { 'use strict';
         });
 
         this.events.on('d3ListGraphNodeRoot', function (data) {
-          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [false, data.focusNextLevel], '.root');
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [], '.root');
         });
 
         this.events.on('d3ListGraphNodeUnroot', function (data) {
-          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true, data.focusNextLevel], '.root');
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true], '.root');
         });
       }
     }
@@ -1053,7 +1055,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'toggleRoot',
-      value: function toggleRoot(el, nodeData, setFalse, focusNextLevel) {
+      value: function toggleRoot(el, nodeData, setFalse) {
         var d3El = d3.select(el);
         var data = d3El.datum();
         var events = { rooted: false, unrooted: false };
@@ -1070,18 +1072,18 @@ var ListGraph = (function ($,d3) { 'use strict';
           // Activate new root
           if (this.rootedNode.datum().id !== data.id && !setFalse) {
             d3El.classed({ active: true, inactive: false });
-            this.rootNode(data.id, focusNextLevel);
+            this.rootNode(data.id);
             this.rootedNode = d3El;
             events.rooted = data.id;
           } else {
             this.rootedNode = undefined;
             // Highlight first level
-            this.vis.levels.focus(0);
+            this.vis.levels.focus(this.vis.activeLevelNumber);
           }
         } else {
           if (!setFalse) {
             d3El.classed({ active: true, inactive: false });
-            this.rootNode(data.id, focusNextLevel);
+            this.rootNode(data.id);
             events.rooted = data.id;
             this.rootedNode = d3El;
           }
@@ -1091,7 +1093,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'rootNode',
-      value: function rootNode(id, focusNextLevel) {
+      value: function rootNode(id) {
         var that = this;
         var els = this.nodes.filter(function (data) {
           return data.id === id;
@@ -1110,7 +1112,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         els.selectAll('.bg-extension').transition().duration(TRANSITION_SEMI_FAST).attr('x', -that.visData.global.row.height / 2);
 
         // Highlight level
-        this.vis.levels.focus(datum.depth + (focusNextLevel ? focusNextLevel : 0));
+        this.vis.levels.focus(datum.depth + this.vis.activeLevelNumber);
       }
     }, {
       key: 'unrootNode',
@@ -1489,12 +1491,15 @@ var ListGraph = (function ($,d3) { 'use strict';
   var SCROLL_CONTAINER_CLASS = 'scroll-container';
 
   var Levels = (function () {
-    function Levels(selection, visData) {
+    function Levels(selection, vis, visData) {
+      var _this = this;
+
       babelHelpers.classCallCheck(this, Levels);
 
+      this.vis = vis;
       this.visData = visData;
       this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS).classed('active', function (data, index) {
-        return index === 0;
+        return _this.vis.highlightActiveLevel && index === 0;
       });
 
       // We need to add an empty rectangle that fills up the whole column to ensure
@@ -1510,12 +1515,12 @@ var ListGraph = (function ($,d3) { 'use strict';
     babelHelpers.createClass(Levels, [{
       key: 'scrollPreparation',
       value: function scrollPreparation(vis, scrollbarWidth) {
-        var _this = this;
+        var _this2 = this;
 
         this.groups.each(function (data, index) {
-          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this.visData.global.row.padding;
-          var scrollHeight = contentHeight - _this.visData.global.column.height;
-          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this.visData.global.column.height * _this.visData.global.column.height / contentHeight, 10) : 0;
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this2.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this2.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this2.visData.global.column.height * _this2.visData.global.column.height / contentHeight, 10) : 0;
 
           data.height = contentHeight;
           data.linkSelections = {
@@ -1526,13 +1531,13 @@ var ListGraph = (function ($,d3) { 'use strict';
           data.scrollTop = 0;
           data.scrollbar = {
             el: undefined,
-            x: data.x + _this.visData.global.column.width - scrollbarWidth,
+            x: data.x + _this2.visData.global.column.width - scrollbarWidth,
             y: 0,
             width: scrollbarWidth,
             height: scrollbarHeight,
-            scrollHeight: _this.visData.global.column.height - scrollbarHeight,
+            scrollHeight: _this2.visData.global.column.height - scrollbarHeight,
             scrollTop: 0,
-            heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this.visData.global.column.height - scrollbarHeight])
+            heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight])
           };
           data.invertedHeightScale = data.scrollbar.heightScale.invert;
         });
@@ -1540,21 +1545,21 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'updateScrollProperties',
       value: function updateScrollProperties() {
-        var _this2 = this;
+        var _this3 = this;
 
         this.groups.each(function (data) {
-          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this2.visData.global.row.padding;
-          var scrollHeight = contentHeight - _this2.visData.global.column.height;
-          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this2.visData.global.column.height * _this2.visData.global.column.height / contentHeight, 10) : 0;
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this3.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this3.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this3.visData.global.column.height * _this3.visData.global.column.height / contentHeight, 10) : 0;
 
           data.height = contentHeight;
           data.scrollHeight = scrollHeight;
           data.scrollTop = 0;
           data.scrollbar.y = 0;
           data.scrollbar.height = scrollbarHeight;
-          data.scrollbar.scrollHeight = _this2.visData.global.column.height - scrollbarHeight;
+          data.scrollbar.scrollHeight = _this3.visData.global.column.height - scrollbarHeight;
           data.scrollbar.scrollTop = 0;
-          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight]);
+          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this3.visData.global.column.height - scrollbarHeight]);
         });
       }
     }, {
@@ -1571,19 +1576,23 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'focus',
       value: function focus(level) {
-        this.groups.filter(function (data) {
-          return data.level === level;
-        }).classed('active', true);
+        if (this.vis.highlightActiveLevel) {
+          this.groups.filter(function (data) {
+            return data.level === level;
+          }).classed('active', true);
+        }
       }
     }, {
       key: 'blur',
       value: function blur(level) {
-        if (level) {
-          this.groups.filter(function (data) {
-            return data.level === level;
-          }).classed('active', false);
-        } else {
-          this.groups.classed('active', false);
+        if (this.vis.highlightActiveLevel) {
+          if (level) {
+            this.groups.filter(function (data) {
+              return data.level === level;
+            }).classed('active', false);
+          } else {
+            this.groups.classed('active', false);
+          }
         }
       }
     }, {
@@ -2253,6 +2262,14 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.columns = options.columns || COLUMNS;
       this.rows = options.rows || ROWS;
       this.iconPath = options.iconPath || ICON_PATH;
+      this.highlightActiveLevel = HIGHLIGHT_ACTIVE_LEVEL;
+      if (typeof options.highlightActiveLevel !== 'undefined') {
+        this.highlightActiveLevel = options.highlightActiveLevel;
+      }
+
+      // Determines which level from the rooted node will be regarded as active.
+      // Zero means that the level of the rooted node is regarded.
+      this.activeLevelNumber = 0;
 
       this.lessAnimations = !!options.lessAnimations;
       this.baseElD3.classed('less-animations', this.lessAnimations);
@@ -2329,7 +2346,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.container = this.svgD3.append('g').attr('class', 'main-container');
 
-      this.levels = new Levels(this.container, this.visData);
+      this.levels = new Levels(this.container, this, this.visData);
 
       this.links = new Links(this.levels.groups, this.visData, this.layout);
       this.nodes = new Nodes(this, this.levels.groups, this.visData, this.links, this.events);
@@ -2374,6 +2391,19 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.events.on('d3ListGraphUpdateBars', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+      });
+
+      this.events.on('d3ListGraphActiveLevel', function (nextLevel) {
+        var oldLevel = _this.activeLevelNumber;
+        _this.activeLevelNumber = Math.max(nextLevel, 0);
+        if (_this.nodes.rootedNode) {
+          var rootNodeDepth = _this.nodes.rootedNode.datum().depth;
+          _this.levels.blur(rootNodeDepth + oldLevel);
+          _this.levels.focus(rootNodeDepth + _this.activeLevelNumber);
+        } else {
+          _this.levels.blur(oldLevel);
+          _this.levels.focus(_this.activeLevelNumber);
+        }
       });
     }
 
