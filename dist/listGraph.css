@@ -1,6 +1,8 @@
 .list-graph {
   position: relative;
   display: block; }
+  .list-graph .base {
+    transition: opacity 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .top-bar {
     position: relative;
     height: 1.5rem;

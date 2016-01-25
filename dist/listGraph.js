@@ -109,6 +109,18 @@ var ListGraph = (function ($,d3) { 'use strict';
     return mergedSelection;
   }
 
+  function allTransitionsEnded(transition, callback) {
+    if (transition.size() === 0) {
+      callback();
+    }
+    var n = 0;
+    transition.each(function () {
+      return ++n;
+    }).each('end', function () {
+      if (! --n) callback.apply(this, arguments);
+    });
+  }
+
   var LimitsUnsupportedFormat = (function (_ExtendableError) {
     babelHelpers.inherits(LimitsUnsupportedFormat, _ExtendableError);
 
@@ -1411,21 +1423,19 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function sort(update, newSortType) {
         var _this3 = this;
 
-        var start = function start() {
-          d3.select(this).classed('sorting', true);
-        };
-        var end = function end() {
-          d3.select(this).classed('sorting', false);
-        };
-
         for (var i = update.length; i--;) {
           var selection = this.nodes.data(update[i].rows, function (data) {
             return data.id;
           });
 
+          this.vis.svgD3.classed('sorting', true);
           selection.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
             return 'translate(' + (data.x + _this3.visData.global.column.padding) + ', ' + data.y + ')';
-          }).each('start', start).each('end', end);
+          }).call(allTransitionsEnded, function () {
+            _this3.vis.svgD3.classed('sorting', false);
+            _this3.vis.updateLevelsVisibility();
+            _this3.vis.updateScrollbarVisibility();
+          });
 
           if (newSortType) {
             this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
@@ -1439,21 +1449,9 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         this.vis.layout.updateNodesVisibility();
 
-        var completed = function completed(transition, callback) {
-          if (transition.size() === 0) {
-            callback();
-          }
-          var n = 0;
-          transition.each(function () {
-            return ++n;
-          }).each('end', function () {
-            if (! --n) callback.apply(this, arguments);
-          });
-        };
-
         this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
           return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
-        }).call(completed, function () {
+        }).call(allTransitionsEnded, function () {
           _this4.vis.updateLevelsVisibility();
           _this4.vis.updateScrollbarVisibility();
         });
@@ -2592,7 +2590,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'sortColumn',
       value: function sortColumn(level, property, sortOrder, newSortType) {
-        this.nodes.sort(this.layout.sort(level, property, sortOrder).nodes(level), newSortType);
+        this.nodes.sort(this.layout.sort(level, property, sortOrder).updateNodesVisibility().nodes(level), newSortType);
         this.links.sort(this.layout.links(level - 1, level + 1));
       }
     }, {
