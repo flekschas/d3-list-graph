@@ -309,7 +309,7 @@ class Nodes {
     const events = this.toggleRoot(el);
 
     if (events.rooted && events.unrooted) {
-      this.events.broadcast('d3ListGraphNodeReRoot', {
+      this.events.broadcast('d3ListGraphNodeReroot', {
         rooted: {
           id: events.rooted.id,
           clone: events.rooted.clone,
