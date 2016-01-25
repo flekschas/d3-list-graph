@@ -66,6 +66,7 @@ var ListGraph = (function ($,d3) { 'use strict';
   var DEFAULT_BAR_MODE = 'one';
 
   var HIGHLIGHT_ACTIVE_LEVEL = true;
+  var ACTIVE_LEVEL_NUMBER = 0;
 
   var TRANSITION_LIGHTNING_FAST = 150;
   var TRANSITION_SEMI_FAST = 250;
@@ -1499,7 +1500,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.vis = vis;
       this.visData = visData;
       this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS).classed('active', function (data, index) {
-        return _this.vis.highlightActiveLevel && index === 0;
+        return _this.vis.highlightActiveLevel && index === _this.vis.activeLevelNumber;
       });
 
       // We need to add an empty rectangle that fills up the whole column to ensure
@@ -2269,7 +2270,10 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       // Determines which level from the rooted node will be regarded as active.
       // Zero means that the level of the rooted node is regarded.
-      this.activeLevelNumber = 0;
+      this.activeLevelNumber = ACTIVE_LEVEL_NUMBER;
+      if (typeof options.activeLevelNumber !== 'undefined') {
+        this.activeLevelNumber = options.activeLevelNumber;
+      }
 
       this.lessAnimations = !!options.lessAnimations;
       this.baseElD3.classed('less-animations', this.lessAnimations);

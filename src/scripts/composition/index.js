@@ -54,7 +54,10 @@ class ListGraph {
 
     // Determines which level from the rooted node will be regarded as active.
     // Zero means that the level of the rooted node is regarded.
-    this.activeLevelNumber = 0;
+    this.activeLevelNumber = config.ACTIVE_LEVEL_NUMBER;
+    if (typeof options.activeLevelNumber !== 'undefined') {
+      this.activeLevelNumber = options.activeLevelNumber;
+    }
 
     this.lessAnimations = !!options.lessAnimations;
     this.baseElD3.classed('less-animations', this.lessAnimations);
