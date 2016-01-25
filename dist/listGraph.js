@@ -582,8 +582,8 @@ var ListGraph = (function ($,d3) { 'use strict';
 
     babelHelpers.createClass(Bar, null, [{
       key: 'updateIndicator',
-      value: function updateIndicator(selection, x, referenceValue) {
-        selection.attr('x', x - 1).classed('positive', function (data) {
+      value: function updateIndicator(selection, contentWidth, referenceValue) {
+        selection.attr('x', Math.min(contentWidth * Math.min(referenceValue, 1), contentWidth - 2)).classed('positive', function (data) {
           return data.value >= referenceValue;
         });
       }
@@ -628,6 +628,8 @@ var ListGraph = (function ($,d3) { 'use strict';
         } else {
           width = visData.global.column.contentWidth * normValue;
         }
+
+        x = Math.min(x, visData.global.column.contentWidth - 2);
 
         return roundRect(x, visData.global.row.padding, width, height, radius);
       }
@@ -709,9 +711,9 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function updateIndicator(refBars, refBarsBg, currentBar, referenceValue) {
         var _this3 = this;
 
-        Bar.updateIndicator(currentBar, this.visData.global.column.contentWidth * referenceValue, referenceValue);
+        Bar.updateIndicator(currentBar, this.visData.global.column.contentWidth, referenceValue);
 
-        Bar.updateIndicator(refBars, this.visData.global.column.contentWidth * referenceValue, referenceValue);
+        Bar.updateIndicator(refBars, this.visData.global.column.contentWidth, referenceValue);
 
         refBarsBg.attr('d', function (data) {
           return Bar.generatePath(data, _this3.mode, undefined, _this3.visData, referenceValue);

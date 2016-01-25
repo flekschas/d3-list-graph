@@ -60,13 +60,13 @@ class Bars {
   updateIndicator (refBars, refBarsBg, currentBar, referenceValue) {
     Bar.updateIndicator(
       currentBar,
-      this.visData.global.column.contentWidth * referenceValue,
+      this.visData.global.column.contentWidth,
       referenceValue
     );
 
     Bar.updateIndicator(
       refBars,
-      this.visData.global.column.contentWidth * referenceValue,
+      this.visData.global.column.contentWidth,
       referenceValue
     );
 

@@ -94,9 +94,15 @@ class Bar {
         .call(setupIndicator.bind(this));
   }
 
-  static updateIndicator (selection, x, referenceValue) {
+  static updateIndicator (selection, contentWidth, referenceValue) {
     selection
-      .attr('x', x - 1)
+      .attr(
+        'x',
+        Math.min(
+          contentWidth * Math.min(referenceValue, 1),
+          contentWidth - 2
+        )
+      )
       .classed('positive', data => data.value >= referenceValue);
   }
 
@@ -148,6 +154,8 @@ class Bar {
     } else {
       width = visData.global.column.contentWidth * normValue;
     }
+
+    x = Math.min(x, visData.global.column.contentWidth - 2);
 
     return roundRect(
       x,
