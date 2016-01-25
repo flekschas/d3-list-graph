@@ -948,10 +948,19 @@ var ListGraph = (function ($,d3) { 'use strict';
         var events = this.toggleLock(el);
 
         if (events.locked) {
-          this.events.broadcast('d3ListGraphNodeLock', { id: events.locked });
+          this.events.broadcast('d3ListGraphNodeLock', {
+            id: events.locked.id,
+            clone: events.locked.clone,
+            clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+          });
         }
+
         if (events.unlocked) {
-          this.events.broadcast('d3ListGraphNodeUnlock', { id: events.unlocked });
+          this.events.broadcast('d3ListGraphNodeUnlock', {
+            id: events.unlocked.id,
+            clone: events.unlocked.clone,
+            clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+          });
         }
       }
     }, {
@@ -1019,18 +1028,18 @@ var ListGraph = (function ($,d3) { 'use strict';
           if (this.lockedNode.datum().id === data.id) {
             this.lockedNode.classed({ active: false, inactive: true });
             this.unlockNode(this.lockedNode.datum().id);
-            events.unlocked = this.lockedNode.datum().id;
+            events.unlocked = this.lockedNode.datum();
             this.lockedNode = undefined;
           } else {
             // Reset previously locked node;
             this.lockedNode.classed({ active: false, inactive: true });
             this.unlockNode(this.lockedNode.datum().id);
-            events.unlocked = this.lockedNode.datum().id;
+            events.unlocked = this.lockedNode.datum();
 
             if (!setFalse) {
               d3El.classed({ active: true, inactive: false });
               this.lockNode(data.id);
-              events.locked = data.id;
+              events.locked = data;
               this.lockedNode = d3El;
             }
           }
@@ -1038,7 +1047,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           if (!setFalse) {
             d3El.classed({ active: true, inactive: false });
             this.lockNode(data.id);
-            events.locked = data.id;
+            events.locked = data;
             this.lockedNode = d3El;
           }
         }
