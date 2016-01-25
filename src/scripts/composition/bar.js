@@ -138,7 +138,7 @@ class Bar {
         if (data.value < indicator) {
           x = data.value * visData.global.column.contentWidth;
         }
-        width = Math.min(Math.min(Math.abs(indicator - data.value), 1) *
+        width = Math.max(Math.min(Math.abs(indicator - data.value), 1) *
           visData.global.column.contentWidth, 2);
       }
     } else {
