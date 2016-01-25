@@ -62,4 +62,11 @@ export function siblings (node, callback) {
       callback(node.parents[parentsId[i]].childRefs[j]);
     }
   }
+  // The root node doesn't have a `parents` property but might have `siblings`.
+  if (node.siblings) {
+    const siblingsId = Object.keys(node.siblings);
+    for (let i = siblingsId.length; i--;) {
+      callback(node.siblings[siblingsId[i]]);
+    }
+  }
 }

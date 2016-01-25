@@ -260,7 +260,9 @@ class Nodes {
     if (events.unrooted) {
       this.events.broadcast('d3ListGraphNodeUnroot', { id: events.unrooted });
     }
-    this.events.broadcast('d3ListGraphUpdateBarsRequest');
+    this.events.broadcast('d3ListGraphUpdateBarsRequest', {
+      id: events.rooted,
+    });
   }
 
   focusNodes (event) {

@@ -320,7 +320,6 @@
     var visited = {};
     var queue = [];
 
-    var j = undefined;
     var child = undefined;
     var childId = undefined;
     var clone = undefined;
@@ -524,6 +523,19 @@
       }
     }
 
+    function addSiblings() {
+      for (var i = starts.length; i--;) {
+        for (var j = starts.length; j--;) {
+          if (i !== j) {
+            if (!graph[starts[i]].siblings) {
+              graph[starts[i]].siblings = {};
+            }
+            graph[starts[i]].siblings[starts[j]] = graph[starts[j]];
+          }
+        }
+      }
+    }
+
     // BFS for each start node.
     for (var i = starts.length; i--;) {
       if (!graph[starts[i]]) {
@@ -538,7 +550,7 @@
       while (queue.length > 0) {
         node = graph[queue.shift()];
 
-        for (j = node.children.length; j--;) {
+        for (var j = node.children.length; j--;) {
           childId = node.children[j];
           child = graph[childId];
 
@@ -556,6 +568,8 @@
         }
       }
     }
+
+    addSiblings();
   }
 
   var ExtendableError = (function (_Error) {

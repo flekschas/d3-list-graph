@@ -422,6 +422,13 @@ var ListGraph = (function ($,d3) { 'use strict';
         callback(node.parents[parentsId[i]].childRefs[j]);
       }
     }
+    // The root node doesn't have a `parents` property but might have `siblings`.
+    if (node.siblings) {
+      var siblingsId = Object.keys(node.siblings);
+      for (var i = siblingsId.length; i--;) {
+        callback(node.siblings[siblingsId[i]]);
+      }
+    }
   }
 
   /**
@@ -611,10 +618,10 @@ var ListGraph = (function ($,d3) { 'use strict';
             if (data.value < indicator) {
               x = data.value * visData.global.column.contentWidth;
             }
-            width = Math.min(Math.abs(indicator - data.value), 2) * visData.global.column.contentWidth;
+            width = Math.min(Math.min(Math.abs(indicator - data.value), 1) * visData.global.column.contentWidth, 2);
           }
         } else {
-          width = visData.global.column.contentWidth * data.value;
+          width = visData.global.column.contentWidth * Math.min(data.value, 1);
         }
 
         return roundRect(x, visData.global.row.padding, width, height, radius);
@@ -624,7 +631,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function generateTwoBarsPath(data, visData, bottom) {
         var height = visData.global.row.contentHeight / 2;
 
-        var width = visData.global.column.contentWidth * data.value;
+        var width = visData.global.column.contentWidth * Math.min(data.value, 1);
 
         var y = visData.global.row.padding;
 
@@ -928,7 +935,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         if (events.unrooted) {
           this.events.broadcast('d3ListGraphNodeUnroot', { id: events.unrooted });
         }
-        this.events.broadcast('d3ListGraphUpdateBarsRequest');
+        this.events.broadcast('d3ListGraphUpdateBarsRequest', {
+          id: events.rooted
+        });
       }
     }, {
       key: 'focusNodes',

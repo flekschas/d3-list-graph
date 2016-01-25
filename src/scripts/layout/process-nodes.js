@@ -23,7 +23,6 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
   const visited = {};
   const queue = [];
 
-  let j;
   let child;
   let childId;
   let clone;
@@ -231,6 +230,19 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     }
   }
 
+  function addSiblings () {
+    for (let i = starts.length; i--;) {
+      for (let j = starts.length; j--;) {
+        if (i !== j) {
+          if (!graph[starts[i]].siblings) {
+            graph[starts[i]].siblings = {};
+          }
+          graph[starts[i]].siblings[starts[j]] = graph[starts[j]];
+        }
+      }
+    }
+  }
+
   // BFS for each start node.
   for (let i = starts.length; i--;) {
     if (!graph[starts[i]]) {
@@ -245,7 +257,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     while (queue.length > 0) {
       node = graph[queue.shift()];
 
-      for (j = node.children.length; j--;) {
+      for (let j = node.children.length; j--;) {
         childId = node.children[j];
         child = graph[childId];
 
@@ -268,6 +280,8 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
       }
     }
   }
+
+  addSiblings();
 }
 
 export { traverseGraph as default };
