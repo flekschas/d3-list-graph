@@ -16,8 +16,15 @@ class Levels {
         .attr('class', COLUMN_CLASS)
         .classed(
           'active',
-          (data, index) => this.vis.highlightActiveLevel &&
-            index === this.vis.activeLevelNumber
+          (data, index) => {
+            if (this.vis.highlightActiveLevel) {
+              if (!this.vis.nodes || !this.vis.nodes.rootedNode) {
+                return index === this.vis.activeLevelNumber -
+                  this.vis.noRootedNodeDifference;
+              }
+              return index === this.vis.activeLevelNumber;
+            }
+          }
         );
 
     // We need to add an empty rectangle that fills up the whole column to ensure

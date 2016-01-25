@@ -59,6 +59,11 @@ class ListGraph {
       this.activeLevelNumber = options.activeLevelNumber;
     }
 
+    this.noRootedNodeDifference = config.NO_ROOTED_NODE_DIFFERENCE;
+    if (typeof options.noRootedNodeDifference !== 'undefined') {
+      this.noRootedNodeDifference = options.noRootedNodeDifference;
+    }
+
     this.lessAnimations = !!options.lessAnimations;
     this.baseElD3.classed('less-animations', this.lessAnimations);
 

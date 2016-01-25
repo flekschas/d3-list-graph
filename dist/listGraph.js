@@ -67,6 +67,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
   var HIGHLIGHT_ACTIVE_LEVEL = true;
   var ACTIVE_LEVEL_NUMBER = 0;
+  var NO_ROOTED_NODE_DIFFERENCE = 0;
 
   var TRANSITION_LIGHTNING_FAST = 150;
   var TRANSITION_SEMI_FAST = 250;
@@ -1079,7 +1080,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           } else {
             this.rootedNode = undefined;
             // Highlight first level
-            this.vis.levels.focus(this.vis.activeLevelNumber);
+            this.vis.levels.focus(this.vis.activeLevelNumber - this.vis.noRootedNodeDifference);
           }
         } else {
           if (!setFalse) {
@@ -1500,7 +1501,12 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.vis = vis;
       this.visData = visData;
       this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS).classed('active', function (data, index) {
-        return _this.vis.highlightActiveLevel && index === _this.vis.activeLevelNumber;
+        if (_this.vis.highlightActiveLevel) {
+          if (!_this.vis.nodes || !_this.vis.nodes.rootedNode) {
+            return index === _this.vis.activeLevelNumber - _this.vis.noRootedNodeDifference;
+          }
+          return index === _this.vis.activeLevelNumber;
+        }
       });
 
       // We need to add an empty rectangle that fills up the whole column to ensure
@@ -2273,6 +2279,11 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.activeLevelNumber = ACTIVE_LEVEL_NUMBER;
       if (typeof options.activeLevelNumber !== 'undefined') {
         this.activeLevelNumber = options.activeLevelNumber;
+      }
+
+      this.noRootedNodeDifference = NO_ROOTED_NODE_DIFFERENCE;
+      if (typeof options.noRootedNodeDifference !== 'undefined') {
+        this.noRootedNodeDifference = options.noRootedNodeDifference;
       }
 
       this.lessAnimations = !!options.lessAnimations;

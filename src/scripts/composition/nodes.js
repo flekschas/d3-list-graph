@@ -412,7 +412,9 @@ class Nodes {
       } else {
         this.rootedNode = undefined;
         // Highlight first level
-        this.vis.levels.focus(this.vis.activeLevelNumber);
+        this.vis.levels.focus(
+          this.vis.activeLevelNumber - this.vis.noRootedNodeDifference
+        );
       }
     } else {
       if (!setFalse) {
