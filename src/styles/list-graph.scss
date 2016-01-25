@@ -2,6 +2,10 @@
   position: relative;
   display: block;
 
+  .base {
+    transition: opacity $transitionFast $easeInOutCubic;
+  }
+
   .top-bar {
     position: relative;
     height: 1.5rem;

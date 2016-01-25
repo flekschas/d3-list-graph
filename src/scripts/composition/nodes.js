@@ -7,6 +7,7 @@ import * as traverse from './traversal';
 import * as config from './config';
 import Bars from './bars';
 import { arrayToFakeObjs } from './utils';
+import { allTransitionsEnded } from '../commons/d3-utils';
 
 const NODES_CLASS = 'nodes';
 const NODE_CLASS = 'node';
@@ -763,19 +764,20 @@ class Nodes {
   }
 
   sort (update, newSortType) {
-    const start = function () { d3.select(this).classed('sorting', true); };
-    const end = function () { d3.select(this).classed('sorting', false); };
-
     for (let i = update.length; i--;) {
       const selection = this.nodes.data(update[i].rows, data => data.id);
 
+      this.vis.svgD3.classed('sorting', true);
       selection
         .transition()
         .duration(config.TRANSITION_SEMI_FAST)
         .attr('transform', data => 'translate(' +
           (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
-        .each('start', start)
-        .each('end', end);
+        .call(allTransitionsEnded, () => {
+          this.vis.svgD3.classed('sorting', false);
+          this.vis.updateLevelsVisibility();
+          this.vis.updateScrollbarVisibility();
+        });
 
       if (newSortType) {
         this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
@@ -786,24 +788,12 @@ class Nodes {
   updateVisibility () {
     this.vis.layout.updateNodesVisibility();
 
-    const completed = (transition, callback) => {
-      if (transition.size() === 0) {
-        callback();
-      }
-      let n = 0;
-      transition
-        .each(() => ++n)
-        .each('end', function () {
-          if (!--n) callback.apply(this, arguments);
-        });
-    };
-
     this.nodes
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('transform', data => 'translate(' +
         (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
-      .call(completed, () => {
+      .call(allTransitionsEnded, () => {
         this.vis.updateLevelsVisibility();
         this.vis.updateScrollbarVisibility();
       });
