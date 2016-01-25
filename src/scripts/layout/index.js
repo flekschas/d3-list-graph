@@ -496,6 +496,8 @@ class ListGraphLayout {
         this.columnNodeOrder[i][j].y = this.scale.y(j - skipped[i]);
       }
     }
+
+    return this;
   }
 
   /**
