@@ -448,7 +448,7 @@ class ListGraph {
 
   sortColumn (level, property, sortOrder, newSortType) {
     this.nodes.sort(
-      this.layout.sort(level, property, sortOrder).nodes(level), newSortType
+      this.layout.sort(level, property, sortOrder).updateNodesVisibility().nodes(level), newSortType
     );
     this.links.sort(this.layout.links(level - 1, level + 1));
   }
