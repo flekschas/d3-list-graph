@@ -928,6 +928,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         if (events.unrooted) {
           this.events.broadcast('d3ListGraphNodeUnroot', { id: events.unrooted });
         }
+        this.events.broadcast('d3ListGraphUpdateBarsRequest');
       }
     }, {
       key: 'focusNodes',
