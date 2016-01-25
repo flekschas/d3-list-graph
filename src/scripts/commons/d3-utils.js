@@ -17,3 +17,15 @@ export function mergeSelections (selections) {
 
   return mergedSelection;
 }
+
+export function allTransitionsEnded (transition, callback) {
+  if (transition.size() === 0) {
+    callback();
+  }
+  let n = 0;
+  transition
+    .each(() => ++n)
+    .each('end', function () {
+      if (!--n) callback.apply(this, arguments);
+    });
+}
