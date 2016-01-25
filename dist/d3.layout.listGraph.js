@@ -382,6 +382,7 @@
           node.data.barRefs = {};
           for (var i = 0, len = node.data.bars.length; i < len; i++) {
             node.data.bars[i].value = Math.max(Math.min(node.data.bars[i].value, 1), 0);
+            node.data.bars[i].barId = node.id + '.' + node.data.bars[i].id;
             node.data.barRefs[node.data.bars[i].id] = node.data.bars[i].value;
           }
         } else if (isObject(node.data.bars)) {
@@ -393,6 +394,7 @@
           for (var i = 0, len = keys.length; i < len; i++) {
             node.data.barRefs[keys[i]] = Math.max(Math.min(node.data.bars[keys[i]], 1), 0);
             bars.push({
+              barId: node.id + '.' + keys[i],
               id: keys[i],
               value: node.data.barRefs[keys[i]]
             });
@@ -454,7 +456,7 @@
 
       if (duplication) {
         if (parent.depth + 1 !== node.depth) {
-          cloneId = id + '.' + node.clones.length + 1;
+          cloneId = id + '.' + (node.clones.length + 1);
           graph[cloneId] = {
             children: [],
             clone: true,
@@ -1054,6 +1056,24 @@
         }
 
         return this;
+      }
+    }, {
+      key: 'updateBars',
+      value: function updateBars(graph) {
+        var nodesId = Object.keys(graph);
+        var barsData = [];
+
+        for (var i = nodesId.length; i--;) {
+          for (var j = graph[nodesId[i]].data.bars.length; j--;) {
+            barsData.push({
+              barId: nodesId[i] + '.' + graph[nodesId[i]].data.bars[j].id,
+              id: graph[nodesId[i]].data.bars[j].id,
+              value: graph[nodesId[i]].data.bars[j].value
+            });
+          }
+        }
+
+        return barsData;
       }
 
       /**

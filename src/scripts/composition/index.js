@@ -207,14 +207,19 @@ class ListGraph {
     this.events.on(
       'd3ListGraphNodeRoot',
       () => {
-        this.nodes.bars.updateAll(this.currentSorting.global.type);
+        // console.log(this.data[event.nodeIds[0]]);
+        this.nodes.bars.updateAll(
+          this.layout.updateBars(this.data), this.currentSorting.global.type
+        );
       }
     );
 
     this.events.on(
       'd3ListGraphNodeUnroot',
       () => {
-        this.nodes.bars.updateAll(this.currentSorting.global.type);
+        this.nodes.bars.updateAll(
+          this.layout.updateBars(this.data), this.currentSorting.global.type
+        );
       }
     );
   }

@@ -662,10 +662,12 @@ var ListGraph = (function ($,d3) { 'use strict';
 
     babelHelpers.createClass(Bars, [{
       key: 'updateAll',
-      value: function updateAll(sortBy) {
+      value: function updateAll(update, sortBy) {
         var _this = this;
 
-        this.selection.selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+        this.selection.selectAll('.bar-magnitude').data(update, function (data) {
+          return data.barId;
+        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
           return Bar.generatePath(data, _this.mode, sortBy, _this.visData);
         });
       }
@@ -2353,11 +2355,12 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
 
       this.events.on('d3ListGraphNodeRoot', function () {
-        _this.nodes.bars.updateAll(_this.currentSorting.global.type);
+        // console.log(this.data[event.nodeIds[0]]);
+        _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
       });
 
       this.events.on('d3ListGraphNodeUnroot', function () {
-        _this.nodes.bars.updateAll(_this.currentSorting.global.type);
+        _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
       });
     }
 

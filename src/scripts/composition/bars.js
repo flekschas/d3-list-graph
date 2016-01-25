@@ -22,8 +22,9 @@ class Bars {
     });
   }
 
-  updateAll (sortBy) {
+  updateAll (update, sortBy) {
     this.selection.selectAll('.bar-magnitude')
+      .data(update, data => data.barId)
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('d', data => {

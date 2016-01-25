@@ -87,6 +87,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
             Math.min(node.data.bars[i].value, 1),
             0
           );
+          node.data.bars[i].barId = node.id + '.' + node.data.bars[i].id;
           node.data.barRefs[node.data.bars[i].id] = node.data.bars[i].value;
         }
       } else if (isObject(node.data.bars)) {
@@ -101,6 +102,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
             0
           );
           bars.push({
+            barId: node.id + '.' + keys[i],
             id: keys[i],
             value: node.data.barRefs[keys[i]],
           });
@@ -161,7 +163,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
 
     if (duplication) {
       if (parent.depth + 1 !== node.depth) {
-        cloneId = id + '.' + node.clones.length + 1;
+        cloneId = id + '.' + (node.clones.length + 1);
         graph[cloneId] = {
           children: [],
           clone: true,
