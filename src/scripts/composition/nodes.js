@@ -232,12 +232,36 @@ class Nodes {
 
   enterHandler (el, data) {
     this.highlightNodes(el, data);
-    this.events.broadcast('d3ListGraphNodeEnter', { id: data.id });
+
+    const eventData = {
+      id: data.id,
+      clone: false,
+      clonedFromId: undefined,
+    };
+
+    if (data.clone) {
+      eventData.clone = true;
+      eventData.clonedFromId = data.originalNode.id;
+    }
+
+    this.events.broadcast('d3ListGraphNodeEnter', eventData);
   }
 
   leaveHandler (el, data) {
     this.unhighlightNodes(el, data);
-    this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
+
+    const eventData = {
+      id: data.id,
+      clone: false,
+      clonedFromId: undefined,
+    };
+
+    if (data.clone) {
+      eventData.clone = true;
+      eventData.clonedFromId = data.originalNode.id;
+    }
+
+    this.events.broadcast('d3ListGraphNodeLeave', eventData);
   }
 
   lockHandler (el) {
