@@ -2355,11 +2355,14 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
 
       this.events.on('d3ListGraphNodeRoot', function () {
-        // console.log(this.data[event.nodeIds[0]]);
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
       });
 
       this.events.on('d3ListGraphNodeUnroot', function () {
+        _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+      });
+
+      this.events.on('d3ListGraphUpdateBars', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
       });
     }
