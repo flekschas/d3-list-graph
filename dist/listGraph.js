@@ -2417,7 +2417,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           _this.levels.focus(rootNodeDepth + _this.activeLevelNumber);
         } else {
           _this.levels.blur(oldLevel - _this.noRootedNodeDifference);
-          _this.levels.focus(_this.activeLevelNumber);
+          _this.levels.focus(_this.activeLevelNumber - _this.noRootedNodeDifference);
         }
       });
     }

@@ -258,7 +258,9 @@ class ListGraph {
           this.levels.focus(rootNodeDepth + this.activeLevelNumber);
         } else {
           this.levels.blur(oldLevel - this.noRootedNodeDifference);
-          this.levels.focus(this.activeLevelNumber);
+          this.levels.focus(
+            this.activeLevelNumber - this.noRootedNodeDifference
+          );
         }
       }
     );

@@ -263,7 +263,8 @@
     color: #000; }
   .list-graph .node.highlight-bar .label {
     color: #000; }
-  .list-graph .node.highlight-label .label {
+  .list-graph .node.highlight-label .label,
+  .list-graph .column.active .node.highlight-label .label {
     color: #f23e00;
     text-shadow: 0 0 3px rgba(242, 62, 0, 0.25); }
   .list-graph .node .focus-controls .bg {
