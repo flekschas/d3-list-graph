@@ -947,20 +947,37 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function lockHandler(el) {
         var events = this.toggleLock(el);
 
-        if (events.locked) {
-          this.events.broadcast('d3ListGraphNodeLock', {
-            id: events.locked.id,
-            clone: events.locked.clone,
-            clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
-          });
-        }
+        if (events.locked && events.unlocked) {
+          if (events.locked) {
+            this.events.broadcast('d3ListGraphNodeLockChange', {
+              lock: {
+                id: events.locked.id,
+                clone: events.locked.clone,
+                clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+              },
+              unlock: {
+                id: events.unlocked.id,
+                clone: events.unlocked.clone,
+                clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+              }
+            });
+          }
+        } else {
+          if (events.locked) {
+            this.events.broadcast('d3ListGraphNodeLock', {
+              id: events.locked.id,
+              clone: events.locked.clone,
+              clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+            });
+          }
 
-        if (events.unlocked) {
-          this.events.broadcast('d3ListGraphNodeUnlock', {
-            id: events.unlocked.id,
-            clone: events.unlocked.clone,
-            clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
-          });
+          if (events.unlocked) {
+            this.events.broadcast('d3ListGraphNodeUnlock', {
+              id: events.unlocked.id,
+              clone: events.unlocked.clone,
+              clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+            });
+          }
         }
       }
     }, {
@@ -968,14 +985,39 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function rootHandler(el) {
         var events = this.toggleRoot(el);
 
-        if (events.rooted) {
-          this.events.broadcast('d3ListGraphNodeRoot', { id: events.rooted });
+        if (events.rooted && events.unrooted) {
+          this.events.broadcast('d3ListGraphNodeReroot', {
+            rooted: {
+              id: events.rooted.id,
+              clone: events.rooted.clone,
+              clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
+            },
+            unrooted: {
+              id: events.unrooted.id,
+              clone: events.unrooted.clone,
+              clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
+            }
+          });
+        } else {
+          if (events.rooted) {
+            this.events.broadcast('d3ListGraphNodeRoot', {
+              id: events.rooted.id,
+              clone: events.rooted.clone,
+              clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
+            });
+          }
+
+          if (events.unrooted) {
+            this.events.broadcast('d3ListGraphNodeUnroot', {
+              id: events.unrooted.id,
+              clone: events.unrooted.clone,
+              clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
+            });
+          }
         }
-        if (events.unrooted) {
-          this.events.broadcast('d3ListGraphNodeUnroot', { id: events.unrooted });
-        }
+
         this.events.broadcast('d3ListGraphUpdateBarsRequest', {
-          id: events.rooted
+          id: events.rooted.id
         });
       }
     }, {
@@ -1104,14 +1146,14 @@ var ListGraph = (function ($,d3) { 'use strict';
           // Reset current root node
           this.rootedNode.classed({ active: false, inactive: true });
           this.unrootNode(this.rootedNode.datum().id);
-          events.unrooted = this.rootedNode.datum().id;
+          events.unrooted = this.rootedNode.datum();
 
           // Activate new root
           if (this.rootedNode.datum().id !== data.id && !setFalse) {
             d3El.classed({ active: true, inactive: false });
             this.rootNode(data.id);
             this.rootedNode = d3El;
-            events.rooted = data.id;
+            events.rooted = data;
           } else {
             this.rootedNode = undefined;
             // Highlight first level
@@ -1121,7 +1163,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           if (!setFalse) {
             d3El.classed({ active: true, inactive: false });
             this.rootNode(data.id);
-            events.rooted = data.id;
+            events.rooted = data;
             this.rootedNode = d3El;
           }
         }
