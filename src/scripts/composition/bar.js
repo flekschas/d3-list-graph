@@ -138,11 +138,11 @@ class Bar {
         if (data.value < indicator) {
           x = data.value * visData.global.column.contentWidth;
         }
-        width = Math.min(Math.abs(indicator - data.value), 2) *
-          visData.global.column.contentWidth;
+        width = Math.min(Math.min(Math.abs(indicator - data.value), 1) *
+          visData.global.column.contentWidth, 2);
       }
     } else {
-      width = visData.global.column.contentWidth * data.value;
+      width = visData.global.column.contentWidth * Math.min(data.value, 1);
     }
 
     return roundRect(
@@ -157,7 +157,7 @@ class Bar {
   static generateTwoBarsPath (data, visData, bottom) {
     const height = visData.global.row.contentHeight / 2;
 
-    const width = visData.global.column.contentWidth * data.value;
+    const width = visData.global.column.contentWidth * Math.min(data.value, 1);
 
     let y = visData.global.row.padding;
 

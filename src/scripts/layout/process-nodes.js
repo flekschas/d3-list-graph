@@ -23,7 +23,6 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
   const visited = {};
   const queue = [];
 
-  let j;
   let child;
   let childId;
   let clone;
@@ -87,6 +86,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
             Math.min(node.data.bars[i].value, 1),
             0
           );
+          node.data.bars[i].barId = node.id + '.' + node.data.bars[i].id;
           node.data.barRefs[node.data.bars[i].id] = node.data.bars[i].value;
         }
       } else if (isObject(node.data.bars)) {
@@ -101,6 +101,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
             0
           );
           bars.push({
+            barId: node.id + '.' + keys[i],
             id: keys[i],
             value: node.data.barRefs[keys[i]],
           });
@@ -161,7 +162,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
 
     if (duplication) {
       if (parent.depth + 1 !== node.depth) {
-        cloneId = id + '.' + node.clones.length + 1;
+        cloneId = id + '.' + (node.clones.length + 1);
         graph[cloneId] = {
           children: [],
           clone: true,
@@ -176,6 +177,9 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
         _node = graph[cloneId];
         // Add a reference to the original node that points to the clone.
         node.clones.push(_node);
+        // Remove parent
+        node.parents[parent.id] = undefined;
+        delete node.parents[parent.id];
       }
     } else {
       _node.clones = [];
@@ -184,10 +188,12 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     _node.id = _id;
 
     if (!_node.parents) {
-      _node.parents = [];
+      _node.parents = {};
     }
     if (parent) {
-      _node.parents.push(parent);
+      _node.parents[parent.id] = parent;
+    } else {
+      _node.parents = {};
     }
 
     if (!_node.childRefs) {
@@ -224,6 +230,19 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     }
   }
 
+  function addSiblings () {
+    for (let i = starts.length; i--;) {
+      for (let j = starts.length; j--;) {
+        if (i !== j) {
+          if (!graph[starts[i]].siblings) {
+            graph[starts[i]].siblings = {};
+          }
+          graph[starts[i]].siblings[starts[j]] = graph[starts[j]];
+        }
+      }
+    }
+  }
+
   // BFS for each start node.
   for (let i = starts.length; i--;) {
     if (!graph[starts[i]]) {
@@ -238,7 +257,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     while (queue.length > 0) {
       node = graph[queue.shift()];
 
-      for (j = node.children.length; j--;) {
+      for (let j = node.children.length; j--;) {
         childId = node.children[j];
         child = graph[childId];
 
@@ -261,6 +280,8 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
       }
     }
   }
+
+  addSiblings();
 }
 
 export { traverseGraph as default };

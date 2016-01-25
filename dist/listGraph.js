@@ -65,6 +65,10 @@ var ListGraph = (function ($,d3) { 'use strict';
 
   var DEFAULT_BAR_MODE = 'one';
 
+  var HIGHLIGHT_ACTIVE_LEVEL = true;
+  var ACTIVE_LEVEL_NUMBER = 0;
+  var NO_ROOTED_NODE_DIFFERENCE = 0;
+
   var TRANSITION_LIGHTNING_FAST = 150;
   var TRANSITION_SEMI_FAST = 250;
   // Gradient colors
@@ -229,7 +233,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           d3.select(this.parentNode).datum().scrollbar.el = this;
         });
       }).attr('x', function (data) {
-        return data.scrollbar.x;
+        return data.scrollbar.x - 2;
       }).attr('y', function (data) {
         return data.scrollbar.y;
       }).attr('width', this.width).attr('height', function (data) {
@@ -383,8 +387,9 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
 
       if (!isFinite(depth) || depth > 0) {
-        for (var j = nodesInclClones[i].parents.length; j--;) {
-          up(nodesInclClones[i].parents[j], callback, depth - 1, includeClones, nodesInclClones[i]);
+        var parentsId = Object.keys(nodesInclClones[i].parents);
+        for (var j = parentsId.length; j--;) {
+          up(nodesInclClones[i].parents[parentsId[j]], callback, depth - 1, includeClones, nodesInclClones[i]);
         }
       }
     }
@@ -415,9 +420,17 @@ var ListGraph = (function ($,d3) { 'use strict';
   }
 
   function siblings(node, callback) {
-    for (var i = node.parents.length; i--;) {
-      for (var j = node.parents[i].childRefs.length; j--;) {
-        callback(node.parents[i].childRefs[j]);
+    var parentsId = Object.keys(node.parents);
+    for (var i = parentsId.length; i--;) {
+      for (var j = node.parents[parentsId[i]].childRefs.length; j--;) {
+        callback(node.parents[parentsId[i]].childRefs[j]);
+      }
+    }
+    // The root node doesn't have a `parents` property but might have `siblings`.
+    if (node.siblings) {
+      var siblingsId = Object.keys(node.siblings);
+      for (var i = siblingsId.length; i--;) {
+        callback(node.siblings[siblingsId[i]]);
       }
     }
   }
@@ -609,10 +622,10 @@ var ListGraph = (function ($,d3) { 'use strict';
             if (data.value < indicator) {
               x = data.value * visData.global.column.contentWidth;
             }
-            width = Math.min(Math.abs(indicator - data.value), 2) * visData.global.column.contentWidth;
+            width = Math.min(Math.min(Math.abs(indicator - data.value), 1) * visData.global.column.contentWidth, 2);
           }
         } else {
-          width = visData.global.column.contentWidth * data.value;
+          width = visData.global.column.contentWidth * Math.min(data.value, 1);
         }
 
         return roundRect(x, visData.global.row.padding, width, height, radius);
@@ -622,7 +635,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function generateTwoBarsPath(data, visData, bottom) {
         var height = visData.global.row.contentHeight / 2;
 
-        var width = visData.global.column.contentWidth * data.value;
+        var width = visData.global.column.contentWidth * Math.min(data.value, 1);
 
         var y = visData.global.row.padding;
 
@@ -659,9 +672,20 @@ var ListGraph = (function ($,d3) { 'use strict';
     }
 
     babelHelpers.createClass(Bars, [{
+      key: 'updateAll',
+      value: function updateAll(update, sortBy) {
+        var _this = this;
+
+        this.selection.selectAll('.bar-magnitude').data(update, function (data) {
+          return data.barId;
+        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+          return Bar.generatePath(data, _this.mode, sortBy, _this.visData);
+        });
+      }
+    }, {
       key: 'update',
       value: function update(selection, sortBy) {
-        var _this = this;
+        var _this2 = this;
 
         selection.each(function () {
           var el = d3.select(this);
@@ -677,20 +701,20 @@ var ListGraph = (function ($,d3) { 'use strict';
         });
 
         selection.selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-          return Bar.generatePath(data, _this.mode, sortBy, _this.visData);
+          return Bar.generatePath(data, _this2.mode, sortBy, _this2.visData);
         });
       }
     }, {
       key: 'updateIndicator',
       value: function updateIndicator(refBars, refBarsBg, currentBar, referenceValue) {
-        var _this2 = this;
+        var _this3 = this;
 
         Bar.updateIndicator(currentBar, this.visData.global.column.contentWidth * referenceValue, referenceValue);
 
         Bar.updateIndicator(refBars, this.visData.global.column.contentWidth * referenceValue, referenceValue);
 
         refBarsBg.attr('d', function (data) {
-          return Bar.generatePath(data, _this2.mode, undefined, _this2.visData, referenceValue);
+          return Bar.generatePath(data, _this3.mode, undefined, _this3.visData, referenceValue);
         }).classed('positive', function (data) {
           return data.value >= referenceValue;
         });
@@ -702,19 +726,19 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
 
         transition.attr('d', function (data) {
-          return Bar.generatePath(data, _this2.mode, undefined, _this2.visData, referenceValue, true);
+          return Bar.generatePath(data, _this3.mode, undefined, _this3.visData, referenceValue, true);
         });
       }
     }, {
       key: 'switchMode',
       value: function switchMode(mode, currentSorting) {
-        var _this3 = this;
+        var _this4 = this;
 
         if (this.mode !== mode) {
           if (mode === 'one') {
             if (currentSorting.global.type) {
               this.selection.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-                return Bar.generateOneBarPath(data, currentSorting.global.type, _this3.visData);
+                return Bar.generateOneBarPath(data, currentSorting.global.type, _this4.visData);
               });
             } else {
               // console.error(
@@ -726,11 +750,11 @@ var ListGraph = (function ($,d3) { 'use strict';
 
           if (mode === 'two') {
             this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return Bar.generateTwoBarsPath(data, _this3.visData);
+              return Bar.generateTwoBarsPath(data, _this4.visData);
             });
 
             this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return Bar.generateTwoBarsPath(data, _this3.visData, true);
+              return Bar.generateTwoBarsPath(data, _this4.visData, true);
             });
           }
 
@@ -865,12 +889,12 @@ var ListGraph = (function ($,d3) { 'use strict';
           return _this.eventHelper(nodeIds, _this.toggleLock, [true], '.lock');
         });
 
-        this.events.on('d3ListGraphNodeRoot', function (nodeIds) {
-          return _this.eventHelper(nodeIds, _this.toggleRoot, [], '.root');
+        this.events.on('d3ListGraphNodeRoot', function (data) {
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [], '.root');
         });
 
-        this.events.on('d3ListGraphNodeUnroot', function (nodeIds) {
-          return _this.eventHelper(nodeIds, _this.toggleRoot, [true], '.root');
+        this.events.on('d3ListGraphNodeUnroot', function (data) {
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true], '.root');
         });
       }
     }
@@ -915,11 +939,14 @@ var ListGraph = (function ($,d3) { 'use strict';
         if (events.unrooted) {
           this.events.broadcast('d3ListGraphNodeUnroot', { id: events.unrooted });
         }
+        this.events.broadcast('d3ListGraphUpdateBarsRequest', {
+          id: events.rooted
+        });
       }
     }, {
       key: 'focusNodes',
       value: function focusNodes(event) {
-        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', true]);
+        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]);
         if (event.zoomOut) {
           this.vis.globalView(this.nodes.filter(function (data) {
             return data.hovering > 0;
@@ -931,7 +958,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'blurNodes',
       value: function blurNodes(event) {
-        this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', true]);
+        this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]);
         if (event.zoomIn) {
           this.vis.zoomedView();
         }
@@ -1035,6 +1062,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         var data = d3El.datum();
         var events = { rooted: false, unrooted: false };
 
+        // Blur current levels
+        this.vis.levels.blur();
+
         if (this.rootedNode) {
           // Reset current root node
           this.rootedNode.classed({ active: false, inactive: true });
@@ -1049,6 +1079,8 @@ var ListGraph = (function ($,d3) { 'use strict';
             events.rooted = data.id;
           } else {
             this.rootedNode = undefined;
+            // Highlight first level
+            this.vis.levels.focus(this.vis.activeLevelNumber - this.vis.noRootedNodeDifference);
           }
         } else {
           if (!setFalse) {
@@ -1069,13 +1101,20 @@ var ListGraph = (function ($,d3) { 'use strict';
           return data.id === id;
         });
 
+        var datum = undefined;
+
+        // Only **one** node should be rooted.
         els.each(function (data) {
           data.rooted = true;
           d3.select(this).classed('rooted', true);
           that.hideNodes.call(that, this, data, 'downStream');
+          datum = data;
         });
 
         els.selectAll('.bg-extension').transition().duration(TRANSITION_SEMI_FAST).attr('x', -that.visData.global.row.height / 2);
+
+        // Highlight level
+        this.vis.levels.focus(datum.depth + this.vis.activeLevelNumber);
       }
     }, {
       key: 'unrootNode',
@@ -1164,7 +1203,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'highlightNodes',
-      value: function highlightNodes(el, data, className, restriction) {
+      value: function highlightNodes(el, data, className, restriction, excludeClones) {
         var _this2 = this;
 
         var that = this;
@@ -1172,14 +1211,8 @@ var ListGraph = (function ($,d3) { 'use strict';
         var currentNodeData = data;
         var includeParents = true;
         var appliedClassName = className ? className : 'hovering';
-
-        var includeClones = true;
-        var includeChildren = true;
-
-        if (restriction === 'directParentsOnly') {
-          includeClones = false;
-          includeChildren = false;
-        }
+        var includeClones = excludeClones ? false : true;
+        var includeChildren = restriction === 'directParentsOnly' ? false : true;
 
         // Store link IDs
         if (!this.currentLinks[appliedClassName]) {
@@ -1220,6 +1253,12 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         if (data.clone) {
           data.originalNode.hovering = 1;
+        } else {
+          if (includeClones) {
+            for (var i = data.clones.length; i--;) {
+              data.clones[i].hovering = 1;
+            }
+          }
         }
 
         data.hovering = 1;
@@ -1253,20 +1292,14 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'unhighlightNodes',
-      value: function unhighlightNodes(el, data, className, restriction) {
+      value: function unhighlightNodes(el, data, className, restriction, excludeClones) {
         var traverseCallback = function traverseCallback(nodeData) {
           return nodeData.hovering = 0;
         };
         var includeParents = true;
         var appliedClassName = className ? className : 'hovering';
-
-        var includeClones = true;
-        var includeChildren = true;
-
-        if (restriction === 'directParentsOnly') {
-          includeClones = false;
-          includeChildren = false;
-        }
+        var includeClones = excludeClones ? false : true;
+        var includeChildren = restriction === 'directParentsOnly' ? false : true;
 
         data.hovering = 0;
         if (includeParents && includeChildren) {
@@ -1281,6 +1314,12 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         if (data.clone) {
           data.originalNode.hovering = 0;
+        } else {
+          if (includeClones) {
+            for (var i = data.clones.length; i--;) {
+              data.clones[i].hovering = 0;
+            }
+          }
         }
 
         this.nodes.classed(appliedClassName + '-directly', false);
@@ -1454,11 +1493,21 @@ var ListGraph = (function ($,d3) { 'use strict';
   var SCROLL_CONTAINER_CLASS = 'scroll-container';
 
   var Levels = (function () {
-    function Levels(selection, visData) {
+    function Levels(selection, vis, visData) {
+      var _this = this;
+
       babelHelpers.classCallCheck(this, Levels);
 
+      this.vis = vis;
       this.visData = visData;
-      this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS);
+      this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS).classed('active', function (data, index) {
+        if (_this.vis.highlightActiveLevel) {
+          if (!_this.vis.nodes || !_this.vis.nodes.rootedNode) {
+            return index === _this.vis.activeLevelNumber - _this.vis.noRootedNodeDifference;
+          }
+          return index === _this.vis.activeLevelNumber;
+        }
+      });
 
       // We need to add an empty rectangle that fills up the whole column to ensure
       // that the `g`'s size is at a maximum, otherwise scrolling will be halted
@@ -1467,18 +1516,18 @@ var ListGraph = (function ($,d3) { 'use strict';
         return data.x;
       }).attr('y', function (data) {
         return data.y;
-      }).attr('width', this.visData.global.column.width).attr('height', this.visData.global.column.height);
+      }).attr('width', this.visData.global.column.width + 1).attr('height', this.visData.global.column.height);
     }
 
     babelHelpers.createClass(Levels, [{
       key: 'scrollPreparation',
       value: function scrollPreparation(vis, scrollbarWidth) {
-        var _this = this;
+        var _this2 = this;
 
         this.groups.each(function (data, index) {
-          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this.visData.global.row.padding;
-          var scrollHeight = contentHeight - _this.visData.global.column.height;
-          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this.visData.global.column.height * _this.visData.global.column.height / contentHeight, 10) : 0;
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this2.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this2.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this2.visData.global.column.height * _this2.visData.global.column.height / contentHeight, 10) : 0;
 
           data.height = contentHeight;
           data.linkSelections = {
@@ -1489,13 +1538,13 @@ var ListGraph = (function ($,d3) { 'use strict';
           data.scrollTop = 0;
           data.scrollbar = {
             el: undefined,
-            x: data.x + _this.visData.global.column.width - scrollbarWidth,
+            x: data.x + _this2.visData.global.column.width - scrollbarWidth,
             y: 0,
             width: scrollbarWidth,
             height: scrollbarHeight,
-            scrollHeight: _this.visData.global.column.height - scrollbarHeight,
+            scrollHeight: _this2.visData.global.column.height - scrollbarHeight,
             scrollTop: 0,
-            heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this.visData.global.column.height - scrollbarHeight])
+            heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight])
           };
           data.invertedHeightScale = data.scrollbar.heightScale.invert;
         });
@@ -1503,21 +1552,21 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'updateScrollProperties',
       value: function updateScrollProperties() {
-        var _this2 = this;
+        var _this3 = this;
 
         this.groups.each(function (data) {
-          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this2.visData.global.row.padding;
-          var scrollHeight = contentHeight - _this2.visData.global.column.height;
-          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this2.visData.global.column.height * _this2.visData.global.column.height / contentHeight, 10) : 0;
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this3.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this3.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this3.visData.global.column.height * _this3.visData.global.column.height / contentHeight, 10) : 0;
 
           data.height = contentHeight;
           data.scrollHeight = scrollHeight;
           data.scrollTop = 0;
           data.scrollbar.y = 0;
           data.scrollbar.height = scrollbarHeight;
-          data.scrollbar.scrollHeight = _this2.visData.global.column.height - scrollbarHeight;
+          data.scrollbar.scrollHeight = _this3.visData.global.column.height - scrollbarHeight;
           data.scrollbar.scrollTop = 0;
-          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight]);
+          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this3.visData.global.column.height - scrollbarHeight]);
         });
       }
     }, {
@@ -1530,6 +1579,28 @@ var ListGraph = (function ($,d3) { 'use strict';
             return !data.hidden;
           }).empty());
         });
+      }
+    }, {
+      key: 'focus',
+      value: function focus(level) {
+        if (this.vis.highlightActiveLevel) {
+          this.groups.filter(function (data) {
+            return data.level === level;
+          }).classed('active', true);
+        }
+      }
+    }, {
+      key: 'blur',
+      value: function blur(level) {
+        if (this.vis.highlightActiveLevel) {
+          if (level) {
+            this.groups.filter(function (data) {
+              return data.level === level;
+            }).classed('active', false);
+          } else {
+            this.groups.classed('active', false);
+          }
+        }
       }
     }, {
       key: 'height',
@@ -1732,7 +1803,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     babelHelpers.createClass(Topbar, [{
       key: 'selectNodesLevel',
       value: function selectNodesLevel(el) {
-        return this.vis.selectByLevel(d3.select(el).datum().depth, '.node');
+        return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
       }
     }, {
       key: 'highlightLabels',
@@ -2198,6 +2269,22 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.columns = options.columns || COLUMNS;
       this.rows = options.rows || ROWS;
       this.iconPath = options.iconPath || ICON_PATH;
+      this.highlightActiveLevel = HIGHLIGHT_ACTIVE_LEVEL;
+      if (typeof options.highlightActiveLevel !== 'undefined') {
+        this.highlightActiveLevel = options.highlightActiveLevel;
+      }
+
+      // Determines which level from the rooted node will be regarded as active.
+      // Zero means that the level of the rooted node is regarded.
+      this.activeLevelNumber = ACTIVE_LEVEL_NUMBER;
+      if (typeof options.activeLevelNumber !== 'undefined') {
+        this.activeLevelNumber = options.activeLevelNumber;
+      }
+
+      this.noRootedNodeDifference = NO_ROOTED_NODE_DIFFERENCE;
+      if (typeof options.noRootedNodeDifference !== 'undefined') {
+        this.noRootedNodeDifference = options.noRootedNodeDifference;
+      }
 
       this.lessAnimations = !!options.lessAnimations;
       this.baseElD3.classed('less-animations', this.lessAnimations);
@@ -2274,7 +2361,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.container = this.svgD3.append('g').attr('class', 'main-container');
 
-      this.levels = new Levels(this.container, this.visData);
+      this.levels = new Levels(this.container, this, this.visData);
 
       this.links = new Links(this.levels.groups, this.visData, this.layout);
       this.nodes = new Nodes(this, this.levels.groups, this.visData, this.links, this.events);
@@ -2304,6 +2391,35 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       // Enable dragging of the whole graph.
       this.svgD3.call(onDragDrop, dragMoveHandler, undefined, [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), [this.scrollbarDragging.bind(this)]);
+
+      this.events.on('d3ListGraphLevelFocus', function (levelId) {
+        return _this.levels.focus(levelId);
+      });
+
+      this.events.on('d3ListGraphNodeRoot', function () {
+        _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+      });
+
+      this.events.on('d3ListGraphNodeUnroot', function () {
+        _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+      });
+
+      this.events.on('d3ListGraphUpdateBars', function () {
+        _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+      });
+
+      this.events.on('d3ListGraphActiveLevel', function (nextLevel) {
+        var oldLevel = _this.activeLevelNumber;
+        _this.activeLevelNumber = Math.max(nextLevel, 0);
+        if (_this.nodes.rootedNode) {
+          var rootNodeDepth = _this.nodes.rootedNode.datum().depth;
+          _this.levels.blur(rootNodeDepth + oldLevel);
+          _this.levels.focus(rootNodeDepth + _this.activeLevelNumber);
+        } else {
+          _this.levels.blur(oldLevel);
+          _this.levels.focus(_this.activeLevelNumber);
+        }
+      });
     }
 
     babelHelpers.createClass(ListGraph, [{

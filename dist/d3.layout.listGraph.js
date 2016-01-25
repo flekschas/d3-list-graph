@@ -320,7 +320,6 @@
     var visited = {};
     var queue = [];
 
-    var j = undefined;
     var child = undefined;
     var childId = undefined;
     var clone = undefined;
@@ -382,6 +381,7 @@
           node.data.barRefs = {};
           for (var i = 0, len = node.data.bars.length; i < len; i++) {
             node.data.bars[i].value = Math.max(Math.min(node.data.bars[i].value, 1), 0);
+            node.data.bars[i].barId = node.id + '.' + node.data.bars[i].id;
             node.data.barRefs[node.data.bars[i].id] = node.data.bars[i].value;
           }
         } else if (isObject(node.data.bars)) {
@@ -393,6 +393,7 @@
           for (var i = 0, len = keys.length; i < len; i++) {
             node.data.barRefs[keys[i]] = Math.max(Math.min(node.data.bars[keys[i]], 1), 0);
             bars.push({
+              barId: node.id + '.' + keys[i],
               id: keys[i],
               value: node.data.barRefs[keys[i]]
             });
@@ -454,7 +455,7 @@
 
       if (duplication) {
         if (parent.depth + 1 !== node.depth) {
-          cloneId = id + '.' + node.clones.length + 1;
+          cloneId = id + '.' + (node.clones.length + 1);
           graph[cloneId] = {
             children: [],
             clone: true,
@@ -469,6 +470,9 @@
           _node = graph[cloneId];
           // Add a reference to the original node that points to the clone.
           node.clones.push(_node);
+          // Remove parent
+          node.parents[parent.id] = undefined;
+          delete node.parents[parent.id];
         }
       } else {
         _node.clones = [];
@@ -477,10 +481,12 @@
       _node.id = _id;
 
       if (!_node.parents) {
-        _node.parents = [];
+        _node.parents = {};
       }
       if (parent) {
-        _node.parents.push(parent);
+        _node.parents[parent.id] = parent;
+      } else {
+        _node.parents = {};
       }
 
       if (!_node.childRefs) {
@@ -517,6 +523,19 @@
       }
     }
 
+    function addSiblings() {
+      for (var i = starts.length; i--;) {
+        for (var j = starts.length; j--;) {
+          if (i !== j) {
+            if (!graph[starts[i]].siblings) {
+              graph[starts[i]].siblings = {};
+            }
+            graph[starts[i]].siblings[starts[j]] = graph[starts[j]];
+          }
+        }
+      }
+    }
+
     // BFS for each start node.
     for (var i = starts.length; i--;) {
       if (!graph[starts[i]]) {
@@ -531,7 +550,7 @@
       while (queue.length > 0) {
         node = graph[queue.shift()];
 
-        for (j = node.children.length; j--;) {
+        for (var j = node.children.length; j--;) {
           childId = node.children[j];
           child = graph[childId];
 
@@ -549,6 +568,8 @@
         }
       }
     }
+
+    addSiblings();
   }
 
   var ExtendableError = (function (_Error) {
@@ -1049,6 +1070,24 @@
         }
 
         return this;
+      }
+    }, {
+      key: 'updateBars',
+      value: function updateBars(graph) {
+        var nodesId = Object.keys(graph);
+        var barsData = [];
+
+        for (var i = nodesId.length; i--;) {
+          for (var j = graph[nodesId[i]].data.bars.length; j--;) {
+            barsData.push({
+              barId: nodesId[i] + '.' + graph[nodesId[i]].data.bars[j].id,
+              id: graph[nodesId[i]].data.bars[j].id,
+              value: graph[nodesId[i]].data.bars[j].value
+            });
+          }
+        }
+
+        return barsData;
       }
 
       /**

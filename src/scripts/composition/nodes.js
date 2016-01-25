@@ -212,15 +212,15 @@ class Nodes {
 
       this.events.on(
         'd3ListGraphNodeRoot',
-        nodeIds => this.eventHelper(
-          nodeIds, this.toggleRoot, [], '.root'
+        data => this.eventHelper(
+          data.nodeIds, this.toggleRoot, [], '.root'
         )
       );
 
       this.events.on(
         'd3ListGraphNodeUnroot',
-        nodeIds => this.eventHelper(
-          nodeIds, this.toggleRoot, [true], '.root'
+        data => this.eventHelper(
+          data.nodeIds, this.toggleRoot, [true], '.root'
         )
       );
     }
@@ -260,13 +260,16 @@ class Nodes {
     if (events.unrooted) {
       this.events.broadcast('d3ListGraphNodeUnroot', { id: events.unrooted });
     }
+    this.events.broadcast('d3ListGraphUpdateBarsRequest', {
+      id: events.rooted,
+    });
   }
 
   focusNodes (event) {
     this.eventHelper(
       event.nodeIds,
       this.highlightNodes,
-      ['focus', 'directParentsOnly', true]
+      ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]
     );
     if (event.zoomOut) {
       this.vis.globalView(this.nodes.filter(data => data.hovering > 0));
@@ -279,7 +282,7 @@ class Nodes {
     this.eventHelper(
       event.nodeIds,
       this.unhighlightNodes,
-      ['focus', 'directParentsOnly', true]
+      ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]
     );
     if (event.zoomIn) {
       this.vis.zoomedView();
@@ -391,6 +394,9 @@ class Nodes {
     const data = d3El.datum();
     const events = { rooted: false, unrooted: false };
 
+    // Blur current levels
+    this.vis.levels.blur();
+
     if (this.rootedNode) {
       // Reset current root node
       this.rootedNode.classed({ active: false, inactive: true });
@@ -405,6 +411,10 @@ class Nodes {
         events.rooted = data.id;
       } else {
         this.rootedNode = undefined;
+        // Highlight first level
+        this.vis.levels.focus(
+          this.vis.activeLevelNumber - this.vis.noRootedNodeDifference
+        );
       }
     } else {
       if (!setFalse) {
@@ -422,16 +432,23 @@ class Nodes {
     const that = this;
     const els = this.nodes.filter(data => data.id === id);
 
+    let datum;
+
+    // Only **one** node should be rooted.
     els.each(function (data) {
       data.rooted = true;
       d3.select(this).classed('rooted', true);
       that.hideNodes.call(that, this, data, 'downStream');
+      datum = data;
     });
 
     els.selectAll('.bg-extension')
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('x', -that.visData.global.row.height / 2);
+
+    // Highlight level
+    this.vis.levels.focus(datum.depth + this.vis.activeLevelNumber);
   }
 
   unrootNode (id) {
@@ -517,20 +534,14 @@ class Nodes {
     this.updateVisibility();
   }
 
-  highlightNodes (el, data, className, restriction) {
+  highlightNodes (el, data, className, restriction, excludeClones) {
     const that = this;
     const nodeId = data.id;
     const currentNodeData = data;
     const includeParents = true;
     const appliedClassName = className ? className : 'hovering';
-
-    let includeClones = true;
-    let includeChildren = true;
-
-    if (restriction === 'directParentsOnly') {
-      includeClones = false;
-      includeChildren = false;
-    }
+    const includeClones = excludeClones ? false : true;
+    const includeChildren = restriction === 'directParentsOnly' ? false : true;
 
     // Store link IDs
     if (!this.currentLinks[appliedClassName]) {
@@ -576,6 +587,12 @@ class Nodes {
 
     if (data.clone) {
       data.originalNode.hovering = 1;
+    } else {
+      if (includeClones) {
+        for (let i = data.clones.length; i--;) {
+          data.clones[i].hovering = 1;
+        }
+      }
     }
 
     data.hovering = 1;
@@ -620,18 +637,12 @@ class Nodes {
     );
   }
 
-  unhighlightNodes (el, data, className, restriction) {
+  unhighlightNodes (el, data, className, restriction, excludeClones) {
     const traverseCallback = nodeData => nodeData.hovering = 0;
     const includeParents = true;
     const appliedClassName = className ? className : 'hovering';
-
-    let includeClones = true;
-    let includeChildren = true;
-
-    if (restriction === 'directParentsOnly') {
-      includeClones = false;
-      includeChildren = false;
-    }
+    const includeClones = excludeClones ? false : true;
+    const includeChildren = restriction === 'directParentsOnly' ? false : true;
 
     data.hovering = 0;
     if (includeParents && includeChildren) {
@@ -648,6 +659,12 @@ class Nodes {
 
     if (data.clone) {
       data.originalNode.hovering = 0;
+    } else {
+      if (includeClones) {
+        for (let i = data.clones.length; i--;) {
+          data.clones[i].hovering = 0;
+        }
+      }
     }
 
     this.nodes.classed(appliedClassName + '-directly', false);

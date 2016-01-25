@@ -459,6 +459,23 @@ class ListGraphLayout {
     return this;
   }
 
+  updateBars (graph) {
+    const nodesId = Object.keys(graph);
+    const barsData = [];
+
+    for (let i = nodesId.length; i--;) {
+      for (let j = graph[nodesId[i]].data.bars.length; j--;) {
+        barsData.push({
+          barId: nodesId[i] + '.' + graph[nodesId[i]].data.bars[j].id,
+          id: graph[nodesId[i]].data.bars[j].id,
+          value: graph[nodesId[i]].data.bars[j].value,
+        });
+      }
+    }
+
+    return barsData;
+  }
+
   /**
    * Update vertical position when filtering, i.e. hiding, nodes.
    *

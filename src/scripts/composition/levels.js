@@ -5,14 +5,27 @@ const COLUMN_CLASS = 'column';
 const SCROLL_CONTAINER_CLASS = 'scroll-container';
 
 class Levels {
-  constructor (selection, visData) {
+  constructor (selection, vis, visData) {
+    this.vis = vis;
     this.visData = visData;
     this.groups = selection
       .selectAll('g')
       .data(this.visData.nodes)
       .enter()
       .append('g')
-        .attr('class', COLUMN_CLASS);
+        .attr('class', COLUMN_CLASS)
+        .classed(
+          'active',
+          (data, index) => {
+            if (this.vis.highlightActiveLevel) {
+              if (!this.vis.nodes || !this.vis.nodes.rootedNode) {
+                return index === this.vis.activeLevelNumber -
+                  this.vis.noRootedNodeDifference;
+              }
+              return index === this.vis.activeLevelNumber;
+            }
+          }
+        );
 
     // We need to add an empty rectangle that fills up the whole column to ensure
     // that the `g`'s size is at a maximum, otherwise scrolling will be halted
@@ -22,7 +35,7 @@ class Levels {
         .attr('class', SCROLL_CONTAINER_CLASS)
         .attr('x', data => data.x)
         .attr('y', data => data.y)
-        .attr('width', this.visData.global.column.width)
+        .attr('width', this.visData.global.column.width + 1)
         .attr('height', this.visData.global.column.height);
   }
 
@@ -105,6 +118,22 @@ class Levels {
 
   get height () {
     return this.visData.global.column.height;
+  }
+
+  focus (level) {
+    if (this.vis.highlightActiveLevel) {
+      this.groups.filter(data => data.level === level).classed('active', true);
+    }
+  }
+
+  blur (level) {
+    if (this.vis.highlightActiveLevel) {
+      if (level) {
+        this.groups.filter(data => data.level === level).classed('active', false);
+      } else {
+        this.groups.classed('active', false);
+      }
+    }
   }
 }
 

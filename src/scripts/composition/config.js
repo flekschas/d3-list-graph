@@ -11,6 +11,10 @@ export const DEFAULT_SORT_ORDER = 'desc';
 
 export const DEFAULT_BAR_MODE = 'one';
 
+export const HIGHLIGHT_ACTIVE_LEVEL = true;
+export const ACTIVE_LEVEL_NUMBER = 0;
+export const NO_ROOTED_NODE_DIFFERENCE = 0;
+
 export const TRANSITION_LIGHTNING_FAST = 150;
 export const TRANSITION_FAST = 200;
 export const TRANSITION_SEMI_FAST = 250;
