@@ -203,6 +203,20 @@ class ListGraph {
       'd3ListGraphLevelFocus',
       levelId => this.levels.focus(levelId)
     );
+
+    this.events.on(
+      'd3ListGraphNodeRoot',
+      () => {
+        this.nodes.bars.updateAll(this.currentSorting.global.type);
+      }
+    );
+
+    this.events.on(
+      'd3ListGraphNodeUnroot',
+      () => {
+        this.nodes.bars.updateAll(this.currentSorting.global.type);
+      }
+    );
   }
 
   get area () {

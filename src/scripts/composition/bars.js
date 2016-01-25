@@ -22,6 +22,15 @@ class Bars {
     });
   }
 
+  updateAll (sortBy) {
+    this.selection.selectAll('.bar-magnitude')
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr('d', data => {
+        return Bar.generatePath(data, this.mode, sortBy, this.visData);
+      });
+  }
+
   update (selection, sortBy) {
     selection.each(function () {
       const el = d3.select(this);

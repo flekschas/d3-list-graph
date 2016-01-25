@@ -661,9 +661,18 @@ var ListGraph = (function ($,d3) { 'use strict';
     }
 
     babelHelpers.createClass(Bars, [{
+      key: 'updateAll',
+      value: function updateAll(sortBy) {
+        var _this = this;
+
+        this.selection.selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+          return Bar.generatePath(data, _this.mode, sortBy, _this.visData);
+        });
+      }
+    }, {
       key: 'update',
       value: function update(selection, sortBy) {
-        var _this = this;
+        var _this2 = this;
 
         selection.each(function () {
           var el = d3.select(this);
@@ -679,20 +688,20 @@ var ListGraph = (function ($,d3) { 'use strict';
         });
 
         selection.selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-          return Bar.generatePath(data, _this.mode, sortBy, _this.visData);
+          return Bar.generatePath(data, _this2.mode, sortBy, _this2.visData);
         });
       }
     }, {
       key: 'updateIndicator',
       value: function updateIndicator(refBars, refBarsBg, currentBar, referenceValue) {
-        var _this2 = this;
+        var _this3 = this;
 
         Bar.updateIndicator(currentBar, this.visData.global.column.contentWidth * referenceValue, referenceValue);
 
         Bar.updateIndicator(refBars, this.visData.global.column.contentWidth * referenceValue, referenceValue);
 
         refBarsBg.attr('d', function (data) {
-          return Bar.generatePath(data, _this2.mode, undefined, _this2.visData, referenceValue);
+          return Bar.generatePath(data, _this3.mode, undefined, _this3.visData, referenceValue);
         }).classed('positive', function (data) {
           return data.value >= referenceValue;
         });
@@ -704,19 +713,19 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
 
         transition.attr('d', function (data) {
-          return Bar.generatePath(data, _this2.mode, undefined, _this2.visData, referenceValue, true);
+          return Bar.generatePath(data, _this3.mode, undefined, _this3.visData, referenceValue, true);
         });
       }
     }, {
       key: 'switchMode',
       value: function switchMode(mode, currentSorting) {
-        var _this3 = this;
+        var _this4 = this;
 
         if (this.mode !== mode) {
           if (mode === 'one') {
             if (currentSorting.global.type) {
               this.selection.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-                return Bar.generateOneBarPath(data, currentSorting.global.type, _this3.visData);
+                return Bar.generateOneBarPath(data, currentSorting.global.type, _this4.visData);
               });
             } else {
               // console.error(
@@ -728,11 +737,11 @@ var ListGraph = (function ($,d3) { 'use strict';
 
           if (mode === 'two') {
             this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return Bar.generateTwoBarsPath(data, _this3.visData);
+              return Bar.generateTwoBarsPath(data, _this4.visData);
             });
 
             this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return Bar.generateTwoBarsPath(data, _this3.visData, true);
+              return Bar.generateTwoBarsPath(data, _this4.visData, true);
             });
           }
 
@@ -2341,6 +2350,14 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.events.on('d3ListGraphLevelFocus', function (levelId) {
         return _this.levels.focus(levelId);
+      });
+
+      this.events.on('d3ListGraphNodeRoot', function () {
+        _this.nodes.bars.updateAll(_this.currentSorting.global.type);
+      });
+
+      this.events.on('d3ListGraphNodeUnroot', function () {
+        _this.nodes.bars.updateAll(_this.currentSorting.global.type);
       });
     }
 
