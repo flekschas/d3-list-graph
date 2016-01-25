@@ -582,8 +582,8 @@ var ListGraph = (function ($,d3) { 'use strict';
 
     babelHelpers.createClass(Bar, null, [{
       key: 'updateIndicator',
-      value: function updateIndicator(selection, x, referenceValue) {
-        selection.attr('x', x - 1).classed('positive', function (data) {
+      value: function updateIndicator(selection, contentWidth, referenceValue) {
+        selection.attr('x', Math.min(contentWidth * Math.min(referenceValue, 1), contentWidth - 2)).classed('positive', function (data) {
           return data.value >= referenceValue;
         });
       }
@@ -598,11 +598,12 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'generateOneBarPath',
       value: function generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth) {
-        var x = 0;
-
-        var width = 2;
-
         var height = visData.global.row.contentHeight;
+        var normValue = Math.min(data.value, 1);
+        var normIndicator = Math.min(indicator, 1);
+
+        var x = 0;
+        var width = 2;
 
         var radius = {
           topLeft: 2,
@@ -614,31 +615,32 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
 
         if (data.id !== currentSorting && typeof indicator === 'undefined') {
-          x = data.value * visData.global.column.contentWidth - 3;
+          x = normValue * visData.global.column.contentWidth - 3;
           radius = {};
         } else if (indicator) {
-          x = indicator * visData.global.column.contentWidth;
+          x = normIndicator * visData.global.column.contentWidth;
           if (adjustWidth) {
-            if (data.value < indicator) {
-              x = data.value * visData.global.column.contentWidth;
+            if (normValue < normIndicator) {
+              x = normValue * visData.global.column.contentWidth;
             }
-            width = Math.min(Math.min(Math.abs(indicator - data.value), 1) * visData.global.column.contentWidth, 2);
+            width = Math.max(Math.abs(normIndicator - normValue) * visData.global.column.contentWidth, 2);
           }
         } else {
-          width = visData.global.column.contentWidth * Math.min(data.value, 1);
+          width = visData.global.column.contentWidth * normValue;
         }
+
+        x = Math.min(x, visData.global.column.contentWidth - 2);
 
         return roundRect(x, visData.global.row.padding, width, height, radius);
       }
     }, {
       key: 'generateTwoBarsPath',
       value: function generateTwoBarsPath(data, visData, bottom) {
+        var normValue = Math.min(data.value, 1);
         var height = visData.global.row.contentHeight / 2;
-
-        var width = visData.global.column.contentWidth * Math.min(data.value, 1);
+        var width = visData.global.column.contentWidth * normValue;
 
         var y = visData.global.row.padding;
-
         var radius = { topLeft: 2 };
 
         if (bottom) {
@@ -709,9 +711,9 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function updateIndicator(refBars, refBarsBg, currentBar, referenceValue) {
         var _this3 = this;
 
-        Bar.updateIndicator(currentBar, this.visData.global.column.contentWidth * referenceValue, referenceValue);
+        Bar.updateIndicator(currentBar, this.visData.global.column.contentWidth, referenceValue);
 
-        Bar.updateIndicator(refBars, this.visData.global.column.contentWidth * referenceValue, referenceValue);
+        Bar.updateIndicator(refBars, this.visData.global.column.contentWidth, referenceValue);
 
         refBarsBg.attr('d', function (data) {
           return Bar.generatePath(data, _this3.mode, undefined, _this3.visData, referenceValue);
@@ -908,13 +910,37 @@ var ListGraph = (function ($,d3) { 'use strict';
       key: 'enterHandler',
       value: function enterHandler(el, data) {
         this.highlightNodes(el, data);
-        this.events.broadcast('d3ListGraphNodeEnter', { id: data.id });
+
+        var eventData = {
+          id: data.id,
+          clone: false,
+          clonedFromId: undefined
+        };
+
+        if (data.clone) {
+          eventData.clone = true;
+          eventData.clonedFromId = data.originalNode.id;
+        }
+
+        this.events.broadcast('d3ListGraphNodeEnter', eventData);
       }
     }, {
       key: 'leaveHandler',
       value: function leaveHandler(el, data) {
         this.unhighlightNodes(el, data);
-        this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
+
+        var eventData = {
+          id: data.id,
+          clone: false,
+          clonedFromId: undefined
+        };
+
+        if (data.clone) {
+          eventData.clone = true;
+          eventData.clonedFromId = data.originalNode.id;
+        }
+
+        this.events.broadcast('d3ListGraphNodeLeave', eventData);
       }
     }, {
       key: 'lockHandler',
@@ -922,10 +948,19 @@ var ListGraph = (function ($,d3) { 'use strict';
         var events = this.toggleLock(el);
 
         if (events.locked) {
-          this.events.broadcast('d3ListGraphNodeLock', { id: events.locked });
+          this.events.broadcast('d3ListGraphNodeLock', {
+            id: events.locked.id,
+            clone: events.locked.clone,
+            clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+          });
         }
+
         if (events.unlocked) {
-          this.events.broadcast('d3ListGraphNodeUnlock', { id: events.unlocked });
+          this.events.broadcast('d3ListGraphNodeUnlock', {
+            id: events.unlocked.id,
+            clone: events.unlocked.clone,
+            clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+          });
         }
       }
     }, {
@@ -993,18 +1028,18 @@ var ListGraph = (function ($,d3) { 'use strict';
           if (this.lockedNode.datum().id === data.id) {
             this.lockedNode.classed({ active: false, inactive: true });
             this.unlockNode(this.lockedNode.datum().id);
-            events.unlocked = this.lockedNode.datum().id;
+            events.unlocked = this.lockedNode.datum();
             this.lockedNode = undefined;
           } else {
             // Reset previously locked node;
             this.lockedNode.classed({ active: false, inactive: true });
             this.unlockNode(this.lockedNode.datum().id);
-            events.unlocked = this.lockedNode.datum().id;
+            events.unlocked = this.lockedNode.datum();
 
             if (!setFalse) {
               d3El.classed({ active: true, inactive: false });
               this.lockNode(data.id);
-              events.locked = data.id;
+              events.locked = data;
               this.lockedNode = d3El;
             }
           }
@@ -1012,7 +1047,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           if (!setFalse) {
             d3El.classed({ active: true, inactive: false });
             this.lockNode(data.id);
-            events.locked = data.id;
+            events.locked = data;
             this.lockedNode = d3El;
           }
         }
@@ -2416,8 +2451,8 @@ var ListGraph = (function ($,d3) { 'use strict';
           _this.levels.blur(rootNodeDepth + oldLevel);
           _this.levels.focus(rootNodeDepth + _this.activeLevelNumber);
         } else {
-          _this.levels.blur(oldLevel);
-          _this.levels.focus(_this.activeLevelNumber);
+          _this.levels.blur(oldLevel - _this.noRootedNodeDifference);
+          _this.levels.focus(_this.activeLevelNumber - _this.noRootedNodeDifference);
         }
       });
     }

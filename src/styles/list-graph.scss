@@ -399,7 +399,8 @@
     color: #000;
   }
 
-  .node.highlight-label .label {
+  .node.highlight-label .label,
+  .column.active .node.highlight-label .label {
     color: $colorHighlightRed;
     text-shadow: 0 0 3px transparentize($colorHighlightRed, 0.75);
   }

@@ -232,22 +232,57 @@ class Nodes {
 
   enterHandler (el, data) {
     this.highlightNodes(el, data);
-    this.events.broadcast('d3ListGraphNodeEnter', { id: data.id });
+
+    const eventData = {
+      id: data.id,
+      clone: false,
+      clonedFromId: undefined,
+    };
+
+    if (data.clone) {
+      eventData.clone = true;
+      eventData.clonedFromId = data.originalNode.id;
+    }
+
+    this.events.broadcast('d3ListGraphNodeEnter', eventData);
   }
 
   leaveHandler (el, data) {
     this.unhighlightNodes(el, data);
-    this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
+
+    const eventData = {
+      id: data.id,
+      clone: false,
+      clonedFromId: undefined,
+    };
+
+    if (data.clone) {
+      eventData.clone = true;
+      eventData.clonedFromId = data.originalNode.id;
+    }
+
+    this.events.broadcast('d3ListGraphNodeLeave', eventData);
   }
 
   lockHandler (el) {
     const events = this.toggleLock(el);
 
     if (events.locked) {
-      this.events.broadcast('d3ListGraphNodeLock', { id: events.locked });
+      this.events.broadcast('d3ListGraphNodeLock', {
+        id: events.locked.id,
+        clone: events.locked.clone,
+        clonedFromId: events.locked.clone ?
+          events.locked.originalNode.id : undefined,
+      });
     }
+
     if (events.unlocked) {
-      this.events.broadcast('d3ListGraphNodeUnlock', { id: events.unlocked });
+      this.events.broadcast('d3ListGraphNodeUnlock', {
+        id: events.unlocked.id,
+        clone: events.unlocked.clone,
+        clonedFromId: events.unlocked.clone ?
+          events.unlocked.originalNode.id : undefined,
+      });
     }
   }
 
@@ -322,18 +357,18 @@ class Nodes {
       if (this.lockedNode.datum().id === data.id) {
         this.lockedNode.classed({ active: false, inactive: true });
         this.unlockNode(this.lockedNode.datum().id);
-        events.unlocked = this.lockedNode.datum().id;
+        events.unlocked = this.lockedNode.datum();
         this.lockedNode = undefined;
       } else {
         // Reset previously locked node;
         this.lockedNode.classed({ active: false, inactive: true });
         this.unlockNode(this.lockedNode.datum().id);
-        events.unlocked = this.lockedNode.datum().id;
+        events.unlocked = this.lockedNode.datum();
 
         if (!setFalse) {
           d3El.classed({ active: true, inactive: false });
           this.lockNode(data.id);
-          events.locked = data.id;
+          events.locked = data;
           this.lockedNode = d3El;
         }
       }
@@ -341,7 +376,7 @@ class Nodes {
       if (!setFalse) {
         d3El.classed({ active: true, inactive: false });
         this.lockNode(data.id);
-        events.locked = data.id;
+        events.locked = data;
         this.lockedNode = d3El;
       }
     }

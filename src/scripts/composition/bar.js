@@ -94,9 +94,15 @@ class Bar {
         .call(setupIndicator.bind(this));
   }
 
-  static updateIndicator (selection, x, referenceValue) {
+  static updateIndicator (selection, contentWidth, referenceValue) {
     selection
-      .attr('x', x - 1)
+      .attr(
+        'x',
+        Math.min(
+          contentWidth * Math.min(referenceValue, 1),
+          contentWidth - 2
+        )
+      )
       .classed('positive', data => data.value >= referenceValue);
   }
 
@@ -114,11 +120,12 @@ class Bar {
   static generateOneBarPath (
     data, currentSorting, visData, indicator, adjustWidth
   ) {
-    let x = 0;
-
-    let width = 2;
-
     const height = visData.global.row.contentHeight;
+    const normValue = Math.min(data.value, 1);
+    const normIndicator = Math.min(indicator, 1);
+
+    let x = 0;
+    let width = 2;
 
     let radius = {
       topLeft: 2,
@@ -130,20 +137,25 @@ class Bar {
     }
 
     if (data.id !== currentSorting && typeof indicator === 'undefined') {
-      x = data.value * visData.global.column.contentWidth - 3;
+      x = normValue * visData.global.column.contentWidth - 3;
       radius = {};
     } else if (indicator) {
-      x = indicator * visData.global.column.contentWidth;
+      x = normIndicator * visData.global.column.contentWidth;
       if (adjustWidth) {
-        if (data.value < indicator) {
-          x = data.value * visData.global.column.contentWidth;
+        if (normValue < normIndicator) {
+          x = normValue * visData.global.column.contentWidth;
         }
-        width = Math.min(Math.min(Math.abs(indicator - data.value), 1) *
-          visData.global.column.contentWidth, 2);
+        width = Math.max(
+          Math.abs(normIndicator - normValue) *
+            visData.global.column.contentWidth
+          , 2
+        );
       }
     } else {
-      width = visData.global.column.contentWidth * Math.min(data.value, 1);
+      width = visData.global.column.contentWidth * normValue;
     }
+
+    x = Math.min(x, visData.global.column.contentWidth - 2);
 
     return roundRect(
       x,
@@ -155,12 +167,11 @@ class Bar {
   }
 
   static generateTwoBarsPath (data, visData, bottom) {
+    const normValue = Math.min(data.value, 1);
     const height = visData.global.row.contentHeight / 2;
-
-    const width = visData.global.column.contentWidth * Math.min(data.value, 1);
+    const width = visData.global.column.contentWidth * normValue;
 
     let y = visData.global.row.padding;
-
     let radius = { topLeft: 2 };
 
     if (bottom) {
