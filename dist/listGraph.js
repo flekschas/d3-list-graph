@@ -910,13 +910,37 @@ var ListGraph = (function ($,d3) { 'use strict';
       key: 'enterHandler',
       value: function enterHandler(el, data) {
         this.highlightNodes(el, data);
-        this.events.broadcast('d3ListGraphNodeEnter', { id: data.id });
+
+        var eventData = {
+          id: data.id,
+          clone: false,
+          clonedFromId: undefined
+        };
+
+        if (data.clone) {
+          eventData.clone = true;
+          eventData.clonedFromId = data.originalNode.id;
+        }
+
+        this.events.broadcast('d3ListGraphNodeEnter', eventData);
       }
     }, {
       key: 'leaveHandler',
       value: function leaveHandler(el, data) {
         this.unhighlightNodes(el, data);
-        this.events.broadcast('d3ListGraphNodeLeave', { id: data.id });
+
+        var eventData = {
+          id: data.id,
+          clone: false,
+          clonedFromId: undefined
+        };
+
+        if (data.clone) {
+          eventData.clone = true;
+          eventData.clonedFromId = data.originalNode.id;
+        }
+
+        this.events.broadcast('d3ListGraphNodeLeave', eventData);
       }
     }, {
       key: 'lockHandler',
