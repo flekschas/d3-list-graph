@@ -869,7 +869,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.nodes.call(function (selection) {
         selection.append('foreignObject').attr('x', _this.visData.global.cell.padding).attr('y', _this.visData.global.row.padding + _this.visData.global.cell.padding).attr('width', _this.visData.global.column.contentWidth).attr('height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2).attr('class', 'label-wrapper').append('xhtml:div').attr('class', 'label').attr('title', function (data) {
           return data.data.name;
-        }).style('line-height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').text(function (data) {
+        }).style('line-height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').classed('ellipsis', true).text(function (data) {
           return data.data.name;
         });
       });
@@ -1029,7 +1029,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
 
         this.events.broadcast('d3ListGraphUpdateBarsRequest', {
-          id: events.rooted.id
+          id: events.rooted.id,
+          clone: events.rooted.clone,
+          clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
         });
       }
     }, {

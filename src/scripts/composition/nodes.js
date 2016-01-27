@@ -346,6 +346,9 @@ class Nodes {
 
     this.events.broadcast('d3ListGraphUpdateBarsRequest', {
       id: events.rooted.id,
+      clone: events.rooted.clone,
+      clonedFromId: events.rooted.clone ?
+        events.rooted.originalNode.id : undefined,
     });
   }
 
