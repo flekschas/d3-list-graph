@@ -42,6 +42,11 @@ class Nodes {
     this.links = links;
     this.events = events;
     this.currentLinks = {};
+    this.iconDimension = Math.min(
+      (this.visData.global.row.contentHeight / 2 -
+      this.visData.global.cell.padding * 2),
+      this.visData.global.column.padding / 2 - 4
+    );
 
     this.groups = baseSelection.append('g')
       .attr('class', NODES_CLASS)
@@ -59,12 +64,60 @@ class Nodes {
         .classed(NODE_CLASS, true)
         .classed(CLONE_CLASS, data => data.clone)
         .attr('transform', data => 'translate(' +
-          (data.x + this.visData.global.column.padding) + ', ' + data.y + ')');
+          (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
+        .on('mouseenter', function (data) {
+          const el = d3.select(this);
+
+          if (!!!that.vis.activeScrollbar) {
+            that.enterHandler.call(that, this, data);
+          }
+
+          if (!el.classed('rooted')) {
+            el.selectAll('.bg-extension')
+              .style(
+                'transform',
+                'translateX(' + (-that.visData.global.column.padding) + 'px)'
+              );
+          }
+        })
+        .on('mouseleave', function (data) {
+          const el = d3.select(this);
+
+          if (!!!that.vis.activeScrollbar) {
+            that.leaveHandler.call(that, this, data);
+          }
+
+          if (!el.classed('rooted')) {
+            if (data.data.queryMode) {
+              el.selectAll('.bg-extension')
+                .style(
+                  'transform',
+                  'translateX(' + (-that.iconDimension - 6) + 'px)'
+                );
+            } else {
+              el.selectAll('.bg-extension')
+                .style(
+                  'transform',
+                  'translateX(0px)'
+                );
+            }
+          }
+        })
+        .on('click', function clickHandler (data) {
+          that.clickHandler.call(that, this, data);
+        });
 
     this.nodes
       .append('rect')
         .call(drawFullSizeRect, 'bg-extension')
-        .attr('width', this.visData.global.column.padding + 5);
+        .attr(
+          'width',
+          Math.max(
+            this.visData.global.column.padding +
+              this.visData.global.column.contentWidth / 2,
+            this.visData.global.column.contentWidth
+          )
+        );
 
     this.nodes
       .append('rect')
@@ -81,15 +134,16 @@ class Nodes {
         that.rootHandler.call(that, this, data);
       });
 
-    nodeRooted.append('circle')
-      .call(this.setUpFocusControls.bind(this), 'left', 'bg', 'bg');
+    // nodeRooted.append('circle')
+    //   .call(this.setUpFocusControls.bind(this), 'left', 'bg', 'bg');
 
     nodeRooted.append('svg')
       .call(
         this.setUpFocusControls.bind(this),
         'left',
+        2,
         'icon',
-        'ease-all state-inactive invisible-default'
+        'ease-all state-inactive invisible-default icon'
       )
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#unlocked');
@@ -98,11 +152,52 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
+        2,
         'icon',
-        'ease-all state-active invisible-default'
+        'ease-all state-active invisible-default icon'
       )
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#locked');
+
+    // Rooting icons
+    const nodeQuery = this.nodes.append('g')
+      .attr('class', 'focus-controls query inactive')
+      .on('click', function clickHandler () {
+        // that.rootHandler.call(that, this, data);
+      });
+
+    nodeQuery.append('svg')
+      .call(
+        this.setUpFocusControls.bind(this),
+        'left',
+        1,
+        'icon',
+        'ease-all state-inactive invisible-default icon'
+      )
+      .append('use')
+        .attr('xlink:href', this.vis.iconPath + '#set-inactive');
+
+    nodeQuery.append('svg')
+      .call(
+        this.setUpFocusControls.bind(this),
+        'left',
+        1,
+        'icon',
+        'ease-all state-and invisible-default icon'
+      )
+      .append('use')
+        .attr('xlink:href', this.vis.iconPath + '#intersection');
+
+    nodeQuery.append('svg')
+      .call(
+        this.setUpFocusControls.bind(this),
+        'left',
+        1,
+        'icon',
+        'ease-all state-or invisible-default icon'
+      )
+      .append('use')
+        .attr('xlink:href', this.vis.iconPath + '#union');
 
     const nodeLocks = this.nodes.append('g')
       .attr('class', 'focus-controls lock inactive')
@@ -111,12 +206,13 @@ class Nodes {
       });
 
     nodeLocks.append('circle')
-      .call(this.setUpFocusControls.bind(this), 'right', 'bg', 'bg');
+      .call(this.setUpFocusControls.bind(this), 'right', 0, 'bg', 'bg');
 
     nodeLocks.append('svg')
       .call(
         this.setUpFocusControls.bind(this),
         'right',
+        0,
         'icon',
         'ease-all state-inactive invisible-default'
       )
@@ -127,27 +223,12 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'right',
+        0,
         'icon',
         'ease-all state-active invisible-default'
       )
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#locked');
-
-    this.nodes.on('click', function clickHandler (data) {
-      that.clickHandler.call(that, this, data);
-    });
-
-    this.nodes.on('mouseenter', function mouseEnterHandler (data) {
-      if (!!!that.vis.activeScrollbar) {
-        that.enterHandler.call(that, this, data);
-      }
-    });
-
-    this.nodes.on('mouseleave', function mouseLeaveHandler (data) {
-      if (!!!that.vis.activeScrollbar) {
-        that.leaveHandler.call(that, this, data);
-      }
-    });
 
     this.bars = new Bars(this.vis, this.nodes, this.vis.barMode, this.visData);
 
@@ -228,6 +309,7 @@ class Nodes {
   }
 
   clickHandler (el, data) {
+    this.toggleQueryMode(el, data);
     this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
   }
 
@@ -332,10 +414,23 @@ class Nodes {
           clonedFromId: events.rooted.clone ?
             events.rooted.originalNode.id : undefined,
         });
+        this.events.broadcast('d3ListGraphNodeQuery', {
+          id: events.rooted.id,
+          clone: events.rooted.clone,
+          clonedFromId: events.rooted.clone ?
+            events.rooted.originalNode.id : undefined,
+          mode: events.rooted.queryMode,
+        });
       }
 
       if (events.unrooted) {
         this.events.broadcast('d3ListGraphNodeUnroot', {
+          id: events.unrooted.id,
+          clone: events.unrooted.clone,
+          clonedFromId: events.unrooted.clone ?
+            events.unrooted.originalNode.id : undefined,
+        });
+        this.events.broadcast('d3ListGraphNodeUnquery', {
           id: events.unrooted.id,
           clone: events.unrooted.clone,
           clonedFromId: events.unrooted.clone ?
@@ -476,6 +571,42 @@ class Nodes {
     });
   }
 
+  queryNode (el, data, mode) {
+    data.data.queryMode = mode;
+    d3.select(el).classed({
+      active: true,
+      inactive: false,
+      'query-and': mode === 'and' ? true : false,
+      'query-or': mode === 'or' ? true : false,
+    });
+  }
+
+  unqueryNode (el, data) {
+    data.data.queryMode = undefined;
+    d3.select(el).classed({
+      active: false,
+      inactive: true,
+      'query-and': false,
+      'query-or': false,
+    });
+  }
+
+  toggleQueryMode (el, data) {
+    if (!data.data.queryMode) {
+      this.queryNode(el, data, 'or');
+    } else {
+      if (data.data.queryMode === 'or') {
+        this.queryNode(el, data, 'and');
+      } else {
+        if (d3.select(el).classed('rooted')) {
+          this.queryNode(el, data, 'or');
+        } else {
+          this.unqueryNode(el, data);
+        }
+      }
+    }
+  }
+
   toggleRoot (el, nodeData, setFalse) {
     const d3El = d3.select(el);
     const data = d3El.datum();
@@ -530,9 +661,10 @@ class Nodes {
     });
 
     els.selectAll('.bg-extension')
-      .transition()
-      .duration(config.TRANSITION_SEMI_FAST)
-      .attr('x', -that.visData.global.row.height / 2);
+      .attr(
+        'transform',
+        'translateX(' + (-(this.iconDimension * 2 + 16)) + ')'
+      );
 
     // Highlight level
     this.vis.levels.focus(datum.depth + this.vis.activeLevelNumber);
@@ -562,11 +694,15 @@ class Nodes {
     });
   }
 
-  setUpFocusControls (selection, location, mode, className) {
-    const height = (this.visData.global.row.contentHeight / 2 -
-      this.visData.global.cell.padding * 2);
+  setUpFocusControls (selection, location, position, mode, className) {
+    // const height = (this.visData.global.row.contentHeight / 2 -
+    //   this.visData.global.cell.padding * 2);
+
+    const paddedDim = this.iconDimension + 4;
+
     const x = location === 'left' ?
-      -height - 2 : this.visData.global.column.contentWidth + 2;
+      -(paddedDim) * (position ? position : 1) :
+        this.visData.global.column.contentWidth + 2;
     const y = this.visData.global.row.padding +
       (
         this.visData.global.row.contentHeight -
@@ -577,9 +713,9 @@ class Nodes {
       selection
         .attr({
           class: className,
-          cx: x + (height / 2),
-          cy: y + (height / 2),
-          r: height * 3 / 4,
+          cx: x + (this.iconDimension / 2),
+          cy: y + (this.iconDimension / 2),
+          r: this.iconDimension * 3 / 4,
         });
     } else {
       selection
@@ -587,8 +723,8 @@ class Nodes {
           class: className,
           x,
           y,
-          width: height,
-          height,
+          width: this.iconDimension,
+          height: this.iconDimension,
         });
     }
   }
@@ -616,7 +752,10 @@ class Nodes {
       // We also show sibling nodes.
       traverse.siblings(data, nodeData => nodeData.hidden = false);
 
-      this.nodes.classed('hidden', nodeData => nodeData.hidden);
+      this.nodes.classed(
+        'hidden',
+        nodeData => nodeData.hidden && !nodeData.data.queryMode
+      );
     }
     this.updateVisibility();
   }

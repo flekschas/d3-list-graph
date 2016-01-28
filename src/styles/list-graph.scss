@@ -252,15 +252,22 @@
   }
 
   .node .bg-extension {
-    fill: #808080;
+    fill: #fff;
     stroke: #808080;
     stroke-width: 2px;
     opacity: 0;
+    transition: all $transitionFast $easeInOutCubic;
   }
 
-  .node.rooted .bg-extension,
+  .node.hovering-directly .bg-extension,
+  .node.active .bg-extension,
   .node.animating .bg-extension {
     opacity: 1;
+  }
+
+  .node.active .bg-extension,
+  .node.animating .bg-extension {
+    fill: #808080;
   }
 
   .node .bg-border {
@@ -380,8 +387,10 @@
     white-space: nowrap;
     color: #666;
     font-size: 12px;
-    line-height: 1em;
+    line-height: 12px;
     transition: all $transitionFast $easeInOutCubic;
+
+    @include multiline-ellipsis(20px, 12px, 16px);
   }
 
   .column.active .node .label {
@@ -433,18 +442,21 @@
     stroke-opacity: 0 !important;
   }
 
-  .node .focus-controls [class^='icon-'],
-  .node .focus-controls [class*=' icon-'] {
+  .node.active .root svg,
+  .node.active .query svg {
+    color: #fff;
+  }
+
+  .node.query-and .query .state-inactive,
+  .node.query-or .query .state-inactive {
     opacity: 0 !important;
   }
 
-  .node:hover .focus-controls.inactive .state-inactive {
-    opacity: 1 !important;
-  }
-
-  .node .focus-controls.active .state-active {
-    color: #fff;
-    opacity: 1 !important;
+  .node:hover .focus-controls.inactive .state-inactive,
+  .node .focus-controls.active .state-active,
+  .node.query-and .focus-controls .state-and,
+  .node.query-or .focus-controls .state-or {
+    opacity: 1;
   }
 
   .bar-border,
