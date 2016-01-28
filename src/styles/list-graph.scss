@@ -261,11 +261,13 @@
 
   .node.hovering-directly .bg-extension,
   .node.active .bg-extension,
+  .node.rooted .bg-extension,
   .node.animating .bg-extension {
     opacity: 1;
   }
 
   .node.active .bg-extension,
+  .node.rooted .bg-extension,
   .node.animating .bg-extension {
     fill: #808080;
   }
@@ -442,8 +444,15 @@
     stroke-opacity: 0 !important;
   }
 
-  .node.active .root svg,
-  .node.active .query svg {
+  .node .focus-controls:hover .icon {
+    color: $colorHighlightRed;
+  }
+
+  .node.active .root .icon,
+  .node.active .query .icon,
+  .node .focus-controls.active .icon,
+  .node .focus-controls.active:hover .icon,
+  .node.active .focus-controls:hover .icon {
     color: #fff;
   }
 
