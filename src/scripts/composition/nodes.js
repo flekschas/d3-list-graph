@@ -429,23 +429,10 @@ class Nodes {
           clonedFromId: events.rooted.clone ?
             events.rooted.originalNode.id : undefined,
         });
-        this.events.broadcast('d3ListGraphNodeQuery', {
-          id: events.rooted.id,
-          clone: events.rooted.clone,
-          clonedFromId: events.rooted.clone ?
-            events.rooted.originalNode.id : undefined,
-          mode: events.rooted.queryMode,
-        });
       }
 
       if (events.unrooted) {
         this.events.broadcast('d3ListGraphNodeUnroot', {
-          id: events.unrooted.id,
-          clone: events.unrooted.clone,
-          clonedFromId: events.unrooted.clone ?
-            events.unrooted.originalNode.id : undefined,
-        });
-        this.events.broadcast('d3ListGraphNodeUnquery', {
           id: events.unrooted.id,
           clone: events.unrooted.clone,
           clonedFromId: events.unrooted.clone ?
@@ -598,6 +585,7 @@ class Nodes {
 
   unqueryNode (el, data) {
     data.data.queryMode = undefined;
+    data.data.queryBeforeRooting = undefined;
     d3.select(el).classed({
       active: false,
       inactive: true,
@@ -616,12 +604,28 @@ class Nodes {
       if (data.data.queryMode === 'or') {
         this.queryNode(el, data, 'and');
       } else {
-        if (d3.select(el).classed('rooted')) {
+        if (data.rooted) {
           this.queryNode(el, data, 'or');
         } else {
           this.unqueryNode(el, data);
         }
       }
+    }
+    if (data.data.queryMode) {
+      this.events.broadcast('d3ListGraphNodeQuery', {
+        id: data.id,
+        clone: data.clone,
+        clonedFromId: data.clone ?
+          data.originalNode.id : undefined,
+        mode: data.data.queryMode,
+      });
+    } else {
+      this.events.broadcast('d3ListGraphNodeUnquery', {
+        id: data.id,
+        clone: data.clone,
+        clonedFromId: data.clone ?
+          data.originalNode.id : undefined,
+      });
     }
   }
 
@@ -643,13 +647,13 @@ class Nodes {
     if (this.rootedNode) {
       // Reset current root node
       this.rootedNode.classed({ active: false, inactive: true });
-      this.unrootNode(this.rootedNode.datum().id, this.rootedNode.datum());
+      this.unrootNode(this.rootedNode.node(), this.rootedNode.datum());
       events.unrooted = this.rootedNode.datum();
 
       // Activate new root
       if (this.rootedNode.datum().id !== data.id && !setFalse) {
         d3El.classed({ active: true, inactive: false });
-        this.rootNode(data.id);
+        this.rootNode(el, data);
         this.rootedNode = d3El;
         events.rooted = data;
       } else {
@@ -662,61 +666,60 @@ class Nodes {
     } else {
       if (!setFalse) {
         d3El.classed({ active: true, inactive: false });
-        this.rootNode(data.id);
+        this.rootNode(el, data);
         events.rooted = data;
         this.rootedNode = d3El;
       }
     }
 
-    this.toggleQueryMode(el.parentNode, data);
-
     return events;
   }
 
-  rootNode (id) {
-    const that = this;
-    const els = this.nodes.filter(data => data.id === id);
+  rootNode (el, data) {
+    const d3El = d3.select(el.parentNode);
 
-    let datum;
+    data.rooted = true;
+    d3El.classed('rooted', true);
+    this.hideNodes(d3El.node(), data, 'downStream');
 
-    // Only **one** node should be rooted.
-    els.each(function (data) {
-      data.rooted = true;
-      d3.select(this).classed('rooted', true);
-      that.hideNodes.call(that, this, data, 'downStream');
-      datum = data;
-    });
-
-    els.selectAll('.bg-extension')
+    d3El.selectAll('.bg-extension')
       .style(
         'transform',
         'translateX(' + (-(this.iconDimension * 2 + 10)) + 'px)'
       );
 
     // Highlight level
-    this.vis.levels.focus(datum.depth + this.vis.activeLevelNumber);
+    this.vis.levels.focus(data.depth + this.vis.activeLevelNumber);
+
+    if (!data.data.queryMode) {
+      this.toggleQueryMode(d3El.node(), data);
+    } else {
+      data.data.queryBeforeRooting = true;
+    }
   }
 
-  unrootNode (id, data) {
-    const that = this;
-    const els = this.nodes.filter(nodeData => nodeData.id === id);
+  unrootNode (el, data) {
+    const d3El = d3.select(el.parentNode);
 
     let x = 0;
+
     if (data.data.queryMode) {
-      x = -that.iconDimension - 6;
+      x = -this.iconDimension - 6;
     }
 
-    els.selectAll('.bg-extension')
+    d3El.selectAll('.bg-extension')
       .style(
         'transform',
         'translateX(' + x + 'px)'
       );
 
-    els.each(function (nodeData) {
-      nodeData.rooted = false;
-      d3.select(this).classed('rooted', false);
-      that.showNodes.call(that, this, nodeData, 'downStream');
-    });
+    data.rooted = false;
+    d3El.classed('rooted', false);
+    this.showNodes(d3El.node(), data, 'downStream');
+
+    if (!data.data.queryBeforeRooting) {
+      this.unqueryNode(d3El.node(), data);
+    }
   }
 
   setUpFocusControls (selection, location, position, mode, className) {
