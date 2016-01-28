@@ -131,8 +131,14 @@ class Nodes {
         that.rootHandler.call(that, this, data);
       });
 
-    // nodeRooted.append('circle')
-    //   .call(this.setUpFocusControls.bind(this), 'left', 'bg', 'bg');
+    nodeRooted.append('rect')
+      .call(
+        this.setUpFocusControls.bind(this),
+        'left',
+        2,
+        'hover-helper',
+        'hover-helper'
+      );
 
     nodeRooted.append('svg')
       .call(
@@ -164,7 +170,13 @@ class Nodes {
       });
 
     nodeQuery.append('rect')
-      .call(this.setUpFocusControls.bind(this), 'left', 0, 'bg', 'bg');
+      .call(
+        this.setUpFocusControls.bind(this),
+        'left',
+        1,
+        'hover-helper',
+        'hover-helper'
+      );
 
     nodeQuery.append('svg')
       .call(
@@ -729,6 +741,15 @@ class Nodes {
           cx: x + (this.iconDimension / 2),
           cy: y + (this.iconDimension / 2),
           r: this.iconDimension * 3 / 4,
+        });
+    } else if (mode === 'hover-helper') {
+      selection
+        .attr({
+          class: className,
+          x: x - 2,
+          y: y - 2,
+          width: this.iconDimension + 4,
+          height: this.iconDimension + 4,
         });
     } else {
       selection
