@@ -172,13 +172,20 @@
     fill: #fff;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .node .bg-extension {
-    fill: #808080;
+    fill: #fff;
     stroke: #808080;
     stroke-width: 2px;
-    opacity: 0; }
+    opacity: 0;
+    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .node.hovering-directly .bg-extension,
+  .list-graph .node.active .bg-extension,
   .list-graph .node.rooted .bg-extension,
   .list-graph .node.animating .bg-extension {
     opacity: 1; }
+  .list-graph .node.active .bg-extension,
+  .list-graph .node.rooted .bg-extension,
+  .list-graph .node.animating .bg-extension {
+    fill: #808080; }
   .list-graph .node .bg-border {
     fill: #f23e00;
     stroke: #f23e00;
@@ -252,7 +259,7 @@
     white-space: nowrap;
     color: #666;
     font-size: 12px;
-    line-height: 1em;
+    line-height: 12px;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .column.active .node .label {
     color: #333; }
@@ -275,6 +282,8 @@
     stroke: #fff;
     stroke-width: 1;
     stroke-opacity: 0; }
+  .list-graph .node .focus-controls .hover-helper {
+    fill-opacity: 0; }
   .list-graph .node:hover .focus-controls .bg {
     fill-opacity: 0.66;
     stroke-opacity: 0.66; }
@@ -285,14 +294,22 @@
   .list-graph .node.animating .focus-controls .bg {
     fill-opacity: 0 !important;
     stroke-opacity: 0 !important; }
-  .list-graph .node .focus-controls [class^='icon-'],
-  .list-graph .node .focus-controls [class*=' icon-'] {
+  .list-graph .node .focus-controls:hover .icon {
+    color: #f23e00; }
+  .list-graph .node.active .root .icon,
+  .list-graph .node.active .query .icon,
+  .list-graph .node .focus-controls.active .icon,
+  .list-graph .node .focus-controls.active:hover .icon,
+  .list-graph .node.active .focus-controls:hover .icon {
+    color: #fff; }
+  .list-graph .node.query-and .query .state-inactive,
+  .list-graph .node.query-or .query .state-inactive {
     opacity: 0 !important; }
-  .list-graph .node:hover .focus-controls.inactive .state-inactive {
-    opacity: 1 !important; }
-  .list-graph .node .focus-controls.active .state-active {
-    color: #fff;
-    opacity: 1 !important; }
+  .list-graph .node:hover .focus-controls.inactive .state-inactive,
+  .list-graph .node .focus-controls.active .state-active,
+  .list-graph .node.query-and .focus-controls .state-and,
+  .list-graph .node.query-or .focus-controls .state-or {
+    opacity: 1; }
   .list-graph .bar-border,
   .list-graph .bar-magnitude {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }

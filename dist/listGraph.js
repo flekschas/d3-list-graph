@@ -803,6 +803,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.links = links;
       this.events = events;
       this.currentLinks = {};
+      this.iconDimension = Math.min(this.visData.global.row.contentHeight / 2 - this.visData.global.cell.padding * 2, this.visData.global.column.padding / 2 - 4);
 
       this.groups = baseSelection.append('g').attr('class', NODES_CLASS).call(function (selection) {
         selection.each(function storeLinkToGroupNode() {
@@ -816,9 +817,33 @@ var ListGraph = (function ($,d3) { 'use strict';
         return data.clone;
       }).attr('transform', function (data) {
         return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
+      }).on('mouseenter', function (data) {
+        var el = d3.select(this);
+
+        if (!!!that.vis.activeScrollbar) {
+          that.enterHandler.call(that, this, data);
+        }
+
+        if (!el.classed('rooted')) {
+          el.selectAll('.bg-extension').style('transform', 'translateX(' + -(that.iconDimension * 2 + 10) + 'px)');
+        }
+      }).on('mouseleave', function (data) {
+        var el = d3.select(this);
+
+        if (!!!that.vis.activeScrollbar) {
+          that.leaveHandler.call(that, this, data);
+        }
+
+        if (!el.classed('rooted')) {
+          if (data.data.queryMode) {
+            el.selectAll('.bg-extension').style('transform', 'translateX(' + (-that.iconDimension - 6) + 'px)');
+          } else {
+            el.selectAll('.bg-extension').style('transform', 'translateX(0px)');
+          }
+        }
       });
 
-      this.nodes.append('rect').call(drawFullSizeRect, 'bg-extension').attr('width', this.visData.global.column.padding + 5);
+      this.nodes.append('rect').call(drawFullSizeRect, 'bg-extension').attr('width', Math.max(this.visData.global.column.padding + this.visData.global.column.contentWidth / 2, this.visData.global.column.contentWidth));
 
       this.nodes.append('rect').call(drawFullSizeRect, 'bg-border');
 
@@ -829,37 +854,34 @@ var ListGraph = (function ($,d3) { 'use strict';
         that.rootHandler.call(that, this, data);
       });
 
-      nodeRooted.append('circle').call(this.setUpFocusControls.bind(this), 'left', 'bg', 'bg');
+      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 2, 'hover-helper', 'hover-helper');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 'icon', 'ease-all state-inactive invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 2, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 'icon', 'ease-all state-active invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 2, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+
+      // Rooting icons
+      var nodeQuery = this.nodes.append('g').attr('class', 'focus-controls query inactive').on('click', function (data) {
+        that.toggleQueryMode.call(that, this.parentNode, data);
+      });
+
+      nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'left', 1, 'hover-helper', 'hover-helper');
+
+      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#set-inactive');
+
+      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-and invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#intersection');
+
+      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
 
       var nodeLocks = this.nodes.append('g').attr('class', 'focus-controls lock inactive').on('click', function clickHandler(data) {
         that.lockHandler.call(that, this, data);
       });
 
-      nodeLocks.append('circle').call(this.setUpFocusControls.bind(this), 'right', 'bg', 'bg');
+      nodeLocks.append('circle').call(this.setUpFocusControls.bind(this), 'right', 0, 'bg', 'bg');
 
-      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 'icon', 'ease-all state-inactive invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
 
-      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 'icon', 'ease-all state-active invisible-default').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
-
-      this.nodes.on('click', function clickHandler(data) {
-        that.clickHandler.call(that, this, data);
-      });
-
-      this.nodes.on('mouseenter', function mouseEnterHandler(data) {
-        if (!!!that.vis.activeScrollbar) {
-          that.enterHandler.call(that, this, data);
-        }
-      });
-
-      this.nodes.on('mouseleave', function mouseLeaveHandler(data) {
-        if (!!!that.vis.activeScrollbar) {
-          that.leaveHandler.call(that, this, data);
-        }
-      });
+      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
       this.bars = new Bars(this.vis, this.nodes, this.vis.barMode, this.visData);
 
@@ -867,7 +889,9 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       // Add node label
       this.nodes.call(function (selection) {
-        selection.append('foreignObject').attr('x', _this.visData.global.cell.padding).attr('y', _this.visData.global.row.padding + _this.visData.global.cell.padding).attr('width', _this.visData.global.column.contentWidth).attr('height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2).attr('class', 'label-wrapper').append('xhtml:div').attr('class', 'label').attr('title', function (data) {
+        selection.append('foreignObject').attr('x', _this.visData.global.cell.padding).attr('y', _this.visData.global.row.padding + _this.visData.global.cell.padding).attr('width', _this.visData.global.column.contentWidth).attr('height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2).attr('class', 'label-wrapper').on('click', function clickHandler(data) {
+          that.clickHandler.call(that, this, data);
+        }).append('xhtml:div').attr('class', 'label').attr('title', function (data) {
           return data.data.name;
         }).style('line-height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').text(function (data) {
           return data.data.name;
@@ -916,7 +940,8 @@ var ListGraph = (function ($,d3) { 'use strict';
     babelHelpers.createClass(Nodes, [{
       key: 'clickHandler',
       value: function clickHandler(el, data) {
-        this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
+        this.toggleQueryMode(el.parentNode, data);
+        // this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
       }
     }, {
       key: 'enterHandler',
@@ -1029,7 +1054,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         }
 
         this.events.broadcast('d3ListGraphUpdateBarsRequest', {
-          id: events.rooted.id
+          id: events.rooted.id,
+          clone: events.rooted.clone,
+          clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
         });
       }
     }, {
@@ -1145,8 +1172,70 @@ var ListGraph = (function ($,d3) { 'use strict';
         });
       }
     }, {
+      key: 'queryNode',
+      value: function queryNode(el, data, mode) {
+        data.data.queryMode = mode;
+        d3.select(el).classed({
+          active: true,
+          inactive: false,
+          'query-and': mode === 'and' ? true : false,
+          'query-or': mode === 'or' ? true : false
+        });
+      }
+    }, {
+      key: 'unqueryNode',
+      value: function unqueryNode(el, data) {
+        data.data.queryMode = undefined;
+        data.data.queryBeforeRooting = undefined;
+        d3.select(el).classed({
+          active: false,
+          inactive: true,
+          'query-and': false,
+          'query-or': false
+        });
+        if (this.rootedNode) {
+          this.updateVisibility();
+        }
+      }
+    }, {
+      key: 'toggleQueryMode',
+      value: function toggleQueryMode(el, data) {
+        if (!data.data.queryMode) {
+          this.queryNode(el, data, 'or');
+        } else {
+          if (data.data.queryMode === 'or') {
+            this.queryNode(el, data, 'and');
+          } else {
+            if (data.rooted) {
+              this.queryNode(el, data, 'or');
+            } else {
+              this.unqueryNode(el, data);
+            }
+          }
+        }
+        if (data.data.queryMode) {
+          this.events.broadcast('d3ListGraphNodeQuery', {
+            id: data.id,
+            clone: data.clone,
+            clonedFromId: data.clone ? data.originalNode.id : undefined,
+            mode: data.data.queryMode
+          });
+        } else {
+          this.events.broadcast('d3ListGraphNodeUnquery', {
+            id: data.id,
+            clone: data.clone,
+            clonedFromId: data.clone ? data.originalNode.id : undefined
+          });
+        }
+      }
+    }, {
+      key: 'progToggleQueryMode',
+      value: function progToggleQueryMode(el, data) {
+        this.toggleQueryMode(d3.select(el).selectAll('.focus-controls.query')[0].node(), data);
+      }
+    }, {
       key: 'toggleRoot',
-      value: function toggleRoot(el, nodeData, setFalse) {
+      value: function toggleRoot(el, setFalse) {
         var d3El = d3.select(el);
         var data = d3El.datum();
         var events = { rooted: false, unrooted: false };
@@ -1157,13 +1246,13 @@ var ListGraph = (function ($,d3) { 'use strict';
         if (this.rootedNode) {
           // Reset current root node
           this.rootedNode.classed({ active: false, inactive: true });
-          this.unrootNode(this.rootedNode.datum().id);
+          this.unrootNode(this.rootedNode.node(), this.rootedNode.datum());
           events.unrooted = this.rootedNode.datum();
 
           // Activate new root
           if (this.rootedNode.datum().id !== data.id && !setFalse) {
             d3El.classed({ active: true, inactive: false });
-            this.rootNode(data.id);
+            this.rootNode(el, data);
             this.rootedNode = d3El;
             events.rooted = data;
           } else {
@@ -1174,7 +1263,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         } else {
           if (!setFalse) {
             d3El.classed({ active: true, inactive: false });
-            this.rootNode(data.id);
+            this.rootNode(el, data);
             events.rooted = data;
             this.rootedNode = d3El;
           }
@@ -1184,70 +1273,78 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'rootNode',
-      value: function rootNode(id) {
-        var that = this;
-        var els = this.nodes.filter(function (data) {
-          return data.id === id;
-        });
+      value: function rootNode(el, data) {
+        var d3El = d3.select(el.parentNode);
 
-        var datum = undefined;
+        data.rooted = true;
+        d3El.classed('rooted', true);
+        this.hideNodes(d3El.node(), data, 'downStream');
 
-        // Only **one** node should be rooted.
-        els.each(function (data) {
-          data.rooted = true;
-          d3.select(this).classed('rooted', true);
-          that.hideNodes.call(that, this, data, 'downStream');
-          datum = data;
-        });
-
-        els.selectAll('.bg-extension').transition().duration(TRANSITION_SEMI_FAST).attr('x', -that.visData.global.row.height / 2);
+        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + -(this.iconDimension * 2 + 10) + 'px)');
 
         // Highlight level
-        this.vis.levels.focus(datum.depth + this.vis.activeLevelNumber);
+        this.vis.levels.focus(data.depth + this.vis.activeLevelNumber);
+
+        if (!data.data.queryMode) {
+          this.toggleQueryMode(d3El.node(), data);
+        } else {
+          data.data.queryBeforeRooting = true;
+        }
       }
     }, {
       key: 'unrootNode',
-      value: function unrootNode(id) {
-        var that = this;
-        var els = this.nodes.filter(function (data) {
-          return data.id === id;
-        });
-        var start = function start() {
-          d3.select(this.parentNode).classed('animating', true);
-        };
-        var end = function end() {
-          d3.select(this.parentNode).classed('animating', false);
-        };
+      value: function unrootNode(el, data) {
+        var d3El = d3.select(el.parentNode);
 
-        els.selectAll('.bg-extension').transition().duration(TRANSITION_SEMI_FAST).attr('x', 0).each('start', start).each('end', end);
+        var x = 0;
 
-        els.each(function (data) {
-          data.rooted = false;
-          d3.select(this).classed('rooted', false);
-          that.showNodes.call(that, this, data, 'downStream');
-        });
+        if (data.data.queryMode) {
+          x = -this.iconDimension - 6;
+        }
+
+        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + x + 'px)');
+
+        data.rooted = false;
+        d3El.classed('rooted', false);
+        this.showNodes(d3El.node(), data, 'downStream');
+
+        if (!data.data.queryBeforeRooting) {
+          this.unqueryNode(d3El.node(), data);
+        }
       }
     }, {
       key: 'setUpFocusControls',
-      value: function setUpFocusControls(selection, location, mode, className) {
-        var height = this.visData.global.row.contentHeight / 2 - this.visData.global.cell.padding * 2;
-        var x = location === 'left' ? -height - 2 : this.visData.global.column.contentWidth + 2;
+      value: function setUpFocusControls(selection, location, position, mode, className) {
+        // const height = (this.visData.global.row.contentHeight / 2 -
+        //   this.visData.global.cell.padding * 2);
+
+        var paddedDim = this.iconDimension + 4;
+
+        var x = location === 'left' ? -paddedDim * (position ? position : 1) : this.visData.global.column.contentWidth + 2;
         var y = this.visData.global.row.padding + (this.visData.global.row.contentHeight - 2 * this.visData.global.cell.padding) / 4;
 
         if (mode === 'bg') {
           selection.attr({
             class: className,
-            cx: x + height / 2,
-            cy: y + height / 2,
-            r: height * 3 / 4
+            cx: x + this.iconDimension / 2,
+            cy: y + this.iconDimension / 2,
+            r: this.iconDimension * 3 / 4
+          });
+        } else if (mode === 'hover-helper') {
+          selection.attr({
+            class: className,
+            x: x - 2,
+            y: y - 2,
+            width: this.iconDimension + 4,
+            height: this.iconDimension + 4
           });
         } else {
           selection.attr({
             class: className,
             x: x,
             y: y,
-            width: height,
-            height: height
+            width: this.iconDimension,
+            height: this.iconDimension
           });
         }
       }
@@ -1285,7 +1382,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           });
 
           this.nodes.classed('hidden', function (nodeData) {
-            return nodeData.hidden;
+            return nodeData.hidden && !nodeData.data.queryMode;
           });
         }
         this.updateVisibility();

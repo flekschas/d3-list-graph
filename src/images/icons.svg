@@ -154,4 +154,19 @@
         c0.194,0.195,0.431,0.293,0.708,0.293h10c0.278,0,0.515-0.098,0.709-0.293c0.194-0.193,0.291-0.43,0.291-0.707L14,8.333L14,8.333z"
       fill="currentColor" />
   </symbol>
+  <symbol id="union" viewBox="0 0 16 16">
+    <path
+      d="M12,1v7C11.999,10.21,10.209,12,8,12c-2.209,0-4-1.79-4-3.999h0l0-7H1v7C1,11.867,4.134,15,8,15
+      c3.865,0,6.999-3.133,7-6.999V1H12z"
+      fill="currentColor"/>
+  </symbol>
+  <symbol id="intersection" viewBox="0 0 16 16">
+    <path
+      d="M15,15V7.999C14.999,4.133,11.865,1,8,1C4.134,1,1,4.133,1,7.999V15h3l0-7.001h0C4.001,5.79,5.792,4,8,4
+      c2.208,0,3.999,1.79,4,3.999V15H15z"
+      fill="currentColor"/>
+  </symbol>
+  <symbol id="set-inactive" viewBox="0 0 16 16">
+    <rect x="1" y="6.5" width="14" height="3" fill="currentColor"/>
+  </symbol>
 </svg>

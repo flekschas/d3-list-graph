@@ -490,7 +490,10 @@ class ListGraphLayout {
       skipped[i] = 0;
       // Update `y` according to the number of previously skipped nodes.
       for (let j = 0, len = this.columnNodeOrder[i].length; j < len; j++) {
-        if (this.columnNodeOrder[i][j].hidden) {
+        if (
+          this.columnNodeOrder[i][j].hidden &&
+          !this.columnNodeOrder[i][j].data.queryMode
+        ) {
           skipped[i]++;
         }
         this.columnNodeOrder[i][j].y = this.scale.y(j - skipped[i]);
