@@ -468,17 +468,18 @@
 
   .node:hover .focus-controls.inactive .state-inactive,
   .node .focus-controls.active .state-active,
-  .node.query-and .focus-controls .state-and,
-  .node.query-or .focus-controls .state-or,
+  .node.query-and .focus-controls .state-and-or,
+  .node.query-or .focus-controls .state-and-or,
   .node.query-not .focus-controls .state-not {
     opacity: 1;
   }
 
-  .node .focus-controls .state-and-or {
+  .node .focus-controls .state-and-or use {
     transition: all $transitionFast $easeInOutCubic;
+    transform-origin: 50% 50%;
   }
 
-  .node.query-and .focus-controls .state-and-or {
+  .node.query-and .focus-controls .state-and-or use {
     transform: scale(1, -1);
   }
 

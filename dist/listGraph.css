@@ -308,13 +308,14 @@
     opacity: 0 !important; }
   .list-graph .node:hover .focus-controls.inactive .state-inactive,
   .list-graph .node .focus-controls.active .state-active,
-  .list-graph .node.query-and .focus-controls .state-and,
-  .list-graph .node.query-or .focus-controls .state-or,
+  .list-graph .node.query-and .focus-controls .state-and-or,
+  .list-graph .node.query-or .focus-controls .state-and-or,
   .list-graph .node.query-not .focus-controls .state-not {
     opacity: 1; }
-  .list-graph .node .focus-controls .state-and-or {
-    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph .node.query-and .focus-controls .state-and-or {
+  .list-graph .node .focus-controls .state-and-or use {
+    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1);
+    transform-origin: 50% 50%; }
+  .list-graph .node.query-and .focus-controls .state-and-or use {
     transform: scale(1, -1); }
   .list-graph .bar-border,
   .list-graph .bar-magnitude {
