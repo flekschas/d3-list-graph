@@ -195,6 +195,17 @@ class Nodes {
         'left',
         1,
         'icon',
+        'ease-all state-or invisible-default icon'
+      )
+      .append('use')
+        .attr('xlink:href', this.vis.iconPath + '#union');
+
+    nodeQuery.append('svg')
+      .call(
+        this.setUpFocusControls.bind(this),
+        'left',
+        1,
+        'icon',
         'ease-all state-and invisible-default icon'
       )
       .append('use')
@@ -206,10 +217,10 @@ class Nodes {
         'left',
         1,
         'icon',
-        'ease-all state-or invisible-default icon'
+        'ease-all state-not invisible-default icon'
       )
       .append('use')
-        .attr('xlink:href', this.vis.iconPath + '#union');
+        .attr('xlink:href', this.vis.iconPath + '#not');
 
     const nodeLocks = this.nodes.append('g')
       .attr('class', 'focus-controls lock inactive')
@@ -580,6 +591,7 @@ class Nodes {
       inactive: false,
       'query-and': mode === 'and' ? true : false,
       'query-or': mode === 'or' ? true : false,
+      'query-not': mode === 'not' ? true : false,
     });
   }
 
@@ -591,6 +603,7 @@ class Nodes {
       inactive: true,
       'query-and': false,
       'query-or': false,
+      'query-not': false,
     });
     if (this.rootedNode) {
       this.updateVisibility();
@@ -598,27 +611,41 @@ class Nodes {
   }
 
   toggleQueryMode (el, data) {
-    if (!data.data.queryMode) {
-      this.queryNode(el, data, 'or');
-    } else {
-      if (data.data.queryMode === 'or') {
-        this.queryNode(el, data, 'and');
+    const previousMode = data.data.queryMode;
+
+    if (data.rooted) {
+      if (previousMode !== 'or') {
+        this.queryNode(el, data, 'or');
       } else {
-        if (data.rooted) {
-          this.queryNode(el, data, 'or');
-        } else {
+        this.queryNode(el, data, 'and');
+      }
+    } else {
+      switch (previousMode) {
+        case 'or':
+          this.queryNode(el, data, 'and');
+          break;
+        case 'and':
+          this.queryNode(el, data, 'not');
+          break;
+        case 'not':
           this.unqueryNode(el, data);
-        }
+          break;
+        default:
+          this.queryNode(el, data, 'or');
+          break;
       }
     }
+
     if (data.data.queryMode) {
-      this.events.broadcast('d3ListGraphNodeQuery', {
-        id: data.id,
-        clone: data.clone,
-        clonedFromId: data.clone ?
-          data.originalNode.id : undefined,
-        mode: data.data.queryMode,
-      });
+      if (data.data.queryMode !== previousMode) {
+        this.events.broadcast('d3ListGraphNodeQuery', {
+          id: data.id,
+          clone: data.clone,
+          clonedFromId: data.clone ?
+            data.originalNode.id : undefined,
+          mode: data.data.queryMode,
+        });
+      }
     } else {
       this.events.broadcast('d3ListGraphNodeUnquery', {
         id: data.id,
@@ -691,8 +718,9 @@ class Nodes {
     // Highlight level
     this.vis.levels.focus(data.depth + this.vis.activeLevelNumber);
 
-    if (!data.data.queryMode) {
+    if (!data.data.queryMode || data.data.queryMode === 'not') {
       this.toggleQueryMode(d3El.node(), data);
+      data.data.queryBeforeRooting = false;
     } else {
       data.data.queryBeforeRooting = true;
     }

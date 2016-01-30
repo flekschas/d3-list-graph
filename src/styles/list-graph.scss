@@ -461,15 +461,25 @@
   }
 
   .node.query-and .query .state-inactive,
-  .node.query-or .query .state-inactive {
+  .node.query-or .query .state-inactive,
+  .node.query-not .query .state-inactive {
     opacity: 0 !important;
   }
 
   .node:hover .focus-controls.inactive .state-inactive,
   .node .focus-controls.active .state-active,
   .node.query-and .focus-controls .state-and,
-  .node.query-or .focus-controls .state-or {
+  .node.query-or .focus-controls .state-or,
+  .node.query-not .focus-controls .state-not {
     opacity: 1;
+  }
+
+  .node .focus-controls .state-and-or {
+    transition: all $transitionFast $easeInOutCubic;
+  }
+
+  .node.query-and .focus-controls .state-and-or {
+    transform: scale(1, -1);
   }
 
   .bar-border,
