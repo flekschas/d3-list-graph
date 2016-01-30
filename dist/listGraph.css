@@ -303,13 +303,19 @@
   .list-graph .node.active .focus-controls:hover .icon {
     color: #fff; }
   .list-graph .node.query-and .query .state-inactive,
-  .list-graph .node.query-or .query .state-inactive {
+  .list-graph .node.query-or .query .state-inactive,
+  .list-graph .node.query-not .query .state-inactive {
     opacity: 0 !important; }
   .list-graph .node:hover .focus-controls.inactive .state-inactive,
   .list-graph .node .focus-controls.active .state-active,
   .list-graph .node.query-and .focus-controls .state-and,
-  .list-graph .node.query-or .focus-controls .state-or {
+  .list-graph .node.query-or .focus-controls .state-or,
+  .list-graph .node.query-not .focus-controls .state-not {
     opacity: 1; }
+  .list-graph .node .focus-controls .state-and-or {
+    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .node.query-and .focus-controls .state-and-or {
+    transform: scale(1, -1); }
   .list-graph .bar-border,
   .list-graph .bar-magnitude {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
