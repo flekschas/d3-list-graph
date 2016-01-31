@@ -228,6 +228,7 @@ class ListGraph {
         this.nodes.bars.updateAll(
           this.layout.updateBars(this.data), this.currentSorting.global.type
         );
+        this.updateSorting();
       }
     );
 
@@ -237,6 +238,7 @@ class ListGraph {
         this.nodes.bars.updateAll(
           this.layout.updateBars(this.data), this.currentSorting.global.type
         );
+        this.updateSorting();
       }
     );
 
@@ -246,6 +248,7 @@ class ListGraph {
         this.nodes.bars.updateAll(
           this.layout.updateBars(this.data), this.currentSorting.global.type
         );
+        this.updateSorting();
       }
     );
 
@@ -446,6 +449,18 @@ class ListGraph {
 
   selectByLevel (level, selector) {
     return d3.select(this.levels.groups[0][level]).selectAll(selector);
+  }
+
+  updateSorting () {
+    const levels = Object.keys(this.currentSorting.local);
+    for (let i = levels.length; i--;) {
+      this.sortColumn(
+        i,
+        this.currentSorting.local[levels[i]].type,
+        this.currentSorting.local[levels[i]].order,
+        this.currentSorting.local[levels[i]].type
+      );
+    }
   }
 
   sortColumn (level, property, sortOrder, newSortType) {
