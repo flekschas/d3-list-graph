@@ -507,7 +507,7 @@
   }
 
   .column.active .bar-magnitude {
-    fill-opacity: 0.25;
+    fill-opacity: 0.15;
   }
 
   .node.focus-directly .bar-magnitude {
@@ -547,6 +547,10 @@
 
   .two-bar .bar.active .bar-magnitude {
     fill-opacity: 0.15;
+  }
+
+  .two-bar .column.active .bar.active .bar-magnitude {
+    fill-opacity: 0.25;
   }
 
   .bar-border {
