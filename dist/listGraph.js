@@ -1846,7 +1846,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         return _this.highlightBars(undefined, 'precision', true);
       });
 
-      this.globalPrecisionWrapper = this.globalPrecision.append('div').attr('class', 'wrapper').text('Precision').style('margin', '0 ' + this.visData.global.column.padding + 'px');
+      this.globalPrecisionWrapper = this.globalPrecision.append('div').attr('class', 'wrapper').text('Precision');
 
       this.globalPrecisionWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'precision').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
 
@@ -1869,7 +1869,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         return _this.highlightBars(undefined, 'recall', true);
       });
 
-      this.globalRecallWrapper = this.globalRecall.append('div').attr('class', 'wrapper').text('Recall').style('margin', '0 ' + this.visData.global.column.padding + 'px');
+      this.globalRecallWrapper = this.globalRecall.append('div').attr('class', 'wrapper').text('Recall');
 
       this.globalRecallWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'recall').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
 
@@ -1892,7 +1892,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         return _this.highlightLabels(true);
       });
 
-      this.globalNameWrapper = this.globalName.append('div').attr('class', 'wrapper').text('Name').style('margin', '0 ' + this.visData.global.column.padding + 'px');
+      this.globalNameWrapper = this.globalName.append('div').attr('class', 'wrapper').text('Name');
 
       this.globalNameWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'name').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
 
@@ -1905,7 +1905,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         that.switchBarMode(this, 'one');
       });
 
-      this.globalOneBarWrapper = this.globalOneBar.append('div').attr('class', 'wrapper').text('One bar').style('margin', '0 ' + this.visData.global.column.padding + 'px');
+      this.globalOneBarWrapper = this.globalOneBar.append('div').attr('class', 'wrapper').text('One bar');
 
       this.globalOneBarWrapper.append('svg').attr('class', 'icon-one-bar').append('use').attr('xlink:href', this.vis.iconPath + '#one-bar');
 
@@ -1914,9 +1914,19 @@ var ListGraph = (function ($,d3) { 'use strict';
         that.switchBarMode(this, 'two');
       });
 
-      this.globalTwoBarsWrapper = this.globalTwoBars.append('div').attr('class', 'wrapper').text('Two bars').style('margin', '0 ' + this.visData.global.column.padding + 'px');
+      this.globalTwoBarsWrapper = this.globalTwoBars.append('div').attr('class', 'wrapper').text('Two bars');
 
       this.globalTwoBarsWrapper.append('svg').attr('class', 'icon-two-bars').append('use').attr('xlink:href', this.vis.iconPath + '#two-bars');
+
+      // Add button for zoom-out
+      this.globalZoomOut = this.globalControls.append('li').attr('class', 'control-btn zoom-out').classed('active', this.vis.zoomedOut).on('mouseenter', this.vis.globalView.bind(this.vis)).on('mouseleave', this.vis.zoomedView.bind(this.vis)).on('click', function () {
+        that.vis.toggleView.call(that.vis);
+        d3.select(this).classed('active', that.vis.zoomedOut);
+      });
+
+      this.globalZoomOutWrapper = this.globalZoomOut.append('div').attr('class', 'wrapper').text('Zoom Out').style('margin-right', this.visData.global.column.padding + 'px');
+
+      this.globalZoomOutWrapper.append('svg').attr('class', 'icon-zoom-out').append('use').attr('xlink:href', this.vis.iconPath + '#zoom-out');
 
       this.localControlWrapper = this.el.append('div').classed('local-controls', true);
 
@@ -2559,7 +2569,9 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
       this.$levels = $(this.levels.groups[0]).on('mousewheel', function (event) {
-        that.mousewheelColumn(this, event);
+        if (!that.zoomedOut) {
+          that.mousewheelColumn(this, event);
+        }
       });
 
       // Normally we would reference a named methods but since we need to aceess
@@ -2733,34 +2745,58 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'globalView',
       value: function globalView(selectionInterst) {
-        var width = 0;
-        var height = 0;
-        var bBox = undefined;
-        var cRect = undefined;
+        var _this2 = this;
 
-        var globalCRect = this.svgD3.node().getBoundingClientRect();
+        if (!this.zoomedOut) {
+          (function () {
+            var x = 0;
+            var y = 0;
+            var width = 0;
+            var height = 0;
+            var bBox = undefined;
+            var cRect = undefined;
 
-        if (selectionInterst && !selectionInterst.empty()) {
-          selectionInterst.each(function () {
-            bBox = this.getBBox();
-            cRect = this.getBoundingClientRect();
-            width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
-            height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
-          });
-          width = this.width > width ? this.width : width;
-          height = this.height > height ? this.height : height;
-        } else {
-          bBox = this.container.node().getBBox();
-          width = this.width > bBox.width ? this.width : bBox.width;
-          height = this.height > bBox.height ? this.height : bBox.height;
+            var globalCRect = _this2.svgD3.node().getBoundingClientRect();
+
+            if (selectionInterst && !selectionInterst.empty()) {
+              selectionInterst.each(function () {
+                bBox = this.getBBox();
+                cRect = this.getBoundingClientRect();
+                width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
+                height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
+              });
+              width = _this2.width > width ? _this2.width : width;
+              height = _this2.height > height ? _this2.height : height;
+            } else {
+              bBox = _this2.container.node().getBBox();
+              width = _this2.width > bBox.width ? _this2.width : bBox.width;
+              height = _this2.height > bBox.height ? _this2.height : bBox.height;
+            }
+
+            x = bBox.x;
+            y = bBox.y;
+
+            _this2.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
+          })();
         }
-
-        this.svgD3.transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + width + ' ' + height);
       }
     }, {
       key: 'zoomedView',
       value: function zoomedView() {
-        this.svgD3.transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
+        if (!this.zoomedOut) {
+          this.svgD3.classed('zoomedOut', false).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
+        }
+      }
+    }, {
+      key: 'toggleView',
+      value: function toggleView() {
+        if (this.zoomedOut) {
+          this.zoomedOut = false;
+          this.zoomedView();
+        } else {
+          this.globalView();
+          this.zoomedOut = true;
+        }
       }
     }, {
       key: 'area',
