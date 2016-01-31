@@ -108,6 +108,7 @@
 
     &.active {
       font-weight: bold;
+      text-decoration: underline;
       box-shadow: inset 0 -20px 0 0 #000;
     }
 
@@ -119,12 +120,13 @@
 
   .top-bar .global-controls .control-btn .wrapper {
     position: relative;
+    margin: 0 1rem;
   }
 
   .top-bar .global-controls .control-btn {
     position: relative;
     float: left;
-    width: 20%;
+    width: 16.666666667%;
     box-shadow: 1px 0 0 0 #efefef;
   }
 
@@ -164,6 +166,12 @@
     width: 1rem;
     height: 1rem;
     transition: all $transitionFast $easeInOutCubic;
+  }
+
+  .top-bar .control-btn .icon-zoom-out {
+    width: 0.85rem;
+    height: 0.85rem;
+    padding: 0.075rem;
   }
 
   .top-bar .controls .icon-gear {
@@ -220,6 +228,10 @@
   .scrollbar {
     fill: #000;
     fill-opacity: 0;
+  }
+
+  .zoomedOut .scrollbar {
+    fill-opacity: 0 !important;
   }
 
   .scrollbar.ready {

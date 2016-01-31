@@ -184,7 +184,9 @@ class ListGraph {
 
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
     this.$levels = $(this.levels.groups[0]).on('mousewheel', function (event) {
-      that.mousewheelColumn(this, event);
+      if (!that.zoomedOut) {
+        that.mousewheelColumn(this, event);
+      }
     });
 
     // Normally we would reference a named methods but since we need to aceess
@@ -473,39 +475,60 @@ class ListGraph {
   }
 
   globalView (selectionInterst) {
-    let width = 0;
-    let height = 0;
-    let bBox;
-    let cRect;
+    if (!this.zoomedOut) {
+      let x = 0;
+      let y = 0;
+      let width = 0;
+      let height = 0;
+      let bBox;
+      let cRect;
 
-    const globalCRect = this.svgD3.node().getBoundingClientRect();
+      const globalCRect = this.svgD3.node().getBoundingClientRect();
 
-    if (selectionInterst && !selectionInterst.empty()) {
-      selectionInterst.each(function () {
-        bBox = this.getBBox();
-        cRect = this.getBoundingClientRect();
-        width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
-        height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
-      });
-      width = this.width > width ? this.width : width;
-      height = this.height > height ? this.height : height;
-    } else {
-      bBox = this.container.node().getBBox();
-      width = this.width > bBox.width ? this.width : bBox.width;
-      height = this.height > bBox.height ? this.height : bBox.height;
+      if (selectionInterst && !selectionInterst.empty()) {
+        selectionInterst.each(function () {
+          bBox = this.getBBox();
+          cRect = this.getBoundingClientRect();
+          width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
+          height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
+        });
+        width = this.width > width ? this.width : width;
+        height = this.height > height ? this.height : height;
+      } else {
+        bBox = this.container.node().getBBox();
+        width = this.width > bBox.width ? this.width : bBox.width;
+        height = this.height > bBox.height ? this.height : bBox.height;
+      }
+
+      x = bBox.x;
+      y = bBox.y;
+
+      this.svgD3
+        .classed('zoomedOut', true)
+        .transition()
+        .duration(config.TRANSITION_SEMI_FAST)
+        .attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
     }
-
-    this.svgD3
-      .transition()
-      .duration(config.TRANSITION_SEMI_FAST)
-      .attr('viewBox', '0 0 ' + width + ' ' + height);
   }
 
   zoomedView () {
-    this.svgD3
-      .transition()
-      .duration(config.TRANSITION_SEMI_FAST)
-      .attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
+    if (!this.zoomedOut) {
+      this.svgD3
+        .classed('zoomedOut', false)
+        .transition()
+        .duration(config.TRANSITION_SEMI_FAST)
+        .attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
+    }
+  }
+
+  toggleView () {
+    if (this.zoomedOut) {
+      this.zoomedOut = false;
+      this.zoomedView();
+    } else {
+      this.globalView();
+      this.zoomedOut = true;
+    }
   }
 }
 
