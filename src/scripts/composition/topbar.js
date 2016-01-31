@@ -60,8 +60,7 @@ class Topbar {
 
     this.globalPrecisionWrapper = this.globalPrecision.append('div')
       .attr('class', 'wrapper')
-      .text('Precision')
-      .style('margin', '0 ' + this.visData.global.column.padding + 'px');
+      .text('Precision');
 
     this.globalPrecisionWrapper.append('svg')
       .attr('class', 'icon-unsort invisible-default')
@@ -113,8 +112,7 @@ class Topbar {
 
     this.globalRecallWrapper = this.globalRecall.append('div')
       .attr('class', 'wrapper')
-      .text('Recall')
-      .style('margin', '0 ' + this.visData.global.column.padding + 'px');
+      .text('Recall');
 
     this.globalRecallWrapper.append('svg')
       .attr('class', 'icon-unsort invisible-default')
@@ -166,8 +164,7 @@ class Topbar {
 
     this.globalNameWrapper = this.globalName.append('div')
       .attr('class', 'wrapper')
-      .text('Name')
-      .style('margin', '0 ' + this.visData.global.column.padding + 'px');
+      .text('Name');
 
     this.globalNameWrapper.append('svg')
       .attr('class', 'icon-unsort invisible-default')
@@ -205,8 +202,7 @@ class Topbar {
 
     this.globalOneBarWrapper = this.globalOneBar.append('div')
       .attr('class', 'wrapper')
-      .text('One bar')
-      .style('margin', '0 ' + this.visData.global.column.padding + 'px');
+      .text('One bar');
 
     this.globalOneBarWrapper.append('svg')
       .attr('class', 'icon-one-bar')
@@ -223,13 +219,33 @@ class Topbar {
 
     this.globalTwoBarsWrapper = this.globalTwoBars.append('div')
       .attr('class', 'wrapper')
-      .text('Two bars')
-      .style('margin', '0 ' + this.visData.global.column.padding + 'px');
+      .text('Two bars');
 
     this.globalTwoBarsWrapper.append('svg')
       .attr('class', 'icon-two-bars')
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#two-bars');
+
+    // Add button for zoom-out
+    this.globalZoomOut = this.globalControls.append('li')
+      .attr('class', 'control-btn zoom-out')
+      .classed('active', this.vis.zoomedOut)
+      .on('mouseenter', this.vis.globalView.bind(this.vis))
+      .on('mouseleave', this.vis.zoomedView.bind(this.vis))
+      .on('click', function () {
+        that.vis.toggleView.call(that.vis);
+        d3.select(this).classed('active', that.vis.zoomedOut);
+      });
+
+    this.globalZoomOutWrapper = this.globalZoomOut.append('div')
+      .attr('class', 'wrapper')
+      .text('Zoom Out')
+      .style('margin-right', this.visData.global.column.padding + 'px');
+
+    this.globalZoomOutWrapper.append('svg')
+      .attr('class', 'icon-zoom-out')
+      .append('use')
+        .attr('xlink:href', this.vis.iconPath + '#zoom-out');
 
     this.localControlWrapper = this.el.append('div')
       .classed('local-controls', true);

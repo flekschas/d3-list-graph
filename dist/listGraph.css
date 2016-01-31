@@ -79,16 +79,18 @@
       background: #efefef; }
     .list-graph .top-bar .control-btn.active {
       font-weight: bold;
+      text-decoration: underline;
       box-shadow: inset 0 -20px 0 0 #000; }
     .list-graph .top-bar .control-btn.inactive {
       cursor: default !important;
       opacity: 0; }
   .list-graph .top-bar .global-controls .control-btn .wrapper {
-    position: relative; }
+    position: relative;
+    margin: 0 1rem; }
   .list-graph .top-bar .global-controls .control-btn {
     position: relative;
     float: left;
-    width: 20%;
+    width: 16.666666667%;
     box-shadow: 1px 0 0 0 #efefef; }
   .list-graph .top-bar .controls .control-btn {
     position: absolute; }
@@ -116,6 +118,10 @@
     width: 1rem;
     height: 1rem;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .top-bar .control-btn .icon-zoom-out {
+    width: 0.85rem;
+    height: 0.85rem;
+    padding: 0.075rem; }
   .list-graph .top-bar .controls .icon-gear {
     display: none;
     top: 0.35rem;
@@ -156,6 +162,8 @@
   .list-graph .scrollbar {
     fill: #000;
     fill-opacity: 0; }
+  .list-graph .zoomedOut .scrollbar {
+    fill-opacity: 0 !important; }
   .list-graph .scrollbar.ready {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph:hover .scrollbar {
@@ -308,13 +316,14 @@
     opacity: 0 !important; }
   .list-graph .node:hover .focus-controls.inactive .state-inactive,
   .list-graph .node .focus-controls.active .state-active,
-  .list-graph .node.query-and .focus-controls .state-and,
-  .list-graph .node.query-or .focus-controls .state-or,
+  .list-graph .node.query-and .focus-controls .state-and-or,
+  .list-graph .node.query-or .focus-controls .state-and-or,
   .list-graph .node.query-not .focus-controls .state-not {
     opacity: 1; }
-  .list-graph .node .focus-controls .state-and-or {
-    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph .node.query-and .focus-controls .state-and-or {
+  .list-graph .node .focus-controls .state-and-or use {
+    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1);
+    transform-origin: 50% 50%; }
+  .list-graph .node.query-and .focus-controls .state-and-or use {
     transform: scale(1, -1); }
   .list-graph .bar-border,
   .list-graph .bar-magnitude {
