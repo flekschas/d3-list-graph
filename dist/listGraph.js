@@ -701,16 +701,18 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function update(selection, sortBy) {
         var _this2 = this;
 
-        selection.each(function () {
+        selection.each(function (data) {
           var el = d3.select(this);
 
-          if (el.classed('active')) {
-            el.classed('active', false);
-          } else {
+          if (data.id === sortBy && !el.classed('active')) {
             el.classed('active', true);
             // Ensure that the active bars we are places before any other bar,
             // thus placing them in the background
             this.parentNode.insertBefore(this, d3.select(this.parentNode).select('.bar').node());
+          }
+
+          if (data.id !== sortBy) {
+            el.classed('active', false);
           }
         });
 
@@ -2599,14 +2601,17 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.events.on('d3ListGraphNodeRoot', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+        _this.updateSorting();
       });
 
       this.events.on('d3ListGraphNodeUnroot', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+        _this.updateSorting();
       });
 
       this.events.on('d3ListGraphUpdateBars', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+        _this.updateSorting();
       });
 
       this.events.on('d3ListGraphActiveLevel', function (nextLevel) {
@@ -2712,6 +2717,14 @@ var ListGraph = (function ($,d3) { 'use strict';
       key: 'selectByLevel',
       value: function selectByLevel(level, selector) {
         return d3.select(this.levels.groups[0][level]).selectAll(selector);
+      }
+    }, {
+      key: 'updateSorting',
+      value: function updateSorting() {
+        var levels = Object.keys(this.currentSorting.local);
+        for (var i = levels.length; i--;) {
+          this.sortColumn(i, this.currentSorting.local[levels[i]].type, this.currentSorting.local[levels[i]].order, this.currentSorting.local[levels[i]].type);
+        }
       }
     }, {
       key: 'sortColumn',

@@ -333,7 +333,7 @@
     fill-opacity: 0.1;
     shape-rendering: crispEdges; }
   .list-graph .column.active .bar-magnitude {
-    fill-opacity: 0.25; }
+    fill-opacity: 0.15; }
   .list-graph .node.focus-directly .bar-magnitude {
     fill-opacity: 0.2; }
   .list-graph .bar-indicator {
@@ -355,6 +355,8 @@
     fill-opacity: 0.05; }
   .list-graph .two-bar .bar.active .bar-magnitude {
     fill-opacity: 0.15; }
+  .list-graph .two-bar .column.active .bar.active .bar-magnitude {
+    fill-opacity: 0.25; }
   .list-graph .bar-border {
     fill: none;
     stroke: #ffe0d5;
