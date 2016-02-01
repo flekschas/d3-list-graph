@@ -33,19 +33,18 @@ class Bars {
   }
 
   update (selection, sortBy) {
-    selection.each(function () {
+    selection.each(function (data) {
       const el = d3.select(this);
 
-      if (el.classed('active')) {
-        el.classed('active', false);
-      } else {
+      if (data.id === sortBy && !el.classed('active')) {
         el.classed('active', true);
         // Ensure that the active bars we are places before any other bar,
         // thus placing them in the background
-        this.parentNode.insertBefore(
-          this,
-          d3.select(this.parentNode).select('.bar').node()
-        );
+        this.parentNode.insertBefore(this, d3.select(this.parentNode).select('.bar').node());
+      }
+
+      if (data.id !== sortBy) {
+        el.classed('active', false);
       }
     });
 
