@@ -975,7 +975,10 @@ class Nodes {
           this.vis.updateScrollbarVisibility();
         });
 
-      if (newSortType) {
+      if (
+        newSortType &&
+        this.vis.currentSorting.local[update[i].level].type !== 'name'
+      ) {
         this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
       }
     }
