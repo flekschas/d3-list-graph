@@ -708,7 +708,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             el.classed('active', true);
             // Ensure that the active bars we are places before any other bar,
             // thus placing them in the background
-            this.parentNode.insertBefore(this, d3.select(this.parentNode).select('.bar').node());
+            this.parentNode.insertBefore(this, this.parentNode.children[0]);
           }
 
           if (data.id !== sortBy) {
@@ -1553,7 +1553,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             _this3.vis.updateScrollbarVisibility();
           });
 
-          if (newSortType) {
+          if (newSortType && this.vis.currentSorting.local[update[i].level].type !== 'name') {
             this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
           }
         }
@@ -1848,7 +1848,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         return _this.highlightBars(undefined, 'precision', true);
       });
 
-      this.globalPrecisionWrapper = this.globalPrecision.append('div').attr('class', 'wrapper').text('Precision');
+      this.globalPrecisionWrapper = this.globalPrecision.append('div').attr('class', 'wrapper');
+
+      this.globalPrecisionWrapper.append('span').attr('class', 'label').text('Precision');
 
       this.globalPrecisionWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'precision').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
 
@@ -1871,7 +1873,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         return _this.highlightBars(undefined, 'recall', true);
       });
 
-      this.globalRecallWrapper = this.globalRecall.append('div').attr('class', 'wrapper').text('Recall');
+      this.globalRecallWrapper = this.globalRecall.append('div').attr('class', 'wrapper');
+
+      this.globalRecallWrapper.append('span').attr('class', 'label').text('Recall');
 
       this.globalRecallWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'recall').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
 
@@ -1894,7 +1898,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         return _this.highlightLabels(true);
       });
 
-      this.globalNameWrapper = this.globalName.append('div').attr('class', 'wrapper').text('Name');
+      this.globalNameWrapper = this.globalName.append('div').attr('class', 'wrapper');
+
+      this.globalNameWrapper.append('span').attr('class', 'label').text('Name');
 
       this.globalNameWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'name').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
 
@@ -1951,7 +1957,13 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         control.append('li').attr('class', 'control-btn toggle').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleColumn);
 
-        control.append('li').attr('class', 'control-btn sort-precision ease-all').style({
+        control.append('li').attr('class', 'control-btn sort-precision ease-all').classed('active', function () {
+          if (that.vis.currentSorting.local[index].type === 'precision') {
+            // See precision
+            that.vis.currentSorting.local[index].el = d3.select(this);
+            return true;
+          }
+        }).style({
           width: that.visData.global.column.contentWidth / 2 + 'px',
           left: that.visData.global.column.padding + 'px'
         }).on('click', function (controlData) {
@@ -1967,7 +1979,13 @@ var ListGraph = (function ($,d3) { 'use strict';
         '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
         '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
 
-        control.append('li').attr('class', 'control-btn sort-recall ease-all').style({
+        control.append('li').attr('class', 'control-btn sort-recall ease-all').classed('active', function () {
+          if (that.vis.currentSorting.local[index].type === 'recall') {
+            // See recall
+            that.vis.currentSorting.local[index].el = d3.select(this);
+            return true;
+          }
+        }).style({
           width: that.visData.global.column.contentWidth / 2 + 'px',
           left: that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
         }).on('click', function (controlData) {
@@ -2021,10 +2039,14 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'sortAllColumns',
       value: function sortAllColumns(el, type) {
+        if (this.semiActiveSortingEls) {
+          this.resetSemiActiveSortingEls();
+        }
+
         if (this.vis.currentSorting.global.type !== type) {
           // Unset class of previous global sorting element
           if (this.vis.currentSorting.global.el) {
-            this.resetSortEl(this.vis.currentSorting.global.el);
+            this.resetSortEl(this.vis.currentSorting.global.el, type);
           }
         }
 
@@ -2036,21 +2058,28 @@ var ListGraph = (function ($,d3) { 'use strict';
         for (var i = 0, len = columnKeys.length; i < len; i++) {
           this.sortColumn(el, columnKeys[i], type, true);
         }
+
+        this.vis.sortAllColumns(type, this.vis.currentSorting.global.order, true);
       }
     }, {
       key: 'sortColumn',
       value: function sortColumn(el, index, type, global) {
         // Reset global sorting
         if (!global) {
+          if (this.semiActiveSortingEls) {
+            this.resetSemiActiveSortingEls();
+          }
+          if (this.vis.currentSorting.global.type) {
+            this.resetSortEl(this.vis.currentSorting.global.el, type);
+          }
           this.vis.currentSorting.global.type = undefined;
-          this.resetSortEl(this.vis.currentSorting.global.el);
         }
 
         var newSortType = false;
 
         if (this.vis.currentSorting.local[index].el) {
           if (this.vis.currentSorting.local[index].type !== type) {
-            this.resetSortEl(this.vis.currentSorting.local[index].el);
+            this.resetSortEl(this.vis.currentSorting.local[index].el, type);
           }
         }
 
@@ -2076,15 +2105,28 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         this.vis.currentSorting.local[index].el.select('.icon-unsort').classed('visible', false);
 
-        this.vis.sortColumn(index, type, this.vis.currentSorting.local[index].order, newSortType);
+        this.vis.currentSorting.local[index].el.classed('active', true);
+
+        if (!global) {
+          this.vis.sortColumn(index, type, this.vis.currentSorting.local[index].order, newSortType);
+        }
       }
     }, {
       key: 'resetSortEl',
-      value: function resetSortEl(el) {
+      value: function resetSortEl(el, newType) {
         el.classed('active', false);
         el.select('.icon-sort-desc').classed('visible', false);
         el.select('.icon-sort-asc').classed('visible', false);
         el.select('.icon-unsort').classed('visible', true);
+        if (newType === 'name') {
+          el.classed('semi-active', true);
+          this.semiActiveSortingEls = true;
+        }
+      }
+    }, {
+      key: 'resetSemiActiveSortingEls',
+      value: function resetSemiActiveSortingEls() {
+        this.el.selectAll('.semi-active').classed('semi-active', false);
       }
 
       // toggleOptions () {
@@ -2731,6 +2773,12 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function sortColumn(level, property, sortOrder, newSortType) {
         this.nodes.sort(this.layout.sort(level, property, sortOrder).updateNodesVisibility().nodes(level), newSortType);
         this.links.sort(this.layout.links(level - 1, level + 1));
+      }
+    }, {
+      key: 'sortAllColumns',
+      value: function sortAllColumns(property, sortOrder, newSortType) {
+        this.nodes.sort(this.layout.sort(undefined, property, sortOrder).updateNodesVisibility().nodes(), newSortType);
+        this.links.sort(this.layout.links());
       }
     }, {
       key: 'switchBarMode',

@@ -59,7 +59,10 @@ class Topbar {
       );
 
     this.globalPrecisionWrapper = this.globalPrecision.append('div')
-      .attr('class', 'wrapper')
+      .attr('class', 'wrapper');
+
+    this.globalPrecisionWrapper.append('span')
+      .attr('class', 'label')
       .text('Precision');
 
     this.globalPrecisionWrapper.append('svg')
@@ -111,7 +114,10 @@ class Topbar {
       );
 
     this.globalRecallWrapper = this.globalRecall.append('div')
-      .attr('class', 'wrapper')
+      .attr('class', 'wrapper');
+
+    this.globalRecallWrapper.append('span')
+      .attr('class', 'label')
       .text('Recall');
 
     this.globalRecallWrapper.append('svg')
@@ -163,7 +169,10 @@ class Topbar {
       );
 
     this.globalNameWrapper = this.globalName.append('div')
-      .attr('class', 'wrapper')
+      .attr('class', 'wrapper');
+
+    this.globalNameWrapper.append('span')
+      .attr('class', 'label')
       .text('Name');
 
     this.globalNameWrapper.append('svg')
@@ -281,6 +290,13 @@ class Topbar {
 
       control.append('li')
         .attr('class', 'control-btn sort-precision ease-all')
+        .classed('active', function () {
+          if (that.vis.currentSorting.local[index].type === 'precision') {
+            // See precision
+            that.vis.currentSorting.local[index].el = d3.select(this);
+            return true;
+          }
+        })
         .style({
           width: that.visData.global.column.contentWidth / 2 + 'px',
           left: that.visData.global.column.padding + 'px',
@@ -327,6 +343,13 @@ class Topbar {
 
       control.append('li')
         .attr('class', 'control-btn sort-recall ease-all')
+        .classed('active', function () {
+          if (that.vis.currentSorting.local[index].type === 'recall') {
+            // See recall
+            that.vis.currentSorting.local[index].el = d3.select(this);
+            return true;
+          }
+        })
         .style({
           width: that.visData.global.column.contentWidth / 2 + 'px',
           left: that.visData.global.column.contentWidth / 2 +
@@ -411,10 +434,14 @@ class Topbar {
   }
 
   sortAllColumns (el, type) {
+    if (this.semiActiveSortingEls) {
+      this.resetSemiActiveSortingEls();
+    }
+
     if (this.vis.currentSorting.global.type !== type) {
       // Unset class of previous global sorting element
       if (this.vis.currentSorting.global.el) {
-        this.resetSortEl(this.vis.currentSorting.global.el);
+        this.resetSortEl(this.vis.currentSorting.global.el, type);
       }
     }
 
@@ -426,20 +453,31 @@ class Topbar {
     for (let i = 0, len = columnKeys.length; i < len; i++) {
       this.sortColumn(el, columnKeys[i], type, true);
     }
+
+    this.vis.sortAllColumns(
+      type,
+      this.vis.currentSorting.global.order,
+      true
+    );
   }
 
   sortColumn (el, index, type, global) {
     // Reset global sorting
     if (!global) {
+      if (this.semiActiveSortingEls) {
+        this.resetSemiActiveSortingEls();
+      }
+      if (this.vis.currentSorting.global.type) {
+        this.resetSortEl(this.vis.currentSorting.global.el, type);
+      }
       this.vis.currentSorting.global.type = undefined;
-      this.resetSortEl(this.vis.currentSorting.global.el);
     }
 
     let newSortType = false;
 
     if (this.vis.currentSorting.local[index].el) {
       if (this.vis.currentSorting.local[index].type !== type) {
-        this.resetSortEl(this.vis.currentSorting.local[index].el);
+        this.resetSortEl(this.vis.currentSorting.local[index].el, type);
       }
     }
 
@@ -470,19 +508,31 @@ class Topbar {
     this.vis.currentSorting.local[index].el.select('.icon-unsort')
       .classed('visible', false);
 
-    this.vis.sortColumn(
-      index,
-      type,
-      this.vis.currentSorting.local[index].order,
-      newSortType
-    );
+    this.vis.currentSorting.local[index].el.classed('active', true);
+
+    if (!global) {
+      this.vis.sortColumn(
+        index,
+        type,
+        this.vis.currentSorting.local[index].order,
+        newSortType
+      );
+    }
   }
 
-  resetSortEl (el) {
+  resetSortEl (el, newType) {
     el.classed('active', false);
     el.select('.icon-sort-desc').classed('visible', false);
     el.select('.icon-sort-asc').classed('visible', false);
     el.select('.icon-unsort').classed('visible', true);
+    if (newType === 'name') {
+      el.classed('semi-active', true);
+      this.semiActiveSortingEls = true;
+    }
+  }
+
+  resetSemiActiveSortingEls () {
+    this.el.selectAll('.semi-active').classed('semi-active', false);
   }
 
   // toggleOptions () {

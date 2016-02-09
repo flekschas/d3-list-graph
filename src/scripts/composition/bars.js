@@ -40,7 +40,10 @@ class Bars {
         el.classed('active', true);
         // Ensure that the active bars we are places before any other bar,
         // thus placing them in the background
-        this.parentNode.insertBefore(this, d3.select(this.parentNode).select('.bar').node());
+        this.parentNode.insertBefore(
+          this,
+          this.parentNode.children[0]
+        );
       }
 
       if (data.id !== sortBy) {

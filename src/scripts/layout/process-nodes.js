@@ -1,3 +1,4 @@
+// External
 import isArray from '../../../node_modules/lodash-es/lang/isArray.js';
 import isObject from '../../../node_modules/lodash-es/lang/isObject.js';
 
