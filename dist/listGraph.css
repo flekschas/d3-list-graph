@@ -166,17 +166,23 @@
     fill-opacity: 0.05; }
   .list-graph .scrollbar {
     fill: #000;
-    fill-opacity: 0; }
+    fill-opacity: 0;
+    stroke: #fff;
+    stroke-width: 1px;
+    stroke-opacity: 0; }
   .list-graph .zoomedOut .scrollbar {
     fill-opacity: 0 !important; }
   .list-graph .scrollbar.ready {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph:hover .scrollbar {
-    fill-opacity: 0.1; }
+    fill-opacity: 0.15;
+    stroke-opacity: 0.33; }
   .list-graph:hover .column:hover .scrollbar {
-    fill-opacity: 0.33; }
+    fill-opacity: 0.33;
+    stroke-opacity: 0.66; }
   .list-graph:hover .scrollbar:hover {
-    fill-opacity: 0.66; }
+    fill-opacity: 0.66;
+    stroke-opacity: 1; }
   .list-graph .scrollbar.active {
     fill-opacity: 1 !important; }
   .list-graph .node {
