@@ -37,18 +37,24 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  *   Boolean value which should prevent the dragMoveHandler from working.
  */
 export function onDragDrop (
-  selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits,
-  notWhenTrue
+  selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged,
+  orientation, limits, notWhenTrue
 ) {
   const drag = d3.behavior.drag();
 
   let appliedLimits = limits || {};  // eslint-disable-line no-param-reassign
 
-  if (dragMoveHandler) {
-    drag.on('drag', function (data) {
+  if (dragStartHandler) {
+    drag.on('dragstart', function () {
       if (typeof limits === 'function') {
         appliedLimits = limits();
       }
+      dragStartHandler();
+    });
+  }
+
+  if (dragMoveHandler) {
+    drag.on('drag', function (data) {
       dragMoveHandler.call(
         this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue
       );
@@ -56,11 +62,7 @@ export function onDragDrop (
   }
 
   if (dropHandler) {
-    drag.on('dragend', function (data) {
-      dropHandler.call(
-        this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue
-      );
-    });
+    drag.on('dragend', dropHandler);
   }
 
   selection.each(function (data) {

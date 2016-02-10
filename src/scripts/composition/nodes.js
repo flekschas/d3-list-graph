@@ -66,42 +66,46 @@ class Nodes {
         .attr('transform', data => 'translate(' +
           (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
         .on('mouseenter', function (data) {
-          const el = d3.select(this);
+          that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
+            const el = d3.select(domEl);
 
-          if (!!!that.vis.activeScrollbar) {
-            that.enterHandler.call(that, this, data);
-          }
+            if (!!!this.vis.activeScrollbar) {
+              this.enterHandler.call(this, domEl, _data);
+            }
 
-          if (!el.classed('rooted')) {
-            el.selectAll('.bg-extension')
-              .style(
-                'transform',
-                'translateX(' + (-(that.iconDimension * 2 + 10)) + 'px)'
-              );
-          }
-        })
-        .on('mouseleave', function (data) {
-          const el = d3.select(this);
-
-          if (!!!that.vis.activeScrollbar) {
-            that.leaveHandler.call(that, this, data);
-          }
-
-          if (!el.classed('rooted')) {
-            if (data.data.queryMode) {
+            if (!el.classed('rooted')) {
               el.selectAll('.bg-extension')
                 .style(
                   'transform',
-                  'translateX(' + (-that.iconDimension - 6) + 'px)'
-                );
-            } else {
-              el.selectAll('.bg-extension')
-                .style(
-                  'transform',
-                  'translateX(0px)'
+                  'translateX(' + (-(this.iconDimension * 2 + 10)) + 'px)'
                 );
             }
-          }
+          }.bind(that), [this, data]);
+        })
+        .on('mouseleave', function (data) {
+          that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
+            const el = d3.select(domEl);
+
+            if (!!!this.vis.activeScrollbar) {
+              this.leaveHandler.call(this, domEl, _data);
+            }
+
+            if (!el.classed('rooted')) {
+              if (_data.data.queryMode) {
+                el.selectAll('.bg-extension')
+                  .style(
+                    'transform',
+                    'translateX(' + (-this.iconDimension - 6) + 'px)'
+                  );
+              } else {
+                el.selectAll('.bg-extension')
+                  .style(
+                    'transform',
+                    'translateX(0px)'
+                  );
+              }
+            }
+          }.bind(that), [this, data]);
         });
 
     this.nodes
