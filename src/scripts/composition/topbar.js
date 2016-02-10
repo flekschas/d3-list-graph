@@ -49,14 +49,16 @@ class Topbar {
       .on('click', function () {
         that.sortAllColumns(this, 'precision');
       })
-      .on(
-        'mouseenter',
-        () => this.highlightBars(undefined, 'precision')
-      )
-      .on(
-        'mouseleave',
-        () => this.highlightBars(undefined, 'precision', true)
-      );
+      .on('mouseenter', () => {
+        this.vis.interactionWrapper.call(this.vis, function () {
+          this.highlightBars(undefined, 'precision');
+        }.bind(this), []);
+      })
+      .on('mouseleave', () => {
+        this.vis.interactionWrapper.call(this.vis, function () {
+          this.highlightBars(undefined, 'precision', true);
+        }.bind(this), []);
+      });
 
     this.globalPrecisionWrapper = this.globalPrecision.append('div')
       .attr('class', 'wrapper');
@@ -104,14 +106,16 @@ class Topbar {
       .on('click', function () {
         that.sortAllColumns(this, 'recall');
       })
-      .on(
-        'mouseenter',
-        () => this.highlightBars(undefined, 'recall')
-      )
-      .on(
-        'mouseleave',
-        () => this.highlightBars(undefined, 'recall', true)
-      );
+      .on('mouseenter', () => {
+        this.vis.interactionWrapper.call(this.vis, function () {
+          this.highlightBars(undefined, 'recall');
+        }.bind(this), []);
+      })
+      .on('mouseleave', () => {
+        this.vis.interactionWrapper.call(this.vis, function () {
+          this.highlightBars(undefined, 'recall', true);
+        }.bind(this), []);
+      });
 
     this.globalRecallWrapper = this.globalRecall.append('div')
       .attr('class', 'wrapper');
@@ -159,14 +163,16 @@ class Topbar {
       .on('click', function () {
         that.sortAllColumns(this, 'name');
       })
-      .on(
-        'mouseenter',
-        () => this.highlightLabels()
-      )
-      .on(
-        'mouseleave',
-        () => this.highlightLabels(true)
-      );
+      .on('mouseenter', () => {
+        this.vis.interactionWrapper.call(this.vis, function () {
+          this.highlightLabels();
+        }.bind(this), []);
+      })
+      .on('mouseleave', () => {
+        this.vis.interactionWrapper.call(this.vis, function () {
+          this.highlightLabels(true);
+        }.bind(this), []);
+      });
 
     this.globalNameWrapper = this.globalName.append('div')
       .attr('class', 'wrapper');
@@ -239,8 +245,16 @@ class Topbar {
     this.globalZoomOut = this.globalControls.append('li')
       .attr('class', 'control-btn zoom-out')
       .classed('active', this.vis.zoomedOut)
-      .on('mouseenter', this.vis.globalView.bind(this.vis))
-      .on('mouseleave', this.vis.zoomedView.bind(this.vis))
+      .on('mouseenter', () => {
+        this.vis.interactionWrapper.call(this.vis, function () {
+          this.vis.globalView.call(this.vis);
+        }.bind(this), []);
+      })
+      .on('mouseleave', () => {
+        this.vis.interactionWrapper.call(this.vis, function () {
+          this.vis.zoomedView.call(this.vis);
+        }.bind(this), []);
+      })
       .on('click', function () {
         that.vis.toggleView.call(that.vis);
         d3.select(this).classed('active', that.vis.zoomedOut);

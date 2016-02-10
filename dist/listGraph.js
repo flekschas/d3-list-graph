@@ -152,24 +152,28 @@ var ListGraph = (function ($,d3) { 'use strict';
    * @param   {Array}             notWhenTrue     List if function returning a
    *   Boolean value which should prevent the dragMoveHandler from working.
    */
-  function onDragDrop(selection, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue) {
+  function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue) {
     var drag = d3.behavior.drag();
 
     var appliedLimits = limits || {}; // eslint-disable-line no-param-reassign
 
-    if (dragMoveHandler) {
-      drag.on('drag', function (data) {
+    if (dragStartHandler) {
+      drag.on('dragstart', function () {
         if (typeof limits === 'function') {
           appliedLimits = limits();
         }
+        dragStartHandler();
+      });
+    }
+
+    if (dragMoveHandler) {
+      drag.on('drag', function (data) {
         dragMoveHandler.call(this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue);
       });
     }
 
     if (dropHandler) {
-      drag.on('dragend', function (data) {
-        dropHandler.call(this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue);
-      });
+      drag.on('dragend', dropHandler);
     }
 
     selection.each(function (data) {
@@ -820,29 +824,33 @@ var ListGraph = (function ($,d3) { 'use strict';
       }).attr('transform', function (data) {
         return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
       }).on('mouseenter', function (data) {
-        var el = d3.select(this);
+        that.vis.interactionWrapper.call(that.vis, (function (domEl, _data) {
+          var el = d3.select(domEl);
 
-        if (!!!that.vis.activeScrollbar) {
-          that.enterHandler.call(that, this, data);
-        }
-
-        if (!el.classed('rooted')) {
-          el.selectAll('.bg-extension').style('transform', 'translateX(' + -(that.iconDimension * 2 + 10) + 'px)');
-        }
-      }).on('mouseleave', function (data) {
-        var el = d3.select(this);
-
-        if (!!!that.vis.activeScrollbar) {
-          that.leaveHandler.call(that, this, data);
-        }
-
-        if (!el.classed('rooted')) {
-          if (data.data.queryMode) {
-            el.selectAll('.bg-extension').style('transform', 'translateX(' + (-that.iconDimension - 6) + 'px)');
-          } else {
-            el.selectAll('.bg-extension').style('transform', 'translateX(0px)');
+          if (!!!this.vis.activeScrollbar) {
+            this.enterHandler.call(this, domEl, _data);
           }
-        }
+
+          if (!el.classed('rooted')) {
+            el.selectAll('.bg-extension').style('transform', 'translateX(' + -(this.iconDimension * 2 + 10) + 'px)');
+          }
+        }).bind(that), [this, data]);
+      }).on('mouseleave', function (data) {
+        that.vis.interactionWrapper.call(that.vis, (function (domEl, _data) {
+          var el = d3.select(domEl);
+
+          if (!!!this.vis.activeScrollbar) {
+            this.leaveHandler.call(this, domEl, _data);
+          }
+
+          if (!el.classed('rooted')) {
+            if (_data.data.queryMode) {
+              el.selectAll('.bg-extension').style('transform', 'translateX(' + (-this.iconDimension - 6) + 'px)');
+            } else {
+              el.selectAll('.bg-extension').style('transform', 'translateX(0px)');
+            }
+          }
+        }).bind(that), [this, data]);
       });
 
       this.nodes.append('rect').call(drawFullSizeRect, 'bg-extension').attr('width', Math.max(this.visData.global.column.padding + this.visData.global.column.contentWidth / 2, this.visData.global.column.contentWidth));
@@ -1843,9 +1851,13 @@ var ListGraph = (function ($,d3) { 'use strict';
       }).on('click', function () {
         that.sortAllColumns(this, 'precision');
       }).on('mouseenter', function () {
-        return _this.highlightBars(undefined, 'precision');
+        _this.vis.interactionWrapper.call(_this.vis, (function () {
+          this.highlightBars(undefined, 'precision');
+        }).bind(_this), []);
       }).on('mouseleave', function () {
-        return _this.highlightBars(undefined, 'precision', true);
+        _this.vis.interactionWrapper.call(_this.vis, (function () {
+          this.highlightBars(undefined, 'precision', true);
+        }).bind(_this), []);
       });
 
       this.globalPrecisionWrapper = this.globalPrecision.append('div').attr('class', 'wrapper');
@@ -1868,9 +1880,13 @@ var ListGraph = (function ($,d3) { 'use strict';
       }).on('click', function () {
         that.sortAllColumns(this, 'recall');
       }).on('mouseenter', function () {
-        return _this.highlightBars(undefined, 'recall');
+        _this.vis.interactionWrapper.call(_this.vis, (function () {
+          this.highlightBars(undefined, 'recall');
+        }).bind(_this), []);
       }).on('mouseleave', function () {
-        return _this.highlightBars(undefined, 'recall', true);
+        _this.vis.interactionWrapper.call(_this.vis, (function () {
+          this.highlightBars(undefined, 'recall', true);
+        }).bind(_this), []);
       });
 
       this.globalRecallWrapper = this.globalRecall.append('div').attr('class', 'wrapper');
@@ -1893,9 +1909,13 @@ var ListGraph = (function ($,d3) { 'use strict';
       }).on('click', function () {
         that.sortAllColumns(this, 'name');
       }).on('mouseenter', function () {
-        return _this.highlightLabels();
+        _this.vis.interactionWrapper.call(_this.vis, (function () {
+          this.highlightLabels();
+        }).bind(_this), []);
       }).on('mouseleave', function () {
-        return _this.highlightLabels(true);
+        _this.vis.interactionWrapper.call(_this.vis, (function () {
+          this.highlightLabels(true);
+        }).bind(_this), []);
       });
 
       this.globalNameWrapper = this.globalName.append('div').attr('class', 'wrapper');
@@ -1927,7 +1947,15 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.globalTwoBarsWrapper.append('svg').attr('class', 'icon-two-bars').append('use').attr('xlink:href', this.vis.iconPath + '#two-bars');
 
       // Add button for zoom-out
-      this.globalZoomOut = this.globalControls.append('li').attr('class', 'control-btn zoom-out').classed('active', this.vis.zoomedOut).on('mouseenter', this.vis.globalView.bind(this.vis)).on('mouseleave', this.vis.zoomedView.bind(this.vis)).on('click', function () {
+      this.globalZoomOut = this.globalControls.append('li').attr('class', 'control-btn zoom-out').classed('active', this.vis.zoomedOut).on('mouseenter', function () {
+        _this.vis.interactionWrapper.call(_this.vis, (function () {
+          this.vis.globalView.call(this.vis);
+        }).bind(_this), []);
+      }).on('mouseleave', function () {
+        _this.vis.interactionWrapper.call(_this.vis, (function () {
+          this.vis.zoomedView.call(this.vis);
+        }).bind(_this), []);
+      }).on('click', function () {
         that.vis.toggleView.call(that.vis);
         d3.select(this).classed('active', that.vis.zoomedOut);
       });
@@ -2635,7 +2663,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
 
       // Enable dragging of the whole graph.
-      this.svgD3.call(onDragDrop, dragMoveHandler, undefined, [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), [this.scrollbarDragging.bind(this)]);
+      this.svgD3.call(onDragDrop, this.dragStartHandler.bind(this), dragMoveHandler, this.dragEndHandler.bind(this), [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), [this.scrollbarDragging.bind(this)]);
 
       this.events.on('d3ListGraphLevelFocus', function (levelId) {
         return _this.levels.focus(levelId);
@@ -2681,6 +2709,25 @@ var ListGraph = (function ($,d3) { 'use strict';
         };
       }
     }, {
+      key: 'interactionWrapper',
+      value: function interactionWrapper(callback, params) {
+        if (!this.noInteractions) {
+          callback.apply(this, params);
+        }
+      }
+    }, {
+      key: 'dragStartHandler',
+      value: function dragStartHandler() {
+        this.noInteractions = true;
+        this.baseElD3.classed('unselectable', true);
+      }
+    }, {
+      key: 'dragEndHandler',
+      value: function dragEndHandler() {
+        this.noInteractions = false;
+        this.baseElD3.classed('unselectable', false);
+      }
+    }, {
       key: 'scrollbarDragging',
       value: function scrollbarDragging() {
         return !!this.activeScrollbar;
@@ -2688,7 +2735,9 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'globalMouseUp',
       value: function globalMouseUp(event) {
+        this.noInteractions = false;
         if (this.activeScrollbar) {
+          this.baseElD3.classed('unselectable', false);
           var data = this.activeScrollbar.datum();
           var deltaY = data.scrollbar.clientY - event.clientY;
 
@@ -2728,6 +2777,8 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'scrollbarMouseDown',
       value: function scrollbarMouseDown(el, event) {
+        this.noInteractions = true;
+        this.baseElD3.classed('unselectable', true);
         this.activeScrollbar = d3.select(el).classed('active', true);
         this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
       }

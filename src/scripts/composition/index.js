@@ -206,8 +206,9 @@ class ListGraph {
     // Enable dragging of the whole graph.
     this.svgD3.call(
       onDragDrop,
+      this.dragStartHandler.bind(this),
       dragMoveHandler,
-      undefined,
+      this.dragEndHandler.bind(this),
       [
         this.container,
         this.topbar.localControlWrapper,
@@ -288,6 +289,22 @@ class ListGraph {
     };
   }
 
+  interactionWrapper (callback, params) {
+    if (!this.noInteractions) {
+      callback.apply(this, params);
+    }
+  }
+
+  dragStartHandler () {
+    this.noInteractions = true;
+    this.baseElD3.classed('unselectable', true);
+  }
+
+  dragEndHandler () {
+    this.noInteractions = false;
+    this.baseElD3.classed('unselectable', false);
+  }
+
   static scrollY (el, offset) {
     d3.select(el).attr(
       'transform',
@@ -300,7 +317,9 @@ class ListGraph {
   }
 
   globalMouseUp (event) {
+    this.noInteractions = false;
     if (this.activeScrollbar) {
+      this.baseElD3.classed('unselectable', false);
       const data = this.activeScrollbar.datum();
       const deltaY = data.scrollbar.clientY - event.clientY;
 
@@ -398,6 +417,8 @@ class ListGraph {
   }
 
   scrollbarMouseDown (el, event) {
+    this.noInteractions = true;
+    this.baseElD3.classed('unselectable', true);
     this.activeScrollbar = d3.select(el).classed('active', true);
     this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
   }

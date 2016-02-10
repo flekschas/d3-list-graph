@@ -239,6 +239,9 @@
   .scrollbar {
     fill: #000;
     fill-opacity: 0;
+    stroke: #fff;
+    stroke-width: 1px;
+    stroke-opacity: 0;
   }
 
   .zoomedOut .scrollbar {
@@ -250,15 +253,18 @@
   }
 
   &:hover .scrollbar {
-    fill-opacity: 0.1;
+    fill-opacity: 0.15;
+    stroke-opacity: 0.33;
   }
 
   &:hover .column:hover .scrollbar {
     fill-opacity: 0.33;
+    stroke-opacity: 0.66;
   }
 
   &:hover .scrollbar:hover {
     fill-opacity: 0.66;
+    stroke-opacity: 1;
   }
 
   .scrollbar.active {
@@ -625,5 +631,14 @@
 
   .ease-all {
     transition: all $transitionFast $easeInOutCubic;
+  }
+
+  &.unselectable .label {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
   }
 }
