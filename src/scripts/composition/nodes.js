@@ -787,14 +787,47 @@ class Nodes {
     }
   }
 
+  /**
+   * Helper method to hide nodes.
+   *
+   * @method  hideNodes
+   * @author  Fritz Lekschas
+   * @date    2016-02-21
+   * @param   {Object}  el         DOM element.
+   * @param   {Object}  data       D3 data object of `el`.
+   * @param   {String}  direction  Defines whether upstream or downstream nodes
+   *   should be hidden.
+   */
   hideNodes (el, data, direction) {
-    return this.nodesVisibility(el, data, direction);
+    this.nodesVisibility(el, data, direction);
   }
 
+  /**
+   * Helper method to show nodes.
+   *
+   * @method  showNodes
+   * @author  Fritz Lekschas
+   * @date    2016-02-21
+   * @param   {Object}  el         DOM element.
+   * @param   {Object}  data       D3 data object of `el`.
+   * @param   {String}  direction  Defines whether upstream or downstream nodes
+   *   should be shown.
+   */
   showNodes (el, data, direction) {
-    return this.nodesVisibility(el, data, direction, true);
+    this.nodesVisibility(el, data, direction, true);
   }
 
+  /**
+   * Sets the nodes' visibility
+   *
+   * @method  nodesVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-02-21
+   * @param   {Object}   el         DOM element.
+   * @param   {Object}   data       D3 data object of `el`.
+   * @param   {String}   direction  Defines whether upstream or downstream nodes
+   * @param   {Boolean}  show       If `true` nodes will be shown.
+   */
   nodesVisibility (el, data, direction, show) {
     if (show) {
       this.nodes
@@ -976,7 +1009,7 @@ class Nodes {
         .call(allTransitionsEnded, () => {
           this.vis.svgD3.classed('sorting', false);
           this.vis.updateLevelsVisibility();
-          this.vis.updateScrollbarVisibility();
+          this.vis.updateScrolling();
         });
 
       if (
@@ -988,9 +1021,18 @@ class Nodes {
     }
   }
 
+  /**
+   * Updates the nodes' visibility visually.
+   *
+   * @method  updateVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-02-21
+   */
   updateVisibility () {
+    // Calls the D3 list graph layout method to update the nodes position.
     this.vis.layout.updateNodesVisibility();
 
+    // Transition to the updated position
     this.nodes
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
@@ -998,7 +1040,7 @@ class Nodes {
         (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
       .call(allTransitionsEnded, () => {
         this.vis.updateLevelsVisibility();
-        this.vis.updateScrollbarVisibility();
+        this.vis.updateScrolling();
       });
 
     this.vis.links.updateVisibility();
