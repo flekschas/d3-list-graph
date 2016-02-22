@@ -14,6 +14,7 @@ import Nodes from './nodes';
 import Scrollbars from './scrollbars';
 import Events from './events';
 import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
+import { allTransitionsEnded } from '../commons/d3-utils';
 
 class ListGraph {
   constructor (baseEl, data, rootNodes, options) {
@@ -305,7 +306,7 @@ class ListGraph {
     this.baseElD3.classed('unselectable', false);
   }
 
-  static scrollY (el, offset) {
+  static scrollElVertically (el, offset) {
     d3.select(el).attr(
       'transform',
       'translate(0, ' + offset + ')'
@@ -355,7 +356,7 @@ class ListGraph {
       const deltaY = data.scrollbar.clientY - event.clientY;
 
       // Scroll scrollbar
-      ListGraph.scrollY(
+      ListGraph.scrollElVertically(
         this.activeScrollbar.node(),
         Math.min(
           Math.max(
@@ -376,7 +377,7 @@ class ListGraph {
         -data.scrollHeight
       );
 
-      ListGraph.scrollY(
+      ListGraph.scrollElVertically(
         data.nodes,
         contentScrollTop
       );
@@ -435,37 +436,62 @@ class ListGraph {
         -data.scrollHeight
       );
 
-      ListGraph.scrollY(data.nodes, data.scrollTop);
+      this.scrollY(data);
+    }
+  }
 
-      // Scroll scrollbar
-      data.scrollbar.scrollTop = data.scrollbar.heightScale(
-        -data.scrollTop
-      );
+  scrollY (columnData) {
+    ListGraph.scrollElVertically(columnData.nodes, columnData.scrollTop);
 
-      ListGraph.scrollY(
-        data.scrollbar.el,
-        data.scrollbar.scrollTop
-      );
+    // Scroll scrollbar
+    columnData.scrollbar.scrollTop = columnData.scrollbar.heightScale(
+      -columnData.scrollTop
+    );
 
-      // Scroll Links
+    ListGraph.scrollElVertically(
+      columnData.scrollbar.el,
+      columnData.scrollbar.scrollTop
+    );
+
+    // Scroll Links
+    if (columnData.level === this.visData.nodes.length) {
       this.links.scroll(
-        data.linkSelections.outgoing,
+        columnData.linkSelections.outgoing,
         this.layout.offsetLinks(
-          data.level,
-          data.scrollTop,
+          columnData.level,
+          columnData.scrollTop,
           'source'
         )
       );
+    }
 
+    if (columnData.level > 0) {
       this.links.scroll(
-        data.linkSelections.incoming,
+        columnData.linkSelections.incoming,
         this.layout.offsetLinks(
-          data.level - 1,
-          data.scrollTop,
+          columnData.level - 1,
+          columnData.scrollTop,
           'target'
         )
       );
     }
+  }
+
+  scrollYTo (selection, positionY) {
+    return selection
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .tween('scrollY', data => {
+        const scrollPositionY = d3.interpolateNumber(data.scrollTop, positionY);
+        return time => {
+          data.scrollTop = scrollPositionY(time);
+          this.scrollY(data);
+        };
+      });
+  }
+
+  resetAllScrollPositions () {
+    return this.scrollYTo(this.levels.groups, 0);
   }
 
   selectByLevel (level, selector) {
@@ -516,9 +542,21 @@ class ListGraph {
     this.events.trigger(event, data);
   }
 
-  updateScrollbarVisibility () {
-    this.levels.updateScrollProperties();
-    this.scrollbars.updateVisibility();
+  /**
+   * Update the scroll position and scroll-bar visibility.
+   *
+   * @description
+   * This method needs to be called after hiding or showing nodes.
+   *
+   * @method  updateScrolling
+   * @author  Fritz Lekschas
+   * @date    2016-02-21
+   */
+  updateScrolling () {
+    this.resetAllScrollPositions().call(allTransitionsEnded, () => {
+      this.levels.updateScrollProperties();
+      this.scrollbars.updateVisibility();
+    });
   }
 
   updateLevelsVisibility () {
