@@ -75,23 +75,6 @@ var ListGraph = (function ($,d3) { 'use strict';
   var COLOR_NEGATIVE_RED = '#e0001c';
   var COLOR_POSITIVE_GREEN = '#60bf00';
 
-  var ExtendableError = (function (_Error) {
-    babelHelpers.inherits(ExtendableError, _Error);
-
-    function ExtendableError(message) {
-      babelHelpers.classCallCheck(this, ExtendableError);
-
-      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
-
-      _this.name = _this.constructor.name;
-      _this.message = message;
-      Error.captureStackTrace(_this, _this.constructor.name);
-      return _this;
-    }
-
-    return ExtendableError;
-  })(Error);
-
   function mergeSelections(selections) {
     // Create a new empty selection
     var mergedSelection = d3.selectAll('.d3-list-graph-not-existent');
@@ -120,6 +103,23 @@ var ListGraph = (function ($,d3) { 'use strict';
       if (! --n) callback.apply(this, arguments);
     });
   }
+
+  var ExtendableError = (function (_Error) {
+    babelHelpers.inherits(ExtendableError, _Error);
+
+    function ExtendableError(message) {
+      babelHelpers.classCallCheck(this, ExtendableError);
+
+      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
+
+      _this.name = _this.constructor.name;
+      _this.message = message;
+      Error.captureStackTrace(_this, _this.constructor.name);
+      return _this;
+    }
+
+    return ExtendableError;
+  })(Error);
 
   var LimitsUnsupportedFormat = (function (_ExtendableError) {
     babelHelpers.inherits(LimitsUnsupportedFormat, _ExtendableError);
@@ -1375,16 +1375,55 @@ var ListGraph = (function ($,d3) { 'use strict';
           });
         }
       }
+
+      /**
+       * Helper method to hide nodes.
+       *
+       * @method  hideNodes
+       * @author  Fritz Lekschas
+       * @date    2016-02-21
+       * @param   {Object}  el         DOM element.
+       * @param   {Object}  data       D3 data object of `el`.
+       * @param   {String}  direction  Defines whether upstream or downstream nodes
+       *   should be hidden.
+       */
+
     }, {
       key: 'hideNodes',
       value: function hideNodes(el, data, direction) {
-        return this.nodesVisibility(el, data, direction);
+        this.nodesVisibility(el, data, direction);
       }
+
+      /**
+       * Helper method to show nodes.
+       *
+       * @method  showNodes
+       * @author  Fritz Lekschas
+       * @date    2016-02-21
+       * @param   {Object}  el         DOM element.
+       * @param   {Object}  data       D3 data object of `el`.
+       * @param   {String}  direction  Defines whether upstream or downstream nodes
+       *   should be shown.
+       */
+
     }, {
       key: 'showNodes',
       value: function showNodes(el, data, direction) {
-        return this.nodesVisibility(el, data, direction, true);
+        this.nodesVisibility(el, data, direction, true);
       }
+
+      /**
+       * Sets the nodes' visibility
+       *
+       * @method  nodesVisibility
+       * @author  Fritz Lekschas
+       * @date    2016-02-21
+       * @param   {Object}   el         DOM element.
+       * @param   {Object}   data       D3 data object of `el`.
+       * @param   {String}   direction  Defines whether upstream or downstream nodes
+       * @param   {Boolean}  show       If `true` nodes will be shown.
+       */
+
     }, {
       key: 'nodesVisibility',
       value: function nodesVisibility(el, data, direction, show) {
@@ -1558,7 +1597,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           }).call(allTransitionsEnded, function () {
             _this3.vis.svgD3.classed('sorting', false);
             _this3.vis.updateLevelsVisibility();
-            _this3.vis.updateScrollbarVisibility();
+            _this3.vis.updateScrolling();
           });
 
           if (newSortType && this.vis.currentSorting.local[update[i].level].type !== 'name') {
@@ -1566,18 +1605,29 @@ var ListGraph = (function ($,d3) { 'use strict';
           }
         }
       }
+
+      /**
+       * Updates the nodes' visibility visually.
+       *
+       * @method  updateVisibility
+       * @author  Fritz Lekschas
+       * @date    2016-02-21
+       */
+
     }, {
       key: 'updateVisibility',
       value: function updateVisibility() {
         var _this4 = this;
 
+        // Calls the D3 list graph layout method to update the nodes position.
         this.vis.layout.updateNodesVisibility();
 
+        // Transition to the updated position
         this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
           return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
         }).call(allTransitionsEnded, function () {
           _this4.vis.updateLevelsVisibility();
-          _this4.vis.updateScrollbarVisibility();
+          _this4.vis.updateScrolling();
         });
 
         this.vis.links.updateVisibility();
@@ -2761,12 +2811,12 @@ var ListGraph = (function ($,d3) { 'use strict';
           var deltaY = data.scrollbar.clientY - event.clientY;
 
           // Scroll scrollbar
-          ListGraph.scrollY(this.activeScrollbar.node(), Math.min(Math.max(data.scrollbar.scrollTop - deltaY, 0), data.scrollbar.scrollHeight));
+          ListGraph.scrollElVertically(this.activeScrollbar.node(), Math.min(Math.max(data.scrollbar.scrollTop - deltaY, 0), data.scrollbar.scrollHeight));
 
           // Scroll content
           var contentScrollTop = Math.max(Math.min(data.scrollTop + data.invertedHeightScale(deltaY), 0), -data.scrollHeight);
 
-          ListGraph.scrollY(data.nodes, contentScrollTop);
+          ListGraph.scrollElVertically(data.nodes, contentScrollTop);
 
           // Scroll Links
           this.links.scroll(data.linkSelections.outgoing, this.layout.offsetLinks(data.level, contentScrollTop, 'source'));
@@ -2793,18 +2843,45 @@ var ListGraph = (function ($,d3) { 'use strict';
           // Scroll nodes
           data.scrollTop = Math.max(Math.min(data.scrollTop + event.deltaY, 0), -data.scrollHeight);
 
-          ListGraph.scrollY(data.nodes, data.scrollTop);
-
-          // Scroll scrollbar
-          data.scrollbar.scrollTop = data.scrollbar.heightScale(-data.scrollTop);
-
-          ListGraph.scrollY(data.scrollbar.el, data.scrollbar.scrollTop);
-
-          // Scroll Links
-          this.links.scroll(data.linkSelections.outgoing, this.layout.offsetLinks(data.level, data.scrollTop, 'source'));
-
-          this.links.scroll(data.linkSelections.incoming, this.layout.offsetLinks(data.level - 1, data.scrollTop, 'target'));
+          this.scrollY(data);
         }
+      }
+    }, {
+      key: 'scrollY',
+      value: function scrollY(columnData) {
+        ListGraph.scrollElVertically(columnData.nodes, columnData.scrollTop);
+
+        // Scroll scrollbar
+        columnData.scrollbar.scrollTop = columnData.scrollbar.heightScale(-columnData.scrollTop);
+
+        ListGraph.scrollElVertically(columnData.scrollbar.el, columnData.scrollbar.scrollTop);
+
+        // Scroll Links
+        if (columnData.level === this.visData.nodes.length) {
+          this.links.scroll(columnData.linkSelections.outgoing, this.layout.offsetLinks(columnData.level, columnData.scrollTop, 'source'));
+        }
+
+        if (columnData.level > 0) {
+          this.links.scroll(columnData.linkSelections.incoming, this.layout.offsetLinks(columnData.level - 1, columnData.scrollTop, 'target'));
+        }
+      }
+    }, {
+      key: 'scrollYTo',
+      value: function scrollYTo(selection, positionY) {
+        var _this2 = this;
+
+        return selection.transition().duration(TRANSITION_SEMI_FAST).tween('scrollY', function (data) {
+          var scrollPositionY = d3.interpolateNumber(data.scrollTop, positionY);
+          return function (time) {
+            data.scrollTop = scrollPositionY(time);
+            _this2.scrollY(data);
+          };
+        });
+      }
+    }, {
+      key: 'resetAllScrollPositions',
+      value: function resetAllScrollPositions() {
+        return this.scrollYTo(this.levels.groups, 0);
       }
     }, {
       key: 'selectByLevel',
@@ -2843,11 +2920,27 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function trigger(event, data) {
         this.events.trigger(event, data);
       }
+
+      /**
+       * Update the scroll position and scroll-bar visibility.
+       *
+       * @description
+       * This method needs to be called after hiding or showing nodes.
+       *
+       * @method  updateScrolling
+       * @author  Fritz Lekschas
+       * @date    2016-02-21
+       */
+
     }, {
-      key: 'updateScrollbarVisibility',
-      value: function updateScrollbarVisibility() {
-        this.levels.updateScrollProperties();
-        this.scrollbars.updateVisibility();
+      key: 'updateScrolling',
+      value: function updateScrolling() {
+        var _this3 = this;
+
+        this.resetAllScrollPositions().call(allTransitionsEnded, function () {
+          _this3.levels.updateScrollProperties();
+          _this3.scrollbars.updateVisibility();
+        });
       }
     }, {
       key: 'updateLevelsVisibility',
@@ -2857,7 +2950,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'globalView',
       value: function globalView(selectionInterst) {
-        var _this2 = this;
+        var _this4 = this;
 
         if (!this.zoomedOut) {
           (function () {
@@ -2868,7 +2961,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             var bBox = undefined;
             var cRect = undefined;
 
-            var globalCRect = _this2.svgD3.node().getBoundingClientRect();
+            var globalCRect = _this4.svgD3.node().getBoundingClientRect();
 
             if (selectionInterst && !selectionInterst.empty()) {
               selectionInterst.each(function () {
@@ -2877,18 +2970,18 @@ var ListGraph = (function ($,d3) { 'use strict';
                 width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
                 height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
               });
-              width = _this2.width > width ? _this2.width : width;
-              height = _this2.height > height ? _this2.height : height;
+              width = _this4.width > width ? _this4.width : width;
+              height = _this4.height > height ? _this4.height : height;
             } else {
-              bBox = _this2.container.node().getBBox();
-              width = _this2.width > bBox.width ? _this2.width : bBox.width;
-              height = _this2.height > bBox.height ? _this2.height : bBox.height;
+              bBox = _this4.container.node().getBBox();
+              width = _this4.width > bBox.width ? _this4.width : bBox.width;
+              height = _this4.height > bBox.height ? _this4.height : bBox.height;
             }
 
             x = bBox.x;
             y = bBox.y;
 
-            _this2.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
+            _this4.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
           })();
         }
       }
@@ -2935,8 +3028,8 @@ var ListGraph = (function ($,d3) { 'use strict';
         this._barMode = mode;
       }
     }], [{
-      key: 'scrollY',
-      value: function scrollY(el, offset) {
+      key: 'scrollElVertically',
+      value: function scrollElVertically(el, offset) {
         d3.select(el).attr('transform', 'translate(0, ' + offset + ')');
       }
     }]);
