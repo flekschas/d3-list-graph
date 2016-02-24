@@ -1,7 +1,6 @@
 // External
 import * as $ from '$';
 import * as d3 from 'd3';
-import isObject from '../../../node_modules/lodash-es/lang/isObject';
 
 // Internal
 import { LayoutNotAvailable } from './errors';
@@ -16,20 +15,16 @@ import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 import { allTransitionsEnded } from '../commons/d3-utils';
 
 class ListGraph {
-  constructor (baseEl, data, rootNodes, options) {
+  constructor (init) {
     if (!d3.layout.listGraph) {
       throw new LayoutNotAvailable();
     }
 
-    if (!isObject(options)) {
-      options = {};  // eslint-disable-line no-param-reassign
-    }
-
     const that = this;
 
-    this.baseEl = baseEl;
-    this.baseElD3 = d3.select(baseEl);
-    this.baseElJq = $(baseEl);
+    this.baseEl = init.element;
+    this.baseElD3 = d3.select(this.baseEl);
+    this.baseElJq = $(this.baseEl);
     this.svgD3 = this.baseElD3.select('svg.base');
 
     if (this.svgD3.empty()) {
@@ -39,44 +34,44 @@ class ListGraph {
       this.svgJq = $(this.svgD3[0]);
     }
 
-    this.rootNodes = rootNodes;
+    this.rootNodes = init.rootNodes;
 
-    this.width = options.width || this.svgJq.width();
-    this.height = options.height || this.svgJq.height();
-    this.scrollbarWidth = options.scrollbarWidth || config.SCROLLBAR_WIDTH;
-    this.columns = options.columns || config.COLUMNS;
-    this.rows = options.rows || config.ROWS;
-    this.iconPath = options.iconPath || config.ICON_PATH;
+    this.width = init.width || this.svgJq.width();
+    this.height = init.height || this.svgJq.height();
+    this.scrollbarWidth = init.scrollbarWidth || config.SCROLLBAR_WIDTH;
+    this.columns = init.columns || config.COLUMNS;
+    this.rows = init.rows || config.ROWS;
+    this.iconPath = init.iconPath || config.ICON_PATH;
     this.highlightActiveLevel = config.HIGHLIGHT_ACTIVE_LEVEL;
-    if (typeof options.highlightActiveLevel !== 'undefined') {
-      this.highlightActiveLevel = options.highlightActiveLevel;
+    if (typeof init.highlightActiveLevel !== 'undefined') {
+      this.highlightActiveLevel = init.highlightActiveLevel;
     }
 
     // Determines which level from the rooted node will be regarded as active.
     // Zero means that the level of the rooted node is regarded.
     this.activeLevelNumber = config.ACTIVE_LEVEL_NUMBER;
-    if (typeof options.activeLevelNumber !== 'undefined') {
-      this.activeLevelNumber = options.activeLevelNumber;
+    if (typeof init.activeLevelNumber !== 'undefined') {
+      this.activeLevelNumber = init.activeLevelNumber;
     }
 
     this.noRootedNodeDifference = config.NO_ROOTED_NODE_DIFFERENCE;
-    if (typeof options.noRootedNodeDifference !== 'undefined') {
-      this.noRootedNodeDifference = options.noRootedNodeDifference;
+    if (typeof init.noRootedNodeDifference !== 'undefined') {
+      this.noRootedNodeDifference = init.noRootedNodeDifference;
     }
 
-    this.lessTransitionsJs = options.lessTransitions > 0;
-    this.lessTransitionsCss = options.lessTransitions > 1;
+    this.lessTransitionsJs = init.lessTransitions > 0;
+    this.lessTransitionsCss = init.lessTransitions > 1;
 
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
-    this.sortBy = options.sortBy;
-    this.sortOrder = options.sortOrder || config.DEFAULT_SORT_ORDER;
+    this.sortBy = init.sortBy;
+    this.sortOrder = init.sortOrder || config.DEFAULT_SORT_ORDER;
 
-    this.events = new Events(this.baseEl, options.dispatcher);
+    this.events = new Events(this.baseEl, init.dispatcher);
 
     this.baseElJq.addClass(config.CLASSNAME);
 
-    if (options.forceWidth) {
+    if (init.forceWidth) {
       this.baseElJq.width(this.width);
     }
 
@@ -91,7 +86,7 @@ class ListGraph {
       ]
     );
 
-    this.data = data;
+    this.data = init.data;
     this.visData = this.layout.process(
       this.data,
       this.rootNodes,
@@ -114,7 +109,7 @@ class ListGraph {
       local: {},
     };
 
-    this.barMode = options.barMode || config.DEFAULT_BAR_MODE;
+    this.barMode = init.barMode || config.DEFAULT_BAR_MODE;
     this.svgD3.classed(this.barMode + '-bar', true);
 
     this.topbar = new Topbar(this, this.baseElD3, this.visData);
