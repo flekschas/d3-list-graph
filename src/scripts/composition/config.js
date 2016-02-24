@@ -23,5 +23,6 @@ export const TRANSITION_SLOW = 666;
 export const TRANSITION_SLOWEST = 1;
 
 // Gradient colors
+export const COLOR_ORANGE = '#f23e00';
 export const COLOR_NEGATIVE_RED = '#e0001c';
 export const COLOR_POSITIVE_GREEN = '#60bf00';
