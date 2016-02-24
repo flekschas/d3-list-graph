@@ -854,7 +854,7 @@ class Nodes {
   highlightNodes (el, data, className, restriction, excludeClones) {
     const that = this;
     const nodeId = data.id;
-    const currentNodeData = data;
+    const currentNodeData = data.clone ? data.originalNode : data;
     const includeParents = true;
     const appliedClassName = className ? className : 'hovering';
     const includeClones = excludeClones ? false : true;
@@ -902,17 +902,13 @@ class Nodes {
       traverse.down(data, traverseCallbackUp, undefined, includeClones);
     }
 
-    if (data.clone) {
-      data.originalNode.hovering = 1;
-    } else {
-      if (includeClones) {
-        for (let i = data.clones.length; i--;) {
-          data.clones[i].hovering = 1;
-        }
+    currentNodeData.hovering = 1;
+
+    if (includeClones) {
+      for (let i = currentNodeData.clones.length; i--;) {
+        currentNodeData.clones[i].hovering = 1;
       }
     }
-
-    data.hovering = 1;
 
     this.nodes.each(function (nodeData) {
       const node = d3.select(this);
