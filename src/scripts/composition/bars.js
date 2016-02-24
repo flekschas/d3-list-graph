@@ -63,13 +63,18 @@ class Bars {
     Bar.updateIndicator(
       currentBar,
       this.visData.global.column.contentWidth,
-      referenceValue
+      this.visData.global.row.contentHeight,
+      referenceValue,
+      this.vis.lessTransitionsJs,
+      true
     );
 
     Bar.updateIndicator(
       refBars,
       this.visData.global.column.contentWidth,
-      referenceValue
+      4,
+      referenceValue,
+      this.vis.lessTransitionsJs
     );
 
     refBarsBg

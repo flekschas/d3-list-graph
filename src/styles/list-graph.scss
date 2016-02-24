@@ -532,26 +532,9 @@
   }
 
   .bar-indicator {
-    fill: $colorNegativeRed;
+    fill: $colorHighlightRed;
     opacity: 0;
-  }
-
-  .bar-indicator-bg {
-    fill: url('#negativeRed');
-    opacity: 0;
-    shape-rendering: crispEdges;
-  }
-
-  &.less-animations .bar-indicator-bg {
     transition: opacity $transitionFast $easeInOutCubic;
-  }
-
-  .bar-indicator.positive {
-    fill: $colorPositiveGreen;
-  }
-
-  .bar-indicator-bg.positive {
-    fill: url('#positiveGreen');
   }
 
   .bar.active .bar-magnitude {
@@ -587,12 +570,7 @@
   }
 
   .node.hovering-directly .bar.active .bar-indicator {
-    fill: #fff;
     opacity: 1;
-  }
-
-  .node.hovering-indirectly .bar.copy .bar-indicator-bg {
-    opacity: 0.66;
   }
 
   .node.hovering-indirectly .bar.copy .bar-indicator {
