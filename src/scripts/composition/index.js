@@ -42,6 +42,7 @@ class ListGraph {
     this.columns = init.columns || config.COLUMNS;
     this.rows = init.rows || config.ROWS;
     this.iconPath = init.iconPath || config.ICON_PATH;
+
     this.highlightActiveLevel = config.HIGHLIGHT_ACTIVE_LEVEL;
     if (typeof init.highlightActiveLevel !== 'undefined') {
       this.highlightActiveLevel = init.highlightActiveLevel;
@@ -49,14 +50,14 @@ class ListGraph {
 
     // Determines which level from the rooted node will be regarded as active.
     // Zero means that the level of the rooted node is regarded.
-    this.activeLevelNumber = config.ACTIVE_LEVEL_NUMBER;
-    if (typeof init.activeLevelNumber !== 'undefined') {
-      this.activeLevelNumber = init.activeLevelNumber;
+    this.activeLevel = config.ACTIVE_LEVEL;
+    if (typeof init.activeLevel !== 'undefined') {
+      this.activeLevel = init.activeLevel;
     }
 
-    this.noRootedNodeDifference = config.NO_ROOTED_NODE_DIFFERENCE;
-    if (typeof init.noRootedNodeDifference !== 'undefined') {
-      this.noRootedNodeDifference = init.noRootedNodeDifference;
+    this.noRootActiveLevelDiff = config.NO_ROOT_ACTIVE_LEVEL_DIFF;
+    if (typeof init.noRootActiveLevelDiff !== 'undefined') {
+      this.noRootActiveLevelDiff = init.noRootActiveLevelDiff;
     }
 
     this.lessTransitionsJs = init.lessTransitions > 0;
@@ -209,16 +210,16 @@ class ListGraph {
     this.events.on(
       'd3ListGraphActiveLevel',
       nextLevel => {
-        const oldLevel = this.activeLevelNumber;
-        this.activeLevelNumber = Math.max(nextLevel, 0);
+        const oldLevel = this.activeLevel;
+        this.activeLevel = Math.max(nextLevel, 0);
         if (this.nodes.rootedNode) {
           const rootNodeDepth = this.nodes.rootedNode.datum().depth;
           this.levels.blur(rootNodeDepth + oldLevel);
-          this.levels.focus(rootNodeDepth + this.activeLevelNumber);
+          this.levels.focus(rootNodeDepth + this.activeLevel);
         } else {
-          this.levels.blur(oldLevel - this.noRootedNodeDifference);
+          this.levels.blur(oldLevel - this.noRootActiveLevelDiff);
           this.levels.focus(
-            this.activeLevelNumber - this.noRootedNodeDifference
+            this.activeLevel - this.noRootActiveLevelDiff
           );
         }
       }

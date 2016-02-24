@@ -19,10 +19,10 @@ class Levels {
           (data, index) => {
             if (this.vis.highlightActiveLevel) {
               if (!this.vis.nodes || !this.vis.nodes.rootedNode) {
-                return index === this.vis.activeLevelNumber -
-                  this.vis.noRootedNodeDifference;
+                return index === this.vis.activeLevel -
+                  this.vis.noRootActiveLevelDiff;
               }
-              return index === this.vis.activeLevelNumber;
+              return index === this.vis.activeLevel;
             }
           }
         );

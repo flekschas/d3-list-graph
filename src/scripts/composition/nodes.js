@@ -680,7 +680,7 @@ class Nodes {
         this.rootedNode = undefined;
         // Highlight first level
         this.vis.levels.focus(
-          this.vis.activeLevelNumber - this.vis.noRootedNodeDifference
+          this.vis.activeLevel - this.vis.noRootActiveLevelDiff
         );
       }
     } else {
@@ -709,7 +709,7 @@ class Nodes {
       );
 
     // Highlight level
-    this.vis.levels.focus(data.depth + this.vis.activeLevelNumber);
+    this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
     if (!data.data.queryMode || data.data.queryMode === 'not') {
       this.toggleQueryMode(d3El.node(), data);
