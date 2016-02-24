@@ -373,6 +373,7 @@
       stroke: #000;
       stroke-opacity: 0.2;
       stroke-width: 2;
+      transition: all $transitionFast $easeInOutCubic;
     }
 
     &.hovering .link-direct {
@@ -618,5 +619,9 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+  }
+
+  &.less-animations * {
+    transition: none !important;
   }
 }

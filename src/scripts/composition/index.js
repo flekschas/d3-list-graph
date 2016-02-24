@@ -64,8 +64,10 @@ class ListGraph {
       this.noRootedNodeDifference = options.noRootedNodeDifference;
     }
 
-    this.lessAnimations = !!options.lessAnimations;
-    this.baseElD3.classed('less-animations', this.lessAnimations);
+    this.lessTransitionsJs = options.lessTransitions > 0;
+    this.lessTransitionsCss = options.lessTransitions > 1;
+
+    this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
     this.sortBy = options.sortBy;
     this.sortOrder = options.sortOrder || config.DEFAULT_SORT_ORDER;
