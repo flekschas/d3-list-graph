@@ -66,7 +66,7 @@ class ListGraph {
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
     this.sortBy = init.sortBy;
-    this.sortOrder = init.sortOrder || config.DEFAULT_SORT_ORDER;
+    this.sortOrder = init.sortOrder === 'asc' ? 1 : config.DEFAULT_SORT_ORDER;
 
     this.events = new Events(this.baseEl, init.dispatcher);
 
@@ -474,14 +474,18 @@ class ListGraph {
     this.links.sort(this.layout.links(level - 1, level + 1));
   }
 
-  sortAllColumns (property, sortOrder, newSortType) {
+  sortAllColumns (property, newSortType) {
+    this.currentSorting.global.order =
+      this.currentSorting.global.order === -1 ? 1 : -1;
+
     this.nodes.sort(
       this.layout
-        .sort(undefined, property, sortOrder)
+        .sort(undefined, property, this.currentSorting.global.order)
         .updateNodesVisibility()
         .nodes(),
       newSortType
     );
+
     this.links.sort(this.layout.links());
   }
 

@@ -7,7 +7,8 @@ export const ROWS = 5;
 // An empty path is equal to inline SVG.
 export const ICON_PATH = '';
 
-export const DEFAULT_SORT_ORDER = 'desc';
+// -1 = desc, 1 = asc
+export const DEFAULT_SORT_ORDER = -1;
 
 export const DEFAULT_BAR_MODE = 'one';
 

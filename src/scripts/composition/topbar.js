@@ -468,11 +468,7 @@ class Topbar {
       this.sortColumn(el, columnKeys[i], type, true);
     }
 
-    this.vis.sortAllColumns(
-      type,
-      this.vis.currentSorting.global.order,
-      true
-    );
+    this.vis.sortAllColumns(type, true);
   }
 
   sortColumn (el, index, type, global) {
