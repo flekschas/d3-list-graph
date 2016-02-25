@@ -435,7 +435,7 @@ class ListGraph {
     );
 
     // Scroll Links
-    if (columnData.level === this.visData.nodes.length) {
+    if (columnData.level !== this.visData.nodes.length) {
       this.links.scroll(
         columnData.linkSelections.outgoing,
         this.layout.offsetLinks(
