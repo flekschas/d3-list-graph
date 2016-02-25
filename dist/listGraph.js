@@ -2779,7 +2779,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         ListGraph.scrollElVertically(columnData.scrollbar.el, columnData.scrollbar.scrollTop);
 
         // Scroll Links
-        if (columnData.level === this.visData.nodes.length) {
+        if (columnData.level !== this.visData.nodes.length) {
           this.links.scroll(columnData.linkSelections.outgoing, this.layout.offsetLinks(columnData.level, columnData.scrollTop, 'source'));
         }
 
