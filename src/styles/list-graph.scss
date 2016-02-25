@@ -566,8 +566,12 @@
   }
 
   .node.hovering-directly .bar-magnitude {
-    fill: #404040;
+    fill: #606060;
     fill-opacity: 1 !important;
+  }
+
+  .node.hovering-directly .active .bar-magnitude {
+    fill: #404040;
   }
 
   .node.hovering-directly .bar.active .bar-indicator {
