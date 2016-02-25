@@ -59,22 +59,14 @@ class Bars {
       });
   }
 
-  updateIndicator (refBars, currentBar, referenceValue) {
+  updateIndicator (bars, referenceValue, direct) {
     Bar.updateIndicator(
-      currentBar,
+      bars,
       this.visData.global.column.contentWidth,
-      this.visData.global.row.contentHeight,
+      direct ? this.visData.global.row.contentHeight : 4,
       referenceValue,
       this.vis.lessTransitionsJs,
-      true
-    );
-
-    Bar.updateIndicator(
-      refBars,
-      this.visData.global.column.contentWidth,
-      4,
-      referenceValue,
-      this.vis.lessTransitionsJs
+      direct
     );
   }
 

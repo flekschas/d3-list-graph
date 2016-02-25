@@ -574,11 +574,8 @@
     fill: #404040;
   }
 
-  .node.hovering-directly .bar.active .bar-indicator {
-    opacity: 1;
-  }
-
-  .node.hovering-indirectly .bar.copy .bar-indicator {
+  .node.hovering-directly .bar.active .bar-indicator,
+  .node.hovering-indirectly .bar.active .bar-indicator {
     opacity: 1;
   }
 
