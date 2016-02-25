@@ -271,64 +271,6 @@ var ListGraph = (function ($,d3) { 'use strict';
     return Scrollbars;
   })();
 
-  /**
-   * Turns an array of IDs into an array of objects holding the ID.
-   *
-   * @description
-   * We need to translate the array of objects into an array of fake objects in
-   * order to easily match the links to be highlighted.
-   *
-   * Using this method selection can be matched easily via the array of fake
-   * objects:
-   *
-   * ```
-   * this.links
-   *   .data(arrayToFakeObjs([1, 2, 3]), data => data)
-   *   .classed('highlight', highlight === false ? false : true);
-   * ```
-   *
-   * @method  arrayToFakeObjs
-   * @author  Fritz Lekschas
-   * @date    2015-12-23
-   * @param   {Array}  arrayIds  Array of IDs.
-   * @return  {Array}            Array of objects holding the ID. E.g. `[1]` will
-   *   be translated into `[{ id: 1 }]`.
-   */
-  function arrayToFakeObjs(arrayIds) {
-    var fakeObjs = [];
-
-    for (var i = arrayIds.length; i--;) {
-      fakeObjs.push({ id: arrayIds[i] });
-    }
-
-    return fakeObjs;
-  }
-
-  /**
-   * Collect all cloned nodes, including the original node.
-   *
-   * @method  collectInclClones
-   * @author  Fritz Lekschas
-   * @date    2015-12-30
-   * @param   {Object}  node  Start node
-   * @return  {Array}         Array of original and cloned nodes.
-   */
-  function collectInclClones(node) {
-    var originalNode = node;
-
-    if (node.clone) {
-      originalNode = node.originalNode;
-    }
-
-    var clones = [originalNode];
-
-    if (originalNode.clones.length) {
-      clones = clones.concat(originalNode.clones);
-    }
-
-    return clones;
-  }
-
   /** Used to determine if values are of the language type `Object`. */
   var objectTypes = {
     'function': true,
@@ -390,6 +332,31 @@ var ListGraph = (function ($,d3) { 'use strict';
    */
   function isFinite(value) {
     return typeof value == 'number' && nativeIsFinite(value);
+  }
+
+  /**
+   * Collect all cloned nodes, including the original node.
+   *
+   * @method  collectInclClones
+   * @author  Fritz Lekschas
+   * @date    2015-12-30
+   * @param   {Object}  node  Start node
+   * @return  {Array}         Array of original and cloned nodes.
+   */
+  function collectInclClones(node) {
+    var originalNode = node;
+
+    if (node.clone) {
+      originalNode = node.originalNode;
+    }
+
+    var clones = [originalNode];
+
+    if (originalNode.clones.length) {
+      clones = clones.concat(originalNode.clones);
+    }
+
+    return clones;
   }
 
   function up(node, callback, depth, includeClones, child) {
@@ -1449,7 +1416,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         if (!this.currentLinks[appliedClassName]) {
           this.currentLinks[appliedClassName] = {};
         }
-        this.currentLinks[appliedClassName][nodeId] = [];
+        this.currentLinks[appliedClassName][nodeId] = {};
 
         var currentlyActiveBar = d3.select(el).selectAll('.bar.active .bar-magnitude');
         if (!currentlyActiveBar.empty()) {
@@ -1465,7 +1432,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             // Store: (parent)->(child)
             // Ignore: (parent)->(siblings of child)
             if (nodeData.links[i].target.node.id === childData.id) {
-              _this2.currentLinks[appliedClassName][nodeId].push(nodeData.links[i].id);
+              _this2.currentLinks[appliedClassName][nodeId][nodeData.links[i].id] = true;
             }
           }
         };
@@ -1473,7 +1440,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         var traverseCallbackDown = function traverseCallbackDown(nodeData) {
           nodeData.hovering = 2;
           for (var i = nodeData.links.length; i--;) {
-            _this2.currentLinks[appliedClassName][nodeId].push(nodeData.links[i].id);
+            _this2.currentLinks[appliedClassName][nodeId][nodeData.links[i].id] = true;
           }
         };
 
@@ -1515,7 +1482,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           }
         });
 
-        this.links.highlight(arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]), true, appliedClassName);
+        this.links.highlight(this.currentLinks[appliedClassName][data.id], true, appliedClassName);
       }
     }, {
       key: 'unhighlightNodes',
@@ -1553,7 +1520,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.nodes.classed(appliedClassName + '-indirectly', false);
 
         if (this.currentLinks[appliedClassName][data.id]) {
-          this.links.highlight(arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]), false, appliedClassName);
+          this.links.highlight(this.currentLinks[appliedClassName][data.id], false, appliedClassName);
         }
       }
     }, {
@@ -1652,9 +1619,9 @@ var ListGraph = (function ($,d3) { 'use strict';
     babelHelpers.createClass(Links, [{
       key: 'highlight',
       value: function highlight(nodeIds, _highlight, className) {
-        this.links.data(nodeIds, function (data) {
-          return data.id;
-        }).classed(className ? className : 'hovering', _highlight === false ? false : true);
+        this.links.filter(function (data) {
+          return nodeIds[data.id];
+        }).classed(className, _highlight);
       }
     }, {
       key: 'scroll',
