@@ -1462,25 +1462,79 @@ var ListGraph = (function ($,d3) { 'use strict';
           }
         }
 
-        this.nodes.each(function (nodeData) {
-          if (!nodeData.hidden && !that.vis.isHidden.call(that.vis, this)) {
-            if (nodeData.hovering > 0) {
-              var node = d3.select(this);
+        /**
+         * Helper method to assess the node visibility.
+         *
+         * @method  checkNodeVisibility
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  _el    [description]
+         * @param   {Object}  _data  [description]
+         * @return  {Boolean}        If `true` element is hidden.
+         */
+        function checkNodeVisibility(_el, _data) {
+          return !_data.hidden && !that.vis.isHidden.call(that.vis, _el);
+        }
 
-              if (nodeData.hovering === 1) {
-                node.classed(appliedClassName + '-directly', true);
-                if (currentlyActiveBar) {
-                  that.bars.updateIndicator(node.selectAll('.bar.' + currentlyActiveBar.id + ' .bar-indicator'), currentlyActiveBar.value, true);
-                }
-              } else if (nodeData.hovering === 2) {
-                node.classed(appliedClassName + '-indirectly', true);
-                if (currentlyActiveBar) {
-                  that.bars.updateIndicator(node.selectAll('.bar.' + currentlyActiveBar.id + ' .bar-indicator'), currentlyActiveBar.value);
-                }
-              }
-            }
-          }
-        });
+        /**
+         * Helper method to filter out directly hovered nodes.
+         *
+         * @method  checkNodeDirect
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  nodeData  The node's data object.
+         * @return  {Boolean}           If `true` element will not be filtered out.
+         */
+        function checkNodeDirect(nodeData) {
+          return nodeData.hovering === 1 && checkNodeVisibility(this, nodeData);
+        }
+
+        /**
+         * Helper method to filter out indirectly hovered nodes.
+         *
+         * @method  checkNodeIndirect
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  nodeData  The node's data object.
+         * @return  {Boolean}           If `true` element will not be filtered out.
+         */
+        function checkNodeIndirect(nodeData) {
+          return nodeData.hovering === 2 && checkNodeVisibility(this, nodeData);
+        }
+
+        /**
+         * Helper method to update bar indicators of the directly hovered node and
+         * clones.
+         *
+         * @method  updateDirectBarIndicator
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  selection  D3 node selection.
+         */
+        function updateDirectBarIndicator(selection) {
+          that.bars.updateIndicator(selection, currentlyActiveBar.value, true);
+        }
+
+        /**
+         * Helper method to update bar indicators of the indirectly hovered nodes.
+         *
+         * @method  updateDirectBarIndicator
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  selection  D3 node selection.
+         */
+        function updateIndirectBarIndicator(selection) {
+          that.bars.updateIndicator(selection, currentlyActiveBar.value);
+        }
+
+        var barIndicatorClass = currentlyActiveBar ? '.bar.' + currentlyActiveBar.id + ' .bar-indicator' : '';
+        var directNodes = this.nodes.filter(checkNodeDirect).classed(appliedClassName + '-directly', true);
+        var indirectNodes = this.nodes.filter(checkNodeIndirect).classed(appliedClassName + '-indirectly', true);
+
+        if (currentlyActiveBar) {
+          directNodes.select(barIndicatorClass).call(updateDirectBarIndicator);
+          indirectNodes.select(barIndicatorClass).call(updateIndirectBarIndicator);
+        }
 
         this.links.highlight(this.currentLinks[appliedClassName][data.id], true, appliedClassName);
       }
