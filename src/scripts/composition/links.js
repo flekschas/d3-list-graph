@@ -62,11 +62,8 @@ class Links {
 
   highlight (nodeIds, highlight, className) {
     this.links
-      .data(nodeIds, data => data.id)
-      .classed(
-        className ? className : 'hovering',
-        highlight === false ? false : true
-      );
+      .filter(data => nodeIds[data.id])
+      .classed(className, highlight);
   }
 
   scroll (selection, data) {

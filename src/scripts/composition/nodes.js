@@ -6,7 +6,6 @@ import isFunction from '../../../node_modules/lodash-es/lang/isFunction';
 import * as traverse from './traversal';
 import * as config from './config';
 import Bars from './bars';
-import { arrayToFakeObjs } from './utils';
 import { allTransitionsEnded } from '../commons/d3-utils';
 
 const NODES_CLASS = 'nodes';
@@ -864,7 +863,7 @@ class Nodes {
     if (!this.currentLinks[appliedClassName]) {
       this.currentLinks[appliedClassName] = {};
     }
-    this.currentLinks[appliedClassName][nodeId] = [];
+    this.currentLinks[appliedClassName][nodeId] = {};
 
     let currentlyActiveBar = d3.select(el).selectAll(
       '.bar.active .bar-magnitude'
@@ -882,9 +881,9 @@ class Nodes {
         // Store: (parent)->(child)
         // Ignore: (parent)->(siblings of child)
         if (nodeData.links[i].target.node.id === childData.id) {
-          this.currentLinks[appliedClassName][nodeId].push(
+          this.currentLinks[appliedClassName][nodeId][
             nodeData.links[i].id
-          );
+          ] = true;
         }
       }
     };
@@ -892,7 +891,9 @@ class Nodes {
     const traverseCallbackDown = nodeData => {
       nodeData.hovering = 2;
       for (let i = nodeData.links.length; i--;) {
-        this.currentLinks[appliedClassName][nodeId].push(nodeData.links[i].id);
+        this.currentLinks[appliedClassName][nodeId][
+          nodeData.links[i].id
+        ] = true;
       }
     };
 
@@ -944,7 +945,7 @@ class Nodes {
     });
 
     this.links.highlight(
-      arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]),
+      this.currentLinks[appliedClassName][data.id],
       true,
       appliedClassName
     );
@@ -985,7 +986,7 @@ class Nodes {
 
     if (this.currentLinks[appliedClassName][data.id]) {
       this.links.highlight(
-        arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]),
+        this.currentLinks[appliedClassName][data.id],
         false,
         appliedClassName
       );
