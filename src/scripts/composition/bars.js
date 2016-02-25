@@ -59,7 +59,7 @@ class Bars {
       });
   }
 
-  updateIndicator (refBars, refBarsBg, currentBar, referenceValue) {
+  updateIndicator (refBars, currentBar, referenceValue) {
     Bar.updateIndicator(
       currentBar,
       this.visData.global.column.contentWidth,
@@ -76,31 +76,6 @@ class Bars {
       referenceValue,
       this.vis.lessTransitionsJs
     );
-
-    refBarsBg
-      .attr('d', data => {
-        return Bar.generatePath(
-          data,
-          this.mode,
-          undefined,
-          this.visData,
-          referenceValue
-        );
-      })
-      .classed('positive', data => data.value >= referenceValue);
-
-    let transition = refBarsBg;
-
-    if (!this.vis.lessAnimations) {
-      transition = refBarsBg.transition().duration(config.TRANSITION_SEMI_FAST);
-    }
-
-    transition
-      .attr('d', data => {
-        return Bar.generatePath(
-          data, this.mode, undefined, this.visData, referenceValue, true
-        );
-      });
   }
 
   switchMode (mode, currentSorting) {
