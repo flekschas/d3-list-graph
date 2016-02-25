@@ -911,38 +911,41 @@ class Nodes {
     }
 
     this.nodes.each(function (nodeData) {
-      const node = d3.select(this);
+      if (!that.vis.isHidden.call(that.vis, this)) {
+        if (nodeData.hovering > 0) {
+          const node = d3.select(this);
 
-      if (nodeData.hovering === 1) {
-        node.classed(appliedClassName + '-directly', true);
-      } else if (nodeData.hovering === 2) {
-        node.classed(appliedClassName + '-indirectly', true);
-        if (!currentlyActiveBar.empty()) {
-          const currentlyActiveBarData = currentlyActiveBar.datum();
+          if (nodeData.hovering === 1) {
+            node.classed(appliedClassName + '-directly', true);
+          } else if (nodeData.hovering === 2) {
+            node.classed(appliedClassName + '-indirectly', true);
+            if (!currentlyActiveBar.empty()) {
+              const currentlyActiveBarData = currentlyActiveBar.datum();
 
-          node.selectAll('.bar.' + currentlyActiveBarData.id)
-            .classed('copy', barData => {
-              let id = barData.id;
+              node.selectAll('.bar.' + currentlyActiveBarData.id)
+                .classed('copy', barData => {
+                  let id = barData.id;
 
-              if (barData.clone) {
-                id = barData.originalNode.id;
-              }
+                  if (barData.clone) {
+                    id = barData.originalNode.id;
+                  }
 
-              if (id !== currentNodeData.id) {
-                return true;
-              }
-            });
+                  if (id !== currentNodeData.id) {
+                    return true;
+                  }
+                });
 
-          const currentBar = d3.select(el)
-            .selectAll('.bar.' + currentlyActiveBarData.id)
-              .classed('reference', true);
+              const currentBar = d3.select(el)
+                .selectAll('.bar.' + currentlyActiveBarData.id)
+                  .classed('reference', true);
 
-          that.bars.updateIndicator(
-            node.selectAll('.bar.copy .bar-indicator'),
-            node.selectAll('.bar.copy .bar-indicator-bg'),
-            currentBar.selectAll('.bar-indicator'),
-            currentlyActiveBarData.value
-          );
+              that.bars.updateIndicator(
+                node.selectAll('.bar.copy .bar-indicator'),
+                currentBar.selectAll('.bar-indicator'),
+                currentlyActiveBarData.value
+              );
+            }
+          }
         }
       }
     });

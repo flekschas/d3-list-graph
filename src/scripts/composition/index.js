@@ -26,18 +26,28 @@ class ListGraph {
     this.baseElD3 = d3.select(this.baseEl);
     this.baseElJq = $(this.baseEl);
     this.svgD3 = this.baseElD3.select('svg.base');
+    this.svgEl = this.svgD3.node();
 
     if (this.svgD3.empty()) {
       this.svgD3 = this.baseElD3.append('svg').attr('class', 'base');
-      this.svgJq = $(this.svgD3[0]);
+      this.svgJq = $(this.svgD3.node());
     } else {
-      this.svgJq = $(this.svgD3[0]);
+      this.svgJq = $(this.svgD3.node());
     }
 
     this.rootNodes = init.rootNodes;
 
     this.width = init.width || this.svgJq.width();
     this.height = init.height || this.svgJq.height();
+
+    // Refresh top and left position of the base `svg` everytime the user enters
+    // the element with his/her mouse cursor. This will avoid relying on complex
+    // browser resize events and other layout manipulations as they most likely
+    // won't happen when the user tries to interact with the visualization.
+    this.svgD3.on('mouseenter', function () {
+      that.getBoundingRect.call(that, this);
+    });
+
     this.scrollbarWidth = init.scrollbarWidth || config.SCROLLBAR_WIDTH;
     this.columns = init.columns || config.COLUMNS;
     this.rows = init.rows || config.ROWS;
@@ -241,6 +251,24 @@ class ListGraph {
         max: 0,
       },
     };
+  }
+
+  /**
+   * Helper method to get the top and left position of the base `svg`.
+   *
+   * @Description
+   * Calling `getBoundingClientRect()` right at the beginning leads to errornous
+   * values, probably because the function is called because HTML has been fully
+   * rendered.
+   *
+   * @method  getBoundingRect
+   * @author  Fritz Lekschas
+   * @date    2016-02-24
+   * @param   {Object}  el  Element on which `getBoundingClientRect` is called.
+   */
+  getBoundingRect (el) {
+    this.top = el.getBoundingClientRect().top;
+    this.left = el.getBoundingClientRect().left;
   }
 
   interactionWrapper (callback, params) {
@@ -575,6 +603,26 @@ class ListGraph {
       this.globalView();
       this.zoomedOut = true;
     }
+  }
+
+  /**
+   * Check if an element is actually visible, i.e. within the boundaries of the
+   * SVG element.
+   *
+   * @method  isHidden
+   * @author  Fritz Lekschas
+   * @date    2016-02-24
+   * @param   {Object}    el  DOM element to be checked.
+   * @return  {Boolean}       If `true` element is not visible.
+   */
+  isHidden (el) {
+    const boundingRect = el.getBoundingClientRect();
+    return (
+      boundingRect.top + boundingRect.height <= this.top ||
+      boundingRect.left + boundingRect.width <= this.left ||
+      boundingRect.top >= this.top + this.height ||
+      boundingRect.left >= this.left + this.width
+    );
   }
 }
 
