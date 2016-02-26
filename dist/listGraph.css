@@ -278,8 +278,8 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: #666;
-    font-size: 12px;
-    line-height: 12px;
+    font-size: 0.75rem;
+    line-height: 0.75rem;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .column.active .node .label {
     color: #333; }
