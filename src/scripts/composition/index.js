@@ -161,13 +161,17 @@ class ListGraph {
     });
 
     // Add jQuery delegated event listeners instead of direct listeners of D3.
-    this.svgJq.on(
-      'click',
-      `.${this.nodes.classLabelWrapper}`,
-      function () {
-        that.nodes.clickHandler.call(that.nodes, this, d3.select(this).datum());
-      }
-    );
+    if (this.querying) {
+      this.svgJq.on(
+        'click',
+        `.${this.nodes.classLabelWrapper}`,
+        function () {
+          that.nodes.toggleQueryMode.call(
+            that.nodes, this.parentNode, d3.select(this).datum()
+          );
+        }
+      );
+    }
 
     this.svgJq.on(
       'click',
@@ -177,15 +181,17 @@ class ListGraph {
       }
     );
 
-    this.svgJq.on(
-      'click',
-      `.${this.nodes.classFocusControls}.${this.nodes.classQuery}`,
-      function () {
-        that.nodes.toggleQueryMode.call(
-          that.nodes, this.parentNode, d3.select(this).datum()
-        );
-      }
-    );
+    if (this.querying) {
+      this.svgJq.on(
+        'click',
+        `.${this.nodes.classFocusControls}.${this.nodes.classQuery}`,
+        function () {
+          that.nodes.toggleQueryMode.call(
+            that.nodes, this.parentNode, d3.select(this).datum()
+          );
+        }
+      );
+    }
 
     this.svgJq.on(
       'click',

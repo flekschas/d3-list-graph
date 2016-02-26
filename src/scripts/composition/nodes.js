@@ -83,7 +83,10 @@ class Nodes {
               el.selectAll('.bg-extension')
                 .style(
                   'transform',
-                  'translateX(' + (-(this.iconDimension * 2 + 10)) + 'px)'
+                  'translateX(' + (
+                    this.vis.querying ?
+                      -this.iconDimension * 2 - 10 : -this.iconDimension - 6
+                  ) + 'px)'
                 );
             }
           }.bind(that), [this, data]);
@@ -142,7 +145,7 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        2,
+        this.vis.querying ? 2 : 1,
         'hover-helper',
         'hover-helper'
       );
@@ -151,7 +154,7 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        2,
+        this.vis.querying ? 2 : 1,
         'icon',
         'ease-all state-inactive invisible-default icon'
       )
@@ -162,60 +165,62 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        2,
+        this.vis.querying ? 2 : 1,
         'icon',
         'ease-all state-active invisible-default icon'
       )
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#locked');
 
-    // Rooting icons
-    const nodeQuery = this.nodes.append('g')
-      .attr(
-        'class', `${CLASS_FOCUS_CONTROLS} ${CLASS_QUERY} ${CLASS_INACTIVE}`
-      );
+    // Querying icons
+    if (this.vis.querying) {
+      const nodeQuery = this.nodes.append('g')
+        .attr(
+          'class', `${CLASS_FOCUS_CONTROLS} ${CLASS_QUERY} ${CLASS_INACTIVE}`
+        );
 
-    nodeQuery.append('rect')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'left',
-        1,
-        'hover-helper',
-        'hover-helper'
-      );
+      nodeQuery.append('rect')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'left',
+          1,
+          'hover-helper',
+          'hover-helper'
+        );
 
-    nodeQuery.append('svg')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'left',
-        1,
-        'icon',
-        'ease-all state-inactive invisible-default icon'
-      )
-      .append('use')
-        .attr('xlink:href', this.vis.iconPath + '#set-inactive');
+      nodeQuery.append('svg')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'left',
+          1,
+          'icon',
+          'ease-all state-inactive invisible-default icon'
+        )
+        .append('use')
+          .attr('xlink:href', this.vis.iconPath + '#set-inactive');
 
-    nodeQuery.append('svg')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'left',
-        1,
-        'icon',
-        'ease-all state-and-or invisible-default icon'
-      )
-      .append('use')
-        .attr('xlink:href', this.vis.iconPath + '#union');
+      nodeQuery.append('svg')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'left',
+          1,
+          'icon',
+          'ease-all state-and-or invisible-default icon'
+        )
+        .append('use')
+          .attr('xlink:href', this.vis.iconPath + '#union');
 
-    nodeQuery.append('svg')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'left',
-        1,
-        'icon',
-        'ease-all state-not invisible-default icon'
-      )
-      .append('use')
-        .attr('xlink:href', this.vis.iconPath + '#not');
+      nodeQuery.append('svg')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'left',
+          1,
+          'icon',
+          'ease-all state-not invisible-default icon'
+        )
+        .append('use')
+          .attr('xlink:href', this.vis.iconPath + '#not');
+    }
 
     const nodeLocks = this.nodes.append('g')
       .attr('class', `${CLASS_FOCUS_CONTROLS} ${CLASS_LOCK} ${CLASS_INACTIVE}`);
@@ -709,7 +714,10 @@ class Nodes {
     d3El.selectAll('.bg-extension')
       .style(
         'transform',
-        'translateX(' + (-(this.iconDimension * 2 + 10)) + 'px)'
+        'translateX(' + (
+          this.vis.querying ?
+            -this.iconDimension * 2 - 10 : -this.iconDimension - 6
+        ) + 'px)'
       );
 
     // Highlight level
