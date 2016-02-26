@@ -1,8 +1,8 @@
 // External
 import * as d3 from 'd3';
-import isArray from '../../../node_modules/lodash-es/lang/isArray';
-import isFinite from '../../../node_modules/lodash-es/lang/isFinite';
-import isObject from '../../../node_modules/lodash-es/lang/isObject';
+import isArray from '../../../node_modules/lodash-es/isArray';
+import isFinite from '../../../node_modules/lodash-es/isFinite';
+import isObject from '../../../node_modules/lodash-es/isObject';
 
 // Internal
 import { NoRootNodes } from './errors';

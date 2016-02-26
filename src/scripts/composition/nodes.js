@@ -1,6 +1,6 @@
 // External
 import * as d3 from 'd3';
-import isFunction from '../../../node_modules/lodash-es/lang/isFunction';
+import isFunction from '../../../node_modules/lodash-es/isFunction';
 
 // Internal
 import * as traverse from './traversal';
