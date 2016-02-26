@@ -23,6 +23,12 @@
     semi: [2, "always"],
     space-before-function-paren: [2, "always"],
     keyword-spacing: 2,
-    strict: [2, "global"]
+    strict: [2, "global"],
+    // String templates are about 100x slower!!!
+    // http://stackoverflow.com/a/29083467/981933
+    prefer-template: 0,
+    // Temporary issue:
+    // https://github.com/eslint/eslint/issues/5074#issuecomment-189509063
+    prefer-const: 1
   }
 }
