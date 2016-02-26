@@ -337,7 +337,7 @@ class Nodes {
     const eventData = {
       id: data.id,
       clone: false,
-      clonedFromId: undefined,
+      clonedFromId: undefined
     };
 
     if (data.clone) {
@@ -354,7 +354,7 @@ class Nodes {
     const eventData = {
       id: data.id,
       clone: false,
-      clonedFromId: undefined,
+      clonedFromId: undefined
     };
 
     if (data.clone) {
@@ -375,14 +375,14 @@ class Nodes {
             id: events.locked.id,
             clone: events.locked.clone,
             clonedFromId: events.locked.clone ?
-              events.locked.originalNode.id : undefined,
+              events.locked.originalNode.id : undefined
           },
           unlock: {
             id: events.unlocked.id,
             clone: events.unlocked.clone,
             clonedFromId: events.unlocked.clone ?
-              events.unlocked.originalNode.id : undefined,
-          },
+              events.unlocked.originalNode.id : undefined
+          }
         });
       }
     } else {
@@ -391,7 +391,7 @@ class Nodes {
           id: events.locked.id,
           clone: events.locked.clone,
           clonedFromId: events.locked.clone ?
-            events.locked.originalNode.id : undefined,
+            events.locked.originalNode.id : undefined
         });
       }
 
@@ -400,7 +400,7 @@ class Nodes {
           id: events.unlocked.id,
           clone: events.unlocked.clone,
           clonedFromId: events.unlocked.clone ?
-            events.unlocked.originalNode.id : undefined,
+            events.unlocked.originalNode.id : undefined
         });
       }
     }
@@ -415,14 +415,14 @@ class Nodes {
           id: events.rooted.id,
           clone: events.rooted.clone,
           clonedFromId: events.rooted.clone ?
-            events.rooted.originalNode.id : undefined,
+            events.rooted.originalNode.id : undefined
         },
         unrooted: {
           id: events.unrooted.id,
           clone: events.unrooted.clone,
           clonedFromId: events.unrooted.clone ?
-            events.unrooted.originalNode.id : undefined,
-        },
+            events.unrooted.originalNode.id : undefined
+        }
       });
     } else {
       if (events.rooted) {
@@ -430,7 +430,7 @@ class Nodes {
           id: events.rooted.id,
           clone: events.rooted.clone,
           clonedFromId: events.rooted.clone ?
-            events.rooted.originalNode.id : undefined,
+            events.rooted.originalNode.id : undefined
         });
       }
 
@@ -439,7 +439,7 @@ class Nodes {
           id: events.unrooted.id,
           clone: events.unrooted.clone,
           clonedFromId: events.unrooted.clone ?
-            events.unrooted.originalNode.id : undefined,
+            events.unrooted.originalNode.id : undefined
         });
       }
     }
@@ -448,7 +448,7 @@ class Nodes {
       id: events.rooted.id,
       clone: events.rooted.clone,
       clonedFromId: events.rooted.clone ?
-        events.rooted.originalNode.id : undefined,
+        events.rooted.originalNode.id : undefined
     });
   }
 
@@ -583,7 +583,7 @@ class Nodes {
       inactive: false,
       'query-and': mode === 'and' ? true : false,
       'query-or': mode === 'or' ? true : false,
-      'query-not': mode === 'not' ? true : false,
+      'query-not': mode === 'not' ? true : false
     });
   }
 
@@ -595,7 +595,7 @@ class Nodes {
       inactive: true,
       'query-and': false,
       'query-or': false,
-      'query-not': false,
+      'query-not': false
     });
     if (this.rootedNode) {
       this.updateVisibility();
@@ -635,7 +635,7 @@ class Nodes {
           clone: data.clone,
           clonedFromId: data.clone ?
             data.originalNode.id : undefined,
-          mode: data.data.queryMode,
+          mode: data.data.queryMode
         });
       }
     } else {
@@ -643,7 +643,7 @@ class Nodes {
         id: data.id,
         clone: data.clone,
         clonedFromId: data.clone ?
-          data.originalNode.id : undefined,
+          data.originalNode.id : undefined
       });
     }
   }
@@ -763,7 +763,7 @@ class Nodes {
           class: className,
           cx: x + (this.iconDimension / 2),
           cy: y + (this.iconDimension / 2),
-          r: this.iconDimension * 3 / 4,
+          r: this.iconDimension * 3 / 4
         });
     } else if (mode === 'hover-helper') {
       selection
@@ -772,7 +772,7 @@ class Nodes {
           x: x - 2,
           y: y - 2,
           width: this.iconDimension + 4,
-          height: this.iconDimension + 4,
+          height: this.iconDimension + 4
         });
     } else {
       selection
@@ -781,7 +781,7 @@ class Nodes {
           x,
           y,
           width: this.iconDimension,
-          height: this.iconDimension,
+          height: this.iconDimension
         });
     }
   }
