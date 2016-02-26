@@ -116,6 +116,10 @@ class Levels {
     });
   }
 
+  get className () {
+    return COLUMN_CLASS;
+  }
+
   get height () {
     return this.visData.global.column.height;
   }
