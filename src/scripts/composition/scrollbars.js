@@ -35,7 +35,7 @@ class Scrollbars {
       .duration(config.TRANSITION_LIGHTNING_FAST)
       .attr({
         x: data => data.scrollbar.x,
-        height: data => data.scrollbar.height,
+        height: data => data.scrollbar.height
       });
   }
 }

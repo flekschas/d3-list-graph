@@ -786,7 +786,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           }
 
           if (!el.classed('rooted')) {
-            el.selectAll('.bg-extension').style('transform', 'translateX(' + -(this.iconDimension * 2 + 10) + 'px)');
+            el.selectAll('.bg-extension').style('transform', 'translateX(' + (this.vis.querying ? -this.iconDimension * 2 - 10 : -this.iconDimension - 6) + 'px)');
           }
         }).bind(that), [this, data]);
       }).on('mouseleave', function (data) {
@@ -816,22 +816,24 @@ var ListGraph = (function ($,d3) { 'use strict';
       // Rooting icons
       var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT + ' ' + CLASS_INACTIVE);
 
-      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 2, 'hover-helper', 'hover-helper');
+      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'hover-helper', 'hover-helper');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 2, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 2, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
-      // Rooting icons
-      var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY + ' ' + CLASS_INACTIVE);
+      // Querying icons
+      if (this.vis.querying) {
+        var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY + ' ' + CLASS_INACTIVE);
 
-      nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'left', 1, 'hover-helper', 'hover-helper');
+        nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'left', 1, 'hover-helper', 'hover-helper');
 
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#set-inactive');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#set-inactive');
 
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
 
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
+      }
 
       var nodeLocks = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_LOCK + ' ' + CLASS_INACTIVE);
 
@@ -1249,7 +1251,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         d3El.classed('rooted', true);
         this.hideNodes(d3El.node(), data, 'downStream');
 
-        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + -(this.iconDimension * 2 + 10) + 'px)');
+        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + (this.vis.querying ? -this.iconDimension * 2 - 10 : -this.iconDimension - 6) + 'px)');
 
         // Highlight level
         this.vis.levels.focus(data.depth + this.vis.activeLevel);
@@ -2662,17 +2664,21 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
 
       // Add jQuery delegated event listeners instead of direct listeners of D3.
-      this.svgJq.on('click', '.' + this.nodes.classLabelWrapper, function () {
-        that.nodes.clickHandler.call(that.nodes, this, d3.select(this).datum());
-      });
+      if (this.querying) {
+        this.svgJq.on('click', '.' + this.nodes.classLabelWrapper, function () {
+          that.nodes.toggleQueryMode.call(that.nodes, this.parentNode, d3.select(this).datum());
+        });
+      }
 
       this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classRoot, function () {
         that.nodes.rootHandler.call(that.nodes, this, d3.select(this).datum());
       });
 
-      this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classQuery, function () {
-        that.nodes.toggleQueryMode.call(that.nodes, this.parentNode, d3.select(this).datum());
-      });
+      if (this.querying) {
+        this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classQuery, function () {
+          that.nodes.toggleQueryMode.call(that.nodes, this.parentNode, d3.select(this).datum());
+        });
+      }
 
       this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classLock, function () {
         that.nodes.lockHandler.call(that.nodes, this, d3.select(this).datum());

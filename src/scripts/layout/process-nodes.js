@@ -104,7 +104,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
           bars.push({
             barId: node.id + '.' + keys[i],
             id: keys[i],
-            value: node.data.barRefs[keys[i]],
+            value: node.data.barRefs[keys[i]]
           });
         }
         node.data.bars = bars;
@@ -130,13 +130,13 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
       source: {
         node: source,
         offsetX: 0,
-        offsetY: 0,
+        offsetY: 0
       },
       target: {
         node: target,
         offsetX: 0,
-        offsetY: 0,
-      },
+        offsetY: 0
+      }
     });
   }
 
@@ -189,7 +189,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
           data: node.data,
           originalId: id.toString(),
           // Reference to the original node
-          originalNode: node,
+          originalNode: node
         };
         _id = cloneId;
         _node = graph[cloneId];
