@@ -6,19 +6,25 @@ import isFunction from '../../../node_modules/lodash-es/lang/isFunction';
 import * as traverse from './traversal';
 import * as config from './config';
 import Bars from './bars';
-import { arrayToFakeObjs } from './utils';
 import { allTransitionsEnded } from '../commons/d3-utils';
 
-const NODES_CLASS = 'nodes';
-const NODE_CLASS = 'node';
-const CLONE_CLASS = 'clone';
+const CLASS_NODES = 'nodes';
+const CLASS_NODE = 'node';
+const CLASS_CLONE = 'clone';
+const CLASS_LABEL_WRAPPER = 'label-wrapper';
+const CLASS_FOCUS_CONTROLS = 'focus-controls';
+const CLASS_ROOT = 'root';
+const CLASS_QUERY = 'query';
+const CLASS_LOCK = 'lock';
+const CLASS_ACTIVE = 'active';
+const CLASS_INACTIVE = 'inactive';
 
 class Nodes {
   constructor (vis, baseSelection, visData, links, events) {
     const that = this;
 
     // Helper
-    function drawFullSizeRect (selection, className, shrinking) {
+    function drawFullSizeRect (selection, className, shrinking, noRoundBorder) {
       const shrinkingAmount = shrinking ? shrinking : 0;
 
       selection
@@ -32,8 +38,8 @@ class Nodes {
           'height',
           that.visData.global.row.contentHeight - 2 * shrinkingAmount
         )
-        .attr('rx', 2 - shrinkingAmount)
-        .attr('ry', 2 - shrinkingAmount)
+        .attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount)
+        .attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount)
         .classed(className, true);
     }
 
@@ -49,7 +55,7 @@ class Nodes {
     );
 
     this.groups = baseSelection.append('g')
-      .attr('class', NODES_CLASS)
+      .attr('class', CLASS_NODES)
       .call(selection => {
         selection.each(function storeLinkToGroupNode () {
           d3.select(this.parentNode).datum().nodes = this;
@@ -57,12 +63,12 @@ class Nodes {
       });
 
     this.nodes = this.groups
-      .selectAll('.' + NODE_CLASS)
+      .selectAll('.' + CLASS_NODE)
       .data(data => data.rows)
       .enter()
       .append('g')
-        .classed(NODE_CLASS, true)
-        .classed(CLONE_CLASS, data => data.clone)
+        .classed(CLASS_NODE, true)
+        .classed(CLASS_CLONE, data => data.clone)
         .attr('transform', data => 'translate(' +
           (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
         .on('mouseenter', function (data) {
@@ -77,7 +83,10 @@ class Nodes {
               el.selectAll('.bg-extension')
                 .style(
                   'transform',
-                  'translateX(' + (-(this.iconDimension * 2 + 10)) + 'px)'
+                  'translateX(' + (
+                    this.vis.querying ?
+                      -this.iconDimension * 2 - 10 : -this.iconDimension - 6
+                  ) + 'px)'
                 );
             }
           }.bind(that), [this, data]);
@@ -126,20 +135,17 @@ class Nodes {
 
     this.nodes
       .append('rect')
-        .call(drawFullSizeRect, 'bg', 1);
+        .call(drawFullSizeRect, 'bg', 1, true);
 
     // Rooting icons
     const nodeRooted = this.nodes.append('g')
-      .attr('class', 'focus-controls root inactive')
-      .on('click', function clickHandler (data) {
-        that.rootHandler.call(that, this, data);
-      });
+      .attr('class', `${CLASS_FOCUS_CONTROLS} ${CLASS_ROOT} ${CLASS_INACTIVE}`);
 
     nodeRooted.append('rect')
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        2,
+        this.vis.querying ? 2 : 1,
         'hover-helper',
         'hover-helper'
       );
@@ -148,7 +154,7 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        2,
+        this.vis.querying ? 2 : 1,
         'icon',
         'ease-all state-inactive invisible-default icon'
       )
@@ -159,67 +165,65 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        2,
+        this.vis.querying ? 2 : 1,
         'icon',
         'ease-all state-active invisible-default icon'
       )
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#locked');
 
-    // Rooting icons
-    const nodeQuery = this.nodes.append('g')
-      .attr('class', 'focus-controls query inactive')
-      .on('click', function (data) {
-        that.toggleQueryMode.call(that, this.parentNode, data);
-      });
+    // Querying icons
+    if (this.vis.querying) {
+      const nodeQuery = this.nodes.append('g')
+        .attr(
+          'class', `${CLASS_FOCUS_CONTROLS} ${CLASS_QUERY} ${CLASS_INACTIVE}`
+        );
 
-    nodeQuery.append('rect')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'left',
-        1,
-        'hover-helper',
-        'hover-helper'
-      );
+      nodeQuery.append('rect')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'left',
+          1,
+          'hover-helper',
+          'hover-helper'
+        );
 
-    nodeQuery.append('svg')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'left',
-        1,
-        'icon',
-        'ease-all state-inactive invisible-default icon'
-      )
-      .append('use')
-        .attr('xlink:href', this.vis.iconPath + '#set-inactive');
+      nodeQuery.append('svg')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'left',
+          1,
+          'icon',
+          'ease-all state-inactive invisible-default icon'
+        )
+        .append('use')
+          .attr('xlink:href', this.vis.iconPath + '#set-inactive');
 
-    nodeQuery.append('svg')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'left',
-        1,
-        'icon',
-        'ease-all state-and-or invisible-default icon'
-      )
-      .append('use')
-        .attr('xlink:href', this.vis.iconPath + '#union');
+      nodeQuery.append('svg')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'left',
+          1,
+          'icon',
+          'ease-all state-and-or invisible-default icon'
+        )
+        .append('use')
+          .attr('xlink:href', this.vis.iconPath + '#union');
 
-    nodeQuery.append('svg')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'left',
-        1,
-        'icon',
-        'ease-all state-not invisible-default icon'
-      )
-      .append('use')
-        .attr('xlink:href', this.vis.iconPath + '#not');
+      nodeQuery.append('svg')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'left',
+          1,
+          'icon',
+          'ease-all state-not invisible-default icon'
+        )
+        .append('use')
+          .attr('xlink:href', this.vis.iconPath + '#not');
+    }
 
     const nodeLocks = this.nodes.append('g')
-      .attr('class', 'focus-controls lock inactive')
-      .on('click', function clickHandler (data) {
-        that.lockHandler.call(that, this, data);
-      });
+      .attr('class', `${CLASS_FOCUS_CONTROLS} ${CLASS_LOCK} ${CLASS_INACTIVE}`);
 
     nodeLocks.append('circle')
       .call(this.setUpFocusControls.bind(this), 'right', 0, 'bg', 'bg');
@@ -253,26 +257,21 @@ class Nodes {
         .call(drawFullSizeRect, 'border');
 
     // Add node label
-    this.nodes.call(selection => {
-      selection.append('foreignObject')
-        .attr('x', this.visData.global.cell.padding)
-        .attr('y', this.visData.global.row.padding +
-          this.visData.global.cell.padding)
-        .attr('width', this.visData.global.column.contentWidth)
-        .attr('height', this.visData.global.row.contentHeight -
-          this.visData.global.cell.padding * 2)
-        .attr('class', 'label-wrapper')
-        .on('click', function clickHandler (data) {
-          that.clickHandler.call(that, this, data);
-        })
-        .append('xhtml:div')
-          .attr('class', 'label')
-          .attr('title', data => data.data.name)
-          .style('line-height', (this.visData.global.row.contentHeight -
-            this.visData.global.cell.padding * 2) + 'px')
-          .append('xhtml:span')
-            .text(data => data.data.name);
-    });
+    this.nodes.append('foreignObject')
+      .attr('x', this.visData.global.cell.padding)
+      .attr('y', this.visData.global.row.padding +
+        this.visData.global.cell.padding)
+      .attr('width', this.visData.global.column.contentWidth)
+      .attr('height', this.visData.global.row.contentHeight -
+        this.visData.global.cell.padding * 2)
+      .attr('class', CLASS_LABEL_WRAPPER)
+      .append('xhtml:div')
+        .attr('class', 'label')
+        .attr('title', data => data.data.name)
+        .style('line-height', (this.visData.global.row.contentHeight -
+          this.visData.global.cell.padding * 2) + 'px')
+        .append('xhtml:span')
+          .text(data => data.data.name);
 
     if (isFunction(this.events.on)) {
       // this.events.on('d3ListGraphNodeClick', dataSetIds => {
@@ -327,6 +326,15 @@ class Nodes {
     }
   }
 
+  get classNnodes () { return CLASS_NODES; }
+  get classNode () { return CLASS_NODE; }
+  get classClone () { return CLASS_CLONE; }
+  get classLabelWrapper () { return CLASS_LABEL_WRAPPER; }
+  get classFocusControls () { return CLASS_FOCUS_CONTROLS; }
+  get classRoot () { return CLASS_ROOT; }
+  get classQuery () { return CLASS_QUERY; }
+  get classLock () { return CLASS_LOCK; }
+
   clickHandler (el, data) {
     this.toggleQueryMode(el.parentNode, data);
     // this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
@@ -338,7 +346,7 @@ class Nodes {
     const eventData = {
       id: data.id,
       clone: false,
-      clonedFromId: undefined,
+      clonedFromId: undefined
     };
 
     if (data.clone) {
@@ -355,7 +363,7 @@ class Nodes {
     const eventData = {
       id: data.id,
       clone: false,
-      clonedFromId: undefined,
+      clonedFromId: undefined
     };
 
     if (data.clone) {
@@ -376,14 +384,14 @@ class Nodes {
             id: events.locked.id,
             clone: events.locked.clone,
             clonedFromId: events.locked.clone ?
-              events.locked.originalNode.id : undefined,
+              events.locked.originalNode.id : undefined
           },
           unlock: {
             id: events.unlocked.id,
             clone: events.unlocked.clone,
             clonedFromId: events.unlocked.clone ?
-              events.unlocked.originalNode.id : undefined,
-          },
+              events.unlocked.originalNode.id : undefined
+          }
         });
       }
     } else {
@@ -392,7 +400,7 @@ class Nodes {
           id: events.locked.id,
           clone: events.locked.clone,
           clonedFromId: events.locked.clone ?
-            events.locked.originalNode.id : undefined,
+            events.locked.originalNode.id : undefined
         });
       }
 
@@ -401,7 +409,7 @@ class Nodes {
           id: events.unlocked.id,
           clone: events.unlocked.clone,
           clonedFromId: events.unlocked.clone ?
-            events.unlocked.originalNode.id : undefined,
+            events.unlocked.originalNode.id : undefined
         });
       }
     }
@@ -416,14 +424,14 @@ class Nodes {
           id: events.rooted.id,
           clone: events.rooted.clone,
           clonedFromId: events.rooted.clone ?
-            events.rooted.originalNode.id : undefined,
+            events.rooted.originalNode.id : undefined
         },
         unrooted: {
           id: events.unrooted.id,
           clone: events.unrooted.clone,
           clonedFromId: events.unrooted.clone ?
-            events.unrooted.originalNode.id : undefined,
-        },
+            events.unrooted.originalNode.id : undefined
+        }
       });
     } else {
       if (events.rooted) {
@@ -431,7 +439,7 @@ class Nodes {
           id: events.rooted.id,
           clone: events.rooted.clone,
           clonedFromId: events.rooted.clone ?
-            events.rooted.originalNode.id : undefined,
+            events.rooted.originalNode.id : undefined
         });
       }
 
@@ -440,7 +448,7 @@ class Nodes {
           id: events.unrooted.id,
           clone: events.unrooted.clone,
           clonedFromId: events.unrooted.clone ?
-            events.unrooted.originalNode.id : undefined,
+            events.unrooted.originalNode.id : undefined
         });
       }
     }
@@ -449,7 +457,7 @@ class Nodes {
       id: events.rooted.id,
       clone: events.rooted.clone,
       clonedFromId: events.rooted.clone ?
-        events.rooted.originalNode.id : undefined,
+        events.rooted.originalNode.id : undefined
     });
   }
 
@@ -507,19 +515,20 @@ class Nodes {
     const events = { locked: false, unlocked: false };
 
     if (this.lockedNode) {
+      this.lockedNode
+        .classed(CLASS_ACTIVE, false)
+        .classed(CLASS_INACTIVE, true);
       if (this.lockedNode.datum().id === data.id) {
-        this.lockedNode.classed({ active: false, inactive: true });
         this.unlockNode(this.lockedNode.datum().id);
         events.unlocked = this.lockedNode.datum();
         this.lockedNode = undefined;
       } else {
         // Reset previously locked node;
-        this.lockedNode.classed({ active: false, inactive: true });
         this.unlockNode(this.lockedNode.datum().id);
         events.unlocked = this.lockedNode.datum();
 
         if (!setFalse) {
-          d3El.classed({ active: true, inactive: false });
+          d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
           this.lockNode(data.id);
           events.locked = data;
           this.lockedNode = d3El;
@@ -527,7 +536,7 @@ class Nodes {
       }
     } else {
       if (!setFalse) {
-        d3El.classed({ active: true, inactive: false });
+        d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
         this.lockNode(data.id);
         events.locked = data;
         this.lockedNode = d3El;
@@ -584,7 +593,7 @@ class Nodes {
       inactive: false,
       'query-and': mode === 'and' ? true : false,
       'query-or': mode === 'or' ? true : false,
-      'query-not': mode === 'not' ? true : false,
+      'query-not': mode === 'not' ? true : false
     });
   }
 
@@ -596,7 +605,7 @@ class Nodes {
       inactive: true,
       'query-and': false,
       'query-or': false,
-      'query-not': false,
+      'query-not': false
     });
     if (this.rootedNode) {
       this.updateVisibility();
@@ -636,7 +645,7 @@ class Nodes {
           clone: data.clone,
           clonedFromId: data.clone ?
             data.originalNode.id : undefined,
-          mode: data.data.queryMode,
+          mode: data.data.queryMode
         });
       }
     } else {
@@ -644,7 +653,7 @@ class Nodes {
         id: data.id,
         clone: data.clone,
         clonedFromId: data.clone ?
-          data.originalNode.id : undefined,
+          data.originalNode.id : undefined
       });
     }
   }
@@ -680,7 +689,7 @@ class Nodes {
         this.rootedNode = undefined;
         // Highlight first level
         this.vis.levels.focus(
-          this.vis.activeLevelNumber - this.vis.noRootedNodeDifference
+          this.vis.activeLevel - this.vis.noRootActiveLevelDiff
         );
       }
     } else {
@@ -705,11 +714,14 @@ class Nodes {
     d3El.selectAll('.bg-extension')
       .style(
         'transform',
-        'translateX(' + (-(this.iconDimension * 2 + 10)) + 'px)'
+        'translateX(' + (
+          this.vis.querying ?
+            -this.iconDimension * 2 - 10 : -this.iconDimension - 6
+        ) + 'px)'
       );
 
     // Highlight level
-    this.vis.levels.focus(data.depth + this.vis.activeLevelNumber);
+    this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
     if (!data.data.queryMode || data.data.queryMode === 'not') {
       this.toggleQueryMode(d3El.node(), data);
@@ -764,7 +776,7 @@ class Nodes {
           class: className,
           cx: x + (this.iconDimension / 2),
           cy: y + (this.iconDimension / 2),
-          r: this.iconDimension * 3 / 4,
+          r: this.iconDimension * 3 / 4
         });
     } else if (mode === 'hover-helper') {
       selection
@@ -773,7 +785,7 @@ class Nodes {
           x: x - 2,
           y: y - 2,
           width: this.iconDimension + 4,
-          height: this.iconDimension + 4,
+          height: this.iconDimension + 4
         });
     } else {
       selection
@@ -782,7 +794,7 @@ class Nodes {
           x,
           y,
           width: this.iconDimension,
-          height: this.iconDimension,
+          height: this.iconDimension
         });
     }
   }
@@ -854,7 +866,7 @@ class Nodes {
   highlightNodes (el, data, className, restriction, excludeClones) {
     const that = this;
     const nodeId = data.id;
-    const currentNodeData = data;
+    const currentNodeData = data.clone ? data.originalNode : data;
     const includeParents = true;
     const appliedClassName = className ? className : 'hovering';
     const includeClones = excludeClones ? false : true;
@@ -864,10 +876,16 @@ class Nodes {
     if (!this.currentLinks[appliedClassName]) {
       this.currentLinks[appliedClassName] = {};
     }
-    this.currentLinks[appliedClassName][nodeId] = [];
+    this.currentLinks[appliedClassName][nodeId] = {};
 
-    const currentActiveProperty = d3.select(el)
-      .selectAll('.bar.active .bar-magnitude').datum();
+    let currentlyActiveBar = d3.select(el).selectAll(
+      '.bar.active .bar-magnitude'
+    );
+    if (!currentlyActiveBar.empty()) {
+      currentlyActiveBar = currentlyActiveBar.datum();
+    } else {
+      currentlyActiveBar = undefined;
+    }
 
     const traverseCallbackUp = (nodeData, childData) => {
       nodeData.hovering = 2;
@@ -876,9 +894,9 @@ class Nodes {
         // Store: (parent)->(child)
         // Ignore: (parent)->(siblings of child)
         if (nodeData.links[i].target.node.id === childData.id) {
-          this.currentLinks[appliedClassName][nodeId].push(
+          this.currentLinks[appliedClassName][nodeId][
             nodeData.links[i].id
-          );
+          ] = true;
         }
       }
     };
@@ -886,7 +904,9 @@ class Nodes {
     const traverseCallbackDown = nodeData => {
       nodeData.hovering = 2;
       for (let i = nodeData.links.length; i--;) {
-        this.currentLinks[appliedClassName][nodeId].push(nodeData.links[i].id);
+        this.currentLinks[appliedClassName][nodeId][
+          nodeData.links[i].id
+        ] = true;
       }
     };
 
@@ -902,53 +922,103 @@ class Nodes {
       traverse.down(data, traverseCallbackUp, undefined, includeClones);
     }
 
-    if (data.clone) {
-      data.originalNode.hovering = 1;
-    } else {
-      if (includeClones) {
-        for (let i = data.clones.length; i--;) {
-          data.clones[i].hovering = 1;
-        }
+    currentNodeData.hovering = 1;
+
+    if (includeClones) {
+      for (let i = currentNodeData.clones.length; i--;) {
+        currentNodeData.clones[i].hovering = 1;
       }
     }
 
-    data.hovering = 1;
+    /**
+     * Helper method to assess the node visibility.
+     *
+     * @method  checkNodeVisibility
+     * @author  Fritz Lekschas
+     * @date    2016-02-25
+     * @param   {Object}  _el    [description]
+     * @param   {Object}  _data  [description]
+     * @return  {Boolean}        If `true` element is hidden.
+     */
+    function checkNodeVisibility (_el, _data) {
+      return (
+        !_data.hidden &&
+        !that.vis.isHidden.call(that.vis, _el)
+      );
+    }
 
-    this.nodes.each(function (nodeData) {
-      const node = d3.select(this);
+    /**
+     * Helper method to filter out directly hovered nodes.
+     *
+     * @method  checkNodeDirect
+     * @author  Fritz Lekschas
+     * @date    2016-02-25
+     * @param   {Object}  nodeData  The node's data object.
+     * @return  {Boolean}           If `true` element will not be filtered out.
+     */
+    function checkNodeDirect (nodeData) {
+      return nodeData.hovering === 1 && checkNodeVisibility(this, nodeData);
+    }
 
-      if (nodeData.hovering === 1) {
-        node.classed(appliedClassName + '-directly', true);
-      } else if (nodeData.hovering === 2) {
-        node.classed(appliedClassName + '-indirectly', true);
-        node.selectAll('.bar.' + currentActiveProperty.id)
-          .classed('copy', barData => {
-            let id = barData.id;
+    /**
+     * Helper method to filter out indirectly hovered nodes.
+     *
+     * @method  checkNodeIndirect
+     * @author  Fritz Lekschas
+     * @date    2016-02-25
+     * @param   {Object}  nodeData  The node's data object.
+     * @return  {Boolean}           If `true` element will not be filtered out.
+     */
+    function checkNodeIndirect (nodeData) {
+      return nodeData.hovering === 2 && checkNodeVisibility(this, nodeData);
+    }
 
-            if (barData.clone) {
-              id = barData.originalNode.id;
-            }
+    /**
+     * Helper method to update bar indicators of the directly hovered node and
+     * clones.
+     *
+     * @method  updateDirectBarIndicator
+     * @author  Fritz Lekschas
+     * @date    2016-02-25
+     * @param   {Object}  selection  D3 node selection.
+     */
+    function updateDirectBarIndicator (selection) {
+      that.bars.updateIndicator(
+        selection,
+        currentlyActiveBar.value,
+        true
+      );
+    }
 
-            if (id !== currentNodeData.id) {
-              return true;
-            }
-          });
+    /**
+     * Helper method to update bar indicators of the indirectly hovered nodes.
+     *
+     * @method  updateDirectBarIndicator
+     * @author  Fritz Lekschas
+     * @date    2016-02-25
+     * @param   {Object}  selection  D3 node selection.
+     */
+    function updateIndirectBarIndicator (selection) {
+      that.bars.updateIndicator(
+        selection,
+        currentlyActiveBar.value
+      );
+    }
 
-        const currentBar = d3.select(el)
-          .selectAll('.bar.' + currentActiveProperty.id)
-            .classed('reference', true);
+    const barIndicatorClass = currentlyActiveBar ?
+      '.bar.' + currentlyActiveBar.id + ' .bar-indicator' : '';
+    const directNodes = this.nodes.filter(checkNodeDirect)
+      .classed(appliedClassName + '-directly', true);
+    const indirectNodes = this.nodes.filter(checkNodeIndirect)
+      .classed(appliedClassName + '-indirectly', true);
 
-        that.bars.updateIndicator(
-          node.selectAll('.bar.copy .bar-indicator'),
-          node.selectAll('.bar.copy .bar-indicator-bg'),
-          currentBar.selectAll('.bar-indicator'),
-          currentActiveProperty.value
-        );
-      }
-    });
+    if (currentlyActiveBar) {
+      directNodes.select(barIndicatorClass).call(updateDirectBarIndicator);
+      indirectNodes.select(barIndicatorClass).call(updateIndirectBarIndicator);
+    }
 
     this.links.highlight(
-      arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]),
+      this.currentLinks[appliedClassName][data.id],
       true,
       appliedClassName
     );
@@ -989,7 +1059,7 @@ class Nodes {
 
     if (this.currentLinks[appliedClassName][data.id]) {
       this.links.highlight(
-        arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]),
+        this.currentLinks[appliedClassName][data.id],
         false,
         appliedClassName
       );

@@ -31,13 +31,13 @@ class Links {
     this.links.append('path')
       .attr({
         class: LINK_CLASS + '-bg',
-        d: this.diagonal,
+        d: this.diagonal
       });
 
     this.links.append('path')
       .attr({
         class: LINK_CLASS + '-direct',
-        d: this.diagonal,
+        d: this.diagonal
       });
   }
 
@@ -49,24 +49,21 @@ class Links {
             this.visData.global.row.height / 2,
           y: data.source.node.x + data.source.offsetX +
             this.visData.global.column.contentWidth +
-            this.visData.global.column.padding,
+            this.visData.global.column.padding
         };})
       .target(data => ({
         x: data.target.node.y + data.target.offsetY +
           this.visData.global.row.height / 2,
         y: data.target.node.x + data.target.offsetX +
-          this.visData.global.column.padding,
+          this.visData.global.column.padding
       }))
       .projection(data => [data.y, data.x]);
   }
 
   highlight (nodeIds, highlight, className) {
     this.links
-      .data(nodeIds, data => data.id)
-      .classed(
-        className ? className : 'hovering',
-        highlight === false ? false : true
-      );
+      .filter(data => nodeIds[data.id])
+      .classed(className, highlight);
   }
 
   scroll (selection, data) {

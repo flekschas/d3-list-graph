@@ -1,11 +1,9 @@
 // External
 import * as $ from '$';
 import * as d3 from 'd3';
-import isObject from '../../../node_modules/lodash-es/lang/isObject';
 
 // Internal
 import { LayoutNotAvailable } from './errors';
-import { exponentialGradient } from './gradients';
 import * as config from './config';
 import Topbar from './topbar';
 import Levels from './levels';
@@ -16,87 +14,102 @@ import Events from './events';
 import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 import { allTransitionsEnded } from '../commons/d3-utils';
 
+function setOption (value, defaultValue, noFalsyValue) {
+  if (noFalsyValue) {
+    return value ? value : defaultValue;
+  }
+
+  return typeof value !== 'undefined' ? value : defaultValue;
+}
+
 class ListGraph {
-  constructor (baseEl, data, rootNodes, options) {
+  constructor (init) {
     if (!d3.layout.listGraph) {
       throw new LayoutNotAvailable();
     }
 
-    if (!isObject(options)) {
-      options = {};  // eslint-disable-line no-param-reassign
-    }
-
     const that = this;
 
-    this.baseEl = baseEl;
-    this.baseElD3 = d3.select(baseEl);
-    this.baseElJq = $(baseEl);
+    this.baseEl = init.element;
+    this.baseElD3 = d3.select(this.baseEl);
+    this.baseElJq = $(this.baseEl);
     this.svgD3 = this.baseElD3.select('svg.base');
+    this.svgEl = this.svgD3.node();
 
     if (this.svgD3.empty()) {
       this.svgD3 = this.baseElD3.append('svg').attr('class', 'base');
-      this.svgJq = $(this.svgD3[0]);
+      this.svgJq = $(this.svgD3.node());
     } else {
-      this.svgJq = $(this.svgD3[0]);
+      this.svgJq = $(this.svgD3.node());
     }
 
-    this.rootNodes = rootNodes;
+    this.rootNodes = init.rootNodes;
 
-    this.width = options.width || this.svgJq.width();
-    this.height = options.height || this.svgJq.height();
-    this.scrollbarWidth = options.scrollbarWidth || config.SCROLLBAR_WIDTH;
-    this.columns = options.columns || config.COLUMNS;
-    this.rows = options.rows || config.ROWS;
-    this.iconPath = options.iconPath || config.ICON_PATH;
-    this.highlightActiveLevel = config.HIGHLIGHT_ACTIVE_LEVEL;
-    if (typeof options.highlightActiveLevel !== 'undefined') {
-      this.highlightActiveLevel = options.highlightActiveLevel;
-    }
+    this.width = setOption(init.width, this.svgJq.width(), true);
+    this.height = setOption(init.height, this.svgJq.height(), true);
+
+    // Refresh top and left position of the base `svg` everytime the user enters
+    // the element with his/her mouse cursor. This will avoid relying on complex
+    // browser resize events and other layout manipulations as they most likely
+    // won't happen when the user tries to interact with the visualization.
+    this.svgD3.on('mouseenter', function () {
+      that.getBoundingRect.call(that, this);
+    });
+
+    this.scrollbarWidth = setOption(
+      init.scrollbarWidth, config.SCROLLBAR_WIDTH, true
+    );
+    this.columns = setOption(init.columns, config.COLUMNS, true);
+    this.rows = setOption(init.rows, config.ROWS, true);
+    this.iconPath = setOption(init.iconPath, config.ICON_PATH, true);
+    this.querying = setOption(init.querying, config.QUERYING);
+
+    this.highlightActiveLevel = setOption(
+      init.highlightActiveLevel, config.HIGHLIGHT_ACTIVE_LEVEL
+    );
 
     // Determines which level from the rooted node will be regarded as active.
     // Zero means that the level of the rooted node is regarded.
-    this.activeLevelNumber = config.ACTIVE_LEVEL_NUMBER;
-    if (typeof options.activeLevelNumber !== 'undefined') {
-      this.activeLevelNumber = options.activeLevelNumber;
-    }
+    this.activeLevel = setOption(init.activeLevel, config.ACTIVE_LEVEL);
 
-    this.noRootedNodeDifference = config.NO_ROOTED_NODE_DIFFERENCE;
-    if (typeof options.noRootedNodeDifference !== 'undefined') {
-      this.noRootedNodeDifference = options.noRootedNodeDifference;
-    }
+    this.noRootActiveLevelDiff = setOption(
+      init.noRootActiveLevelDiff, config.NO_ROOT_ACTIVE_LEVEL_DIFF
+    );
 
-    this.lessAnimations = !!options.lessAnimations;
-    this.baseElD3.classed('less-animations', this.lessAnimations);
+    this.lessTransitionsJs = init.lessTransitions > 0;
+    this.lessTransitionsCss = init.lessTransitions > 1;
 
-    this.sortBy = options.sortBy;
-    this.sortOrder = options.sortOrder || config.DEFAULT_SORT_ORDER;
+    this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
-    this.events = new Events(this.baseEl, options.dispatcher);
+    this.sortBy = init.sortBy;
+    this.sortOrder = init.sortOrder === 'asc' ? 1 : config.DEFAULT_SORT_ORDER;
+
+    this.events = new Events(this.baseEl, init.dispatcher);
 
     this.baseElJq.addClass(config.CLASSNAME);
 
-    if (options.forceWidth) {
+    if (init.forceWidth) {
       this.baseElJq.width(this.width);
     }
 
     this.layout = new d3.layout.listGraph( // eslint-disable-line new-cap
       [
         this.width,
-        this.height,
+        this.height
       ],
       [
         this.columns,
-        this.rows,
+        this.rows
       ]
     );
 
-    this.data = data;
+    this.data = init.data;
     this.visData = this.layout.process(
       this.data,
       this.rootNodes,
       {
         sortBy: this.sortBy,
-        sortOrder: this.sortOrder,
+        sortOrder: this.sortOrder
       }
     );
 
@@ -108,56 +121,12 @@ class ListGraph {
     this.currentSorting = {
       global: {
         type: this.sortBy,
-        order: this.sortOrder,
+        order: this.sortOrder
       },
-      local: {},
+      local: {}
     };
 
-    exponentialGradient(
-      this.svgD3,
-      {
-        color: config.COLOR_NEGATIVE_RED,
-        offset: 0,
-        opacity: 0.2,
-        x: 0,
-        y: 0,
-      },
-      {
-        afterOffsetOpacity: 1,
-        color: config.COLOR_NEGATIVE_RED,
-        offset: 99,
-        opacity: 1,
-        x: 1,
-        y: 0,
-      },
-      'negativeRed',
-      4,
-      10
-    );
-
-    exponentialGradient(
-      this.svgD3,
-      {
-        beforeOffsetOpacity: 1,
-        color: config.COLOR_POSITIVE_GREEN,
-        offset: 1,
-        opacity: 1,
-        x: 0,
-        y: 0,
-      },
-      {
-        color: config.COLOR_POSITIVE_GREEN,
-        offset: 100,
-        opacity: 0.2,
-        x: 1,
-        y: 0,
-      },
-      'positiveGreen',
-      0.25,
-      10
-    );
-
-    this.barMode = options.barMode || config.DEFAULT_BAR_MODE;
+    this.barMode = init.barMode || config.DEFAULT_BAR_MODE;
     this.svgD3.classed(this.barMode + '-bar', true);
 
     this.topbar = new Topbar(this, this.baseElD3, this.visData);
@@ -184,13 +153,55 @@ class ListGraph {
     );
 
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
-    this.$levels = $(this.levels.groups[0]).on('mousewheel', function (event) {
+    // We are using delegated event listeners to provide better scaling
+    this.svgJq.on('mousewheel', '.' + this.levels.className, function (event) {
       if (!that.zoomedOut) {
         that.mousewheelColumn(this, event);
       }
     });
 
-    // Normally we would reference a named methods but since we need to aceess
+    // Add jQuery delegated event listeners instead of direct listeners of D3.
+    if (this.querying) {
+      this.svgJq.on(
+        'click',
+        `.${this.nodes.classLabelWrapper}`,
+        function () {
+          that.nodes.toggleQueryMode.call(
+            that.nodes, this.parentNode, d3.select(this).datum()
+          );
+        }
+      );
+    }
+
+    this.svgJq.on(
+      'click',
+      `.${this.nodes.classFocusControls}.${this.nodes.classRoot}`,
+      function () {
+        that.nodes.rootHandler.call(that.nodes, this, d3.select(this).datum());
+      }
+    );
+
+    if (this.querying) {
+      this.svgJq.on(
+        'click',
+        `.${this.nodes.classFocusControls}.${this.nodes.classQuery}`,
+        function () {
+          that.nodes.toggleQueryMode.call(
+            that.nodes, this.parentNode, d3.select(this).datum()
+          );
+        }
+      );
+    }
+
+    this.svgJq.on(
+      'click',
+      `.${this.nodes.classFocusControls}.${this.nodes.classLock}`,
+      function () {
+        that.nodes.lockHandler.call(that.nodes, this, d3.select(this).datum());
+      }
+    );
+
+    // Normally we would reference a named methods but since we need to access
     // the class' `this` property instead of the DOM element we need to use an
     // arrow function.
     this.scrollbars.all.on('mousedown', function () {
@@ -212,7 +223,7 @@ class ListGraph {
       this.dragEndHandler.bind(this),
       [
         this.container,
-        this.topbar.localControlWrapper,
+        this.topbar.localControlWrapper
       ],
       'horizontal',
       this.getDragLimits.bind(this),
@@ -257,16 +268,16 @@ class ListGraph {
     this.events.on(
       'd3ListGraphActiveLevel',
       nextLevel => {
-        const oldLevel = this.activeLevelNumber;
-        this.activeLevelNumber = Math.max(nextLevel, 0);
+        const oldLevel = this.activeLevel;
+        this.activeLevel = Math.max(nextLevel, 0);
         if (this.nodes.rootedNode) {
           const rootNodeDepth = this.nodes.rootedNode.datum().depth;
           this.levels.blur(rootNodeDepth + oldLevel);
-          this.levels.focus(rootNodeDepth + this.activeLevelNumber);
+          this.levels.focus(rootNodeDepth + this.activeLevel);
         } else {
-          this.levels.blur(oldLevel - this.noRootedNodeDifference);
+          this.levels.blur(oldLevel - this.noRootActiveLevelDiff);
           this.levels.focus(
-            this.activeLevelNumber - this.noRootedNodeDifference
+            this.activeLevel - this.noRootActiveLevelDiff
           );
         }
       }
@@ -285,9 +296,27 @@ class ListGraph {
     return {
       x: {
         min: this.dragMinX,
-        max: 0,
-      },
+        max: 0
+      }
     };
+  }
+
+  /**
+   * Helper method to get the top and left position of the base `svg`.
+   *
+   * @Description
+   * Calling `getBoundingClientRect()` right at the beginning leads to errornous
+   * values, probably because the function is called because HTML has been fully
+   * rendered.
+   *
+   * @method  getBoundingRect
+   * @author  Fritz Lekschas
+   * @date    2016-02-24
+   * @param   {Object}  el  Element on which `getBoundingClientRect` is called.
+   */
+  getBoundingRect (el) {
+    this.top = el.getBoundingClientRect().top;
+    this.left = el.getBoundingClientRect().left;
   }
 
   interactionWrapper (callback, params) {
@@ -454,7 +483,7 @@ class ListGraph {
     );
 
     // Scroll Links
-    if (columnData.level === this.visData.nodes.length) {
+    if (columnData.level !== this.visData.nodes.length) {
       this.links.scroll(
         columnData.linkSelections.outgoing,
         this.layout.offsetLinks(
@@ -521,14 +550,18 @@ class ListGraph {
     this.links.sort(this.layout.links(level - 1, level + 1));
   }
 
-  sortAllColumns (property, sortOrder, newSortType) {
+  sortAllColumns (property, newSortType) {
+    this.currentSorting.global.order =
+      this.currentSorting.global.order === -1 ? 1 : -1;
+
     this.nodes.sort(
       this.layout
-        .sort(undefined, property, sortOrder)
+        .sort(undefined, property, this.currentSorting.global.order)
         .updateNodesVisibility()
         .nodes(),
       newSortType
     );
+
     this.links.sort(this.layout.links());
   }
 
@@ -618,6 +651,26 @@ class ListGraph {
       this.globalView();
       this.zoomedOut = true;
     }
+  }
+
+  /**
+   * Check if an element is actually visible, i.e. within the boundaries of the
+   * SVG element.
+   *
+   * @method  isHidden
+   * @author  Fritz Lekschas
+   * @date    2016-02-24
+   * @param   {Object}    el  DOM element to be checked.
+   * @return  {Boolean}       If `true` element is not visible.
+   */
+  isHidden (el) {
+    const boundingRect = el.getBoundingClientRect();
+    return (
+      boundingRect.top + boundingRect.height <= this.top ||
+      boundingRect.left + boundingRect.width <= this.left ||
+      boundingRect.top >= this.top + this.height ||
+      boundingRect.left >= this.left + this.width
+    );
   }
 }
 

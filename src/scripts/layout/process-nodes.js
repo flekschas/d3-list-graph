@@ -104,7 +104,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
           bars.push({
             barId: node.id + '.' + keys[i],
             id: keys[i],
-            value: node.data.barRefs[keys[i]],
+            value: node.data.barRefs[keys[i]]
           });
         }
         node.data.bars = bars;
@@ -130,13 +130,13 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
       source: {
         node: source,
         offsetX: 0,
-        offsetY: 0,
+        offsetY: 0
       },
       target: {
         node: target,
         offsetX: 0,
-        offsetY: 0,
-      },
+        offsetY: 0
+      }
     });
   }
 
@@ -155,24 +155,41 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    * @param  {String}  id  Node ID.
    * @param  {Object}  node  Node to be processed.
    * @param  {Object}  parent  Parent node.
-   * @param  {Boolean}  duplication  If `true` node is a duplication.
+   * @param  {Boolean}  duplication  If `true` node needs to be duplicated or
+   *   cloned.
    */
   function processNode (id, node, parent, duplication) {  // eslint-disable-line no-shadow
     let _id = id.toString();
     let _node = node;
+    let skip = false;
 
     if (duplication) {
-      if (parent.depth + 1 !== node.depth) {
+      // Check if there is already another clone on the same level. If so, skip
+      // creating a new clone. The rationale is to have only one clone per
+      // level.
+      for (let i = node.clones.length; i--;) {
+        if (node.clones[i].depth === parent.depth + 1) {
+          skip = true;
+          _id = node.clones[i].cloneId;
+          _node = node.clones[i];
+          break;
+        }
+      }
+
+      // Clone node only when the parent is **not** just one level before the
+      // clone because then the parent can simple link to the _original node_.
+      if (parent.depth + 1 !== node.depth && !skip) {
         cloneId = id + '.' + (node.clones.length + 1);
         graph[cloneId] = {
           children: [],
           clone: true,
-          cloneId: node.clones.length + 1,
+          cloneId,
+          cloneNum: node.clones.length + 1,
           // Data will be referenced rather than copied to avoid inconsistencies
           data: node.data,
           originalId: id.toString(),
           // Reference to the original node
-          originalNode: node,
+          originalNode: node
         };
         _id = cloneId;
         _node = graph[cloneId];

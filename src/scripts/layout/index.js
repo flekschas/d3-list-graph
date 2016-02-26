@@ -17,7 +17,7 @@ import traverseGraph from './process-nodes';
  */
 const SIZE = {
   width: 300,
-  height: 300,
+  height: 300
 };
 
 /**
@@ -29,7 +29,7 @@ const SIZE = {
  */
 const GRID = {
   columns: 3,
-  rows: 3,
+  rows: 3
 };
 
 /**
@@ -84,7 +84,7 @@ class ListGraphLayout {
   constructor (size, grid) {
     this.scale = {
       x: d3.scale.linear(),
-      y: d3.scale.linear(),
+      y: d3.scale.linear()
     };
 
     this._colRelPadding = COL_REL_PADDING;
@@ -93,12 +93,12 @@ class ListGraphLayout {
 
     this._grid = {
       columns: GRID.columns,
-      rows: GRID.rows,
+      rows: GRID.rows
     };
 
     this._size = {
       width: SIZE.width,
-      height: SIZE.height,
+      height: SIZE.height
     };
 
     this.grid(grid);
@@ -151,7 +151,7 @@ class ListGraphLayout {
         level: i,
         rows: [],
         sortBy: this.columnSorting[i].by,
-        sortOrder: this.columnSorting[i].order,
+        sortOrder: this.columnSorting[i].order
       });
       keys = Object.keys(this.columnCache[i]);
       for (let j = keys.length; j--;) {
@@ -209,7 +209,7 @@ class ListGraphLayout {
 
     return {
       global: this.compileGlobalProps(),
-      nodes: this.nodesToMatrix(),
+      nodes: this.nodesToMatrix()
     };
   }
 
@@ -306,16 +306,16 @@ class ListGraphLayout {
         width: this._columnWidth,
         height: this._size.height,
         padding: this._colAbsPadding,
-        contentWidth: this._colAbsContentWidth,
+        contentWidth: this._colAbsContentWidth
       },
       row: {
         height: this._rowHeight,
         padding: this._rowAbsPadding,
-        contentHeight: this._rowAbsContentHeight,
+        contentHeight: this._rowAbsContentHeight
       },
       cell: {
-        padding: this._cellAbsInnerPadding,
-      },
+        padding: this._cellAbsInnerPadding
+      }
     };
   }
 
@@ -468,7 +468,7 @@ class ListGraphLayout {
         barsData.push({
           barId: nodesId[i] + '.' + graph[nodesId[i]].data.bars[j].id,
           id: graph[nodesId[i]].data.bars[j].id,
-          value: graph[nodesId[i]].data.bars[j].value,
+          value: graph[nodesId[i]].data.bars[j].value
         });
       }
     }

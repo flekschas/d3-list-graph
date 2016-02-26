@@ -61,19 +61,18 @@ var ListGraph = (function ($,d3) { 'use strict';
   // An empty path is equal to inline SVG.
   var ICON_PATH = '';
 
-  var DEFAULT_SORT_ORDER = 'desc';
+  // -1 = desc, 1 = asc
+  var DEFAULT_SORT_ORDER = -1;
 
   var DEFAULT_BAR_MODE = 'one';
 
   var HIGHLIGHT_ACTIVE_LEVEL = true;
-  var ACTIVE_LEVEL_NUMBER = 0;
-  var NO_ROOTED_NODE_DIFFERENCE = 0;
+  var ACTIVE_LEVEL = 0;
+  var NO_ROOT_ACTIVE_LEVEL_DIFF = 0;
+  var QUERYING = false;
 
   var TRANSITION_LIGHTNING_FAST = 150;
   var TRANSITION_SEMI_FAST = 250;
-  // Gradient colors
-  var COLOR_NEGATIVE_RED = '#e0001c';
-  var COLOR_POSITIVE_GREEN = '#60bf00';
 
   function mergeSelections(selections) {
     // Create a new empty selection
@@ -273,64 +272,6 @@ var ListGraph = (function ($,d3) { 'use strict';
     return Scrollbars;
   })();
 
-  /**
-   * Turns an array of IDs into an array of objects holding the ID.
-   *
-   * @description
-   * We need to translate the array of objects into an array of fake objects in
-   * order to easily match the links to be highlighted.
-   *
-   * Using this method selection can be matched easily via the array of fake
-   * objects:
-   *
-   * ```
-   * this.links
-   *   .data(arrayToFakeObjs([1, 2, 3]), data => data)
-   *   .classed('highlight', highlight === false ? false : true);
-   * ```
-   *
-   * @method  arrayToFakeObjs
-   * @author  Fritz Lekschas
-   * @date    2015-12-23
-   * @param   {Array}  arrayIds  Array of IDs.
-   * @return  {Array}            Array of objects holding the ID. E.g. `[1]` will
-   *   be translated into `[{ id: 1 }]`.
-   */
-  function arrayToFakeObjs(arrayIds) {
-    var fakeObjs = [];
-
-    for (var i = arrayIds.length; i--;) {
-      fakeObjs.push({ id: arrayIds[i] });
-    }
-
-    return fakeObjs;
-  }
-
-  /**
-   * Collect all cloned nodes, including the original node.
-   *
-   * @method  collectInclClones
-   * @author  Fritz Lekschas
-   * @date    2015-12-30
-   * @param   {Object}  node  Start node
-   * @return  {Array}         Array of original and cloned nodes.
-   */
-  function collectInclClones(node) {
-    var originalNode = node;
-
-    if (node.clone) {
-      originalNode = node.originalNode;
-    }
-
-    var clones = [originalNode];
-
-    if (originalNode.clones.length) {
-      clones = clones.concat(originalNode.clones);
-    }
-
-    return clones;
-  }
-
   /** Used to determine if values are of the language type `Object`. */
   var objectTypes = {
     'function': true,
@@ -392,6 +333,31 @@ var ListGraph = (function ($,d3) { 'use strict';
    */
   function isFinite(value) {
     return typeof value == 'number' && nativeIsFinite(value);
+  }
+
+  /**
+   * Collect all cloned nodes, including the original node.
+   *
+   * @method  collectInclClones
+   * @author  Fritz Lekschas
+   * @date    2015-12-30
+   * @param   {Object}  node  Start node
+   * @return  {Array}         Array of original and cloned nodes.
+   */
+  function collectInclClones(node) {
+    var originalNode = node;
+
+    if (node.clone) {
+      originalNode = node.originalNode;
+    }
+
+    var clones = [originalNode];
+
+    if (originalNode.clones.length) {
+      clones = clones.concat(originalNode.clones);
+    }
+
+    return clones;
   }
 
   function up(node, callback, depth, includeClones, child) {
@@ -569,21 +535,13 @@ var ListGraph = (function ($,d3) { 'use strict';
         selection.attr('x', 0).attr('y', this.visData.global.row.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
       }
 
-      function setupIndicatorBg(selection) {
-        var _this3 = this;
-
-        selection.attr('d', function (data) {
-          return Bar.generatePath(data, _this3.bars.mode, undefined, _this3.visData, data.value);
-        }).classed('bar-indicator-bg', true);
-      }
-
       function setupIndicator(selection) {
         selection.attr({
           class: 'bar-indicator',
           x: 0,
           y: this.visData.global.row.padding,
           width: 2,
-          height: this.visData.global.row.contentHeight
+          height: 4
         });
       }
 
@@ -591,17 +549,26 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.selection.append('path').call(setupMagnitude.bind(this));
 
-      this.selection.append('path').call(setupIndicatorBg.bind(this));
-
       this.selection.append('rect').call(setupIndicator.bind(this));
     }
 
     babelHelpers.createClass(Bar, null, [{
       key: 'updateIndicator',
-      value: function updateIndicator(selection, contentWidth, referenceValue) {
-        selection.attr('x', Math.min(contentWidth * Math.min(referenceValue, 1), contentWidth - 2)).classed('positive', function (data) {
+      value: function updateIndicator(selection, contentWidth, contentHeight, referenceValue, lessTransitions, reference) {
+        var y = Math.min(contentWidth * Math.min(referenceValue, 1) - 1, contentWidth - 2);
+
+        // Stop previous transitions.
+        selection.attr({
+          height: contentHeight,
+          x: reference ? y : 0
+        }).classed('positive', function (data) {
           return data.value >= referenceValue;
-        });
+        }).transition().duration(0).attr('width', reference ? 2 : lessTransitions ? y : 0 // eslint-disable-line no-nested-ternary
+        );
+
+        if (!lessTransitions && !reference) {
+          selection.transition().duration(TRANSITION_SEMI_FAST).attr('width', y);
+        }
       }
     }, {
       key: 'generatePath',
@@ -726,39 +693,19 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'updateIndicator',
-      value: function updateIndicator(refBars, refBarsBg, currentBar, referenceValue) {
-        var _this3 = this;
-
-        Bar.updateIndicator(currentBar, this.visData.global.column.contentWidth, referenceValue);
-
-        Bar.updateIndicator(refBars, this.visData.global.column.contentWidth, referenceValue);
-
-        refBarsBg.attr('d', function (data) {
-          return Bar.generatePath(data, _this3.mode, undefined, _this3.visData, referenceValue);
-        }).classed('positive', function (data) {
-          return data.value >= referenceValue;
-        });
-
-        var transition = refBarsBg;
-
-        if (!this.vis.lessAnimations) {
-          transition = refBarsBg.transition().duration(TRANSITION_SEMI_FAST);
-        }
-
-        transition.attr('d', function (data) {
-          return Bar.generatePath(data, _this3.mode, undefined, _this3.visData, referenceValue, true);
-        });
+      value: function updateIndicator(bars, referenceValue, direct) {
+        Bar.updateIndicator(bars, this.visData.global.column.contentWidth, direct ? this.visData.global.row.contentHeight : 4, referenceValue, this.vis.lessTransitionsJs, direct);
       }
     }, {
       key: 'switchMode',
       value: function switchMode(mode, currentSorting) {
-        var _this4 = this;
+        var _this3 = this;
 
         if (this.mode !== mode) {
           if (mode === 'one') {
             if (currentSorting.global.type) {
               this.selection.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-                return Bar.generateOneBarPath(data, currentSorting.global.type, _this4.visData);
+                return Bar.generateOneBarPath(data, currentSorting.global.type, _this3.visData);
               });
             } else {
               // console.error(
@@ -770,11 +717,11 @@ var ListGraph = (function ($,d3) { 'use strict';
 
           if (mode === 'two') {
             this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return Bar.generateTwoBarsPath(data, _this4.visData);
+              return Bar.generateTwoBarsPath(data, _this3.visData);
             });
 
             this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return Bar.generateTwoBarsPath(data, _this4.visData, true);
+              return Bar.generateTwoBarsPath(data, _this3.visData, true);
             });
           }
 
@@ -785,9 +732,16 @@ var ListGraph = (function ($,d3) { 'use strict';
     return Bars;
   })();
 
-  var NODES_CLASS = 'nodes';
-  var NODE_CLASS = 'node';
-  var CLONE_CLASS = 'clone';
+  var CLASS_NODES = 'nodes';
+  var CLASS_NODE = 'node';
+  var CLASS_CLONE = 'clone';
+  var CLASS_LABEL_WRAPPER = 'label-wrapper';
+  var CLASS_FOCUS_CONTROLS = 'focus-controls';
+  var CLASS_ROOT = 'root';
+  var CLASS_QUERY = 'query';
+  var CLASS_LOCK = 'lock';
+  var CLASS_ACTIVE = 'active';
+  var CLASS_INACTIVE = 'inactive';
 
   var Nodes = (function () {
     function Nodes(vis, baseSelection, visData, links, events) {
@@ -798,10 +752,10 @@ var ListGraph = (function ($,d3) { 'use strict';
       var that = this;
 
       // Helper
-      function drawFullSizeRect(selection, className, shrinking) {
+      function drawFullSizeRect(selection, className, shrinking, noRoundBorder) {
         var shrinkingAmount = shrinking ? shrinking : 0;
 
-        selection.attr('x', shrinkingAmount).attr('y', that.visData.global.row.padding + shrinkingAmount).attr('width', that.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', that.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', 2 - shrinkingAmount).attr('ry', 2 - shrinkingAmount).classed(className, true);
+        selection.attr('x', shrinkingAmount).attr('y', that.visData.global.row.padding + shrinkingAmount).attr('width', that.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', that.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
       }
 
       this.vis = vis;
@@ -811,15 +765,15 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.currentLinks = {};
       this.iconDimension = Math.min(this.visData.global.row.contentHeight / 2 - this.visData.global.cell.padding * 2, this.visData.global.column.padding / 2 - 4);
 
-      this.groups = baseSelection.append('g').attr('class', NODES_CLASS).call(function (selection) {
+      this.groups = baseSelection.append('g').attr('class', CLASS_NODES).call(function (selection) {
         selection.each(function storeLinkToGroupNode() {
           d3.select(this.parentNode).datum().nodes = this;
         });
       });
 
-      this.nodes = this.groups.selectAll('.' + NODE_CLASS).data(function (data) {
+      this.nodes = this.groups.selectAll('.' + CLASS_NODE).data(function (data) {
         return data.rows;
-      }).enter().append('g').classed(NODE_CLASS, true).classed(CLONE_CLASS, function (data) {
+      }).enter().append('g').classed(CLASS_NODE, true).classed(CLASS_CLONE, function (data) {
         return data.clone;
       }).attr('transform', function (data) {
         return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
@@ -832,7 +786,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           }
 
           if (!el.classed('rooted')) {
-            el.selectAll('.bg-extension').style('transform', 'translateX(' + -(this.iconDimension * 2 + 10) + 'px)');
+            el.selectAll('.bg-extension').style('transform', 'translateX(' + (this.vis.querying ? -this.iconDimension * 2 - 10 : -this.iconDimension - 6) + 'px)');
           }
         }).bind(that), [this, data]);
       }).on('mouseleave', function (data) {
@@ -857,35 +811,31 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.nodes.append('rect').call(drawFullSizeRect, 'bg-border');
 
-      this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1);
+      this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
 
       // Rooting icons
-      var nodeRooted = this.nodes.append('g').attr('class', 'focus-controls root inactive').on('click', function clickHandler(data) {
-        that.rootHandler.call(that, this, data);
-      });
+      var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT + ' ' + CLASS_INACTIVE);
 
-      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 2, 'hover-helper', 'hover-helper');
+      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'hover-helper', 'hover-helper');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 2, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 2, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
-      // Rooting icons
-      var nodeQuery = this.nodes.append('g').attr('class', 'focus-controls query inactive').on('click', function (data) {
-        that.toggleQueryMode.call(that, this.parentNode, data);
-      });
+      // Querying icons
+      if (this.vis.querying) {
+        var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY + ' ' + CLASS_INACTIVE);
 
-      nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'left', 1, 'hover-helper', 'hover-helper');
+        nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'left', 1, 'hover-helper', 'hover-helper');
 
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#set-inactive');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#set-inactive');
 
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
 
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
+      }
 
-      var nodeLocks = this.nodes.append('g').attr('class', 'focus-controls lock inactive').on('click', function clickHandler(data) {
-        that.lockHandler.call(that, this, data);
-      });
+      var nodeLocks = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_LOCK + ' ' + CLASS_INACTIVE);
 
       nodeLocks.append('circle').call(this.setUpFocusControls.bind(this), 'right', 0, 'bg', 'bg');
 
@@ -898,14 +848,10 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.nodes.append('rect').call(drawFullSizeRect, 'border');
 
       // Add node label
-      this.nodes.call(function (selection) {
-        selection.append('foreignObject').attr('x', _this.visData.global.cell.padding).attr('y', _this.visData.global.row.padding + _this.visData.global.cell.padding).attr('width', _this.visData.global.column.contentWidth).attr('height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2).attr('class', 'label-wrapper').on('click', function clickHandler(data) {
-          that.clickHandler.call(that, this, data);
-        }).append('xhtml:div').attr('class', 'label').attr('title', function (data) {
-          return data.data.name;
-        }).style('line-height', _this.visData.global.row.contentHeight - _this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').text(function (data) {
-          return data.data.name;
-        });
+      this.nodes.append('foreignObject').attr('x', this.visData.global.cell.padding).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2).attr('class', CLASS_LABEL_WRAPPER).append('xhtml:div').attr('class', 'label').attr('title', function (data) {
+        return data.data.name;
+      }).style('line-height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').text(function (data) {
+        return data.data.name;
       });
 
       if (isFunction(this.events.on)) {
@@ -1116,19 +1062,18 @@ var ListGraph = (function ($,d3) { 'use strict';
         var events = { locked: false, unlocked: false };
 
         if (this.lockedNode) {
+          this.lockedNode.classed(CLASS_ACTIVE, false).classed(CLASS_INACTIVE, true);
           if (this.lockedNode.datum().id === data.id) {
-            this.lockedNode.classed({ active: false, inactive: true });
             this.unlockNode(this.lockedNode.datum().id);
             events.unlocked = this.lockedNode.datum();
             this.lockedNode = undefined;
           } else {
             // Reset previously locked node;
-            this.lockedNode.classed({ active: false, inactive: true });
             this.unlockNode(this.lockedNode.datum().id);
             events.unlocked = this.lockedNode.datum();
 
             if (!setFalse) {
-              d3El.classed({ active: true, inactive: false });
+              d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
               this.lockNode(data.id);
               events.locked = data;
               this.lockedNode = d3El;
@@ -1136,7 +1081,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           }
         } else {
           if (!setFalse) {
-            d3El.classed({ active: true, inactive: false });
+            d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
             this.lockNode(data.id);
             events.locked = data;
             this.lockedNode = d3El;
@@ -1284,7 +1229,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           } else {
             this.rootedNode = undefined;
             // Highlight first level
-            this.vis.levels.focus(this.vis.activeLevelNumber - this.vis.noRootedNodeDifference);
+            this.vis.levels.focus(this.vis.activeLevel - this.vis.noRootActiveLevelDiff);
           }
         } else {
           if (!setFalse) {
@@ -1306,10 +1251,10 @@ var ListGraph = (function ($,d3) { 'use strict';
         d3El.classed('rooted', true);
         this.hideNodes(d3El.node(), data, 'downStream');
 
-        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + -(this.iconDimension * 2 + 10) + 'px)');
+        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + (this.vis.querying ? -this.iconDimension * 2 - 10 : -this.iconDimension - 6) + 'px)');
 
         // Highlight level
-        this.vis.levels.focus(data.depth + this.vis.activeLevelNumber);
+        this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
         if (!data.data.queryMode || data.data.queryMode === 'not') {
           this.toggleQueryMode(d3El.node(), data);
@@ -1460,7 +1405,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         var that = this;
         var nodeId = data.id;
-        var currentNodeData = data;
+        var currentNodeData = data.clone ? data.originalNode : data;
         var includeParents = true;
         var appliedClassName = className ? className : 'hovering';
         var includeClones = excludeClones ? false : true;
@@ -1470,9 +1415,14 @@ var ListGraph = (function ($,d3) { 'use strict';
         if (!this.currentLinks[appliedClassName]) {
           this.currentLinks[appliedClassName] = {};
         }
-        this.currentLinks[appliedClassName][nodeId] = [];
+        this.currentLinks[appliedClassName][nodeId] = {};
 
-        var currentActiveProperty = d3.select(el).selectAll('.bar.active .bar-magnitude').datum();
+        var currentlyActiveBar = d3.select(el).selectAll('.bar.active .bar-magnitude');
+        if (!currentlyActiveBar.empty()) {
+          currentlyActiveBar = currentlyActiveBar.datum();
+        } else {
+          currentlyActiveBar = undefined;
+        }
 
         var traverseCallbackUp = function traverseCallbackUp(nodeData, childData) {
           nodeData.hovering = 2;
@@ -1481,7 +1431,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             // Store: (parent)->(child)
             // Ignore: (parent)->(siblings of child)
             if (nodeData.links[i].target.node.id === childData.id) {
-              _this2.currentLinks[appliedClassName][nodeId].push(nodeData.links[i].id);
+              _this2.currentLinks[appliedClassName][nodeId][nodeData.links[i].id] = true;
             }
           }
         };
@@ -1489,7 +1439,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         var traverseCallbackDown = function traverseCallbackDown(nodeData) {
           nodeData.hovering = 2;
           for (var i = nodeData.links.length; i--;) {
-            _this2.currentLinks[appliedClassName][nodeId].push(nodeData.links[i].id);
+            _this2.currentLinks[appliedClassName][nodeId][nodeData.links[i].id] = true;
           }
         };
 
@@ -1503,44 +1453,89 @@ var ListGraph = (function ($,d3) { 'use strict';
           down(data, traverseCallbackUp, undefined, includeClones);
         }
 
-        if (data.clone) {
-          data.originalNode.hovering = 1;
-        } else {
-          if (includeClones) {
-            for (var i = data.clones.length; i--;) {
-              data.clones[i].hovering = 1;
-            }
+        currentNodeData.hovering = 1;
+
+        if (includeClones) {
+          for (var i = currentNodeData.clones.length; i--;) {
+            currentNodeData.clones[i].hovering = 1;
           }
         }
 
-        data.hovering = 1;
+        /**
+         * Helper method to assess the node visibility.
+         *
+         * @method  checkNodeVisibility
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  _el    [description]
+         * @param   {Object}  _data  [description]
+         * @return  {Boolean}        If `true` element is hidden.
+         */
+        function checkNodeVisibility(_el, _data) {
+          return !_data.hidden && !that.vis.isHidden.call(that.vis, _el);
+        }
 
-        this.nodes.each(function (nodeData) {
-          var node = d3.select(this);
+        /**
+         * Helper method to filter out directly hovered nodes.
+         *
+         * @method  checkNodeDirect
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  nodeData  The node's data object.
+         * @return  {Boolean}           If `true` element will not be filtered out.
+         */
+        function checkNodeDirect(nodeData) {
+          return nodeData.hovering === 1 && checkNodeVisibility(this, nodeData);
+        }
 
-          if (nodeData.hovering === 1) {
-            node.classed(appliedClassName + '-directly', true);
-          } else if (nodeData.hovering === 2) {
-            node.classed(appliedClassName + '-indirectly', true);
-            node.selectAll('.bar.' + currentActiveProperty.id).classed('copy', function (barData) {
-              var id = barData.id;
+        /**
+         * Helper method to filter out indirectly hovered nodes.
+         *
+         * @method  checkNodeIndirect
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  nodeData  The node's data object.
+         * @return  {Boolean}           If `true` element will not be filtered out.
+         */
+        function checkNodeIndirect(nodeData) {
+          return nodeData.hovering === 2 && checkNodeVisibility(this, nodeData);
+        }
 
-              if (barData.clone) {
-                id = barData.originalNode.id;
-              }
+        /**
+         * Helper method to update bar indicators of the directly hovered node and
+         * clones.
+         *
+         * @method  updateDirectBarIndicator
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  selection  D3 node selection.
+         */
+        function updateDirectBarIndicator(selection) {
+          that.bars.updateIndicator(selection, currentlyActiveBar.value, true);
+        }
 
-              if (id !== currentNodeData.id) {
-                return true;
-              }
-            });
+        /**
+         * Helper method to update bar indicators of the indirectly hovered nodes.
+         *
+         * @method  updateDirectBarIndicator
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  selection  D3 node selection.
+         */
+        function updateIndirectBarIndicator(selection) {
+          that.bars.updateIndicator(selection, currentlyActiveBar.value);
+        }
 
-            var currentBar = d3.select(el).selectAll('.bar.' + currentActiveProperty.id).classed('reference', true);
+        var barIndicatorClass = currentlyActiveBar ? '.bar.' + currentlyActiveBar.id + ' .bar-indicator' : '';
+        var directNodes = this.nodes.filter(checkNodeDirect).classed(appliedClassName + '-directly', true);
+        var indirectNodes = this.nodes.filter(checkNodeIndirect).classed(appliedClassName + '-indirectly', true);
 
-            that.bars.updateIndicator(node.selectAll('.bar.copy .bar-indicator'), node.selectAll('.bar.copy .bar-indicator-bg'), currentBar.selectAll('.bar-indicator'), currentActiveProperty.value);
-          }
-        });
+        if (currentlyActiveBar) {
+          directNodes.select(barIndicatorClass).call(updateDirectBarIndicator);
+          indirectNodes.select(barIndicatorClass).call(updateIndirectBarIndicator);
+        }
 
-        this.links.highlight(arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]), true, appliedClassName);
+        this.links.highlight(this.currentLinks[appliedClassName][data.id], true, appliedClassName);
       }
     }, {
       key: 'unhighlightNodes',
@@ -1578,7 +1573,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.nodes.classed(appliedClassName + '-indirectly', false);
 
         if (this.currentLinks[appliedClassName][data.id]) {
-          this.links.highlight(arrayToFakeObjs(this.currentLinks[appliedClassName][data.id]), false, appliedClassName);
+          this.links.highlight(this.currentLinks[appliedClassName][data.id], false, appliedClassName);
         }
       }
     }, {
@@ -1633,6 +1628,46 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.vis.links.updateVisibility();
       }
     }, {
+      key: 'classNnodes',
+      get: function get() {
+        return CLASS_NODES;
+      }
+    }, {
+      key: 'classNode',
+      get: function get() {
+        return CLASS_NODE;
+      }
+    }, {
+      key: 'classClone',
+      get: function get() {
+        return CLASS_CLONE;
+      }
+    }, {
+      key: 'classLabelWrapper',
+      get: function get() {
+        return CLASS_LABEL_WRAPPER;
+      }
+    }, {
+      key: 'classFocusControls',
+      get: function get() {
+        return CLASS_FOCUS_CONTROLS;
+      }
+    }, {
+      key: 'classRoot',
+      get: function get() {
+        return CLASS_ROOT;
+      }
+    }, {
+      key: 'classQuery',
+      get: function get() {
+        return CLASS_QUERY;
+      }
+    }, {
+      key: 'classLock',
+      get: function get() {
+        return CLASS_LOCK;
+      }
+    }, {
       key: 'barMode',
       get: function get() {
         return this.bars.mode;
@@ -1677,9 +1712,9 @@ var ListGraph = (function ($,d3) { 'use strict';
     babelHelpers.createClass(Links, [{
       key: 'highlight',
       value: function highlight(nodeIds, _highlight, className) {
-        this.links.data(nodeIds, function (data) {
-          return data.id;
-        }).classed(className ? className : 'hovering', _highlight === false ? false : true);
+        this.links.filter(function (data) {
+          return nodeIds[data.id];
+        }).classed(className, _highlight);
       }
     }, {
       key: 'scroll',
@@ -1752,9 +1787,9 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS).classed('active', function (data, index) {
         if (_this.vis.highlightActiveLevel) {
           if (!_this.vis.nodes || !_this.vis.nodes.rootedNode) {
-            return index === _this.vis.activeLevelNumber - _this.vis.noRootedNodeDifference;
+            return index === _this.vis.activeLevel - _this.vis.noRootActiveLevelDiff;
           }
-          return index === _this.vis.activeLevelNumber;
+          return index === _this.vis.activeLevel;
         }
       });
 
@@ -1850,6 +1885,11 @@ var ListGraph = (function ($,d3) { 'use strict';
             this.groups.classed('active', false);
           }
         }
+      }
+    }, {
+      key: 'className',
+      get: function get() {
+        return COLUMN_CLASS;
       }
     }, {
       key: 'height',
@@ -2137,7 +2177,7 @@ var ListGraph = (function ($,d3) { 'use strict';
           this.sortColumn(el, columnKeys[i], type, true);
         }
 
-        this.vis.sortAllColumns(type, this.vis.currentSorting.global.order, true);
+        this.vis.sortAllColumns(type, true);
       }
     }, {
       key: 'sortColumn',
@@ -2233,59 +2273,6 @@ var ListGraph = (function ($,d3) { 'use strict';
     }]);
     return Topbar;
   })();
-
-  /**
-   * Creates and adds an interpolated exponential SVG gradient to an SVG element.
-   *
-   * @example
-   * ```
-   * exponentialGradient(
-   *   d3.select('svg'),
-   *   {
-   *     color: #fff,
-   *     offset: 10,
-   *     opacity: 0.5,
-   *     x: 0,
-   *     y: 0
-   *   },
-   *   {
-   *     color: #000,
-   *     offset: 10,
-   *     opacity: 1,
-   *     x: 1,
-   *     y: 1
-   *   },
-   *   'myFancyGradient',
-   *   3,
-   *   5
-   * );
-   * ```
-   *
-   * @method  exponentialGradient
-   * @author  Fritz Lekschas
-   * @date    2015-12-30
-   * @param   {Object}  el     Element to which the `def` gradient should be
-   *   added to.
-   * @param   {Object}  start  Start properies.
-   * @param   {Object}  end    End properies.
-   * @param   {String}  name   Name of the gradient.
-   * @param   {Number}  power  Exponential power.
-   * @param   {Number}  steps  Interpolation steps.
-   */
-  function exponentialGradient(el, start, end, name, power, steps) {
-    var scale = d3.scale.pow().exponent(power || 2);
-    var stepSize = 1 / ((steps || 0) + 1);
-
-    var gradient = el.append('defs').append('linearGradient').attr('id', name).attr('x1', start.x).attr('y1', start.y).attr('x2', end.x).attr('y2', end.y).attr('spreadMethod', 'pad');
-
-    gradient.append('stop').attr('offset', start.offset + '%').attr('stop-color', start.color).attr('stop-opacity', start.opacity);
-
-    for (var i = 0; i < steps; i++) {
-      gradient.append('stop').attr('offset', start.offset + i * stepSize * (end.offset - start.offset) + '%').attr('stop-color', end.color).attr('stop-opacity', start.opacity + scale(i * stepSize) * (end.opacity - start.opacity));
-    }
-
-    gradient.append('stop').attr('offset', end.offset + '%').attr('stop-color', end.color).attr('stop-opacity', end.opacity);
-  }
 
   /**
    * Checks if `value` is object-like.
@@ -2554,8 +2541,16 @@ var ListGraph = (function ($,d3) { 'use strict';
     return Events;
   })();
 
+  function setOption(value, defaultValue, noFalsyValue) {
+    if (noFalsyValue) {
+      return value ? value : defaultValue;
+    }
+
+    return typeof value !== 'undefined' ? value : defaultValue;
+  }
+
   var ListGraph = (function () {
-    function ListGraph(baseEl, data, rootNodes, options) {
+    function ListGraph(init) {
       var _this = this;
 
       babelHelpers.classCallCheck(this, ListGraph);
@@ -2564,67 +2559,68 @@ var ListGraph = (function ($,d3) { 'use strict';
         throw new LayoutNotAvailable();
       }
 
-      if (!isObject(options)) {
-        options = {}; // eslint-disable-line no-param-reassign
-      }
-
       var that = this;
 
-      this.baseEl = baseEl;
-      this.baseElD3 = d3.select(baseEl);
-      this.baseElJq = $(baseEl);
+      this.baseEl = init.element;
+      this.baseElD3 = d3.select(this.baseEl);
+      this.baseElJq = $(this.baseEl);
       this.svgD3 = this.baseElD3.select('svg.base');
+      this.svgEl = this.svgD3.node();
 
       if (this.svgD3.empty()) {
         this.svgD3 = this.baseElD3.append('svg').attr('class', 'base');
-        this.svgJq = $(this.svgD3[0]);
+        this.svgJq = $(this.svgD3.node());
       } else {
-        this.svgJq = $(this.svgD3[0]);
+        this.svgJq = $(this.svgD3.node());
       }
 
-      this.rootNodes = rootNodes;
+      this.rootNodes = init.rootNodes;
 
-      this.width = options.width || this.svgJq.width();
-      this.height = options.height || this.svgJq.height();
-      this.scrollbarWidth = options.scrollbarWidth || SCROLLBAR_WIDTH;
-      this.columns = options.columns || COLUMNS;
-      this.rows = options.rows || ROWS;
-      this.iconPath = options.iconPath || ICON_PATH;
-      this.highlightActiveLevel = HIGHLIGHT_ACTIVE_LEVEL;
-      if (typeof options.highlightActiveLevel !== 'undefined') {
-        this.highlightActiveLevel = options.highlightActiveLevel;
-      }
+      this.width = setOption(init.width, this.svgJq.width(), true);
+      this.height = setOption(init.height, this.svgJq.height(), true);
+
+      // Refresh top and left position of the base `svg` everytime the user enters
+      // the element with his/her mouse cursor. This will avoid relying on complex
+      // browser resize events and other layout manipulations as they most likely
+      // won't happen when the user tries to interact with the visualization.
+      this.svgD3.on('mouseenter', function () {
+        that.getBoundingRect.call(that, this);
+      });
+
+      this.scrollbarWidth = setOption(init.scrollbarWidth, SCROLLBAR_WIDTH, true);
+      this.columns = setOption(init.columns, COLUMNS, true);
+      this.rows = setOption(init.rows, ROWS, true);
+      this.iconPath = setOption(init.iconPath, ICON_PATH, true);
+      this.querying = setOption(init.querying, QUERYING);
+
+      this.highlightActiveLevel = setOption(init.highlightActiveLevel, HIGHLIGHT_ACTIVE_LEVEL);
 
       // Determines which level from the rooted node will be regarded as active.
       // Zero means that the level of the rooted node is regarded.
-      this.activeLevelNumber = ACTIVE_LEVEL_NUMBER;
-      if (typeof options.activeLevelNumber !== 'undefined') {
-        this.activeLevelNumber = options.activeLevelNumber;
-      }
+      this.activeLevel = setOption(init.activeLevel, ACTIVE_LEVEL);
 
-      this.noRootedNodeDifference = NO_ROOTED_NODE_DIFFERENCE;
-      if (typeof options.noRootedNodeDifference !== 'undefined') {
-        this.noRootedNodeDifference = options.noRootedNodeDifference;
-      }
+      this.noRootActiveLevelDiff = setOption(init.noRootActiveLevelDiff, NO_ROOT_ACTIVE_LEVEL_DIFF);
 
-      this.lessAnimations = !!options.lessAnimations;
-      this.baseElD3.classed('less-animations', this.lessAnimations);
+      this.lessTransitionsJs = init.lessTransitions > 0;
+      this.lessTransitionsCss = init.lessTransitions > 1;
 
-      this.sortBy = options.sortBy;
-      this.sortOrder = options.sortOrder || DEFAULT_SORT_ORDER;
+      this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
-      this.events = new Events(this.baseEl, options.dispatcher);
+      this.sortBy = init.sortBy;
+      this.sortOrder = init.sortOrder === 'asc' ? 1 : DEFAULT_SORT_ORDER;
+
+      this.events = new Events(this.baseEl, init.dispatcher);
 
       this.baseElJq.addClass(CLASSNAME);
 
-      if (options.forceWidth) {
+      if (init.forceWidth) {
         this.baseElJq.width(this.width);
       }
 
       this.layout = new d3.layout.listGraph( // eslint-disable-line new-cap
       [this.width, this.height], [this.columns, this.rows]);
 
-      this.data = data;
+      this.data = init.data;
       this.visData = this.layout.process(this.data, this.rootNodes, {
         sortBy: this.sortBy,
         sortOrder: this.sortOrder
@@ -2643,37 +2639,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         local: {}
       };
 
-      exponentialGradient(this.svgD3, {
-        color: COLOR_NEGATIVE_RED,
-        offset: 0,
-        opacity: 0.2,
-        x: 0,
-        y: 0
-      }, {
-        afterOffsetOpacity: 1,
-        color: COLOR_NEGATIVE_RED,
-        offset: 99,
-        opacity: 1,
-        x: 1,
-        y: 0
-      }, 'negativeRed', 4, 10);
-
-      exponentialGradient(this.svgD3, {
-        beforeOffsetOpacity: 1,
-        color: COLOR_POSITIVE_GREEN,
-        offset: 1,
-        opacity: 1,
-        x: 0,
-        y: 0
-      }, {
-        color: COLOR_POSITIVE_GREEN,
-        offset: 100,
-        opacity: 0.2,
-        x: 1,
-        y: 0
-      }, 'positiveGreen', 0.25, 10);
-
-      this.barMode = options.barMode || DEFAULT_BAR_MODE;
+      this.barMode = init.barMode || DEFAULT_BAR_MODE;
       this.svgD3.classed(this.barMode + '-bar', true);
 
       this.topbar = new Topbar(this, this.baseElD3, this.visData);
@@ -2690,13 +2656,35 @@ var ListGraph = (function ($,d3) { 'use strict';
       this.scrollbars = new Scrollbars(this.levels.groups, this.visData, this.scrollbarWidth);
 
       // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
-      this.$levels = $(this.levels.groups[0]).on('mousewheel', function (event) {
+      // We are using delegated event listeners to provide better scaling
+      this.svgJq.on('mousewheel', '.' + this.levels.className, function (event) {
         if (!that.zoomedOut) {
           that.mousewheelColumn(this, event);
         }
       });
 
-      // Normally we would reference a named methods but since we need to aceess
+      // Add jQuery delegated event listeners instead of direct listeners of D3.
+      if (this.querying) {
+        this.svgJq.on('click', '.' + this.nodes.classLabelWrapper, function () {
+          that.nodes.toggleQueryMode.call(that.nodes, this.parentNode, d3.select(this).datum());
+        });
+      }
+
+      this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classRoot, function () {
+        that.nodes.rootHandler.call(that.nodes, this, d3.select(this).datum());
+      });
+
+      if (this.querying) {
+        this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classQuery, function () {
+          that.nodes.toggleQueryMode.call(that.nodes, this.parentNode, d3.select(this).datum());
+        });
+      }
+
+      this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classLock, function () {
+        that.nodes.lockHandler.call(that.nodes, this, d3.select(this).datum());
+      });
+
+      // Normally we would reference a named methods but since we need to access
       // the class' `this` property instead of the DOM element we need to use an
       // arrow function.
       this.scrollbars.all.on('mousedown', function () {
@@ -2735,15 +2723,15 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
 
       this.events.on('d3ListGraphActiveLevel', function (nextLevel) {
-        var oldLevel = _this.activeLevelNumber;
-        _this.activeLevelNumber = Math.max(nextLevel, 0);
+        var oldLevel = _this.activeLevel;
+        _this.activeLevel = Math.max(nextLevel, 0);
         if (_this.nodes.rootedNode) {
           var rootNodeDepth = _this.nodes.rootedNode.datum().depth;
           _this.levels.blur(rootNodeDepth + oldLevel);
-          _this.levels.focus(rootNodeDepth + _this.activeLevelNumber);
+          _this.levels.focus(rootNodeDepth + _this.activeLevel);
         } else {
-          _this.levels.blur(oldLevel - _this.noRootedNodeDifference);
-          _this.levels.focus(_this.activeLevelNumber - _this.noRootedNodeDifference);
+          _this.levels.blur(oldLevel - _this.noRootActiveLevelDiff);
+          _this.levels.focus(_this.activeLevel - _this.noRootActiveLevelDiff);
         }
       });
     }
@@ -2757,6 +2745,27 @@ var ListGraph = (function ($,d3) { 'use strict';
             max: 0
           }
         };
+      }
+
+      /**
+       * Helper method to get the top and left position of the base `svg`.
+       *
+       * @Description
+       * Calling `getBoundingClientRect()` right at the beginning leads to errornous
+       * values, probably because the function is called because HTML has been fully
+       * rendered.
+       *
+       * @method  getBoundingRect
+       * @author  Fritz Lekschas
+       * @date    2016-02-24
+       * @param   {Object}  el  Element on which `getBoundingClientRect` is called.
+       */
+
+    }, {
+      key: 'getBoundingRect',
+      value: function getBoundingRect(el) {
+        this.top = el.getBoundingClientRect().top;
+        this.left = el.getBoundingClientRect().left;
       }
     }, {
       key: 'interactionWrapper',
@@ -2857,7 +2866,7 @@ var ListGraph = (function ($,d3) { 'use strict';
         ListGraph.scrollElVertically(columnData.scrollbar.el, columnData.scrollbar.scrollTop);
 
         // Scroll Links
-        if (columnData.level === this.visData.nodes.length) {
+        if (columnData.level !== this.visData.nodes.length) {
           this.links.scroll(columnData.linkSelections.outgoing, this.layout.offsetLinks(columnData.level, columnData.scrollTop, 'source'));
         }
 
@@ -2904,8 +2913,11 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'sortAllColumns',
-      value: function sortAllColumns(property, sortOrder, newSortType) {
-        this.nodes.sort(this.layout.sort(undefined, property, sortOrder).updateNodesVisibility().nodes(), newSortType);
+      value: function sortAllColumns(property, newSortType) {
+        this.currentSorting.global.order = this.currentSorting.global.order === -1 ? 1 : -1;
+
+        this.nodes.sort(this.layout.sort(undefined, property, this.currentSorting.global.order).updateNodesVisibility().nodes(), newSortType);
+
         this.links.sort(this.layout.links());
       }
     }, {
@@ -3002,6 +3014,24 @@ var ListGraph = (function ($,d3) { 'use strict';
           this.globalView();
           this.zoomedOut = true;
         }
+      }
+
+      /**
+       * Check if an element is actually visible, i.e. within the boundaries of the
+       * SVG element.
+       *
+       * @method  isHidden
+       * @author  Fritz Lekschas
+       * @date    2016-02-24
+       * @param   {Object}    el  DOM element to be checked.
+       * @return  {Boolean}       If `true` element is not visible.
+       */
+
+    }, {
+      key: 'isHidden',
+      value: function isHidden(el) {
+        var boundingRect = el.getBoundingClientRect();
+        return boundingRect.top + boundingRect.height <= this.top || boundingRect.left + boundingRect.width <= this.left || boundingRect.top >= this.top + this.height || boundingRect.left >= this.left + this.width;
       }
     }, {
       key: 'area',

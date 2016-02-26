@@ -234,7 +234,9 @@
     }
   },
   "2-2-2": {
-    "children": [],
+    "children": [
+      "2-3"
+    ],
     "data": {
       "name": "two-two-two",
       "bars": {
@@ -296,7 +298,7 @@
   "2-1-1-1-1": {
     "children": [],
     "data": {
-      "name": "two-one-one-one-one",
+      "name": "two-one-one-one-one this name is too long man",
       "bars": {
         "precision": 0.29,
         "recall": 0.36

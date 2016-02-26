@@ -294,7 +294,7 @@ class Topbar {
       that.vis.currentSorting.local[index] = {
         type: data.sortBy,
         order: data.sortOrder,
-        el: undefined,
+        el: undefined
       };
 
       control.append('li')
@@ -313,7 +313,7 @@ class Topbar {
         })
         .style({
           width: that.visData.global.column.contentWidth / 2 + 'px',
-          left: that.visData.global.column.padding + 'px',
+          left: that.visData.global.column.padding + 'px'
         })
         .on('click', function (controlData) {
           that.sortColumn(this, controlData.level, 'precision');
@@ -367,7 +367,7 @@ class Topbar {
         .style({
           width: that.visData.global.column.contentWidth / 2 + 'px',
           left: that.visData.global.column.contentWidth / 2 +
-            that.visData.global.column.padding + 'px',
+            that.visData.global.column.padding + 'px'
         })
         .on('click', function (controlData) {
           that.sortColumn(this, controlData.level, 'recall');
@@ -376,7 +376,7 @@ class Topbar {
           that.highlightBars(this.parentNode, 'recall');
           d3.select(this).style({
             width: (that.visData.global.column.contentWidth - 16) + 'px',
-            left: (that.visData.global.column.padding + 16) + 'px',
+            left: (that.visData.global.column.padding + 16) + 'px'
           });
         })
         .on('mouseleave', function () {
@@ -384,7 +384,7 @@ class Topbar {
           d3.select(this).style({
             width: (that.visData.global.column.contentWidth) / 2 + 'px',
             left: (that.visData.global.column.contentWidth / 2 +
-              that.visData.global.column.padding) + 'px',
+              that.visData.global.column.padding) + 'px'
           });
         })
         .html(
@@ -468,11 +468,7 @@ class Topbar {
       this.sortColumn(el, columnKeys[i], type, true);
     }
 
-    this.vis.sortAllColumns(
-      type,
-      this.vis.currentSorting.global.order,
-      true
-    );
+    this.vis.sortAllColumns(type, true);
   }
 
   sortColumn (el, index, type, global) {

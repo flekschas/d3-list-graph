@@ -1,5 +1,6 @@
 // Internal
-import { roundRect } from './charts';
+import * as config from './config';
+import { roundRect } from '../commons/charts';
 
 const BAR_CLASS = 'bar';
 
@@ -56,16 +57,6 @@ class Bar {
         .classed('bar-border', true);
     }
 
-    function setupIndicatorBg (selection) {
-      selection
-        .attr('d', data => {
-          return Bar.generatePath(
-            data, this.bars.mode, undefined, this.visData, data.value
-          );
-        })
-        .classed('bar-indicator-bg', true);
-    }
-
     function setupIndicator (selection) {
       selection
         .attr({
@@ -73,7 +64,7 @@ class Bar {
           x: 0,
           y: this.visData.global.row.padding,
           width: 2,
-          height: this.visData.global.row.contentHeight,
+          height: 4
         });
     }
 
@@ -86,24 +77,39 @@ class Bar {
         .call(setupMagnitude.bind(this));
 
     this.selection
-      .append('path')
-        .call(setupIndicatorBg.bind(this));
-
-    this.selection
       .append('rect')
         .call(setupIndicator.bind(this));
   }
 
-  static updateIndicator (selection, contentWidth, referenceValue) {
+  static updateIndicator (
+    selection, contentWidth, contentHeight, referenceValue, lessTransitions,
+    reference
+  ) {
+    const y = Math.min(
+      contentWidth * Math.min(referenceValue, 1) - 1,
+      contentWidth - 2
+    );
+
+    // Stop previous transitions.
     selection
+      .attr({
+        height: contentHeight,
+        x: reference ? y : 0
+      })
+      .classed('positive', data => data.value >= referenceValue)
+      .transition()
+      .duration(0)
       .attr(
-        'x',
-        Math.min(
-          contentWidth * Math.min(referenceValue, 1),
-          contentWidth - 2
-        )
-      )
-      .classed('positive', data => data.value >= referenceValue);
+        'width',
+        reference ? 2 : lessTransitions ? y : 0  // eslint-disable-line no-nested-ternary
+      );
+
+    if (!lessTransitions && !reference) {
+      selection
+        .transition()
+        .duration(config.TRANSITION_SEMI_FAST)
+        .attr('width', y);
+    }
   }
 
   static generatePath (
@@ -129,7 +135,7 @@ class Bar {
 
     let radius = {
       topLeft: 2,
-      bottomLeft: 2,
+      bottomLeft: 2
     };
 
     if (indicator) {

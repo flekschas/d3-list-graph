@@ -73,10 +73,12 @@ export function exponentialGradient (el, start, end, name, power, steps) {
       .attr('y2', end.y)
       .attr('spreadMethod', 'pad');
 
-  gradient.append('stop')
-    .attr('offset', start.offset + '%')
-    .attr('stop-color', start.color)
-    .attr('stop-opacity', start.opacity);
+  if (!steps) {
+    gradient.append('stop')
+      .attr('offset', start.offset + '%')
+      .attr('stop-color', start.color)
+      .attr('stop-opacity', start.opacity);
+  }
 
   for (let i = 0; i < steps; i++) {
     gradient.append('stop')

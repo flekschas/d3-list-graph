@@ -373,6 +373,7 @@
       stroke: #000;
       stroke-opacity: 0.2;
       stroke-width: 2;
+      transition: all $transitionFast $easeInOutCubic;
     }
 
     &.hovering .link-direct {
@@ -417,11 +418,9 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: #666;
-    font-size: 12px;
-    line-height: 12px;
+    font-size: 0.75rem;
+    line-height: 0.75rem;
     transition: all $transitionFast $easeInOutCubic;
-
-    // @include multiline-ellipsis(20px, 12px, 16px);
   }
 
   .column.active .node .label {
@@ -532,26 +531,9 @@
   }
 
   .bar-indicator {
-    fill: $colorNegativeRed;
+    fill: $colorHighlightRed;
     opacity: 0;
-  }
-
-  .bar-indicator-bg {
-    fill: url('#negativeRed');
-    opacity: 0;
-    shape-rendering: crispEdges;
-  }
-
-  &.less-animations .bar-indicator-bg {
     transition: opacity $transitionFast $easeInOutCubic;
-  }
-
-  .bar-indicator.positive {
-    fill: $colorPositiveGreen;
-  }
-
-  .bar-indicator-bg.positive {
-    fill: url('#positiveGreen');
   }
 
   .bar.active .bar-magnitude {
@@ -582,20 +564,16 @@
   }
 
   .node.hovering-directly .bar-magnitude {
-    fill: #404040;
+    fill: #606060;
     fill-opacity: 1 !important;
   }
 
-  .node.hovering-directly .bar.active .bar-indicator {
-    fill: #fff;
-    opacity: 1;
+  .node.hovering-directly .active .bar-magnitude {
+    fill: #404040;
   }
 
-  .node.hovering-indirectly .bar.copy .bar-indicator-bg {
-    opacity: 0.66;
-  }
-
-  .node.hovering-indirectly .bar.copy .bar-indicator {
+  .node.hovering-directly .bar.active .bar-indicator,
+  .node.hovering-indirectly .bar.active .bar-indicator {
     opacity: 1;
   }
 
@@ -640,5 +618,9 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+  }
+
+  &.less-animations * {
+    transition: none !important;
   }
 }

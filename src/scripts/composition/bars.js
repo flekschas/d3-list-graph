@@ -59,43 +59,15 @@ class Bars {
       });
   }
 
-  updateIndicator (refBars, refBarsBg, currentBar, referenceValue) {
+  updateIndicator (bars, referenceValue, direct) {
     Bar.updateIndicator(
-      currentBar,
+      bars,
       this.visData.global.column.contentWidth,
-      referenceValue
+      direct ? this.visData.global.row.contentHeight : 4,
+      referenceValue,
+      this.vis.lessTransitionsJs,
+      direct
     );
-
-    Bar.updateIndicator(
-      refBars,
-      this.visData.global.column.contentWidth,
-      referenceValue
-    );
-
-    refBarsBg
-      .attr('d', data => {
-        return Bar.generatePath(
-          data,
-          this.mode,
-          undefined,
-          this.visData,
-          referenceValue
-        );
-      })
-      .classed('positive', data => data.value >= referenceValue);
-
-    let transition = refBarsBg;
-
-    if (!this.vis.lessAnimations) {
-      transition = refBarsBg.transition().duration(config.TRANSITION_SEMI_FAST);
-    }
-
-    transition
-      .attr('d', data => {
-        return Bar.generatePath(
-          data, this.mode, undefined, this.visData, referenceValue, true
-        );
-      });
   }
 
   switchMode (mode, currentSorting) {

@@ -7,13 +7,15 @@ export const ROWS = 5;
 // An empty path is equal to inline SVG.
 export const ICON_PATH = '';
 
-export const DEFAULT_SORT_ORDER = 'desc';
+// -1 = desc, 1 = asc
+export const DEFAULT_SORT_ORDER = -1;
 
 export const DEFAULT_BAR_MODE = 'one';
 
 export const HIGHLIGHT_ACTIVE_LEVEL = true;
-export const ACTIVE_LEVEL_NUMBER = 0;
-export const NO_ROOTED_NODE_DIFFERENCE = 0;
+export const ACTIVE_LEVEL = 0;
+export const NO_ROOT_ACTIVE_LEVEL_DIFF = 0;
+export const QUERYING = false;
 
 export const TRANSITION_LIGHTNING_FAST = 150;
 export const TRANSITION_FAST = 200;
@@ -23,5 +25,6 @@ export const TRANSITION_SLOW = 666;
 export const TRANSITION_SLOWEST = 1;
 
 // Gradient colors
+export const COLOR_ORANGE = '#f23e00';
 export const COLOR_NEGATIVE_RED = '#e0001c';
 export const COLOR_POSITIVE_GREEN = '#60bf00';

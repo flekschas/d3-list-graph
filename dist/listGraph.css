@@ -249,7 +249,8 @@
     .list-graph .link .link-direct {
       stroke: #000;
       stroke-opacity: 0.2;
-      stroke-width: 2; }
+      stroke-width: 2;
+      transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
     .list-graph .link.hovering .link-direct {
       stroke-opacity: 0.75;
       stroke-width: 4; }
@@ -277,8 +278,8 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: #666;
-    font-size: 12px;
-    line-height: 12px;
+    font-size: 0.75rem;
+    line-height: 0.75rem;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .column.active .node .label {
     color: #333; }
@@ -348,18 +349,9 @@
   .list-graph .node.focus-directly .bar-magnitude {
     fill-opacity: 0.2; }
   .list-graph .bar-indicator {
-    fill: #e0001c;
-    opacity: 0; }
-  .list-graph .bar-indicator-bg {
-    fill: url("#negativeRed");
+    fill: #f23e00;
     opacity: 0;
-    shape-rendering: crispEdges; }
-  .list-graph.less-animations .bar-indicator-bg {
     transition: opacity 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph .bar-indicator.positive {
-    fill: #60bf00; }
-  .list-graph .bar-indicator-bg.positive {
-    fill: url("#positiveGreen"); }
   .list-graph .bar.active .bar-magnitude {
     shape-rendering: auto; }
   .list-graph .two-bar .bar-magnitude {
@@ -376,14 +368,12 @@
   .list-graph .bar.highlight .bar-border {
     stroke-opacity: 1; }
   .list-graph .node.hovering-directly .bar-magnitude {
-    fill: #404040;
+    fill: #606060;
     fill-opacity: 1 !important; }
-  .list-graph .node.hovering-directly .bar.active .bar-indicator {
-    fill: #fff;
-    opacity: 1; }
-  .list-graph .node.hovering-indirectly .bar.copy .bar-indicator-bg {
-    opacity: 0.66; }
-  .list-graph .node.hovering-indirectly .bar.copy .bar-indicator {
+  .list-graph .node.hovering-directly .active .bar-magnitude {
+    fill: #404040; }
+  .list-graph .node.hovering-directly .bar.active .bar-indicator,
+  .list-graph .node.hovering-indirectly .bar.active .bar-indicator {
     opacity: 1; }
   .list-graph .bar.highlight .bar-magnitude {
     fill: #ff8459;
@@ -410,3 +400,5 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none; }
+  .list-graph.less-animations * {
+    transition: none !important; }
