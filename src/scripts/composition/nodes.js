@@ -25,7 +25,7 @@ class Nodes {
 
     // Helper
     function drawFullSizeRect (selection, className, shrinking, noRoundBorder) {
-      const shrinkingAmount = shrinking ? shrinking : 0;
+      const shrinkingAmount = shrinking || 0;
 
       selection
         .attr('x', shrinkingAmount)
@@ -465,7 +465,7 @@ class Nodes {
     this.eventHelper(
       event.nodeIds,
       this.highlightNodes,
-      ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]
+      ['focus', 'directParentsOnly', !!event.excludeClones]
     );
     if (event.zoomOut) {
       this.vis.globalView(this.nodes.filter(data => data.hovering > 0));
@@ -478,7 +478,7 @@ class Nodes {
     this.eventHelper(
       event.nodeIds,
       this.unhighlightNodes,
-      ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]
+      ['focus', 'directParentsOnly', !!event.excludeClones]
     );
     if (event.zoomIn) {
       this.vis.zoomedView();
@@ -500,7 +500,7 @@ class Nodes {
 
         callback.apply(
           that,
-          [el, data].concat(optionalParams ? optionalParams : [])
+          [el, data].concat(optionalParams || [])
         );
       });
   }
@@ -591,9 +591,9 @@ class Nodes {
     d3.select(el).classed({
       active: true,
       inactive: false,
-      'query-and': mode === 'and' ? true : false,
-      'query-or': mode === 'or' ? true : false,
-      'query-not': mode === 'not' ? true : false
+      'query-and': mode === 'and',
+      'query-or': mode === 'or',
+      'query-not': mode === 'not'
     });
   }
 
@@ -762,7 +762,7 @@ class Nodes {
     const paddedDim = this.iconDimension + 4;
 
     const x = location === 'left' ?
-      -(paddedDim) * (position ? position : 1) :
+      -(paddedDim) * (position || 1) :
         this.visData.global.column.contentWidth + 2;
     const y = this.visData.global.row.padding +
       (
@@ -844,16 +844,16 @@ class Nodes {
     if (show) {
       this.nodes
         .classed('hidden', false)
-        .each(nodeData => nodeData.hidden = false);
+        .each(nodeData => { nodeData.hidden = false; });
     } else {
       // First we set all nodes to `hidden`.
-      this.nodes.each(nodeData => nodeData.hidden = true);
+      this.nodes.each(nodeData => { nodeData.hidden = true; });
 
       // Then we set direct child and parent nodes of the current node visible.
-      traverse.upAndDown(data, nodeData => nodeData.hidden = false);
+      traverse.upAndDown(data, nodeData => { nodeData.hidden = false; });
 
       // We also show sibling nodes.
-      traverse.siblings(data, nodeData => nodeData.hidden = false);
+      traverse.siblings(data, nodeData => { nodeData.hidden = false; });
 
       this.nodes.classed(
         'hidden',
@@ -868,9 +868,9 @@ class Nodes {
     const nodeId = data.id;
     const currentNodeData = data.clone ? data.originalNode : data;
     const includeParents = true;
-    const appliedClassName = className ? className : 'hovering';
-    const includeClones = excludeClones ? false : true;
-    const includeChildren = restriction === 'directParentsOnly' ? false : true;
+    const appliedClassName = className || 'hovering';
+    const includeClones = !!!excludeClones;
+    const includeChildren = restriction !== 'directParentsOnly';
 
     // Store link IDs
     if (!this.currentLinks[appliedClassName]) {
@@ -1025,11 +1025,11 @@ class Nodes {
   }
 
   unhighlightNodes (el, data, className, restriction, excludeClones) {
-    const traverseCallback = nodeData => nodeData.hovering = 0;
+    const traverseCallback = nodeData => { nodeData.hovering = 0; };
     const includeParents = true;
-    const appliedClassName = className ? className : 'hovering';
-    const includeClones = excludeClones ? false : true;
-    const includeChildren = restriction === 'directParentsOnly' ? false : true;
+    const appliedClassName = className || 'hovering';
+    const includeClones = !!!excludeClones;
+    const includeChildren = restriction !== 'directParentsOnly';
 
     data.hovering = 0;
     if (includeParents && includeChildren) {

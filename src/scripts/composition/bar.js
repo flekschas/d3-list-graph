@@ -38,11 +38,9 @@ class Bar {
       const currentSorting = this.visData.nodes[this.nodeData.depth].sortBy;
 
       selection
-        .attr('d', data => {
-          return Bar.generatePath(
-            data, this.bars.mode, currentSorting, this.visData
-          );
-        })
+        .attr('d', data => Bar.generatePath(
+          data, this.bars.mode, currentSorting, this.visData
+        ))
         .classed('bar-magnitude', true);
     }
 

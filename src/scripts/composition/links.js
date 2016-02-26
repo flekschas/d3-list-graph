@@ -21,9 +21,7 @@ class Links {
       });
 
     this.links = this.groups.selectAll(LINK_CLASS + '-bg')
-      .data((data, index) => {
-        return this.layout.links(index);
-      })
+      .data((data, index) => this.layout.links(index))
       .enter()
       .append('g')
         .attr('class', LINK_CLASS);
@@ -43,14 +41,13 @@ class Links {
 
   get diagonal () {
     return d3.svg.diagonal()
-      .source(data => {
-        return {
-          x: data.source.node.y + data.source.offsetY +
-            this.visData.global.row.height / 2,
-          y: data.source.node.x + data.source.offsetX +
-            this.visData.global.column.contentWidth +
-            this.visData.global.column.padding
-        };})
+      .source(data => ({
+        x: data.source.node.y + data.source.offsetY +
+          this.visData.global.row.height / 2,
+        y: data.source.node.x + data.source.offsetX +
+          this.visData.global.column.contentWidth +
+          this.visData.global.column.padding
+      }))
       .target(data => ({
         x: data.target.node.y + data.target.offsetY +
           this.visData.global.row.height / 2,

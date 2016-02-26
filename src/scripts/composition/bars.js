@@ -27,9 +27,9 @@ class Bars {
       .data(update, data => data.barId)
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
-      .attr('d', data => {
-        return Bar.generatePath(data, this.mode, sortBy, this.visData);
-      });
+      .attr('d', data => Bar.generatePath(
+        data, this.mode, sortBy, this.visData
+      ));
   }
 
   update (selection, sortBy) {
@@ -54,9 +54,9 @@ class Bars {
     selection.selectAll('.bar-magnitude')
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
-      .attr('d', data => {
-        return Bar.generatePath(data, this.mode, sortBy, this.visData);
-      });
+      .attr('d', data => Bar.generatePath(
+        data, this.mode, sortBy, this.visData
+      ));
   }
 
   updateIndicator (bars, referenceValue, direct) {
@@ -77,11 +77,9 @@ class Bars {
           this.selection.selectAll('.bar').selectAll('.bar-magnitude')
             .transition()
             .duration(config.TRANSITION_SEMI_FAST)
-            .attr('d', data => {
-              return Bar.generateOneBarPath(
-                data, currentSorting.global.type, this.visData
-              );
-            });
+            .attr('d', data => Bar.generateOneBarPath(
+              data, currentSorting.global.type, this.visData
+            ));
         } else {
           // console.error(
           //   'Switching magnitude visualization after individual sorting is ' +
@@ -94,16 +92,12 @@ class Bars {
         this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude')
           .transition()
           .duration(config.TRANSITION_SEMI_FAST)
-          .attr('d', data => {
-            return Bar.generateTwoBarsPath(data, this.visData);
-          });
+          .attr('d', data => Bar.generateTwoBarsPath(data, this.visData));
 
         this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude')
           .transition()
           .duration(config.TRANSITION_SEMI_FAST)
-          .attr('d', data => {
-            return Bar.generateTwoBarsPath(data, this.visData, true);
-          });
+          .attr('d', data => Bar.generateTwoBarsPath(data, this.visData, true));
       }
 
       this.mode = mode;

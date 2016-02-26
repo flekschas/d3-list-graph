@@ -24,6 +24,7 @@ class Levels {
               }
               return index === this.vis.activeLevel;
             }
+            return false;
           }
         );
 

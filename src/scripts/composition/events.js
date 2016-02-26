@@ -14,7 +14,7 @@ class Events {
 
     this.el = el;
     this._stack = {};
-    this.dispatch = broadcast ? broadcast : this._dispatchEvent;
+    this.dispatch = broadcast || this._dispatchEvent;
   }
 
   get stack () {

@@ -440,7 +440,7 @@ class ListGraphLayout {
    * @return  {Object}  Self.
    */
   grid (newGrid) {
-    if (!arguments.length) {
+    if (!newGrid) {
       return this._grid;
     }
 
@@ -554,7 +554,7 @@ class ListGraphLayout {
    * @return  {Object}  Self.
    */
   size (newSize) {
-    if (!arguments.length) {
+    if (!newSize) {
       return this._size;
     }
 
@@ -590,7 +590,7 @@ class ListGraphLayout {
    *   for chaining. Otherwise the current padding of columns will be returned.
    */
   columnPadding (padding, absolute) {
-    if (!arguments.length) {
+    if (!padding) {
       return this._colRelPadding;
     }
 
@@ -623,7 +623,7 @@ class ListGraphLayout {
    *   for chaining. Otherwise the current padding of rows will be returned.
    */
   rowPadding (padding, absolute) {
-    if (!arguments.length) {
+    if (!padding) {
       return this._rowRelPadding;
     }
 
