@@ -89,11 +89,11 @@ class ListGraph {
     this.layout = new d3.layout.listGraph( // eslint-disable-line new-cap
       [
         this.width,
-        this.height,
+        this.height
       ],
       [
         this.columns,
-        this.rows,
+        this.rows
       ]
     );
 
@@ -103,7 +103,7 @@ class ListGraph {
       this.rootNodes,
       {
         sortBy: this.sortBy,
-        sortOrder: this.sortOrder,
+        sortOrder: this.sortOrder
       }
     );
 
@@ -115,9 +115,9 @@ class ListGraph {
     this.currentSorting = {
       global: {
         type: this.sortBy,
-        order: this.sortOrder,
+        order: this.sortOrder
       },
-      local: {},
+      local: {}
     };
 
     this.barMode = init.barMode || config.DEFAULT_BAR_MODE;
@@ -147,7 +147,8 @@ class ListGraph {
     );
 
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
-    this.$levels = $(this.levels.groups[0]).on('mousewheel', function (event) {
+    // We are using delegated event listeners to provide better scaling
+    this.svgJq.on('mousewheel', '.' + this.levels.className, function (event) {
       if (!that.zoomedOut) {
         that.mousewheelColumn(this, event);
       }
@@ -175,7 +176,7 @@ class ListGraph {
       this.dragEndHandler.bind(this),
       [
         this.container,
-        this.topbar.localControlWrapper,
+        this.topbar.localControlWrapper
       ],
       'horizontal',
       this.getDragLimits.bind(this),
@@ -248,8 +249,8 @@ class ListGraph {
     return {
       x: {
         min: this.dragMinX,
-        max: 0,
-      },
+        max: 0
+      }
     };
   }
 
