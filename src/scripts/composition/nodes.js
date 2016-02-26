@@ -17,7 +17,7 @@ class Nodes {
     const that = this;
 
     // Helper
-    function drawFullSizeRect (selection, className, shrinking) {
+    function drawFullSizeRect (selection, className, shrinking, noRoundBorder) {
       const shrinkingAmount = shrinking ? shrinking : 0;
 
       selection
@@ -31,8 +31,8 @@ class Nodes {
           'height',
           that.visData.global.row.contentHeight - 2 * shrinkingAmount
         )
-        .attr('rx', 2 - shrinkingAmount)
-        .attr('ry', 2 - shrinkingAmount)
+        .attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount)
+        .attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount)
         .classed(className, true);
     }
 
@@ -125,7 +125,7 @@ class Nodes {
 
     this.nodes
       .append('rect')
-        .call(drawFullSizeRect, 'bg', 1);
+        .call(drawFullSizeRect, 'bg', 1, true);
 
     // Rooting icons
     const nodeRooted = this.nodes.append('g')
