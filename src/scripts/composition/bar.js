@@ -1,6 +1,6 @@
 // Internal
 import * as config from './config';
-import { roundRect } from './charts';
+import { roundRect } from '../commons/charts';
 
 const BAR_CLASS = 'bar';
 
@@ -64,7 +64,7 @@ class Bar {
           x: 0,
           y: this.visData.global.row.padding,
           width: 2,
-          height: 4,
+          height: 4
         });
     }
 
@@ -94,7 +94,7 @@ class Bar {
     selection
       .attr({
         height: contentHeight,
-        x: reference ? y : 0,
+        x: reference ? y : 0
       })
       .classed('positive', data => data.value >= referenceValue)
       .transition()
@@ -135,7 +135,7 @@ class Bar {
 
     let radius = {
       topLeft: 2,
-      bottomLeft: 2,
+      bottomLeft: 2
     };
 
     if (indicator) {
