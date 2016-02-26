@@ -11,8 +11,10 @@ import Links from './links';
 import Nodes from './nodes';
 import Scrollbars from './scrollbars';
 import Events from './events';
+import NodeContextMenu from './nodeContextMenu';
 import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 import { allTransitionsEnded } from '../commons/d3-utils';
+import { dropShadow } from '../commons/filters';
 
 function setOption (value, defaultValue, noFalsyValue) {
   if (noFalsyValue) {
@@ -151,6 +153,16 @@ class ListGraph {
       this.visData,
       this.scrollbarWidth
     );
+
+    this.nodeContextMenu = new NodeContextMenu(
+      this,
+      this.visData,
+      this.container,
+      this.events,
+      this.querying
+    );
+
+    dropShadow(this.svgD3, 'context-menu', 1, 1, 3);
 
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
     // We are using delegated event listeners to provide better scaling

@@ -582,6 +582,24 @@
     fill-opacity: 1 !important;
   }
 
+  .context-menu {
+    .bg {
+      fill: #ccc;
+    }
+
+    .arrow {
+      fill: #ccc;
+    }
+
+    .button .bg {
+      fill: #808080;
+    }
+
+    .button .label {
+      font-size: 0.75rem;
+    }
+  }
+
   .sorting {
     opacity: 0.33;
   }
