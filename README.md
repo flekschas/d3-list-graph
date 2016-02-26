@@ -56,66 +56,69 @@ This example assumes that you're using Bower to fetch all code.
 </html>
 ```
 
-### Options
+### Parameters
 
-* = required
-[`true`] = default value
+Required parameters:
 
-**element** *: _Object_
+**element**: _Object_.
 DOM element that should act as the base element.
 
-**data** *: _Object_
+**data**: _Object_.
 Unique key-value list-like object. E.g.: `{1: {...}, 2: {...}, 3: {...}}`.
 
-**rootNodes** *: _Array_
+**rootNodes**: _Array_.
 List of node ids that should act as root nodes.
 
-**iconPath** *: _String_ [_Empty string_]
+**iconPath**: _String_ [_Empty string_].
 Path to the SVG icon file. Default is an empty string, which is equivalent to inline SVG.
 
-**width**: _Number_ [100% of the SVG container]
+---
+
+Optional parameters:
+
+**width**: _Number_ [100% of the SVG container].
 Number of columns to be shown.
 
-**height**: _Number_ [100% of the SVG container]
+**height**: _Number_ [100% of the SVG container].
 Number of columns to be shown.
 
-**scrollbarWidth**: _Number_ [`6`]
+**scrollbarWidth**: _Number_ [`6`].
 Width of the scrollbars.
 
-**columns**: _Number_ [`5`]
+**columns**: _Number_ [`5`].
 Number of columns to be shown.
 
-**rows**: _Number_
-Number of rows to be shown. [`5`]
+**rows**: _Number_ [`5`].
+Number of rows to be shown.
 
-**barMode**: _String_ [`one`]
+**barMode**: _String_ [`one`].
 Initial bar mode. Can either be `one` or `two`.
 
-**highlightActiveLevel**: _Boolean_ [`false`]
+**highlightActiveLevel**: _Boolean_ [`false`].
 If `true` the currently active root level is highlighted
 
-**activeLevel**: _Number_ [`0`]
+**activeLevel**: _Number_ [`0`].
 Offset of the root level to be highlighted. If `1` one level to the right of the root level will be highlighted.
 
-**noRootActiveLevelDiff**: _Number_ [`0`]
+**noRootActiveLevelDiff**: _Number_ [`0`].
 Negative offset when no manually selected new root level is set.
 
-**forceWidth**: _Boolean_ [`false`]
+**forceWidth**: _Boolean_ [`false`].
 If you want to force the visualization to be of a certain width use this. [Default: false]
 
-**sortBy**: _String_
+**sortBy**: _String_.
 Initial sorting of a property. This string should be identical to the property key.
 
-**sortOrder:** _String_ [`desc`]
+**sortOrder:** _String_ [`desc`].
 Initial sort order. Can either be `asc` or `desc`.
 
-**dispatcher**: _Function_
+**dispatcher**: _Function_.
 Can be used to listen to internal events.
 
-**lessTransitions**: _Number_ [`0`]
- - 0 [Default]: Show all transitions
- - 1: Show only CSS transitions
- - 2: Show no transitions
+**lessTransitions**: _Number_ [`0`].
+- 0 [Default]: Show all transitions
+- 1: Show only CSS transitions
+- 2: Show no transitions
 
 ## Develop
 
