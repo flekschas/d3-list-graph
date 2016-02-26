@@ -160,7 +160,42 @@ class ListGraph {
       }
     });
 
-    // Normally we would reference a named methods but since we need to aceess
+    // Add jQuery delegated event listeners instead of direct listeners of D3.
+    this.svgJq.on(
+      'click',
+      `.${this.nodes.classLabelWrapper}`,
+      function () {
+        that.nodes.clickHandler.call(that.nodes, this, d3.select(this).datum());
+      }
+    );
+
+    this.svgJq.on(
+      'click',
+      `.${this.nodes.classFocusControls}.${this.nodes.classRoot}`,
+      function () {
+        that.nodes.rootHandler.call(that.nodes, this, d3.select(this).datum());
+      }
+    );
+
+    this.svgJq.on(
+      'click',
+      `.${this.nodes.classFocusControls}.${this.nodes.classQuery}`,
+      function () {
+        that.nodes.toggleQueryMode.call(
+          that.nodes, this.parentNode, d3.select(this).datum()
+        );
+      }
+    );
+
+    this.svgJq.on(
+      'click',
+      `.${this.nodes.classFocusControls}.${this.nodes.classLock}`,
+      function () {
+        that.nodes.lockHandler.call(that.nodes, this, d3.select(this).datum());
+      }
+    );
+
+    // Normally we would reference a named methods but since we need to access
     // the class' `this` property instead of the DOM element we need to use an
     // arrow function.
     this.scrollbars.all.on('mousedown', function () {

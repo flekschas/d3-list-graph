@@ -8,9 +8,16 @@ import * as config from './config';
 import Bars from './bars';
 import { allTransitionsEnded } from '../commons/d3-utils';
 
-const NODES_CLASS = 'nodes';
-const NODE_CLASS = 'node';
-const CLONE_CLASS = 'clone';
+const CLASS_NODES = 'nodes';
+const CLASS_NODE = 'node';
+const CLASS_CLONE = 'clone';
+const CLASS_LABEL_WRAPPER = 'label-wrapper';
+const CLASS_FOCUS_CONTROLS = 'focus-controls';
+const CLASS_ROOT = 'root';
+const CLASS_QUERY = 'query';
+const CLASS_LOCK = 'lock';
+const CLASS_ACTIVE = 'active';
+const CLASS_INACTIVE = 'inactive';
 
 class Nodes {
   constructor (vis, baseSelection, visData, links, events) {
@@ -48,7 +55,7 @@ class Nodes {
     );
 
     this.groups = baseSelection.append('g')
-      .attr('class', NODES_CLASS)
+      .attr('class', CLASS_NODES)
       .call(selection => {
         selection.each(function storeLinkToGroupNode () {
           d3.select(this.parentNode).datum().nodes = this;
@@ -56,12 +63,12 @@ class Nodes {
       });
 
     this.nodes = this.groups
-      .selectAll('.' + NODE_CLASS)
+      .selectAll('.' + CLASS_NODE)
       .data(data => data.rows)
       .enter()
       .append('g')
-        .classed(NODE_CLASS, true)
-        .classed(CLONE_CLASS, data => data.clone)
+        .classed(CLASS_NODE, true)
+        .classed(CLASS_CLONE, data => data.clone)
         .attr('transform', data => 'translate(' +
           (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
         .on('mouseenter', function (data) {
@@ -129,10 +136,7 @@ class Nodes {
 
     // Rooting icons
     const nodeRooted = this.nodes.append('g')
-      .attr('class', 'focus-controls root inactive')
-      .on('click', function clickHandler (data) {
-        that.rootHandler.call(that, this, data);
-      });
+      .attr('class', `${CLASS_FOCUS_CONTROLS} ${CLASS_ROOT} ${CLASS_INACTIVE}`);
 
     nodeRooted.append('rect')
       .call(
@@ -167,10 +171,9 @@ class Nodes {
 
     // Rooting icons
     const nodeQuery = this.nodes.append('g')
-      .attr('class', 'focus-controls query inactive')
-      .on('click', function (data) {
-        that.toggleQueryMode.call(that, this.parentNode, data);
-      });
+      .attr(
+        'class', `${CLASS_FOCUS_CONTROLS} ${CLASS_QUERY} ${CLASS_INACTIVE}`
+      );
 
     nodeQuery.append('rect')
       .call(
@@ -215,10 +218,7 @@ class Nodes {
         .attr('xlink:href', this.vis.iconPath + '#not');
 
     const nodeLocks = this.nodes.append('g')
-      .attr('class', 'focus-controls lock inactive')
-      .on('click', function clickHandler (data) {
-        that.lockHandler.call(that, this, data);
-      });
+      .attr('class', `${CLASS_FOCUS_CONTROLS} ${CLASS_LOCK} ${CLASS_INACTIVE}`);
 
     nodeLocks.append('circle')
       .call(this.setUpFocusControls.bind(this), 'right', 0, 'bg', 'bg');
@@ -259,10 +259,7 @@ class Nodes {
       .attr('width', this.visData.global.column.contentWidth)
       .attr('height', this.visData.global.row.contentHeight -
         this.visData.global.cell.padding * 2)
-      .attr('class', 'label-wrapper')
-      .on('click', function clickHandler (data) {
-        that.clickHandler.call(that, this, data);
-      })
+      .attr('class', CLASS_LABEL_WRAPPER)
       .append('xhtml:div')
         .attr('class', 'label')
         .attr('title', data => data.data.name)
@@ -323,6 +320,15 @@ class Nodes {
       );
     }
   }
+
+  get classNnodes () { return CLASS_NODES; }
+  get classNode () { return CLASS_NODE; }
+  get classClone () { return CLASS_CLONE; }
+  get classLabelWrapper () { return CLASS_LABEL_WRAPPER; }
+  get classFocusControls () { return CLASS_FOCUS_CONTROLS; }
+  get classRoot () { return CLASS_ROOT; }
+  get classQuery () { return CLASS_QUERY; }
+  get classLock () { return CLASS_LOCK; }
 
   clickHandler (el, data) {
     this.toggleQueryMode(el.parentNode, data);
@@ -504,19 +510,20 @@ class Nodes {
     const events = { locked: false, unlocked: false };
 
     if (this.lockedNode) {
+      this.lockedNode
+        .classed(CLASS_ACTIVE, false)
+        .classed(CLASS_INACTIVE, true);
       if (this.lockedNode.datum().id === data.id) {
-        this.lockedNode.classed({ active: false, inactive: true });
         this.unlockNode(this.lockedNode.datum().id);
         events.unlocked = this.lockedNode.datum();
         this.lockedNode = undefined;
       } else {
         // Reset previously locked node;
-        this.lockedNode.classed({ active: false, inactive: true });
         this.unlockNode(this.lockedNode.datum().id);
         events.unlocked = this.lockedNode.datum();
 
         if (!setFalse) {
-          d3El.classed({ active: true, inactive: false });
+          d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
           this.lockNode(data.id);
           events.locked = data;
           this.lockedNode = d3El;
@@ -524,7 +531,7 @@ class Nodes {
       }
     } else {
       if (!setFalse) {
-        d3El.classed({ active: true, inactive: false });
+        d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
         this.lockNode(data.id);
         events.locked = data;
         this.lockedNode = d3El;
