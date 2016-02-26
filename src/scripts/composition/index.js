@@ -14,6 +14,14 @@ import Events from './events';
 import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 import { allTransitionsEnded } from '../commons/d3-utils';
 
+function setOption (value, defaultValue, noFalsyValue) {
+  if (noFalsyValue) {
+    return value ? value : defaultValue;
+  }
+
+  return typeof value !== 'undefined' ? value : defaultValue;
+}
+
 class ListGraph {
   constructor (init) {
     if (!d3.layout.listGraph) {
@@ -37,8 +45,8 @@ class ListGraph {
 
     this.rootNodes = init.rootNodes;
 
-    this.width = init.width || this.svgJq.width();
-    this.height = init.height || this.svgJq.height();
+    this.width = setOption(init.width, this.svgJq.width(), true);
+    this.height = setOption(init.height, this.svgJq.height(), true);
 
     // Refresh top and left position of the base `svg` everytime the user enters
     // the element with his/her mouse cursor. This will avoid relying on complex
@@ -48,27 +56,25 @@ class ListGraph {
       that.getBoundingRect.call(that, this);
     });
 
-    this.scrollbarWidth = init.scrollbarWidth || config.SCROLLBAR_WIDTH;
-    this.columns = init.columns || config.COLUMNS;
-    this.rows = init.rows || config.ROWS;
-    this.iconPath = init.iconPath || config.ICON_PATH;
+    this.scrollbarWidth = setOption(
+      init.scrollbarWidth, config.SCROLLBAR_WIDTH, true
+    );
+    this.columns = setOption(init.columns, config.COLUMNS, true);
+    this.rows = setOption(init.rows, config.ROWS, true);
+    this.iconPath = setOption(init.iconPath, config.ICON_PATH, true);
+    this.querying = setOption(init.querying, config.QUERYING);
 
-    this.highlightActiveLevel = config.HIGHLIGHT_ACTIVE_LEVEL;
-    if (typeof init.highlightActiveLevel !== 'undefined') {
-      this.highlightActiveLevel = init.highlightActiveLevel;
-    }
+    this.highlightActiveLevel = setOption(
+      init.highlightActiveLevel, config.HIGHLIGHT_ACTIVE_LEVEL
+    );
 
     // Determines which level from the rooted node will be regarded as active.
     // Zero means that the level of the rooted node is regarded.
-    this.activeLevel = config.ACTIVE_LEVEL;
-    if (typeof init.activeLevel !== 'undefined') {
-      this.activeLevel = init.activeLevel;
-    }
+    this.activeLevel = setOption(init.activeLevel, config.ACTIVE_LEVEL);
 
-    this.noRootActiveLevelDiff = config.NO_ROOT_ACTIVE_LEVEL_DIFF;
-    if (typeof init.noRootActiveLevelDiff !== 'undefined') {
-      this.noRootActiveLevelDiff = init.noRootActiveLevelDiff;
-    }
+    this.noRootActiveLevelDiff = setOption(
+      init.noRootActiveLevelDiff, config.NO_ROOT_ACTIVE_LEVEL_DIFF
+    );
 
     this.lessTransitionsJs = init.lessTransitions > 0;
     this.lessTransitionsCss = init.lessTransitions > 1;
