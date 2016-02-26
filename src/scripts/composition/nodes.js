@@ -252,26 +252,24 @@ class Nodes {
         .call(drawFullSizeRect, 'border');
 
     // Add node label
-    this.nodes.call(selection => {
-      selection.append('foreignObject')
-        .attr('x', this.visData.global.cell.padding)
-        .attr('y', this.visData.global.row.padding +
-          this.visData.global.cell.padding)
-        .attr('width', this.visData.global.column.contentWidth)
-        .attr('height', this.visData.global.row.contentHeight -
-          this.visData.global.cell.padding * 2)
-        .attr('class', 'label-wrapper')
-        .on('click', function clickHandler (data) {
-          that.clickHandler.call(that, this, data);
-        })
-        .append('xhtml:div')
-          .attr('class', 'label')
-          .attr('title', data => data.data.name)
-          .style('line-height', (this.visData.global.row.contentHeight -
-            this.visData.global.cell.padding * 2) + 'px')
-          .append('xhtml:span')
-            .text(data => data.data.name);
-    });
+    this.nodes.append('foreignObject')
+      .attr('x', this.visData.global.cell.padding)
+      .attr('y', this.visData.global.row.padding +
+        this.visData.global.cell.padding)
+      .attr('width', this.visData.global.column.contentWidth)
+      .attr('height', this.visData.global.row.contentHeight -
+        this.visData.global.cell.padding * 2)
+      .attr('class', 'label-wrapper')
+      .on('click', function clickHandler (data) {
+        that.clickHandler.call(that, this, data);
+      })
+      .append('xhtml:div')
+        .attr('class', 'label')
+        .attr('title', data => data.data.name)
+        .style('line-height', (this.visData.global.row.contentHeight -
+          this.visData.global.cell.padding * 2) + 'px')
+        .append('xhtml:span')
+          .text(data => data.data.name);
 
     if (isFunction(this.events.on)) {
       // this.events.on('d3ListGraphNodeClick', dataSetIds => {
