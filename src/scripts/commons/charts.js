@@ -16,3 +16,19 @@ export function roundRect (x, y, width, height, radius) {
     'a' + topLeft + ',' + topLeft + ' 0 0 1 ' + topLeft + ',' + -topLeft +
     'z';
 }
+
+export function dropMenu (x, y, width, height, radius, arrowSize) {
+  return 'M' + (x + radius) + ',' + y +
+    'h' + (width - radius * 2) +
+    'a' + radius + ',' + radius + ' 0 0 1 ' + radius + ',' + radius +
+    'v' + (height - radius * 2) +
+    'a' + radius + ',' + radius + ' 0 0 1 ' + -radius + ',' + radius +
+    'h' + (-(width - radius * 2 - arrowSize * 2) / 2) +
+    'l' + (-arrowSize) + ',' + (arrowSize) +
+    'l' + (-arrowSize) + ',' + (-arrowSize) +
+    'h' + (-(width - radius * 2 - arrowSize * 2) / 2) +
+    'a' + radius + ',' + radius + ' 0 0 1 ' + -radius + ',' + -radius +
+    'v' + (radius - (height - radius)) +
+    'a' + radius + ',' + radius + ' 0 0 1 ' + radius + ',' + -radius +
+    'z';
+}
