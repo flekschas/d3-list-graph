@@ -16,7 +16,7 @@ import { allTransitionsEnded } from '../commons/d3-utils';
 
 function setOption (value, defaultValue, noFalsyValue) {
   if (noFalsyValue) {
-    return value ? value : defaultValue;
+    return value || defaultValue;
   }
 
   return typeof value !== 'undefined' ? value : defaultValue;

@@ -1,5 +1,6 @@
 /* Copyright Fritz Lekschas: D3 layout for list-based graphs */
-(function (d3) { 'use strict';
+(function (d3) {
+  'use strict';
 
   var babelHelpers = {};
 
@@ -9,7 +10,7 @@
     }
   };
 
-  babelHelpers.createClass = (function () {
+  babelHelpers.createClass = function () {
     function defineProperties(target, props) {
       for (var i = 0; i < props.length; i++) {
         var descriptor = props[i];
@@ -25,7 +26,7 @@
       if (staticProps) defineProperties(Constructor, staticProps);
       return Constructor;
     };
-  })();
+  }();
 
   babelHelpers.inherits = function (subClass, superClass) {
     if (typeof superClass !== "function" && superClass !== null) {
@@ -52,6 +53,43 @@
   };
 
   babelHelpers;
+
+  /**
+   * Checks if `value` is classified as an `Array` object.
+   *
+   * @static
+   * @memberOf _
+   * @type {Function}
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+   * @example
+   *
+   * _.isArray([1, 2, 3]);
+   * // => true
+   *
+   * _.isArray(document.body.children);
+   * // => false
+   *
+   * _.isArray('abc');
+   * // => false
+   *
+   * _.isArray(_.noop);
+   * // => false
+   */
+  var isArray = Array.isArray;
+
+  /**
+   * Checks if `value` is a global object.
+   *
+   * @private
+   * @param {*} value The value to check.
+   * @returns {null|Object} Returns `value` if it's a global object, else `null`.
+   */
+  function checkGlobal(value) {
+    return (value && value.Object === Object) ? value : null;
+  }
+
   /** Used to determine if values are of the language type `Object`. */
   var objectTypes = {
     'function': true,
@@ -59,19 +97,26 @@
   };
 
   /** Detect free variable `exports`. */
-  var freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports;
+  var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
+    ? exports
+    : undefined;
 
   /** Detect free variable `module`. */
-  var freeModule = objectTypes[typeof module] && module && !module.nodeType && module;
+  var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
+    ? module
+    : undefined;
 
   /** Detect free variable `global` from Node.js. */
-  var freeGlobal = freeExports && freeModule && typeof global == 'object' && global && global.Object && global;
+  var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
 
   /** Detect free variable `self`. */
-  var freeSelf = objectTypes[typeof self] && self && self.Object && self;
+  var freeSelf = checkGlobal(objectTypes[typeof self] && self);
 
   /** Detect free variable `window`. */
-  var freeWindow = objectTypes[typeof window] && window && window.Object && window;
+  var freeWindow = checkGlobal(objectTypes[typeof window] && window);
+
+  /** Detect `this` as the global object. */
+  var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
 
   /**
    * Used as a reference to the global object.
@@ -79,15 +124,17 @@
    * The `this` value is used if it's the global object to avoid Greasemonkey's
    * restricted `window` object, otherwise the `window` object is used.
    */
-  var root = freeGlobal || ((freeWindow !== (this && this.window)) && freeWindow) || freeSelf || this;
+  var root = freeGlobal ||
+    ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
+      freeSelf || thisGlobal || Function('return this')();
 
-  /* Native method references for those with the same name as other `lodash` methods. */
+  /* Built-in method references for those with the same name as other `lodash` methods. */
   var nativeIsFinite = root.isFinite;
 
   /**
    * Checks if `value` is a finite primitive number.
    *
-   * **Note:** This method is based on [`Number.isFinite`](http://ecma-international.org/ecma-262/6.0/#sec-number.isfinite).
+   * **Note:** This method is based on [`Number.isFinite`](https://mdn.io/Number/isFinite).
    *
    * @static
    * @memberOf _
@@ -96,17 +143,14 @@
    * @returns {boolean} Returns `true` if `value` is a finite number, else `false`.
    * @example
    *
-   * _.isFinite(10);
+   * _.isFinite(3);
    * // => true
    *
-   * _.isFinite('10');
-   * // => false
+   * _.isFinite(Number.MAX_VALUE);
+   * // => true
    *
-   * _.isFinite(true);
-   * // => false
-   *
-   * _.isFinite(Object(10));
-   * // => false
+   * _.isFinite(3.14);
+   * // => true
    *
    * _.isFinite(Infinity);
    * // => false
@@ -132,172 +176,44 @@
    * _.isObject([1, 2, 3]);
    * // => true
    *
-   * _.isObject(1);
+   * _.isObject(_.noop);
+   * // => true
+   *
+   * _.isObject(null);
    * // => false
    */
   function isObject(value) {
-    // Avoid a V8 JIT bug in Chrome 19-20.
-    // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
     var type = typeof value;
     return !!value && (type == 'object' || type == 'function');
   }
 
-  /** `Object#toString` result references. */
-  var funcTag = '[object Function]';
+  var ExtendableError = function (_Error) {
+    babelHelpers.inherits(ExtendableError, _Error);
 
-  /** Used for native method references. */
-  var objectProto$2 = Object.prototype;
+    function ExtendableError(message) {
+      babelHelpers.classCallCheck(this, ExtendableError);
 
-  /**
-   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
-   * of values.
-   */
-  var objToString$1 = objectProto$2.toString;
+      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
 
-  /**
-   * Checks if `value` is classified as a `Function` object.
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
-   * @example
-   *
-   * _.isFunction(_);
-   * // => true
-   *
-   * _.isFunction(/abc/);
-   * // => false
-   */
-  function isFunction(value) {
-    // The use of `Object#toString` avoids issues with the `typeof` operator
-    // in older versions of Chrome and Safari which return 'function' for regexes
-    // and Safari 8 which returns 'object' for typed array constructors.
-    return isObject(value) && objToString$1.call(value) == funcTag;
-  }
-
-  /**
-   * Checks if `value` is object-like.
-   *
-   * @private
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
-   */
-  function isObjectLike(value) {
-    return !!value && typeof value == 'object';
-  }
-
-  /** Used to detect host constructors (Safari > 5). */
-  var reIsHostCtor = /^\[object .+?Constructor\]$/;
-
-  /** Used for native method references. */
-  var objectProto$1 = Object.prototype;
-
-  /** Used to resolve the decompiled source of functions. */
-  var fnToString = Function.prototype.toString;
-
-  /** Used to check objects for own properties. */
-  var hasOwnProperty = objectProto$1.hasOwnProperty;
-
-  /** Used to detect if a method is native. */
-  var reIsNative = RegExp('^' +
-    fnToString.call(hasOwnProperty).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
-    .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
-  );
-
-  /**
-   * Checks if `value` is a native function.
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a native function, else `false`.
-   * @example
-   *
-   * _.isNative(Array.prototype.push);
-   * // => true
-   *
-   * _.isNative(_);
-   * // => false
-   */
-  function isNative(value) {
-    if (value == null) {
-      return false;
+      _this.name = _this.constructor.name;
+      _this.message = message;
+      Error.captureStackTrace(_this, _this.constructor.name);
+      return _this;
     }
-    if (isFunction(value)) {
-      return reIsNative.test(fnToString.call(value));
+
+    return ExtendableError;
+  }(Error);
+
+  var NoRootNodes = function (_ExtendableError) {
+    babelHelpers.inherits(NoRootNodes, _ExtendableError);
+
+    function NoRootNodes(message) {
+      babelHelpers.classCallCheck(this, NoRootNodes);
+      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(NoRootNodes).call(this, message || 'No root node IDs specified.'));
     }
-    return isObjectLike(value) && reIsHostCtor.test(value);
-  }
 
-  /**
-   * Gets the native function at `key` of `object`.
-   *
-   * @private
-   * @param {Object} object The object to query.
-   * @param {string} key The key of the method to get.
-   * @returns {*} Returns the function if it's native, else `undefined`.
-   */
-  function getNative(object, key) {
-    var value = object == null ? undefined : object[key];
-    return isNative(value) ? value : undefined;
-  }
-
-  /**
-   * Used as the [maximum length](http://ecma-international.org/ecma-262/6.0/#sec-number.max_safe_integer)
-   * of an array-like value.
-   */
-  var MAX_SAFE_INTEGER = 9007199254740991;
-
-  /**
-   * Checks if `value` is a valid array-like length.
-   *
-   * **Note:** This function is based on [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
-   *
-   * @private
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
-   */
-  function isLength(value) {
-    return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-  }
-
-  /** `Object#toString` result references. */
-  var arrayTag = '[object Array]';
-
-  /** Used for native method references. */
-  var objectProto = Object.prototype;
-
-  /**
-   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
-   * of values.
-   */
-  var objToString = objectProto.toString;
-
-  /* Native method references for those with the same name as other `lodash` methods. */
-  var nativeIsArray = getNative(Array, 'isArray');
-
-  /**
-   * Checks if `value` is classified as an `Array` object.
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
-   * @example
-   *
-   * _.isArray([1, 2, 3]);
-   * // => true
-   *
-   * _.isArray(function() { return arguments; }());
-   * // => false
-   */
-  var isArray = nativeIsArray || function(value) {
-    return isObjectLike(value) && isLength(value.length) && objToString.call(value) == arrayTag;
-  };
+    return NoRootNodes;
+  }(ExtendableError);
 
   /**
    * Traverse graph in a breadth-first search fashion and process nodes along
@@ -589,34 +505,6 @@
     addSiblings();
   }
 
-  var ExtendableError = (function (_Error) {
-    babelHelpers.inherits(ExtendableError, _Error);
-
-    function ExtendableError(message) {
-      babelHelpers.classCallCheck(this, ExtendableError);
-
-      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
-
-      _this.name = _this.constructor.name;
-      _this.message = message;
-      Error.captureStackTrace(_this, _this.constructor.name);
-      return _this;
-    }
-
-    return ExtendableError;
-  })(Error);
-
-  var NoRootNodes = (function (_ExtendableError) {
-    babelHelpers.inherits(NoRootNodes, _ExtendableError);
-
-    function NoRootNodes(message) {
-      babelHelpers.classCallCheck(this, NoRootNodes);
-      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(NoRootNodes).call(this, message || 'No root node IDs specified.'));
-    }
-
-    return NoRootNodes;
-  })(ExtendableError);
-
   /**
    * Default size
    *
@@ -677,7 +565,7 @@
    */
   var CELL_REL_INNER_PADDING = 0.05;
 
-  var ListGraphLayout = (function () {
+  var ListGraphLayout = function () {
     /**
      * ListGraph class constructor.
      *
@@ -744,6 +632,7 @@
      * @param  {Integer}  Level for which nodes should be returned.
      * @return  {Array}  Fat array of arrays of nodes.
      */
+
 
     babelHelpers.createClass(ListGraphLayout, [{
       key: 'nodesToMatrix',
@@ -853,18 +742,18 @@
         switch (property) {
           case 'precision':
             sortProperty = 'precision';
-            getValue = function (obj) {
+            getValue = function getValue(obj) {
               return obj.data.barRefs.precision;
             };
             break;
           case 'recall':
             sortProperty = 'recall';
-            getValue = function (obj) {
+            getValue = function getValue(obj) {
               return obj.data.barRefs.recall;
             };
             break;
           default:
-            getValue = function (obj) {
+            getValue = function getValue(obj) {
               return obj.data.name.toLowerCase();
             };
             sortProperty = 'name';
@@ -1070,7 +959,7 @@
     }, {
       key: 'grid',
       value: function grid(newGrid) {
-        if (!arguments.length) {
+        if (!newGrid) {
           return this._grid;
         }
 
@@ -1185,7 +1074,7 @@
     }, {
       key: 'size',
       value: function size(newSize) {
-        if (!arguments.length) {
+        if (!newSize) {
           return this._size;
         }
 
@@ -1224,7 +1113,7 @@
     }, {
       key: 'columnPadding',
       value: function columnPadding(padding, absolute) {
-        if (!arguments.length) {
+        if (!padding) {
           return this._colRelPadding;
         }
 
@@ -1260,7 +1149,7 @@
     }, {
       key: 'rowPadding',
       value: function rowPadding(padding, absolute) {
-        if (!arguments.length) {
+        if (!padding) {
           return this._rowRelPadding;
         }
 
@@ -1277,8 +1166,8 @@
       }
     }]);
     return ListGraphLayout;
-  })();
+  }();
 
   d3.layout.listGraph = ListGraphLayout;
 
-})(d3);
+}(d3));

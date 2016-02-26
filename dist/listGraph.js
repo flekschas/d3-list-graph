@@ -1,5 +1,6 @@
 /* Copyright Fritz Lekschas: D3 example visualization app using list-based graphs */
-var ListGraph = (function ($,d3) { 'use strict';
+var ListGraph = (function ($,d3) {
+  'use strict';
 
   var babelHelpers = {};
 
@@ -9,7 +10,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }
   };
 
-  babelHelpers.createClass = (function () {
+  babelHelpers.createClass = function () {
     function defineProperties(target, props) {
       for (var i = 0; i < props.length; i++) {
         var descriptor = props[i];
@@ -25,7 +26,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       if (staticProps) defineProperties(Constructor, staticProps);
       return Constructor;
     };
-  })();
+  }();
 
   babelHelpers.inherits = function (subClass, superClass) {
     if (typeof superClass !== "function" && superClass !== null) {
@@ -52,6 +53,46 @@ var ListGraph = (function ($,d3) { 'use strict';
   };
 
   babelHelpers;
+
+  var ExtendableError = function (_Error) {
+    babelHelpers.inherits(ExtendableError, _Error);
+
+    function ExtendableError(message) {
+      babelHelpers.classCallCheck(this, ExtendableError);
+
+      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
+
+      _this.name = _this.constructor.name;
+      _this.message = message;
+      Error.captureStackTrace(_this, _this.constructor.name);
+      return _this;
+    }
+
+    return ExtendableError;
+  }(Error);
+
+  var LayoutNotAvailable = function (_ExtendableError) {
+    babelHelpers.inherits(LayoutNotAvailable, _ExtendableError);
+
+    function LayoutNotAvailable(message) {
+      babelHelpers.classCallCheck(this, LayoutNotAvailable);
+      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LayoutNotAvailable).call(this, message || 'D3.layout.listGraph.js has not been loaded yet.'));
+    }
+
+    return LayoutNotAvailable;
+  }(ExtendableError);
+
+  var EventDispatcherNoFunction = function (_ExtendableError2) {
+    babelHelpers.inherits(EventDispatcherNoFunction, _ExtendableError2);
+
+    function EventDispatcherNoFunction(message) {
+      babelHelpers.classCallCheck(this, EventDispatcherNoFunction);
+      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(EventDispatcherNoFunction).call(this, message || 'Dispatcher needs to be a function.'));
+    }
+
+    return EventDispatcherNoFunction;
+  }(ExtendableError);
+
   var CLASSNAME = 'list-graph';
 
   var SCROLLBAR_WIDTH = 6;
@@ -74,203 +115,683 @@ var ListGraph = (function ($,d3) { 'use strict';
   var TRANSITION_LIGHTNING_FAST = 150;
   var TRANSITION_SEMI_FAST = 250;
 
-  function mergeSelections(selections) {
-    // Create a new empty selection
-    var mergedSelection = d3.selectAll('.d3-list-graph-not-existent');
+  var TOPBAR_EL = 'div';
+  var TOPBAR_CLASS = 'top-bar';
 
-    function pushSelection(selection) {
-      selection.each(function pushDomNode() {
-        mergedSelection[0].push(this);
-      });
-    }
+  var TOPBAR_CONTROL_EL = 'ul';
+  var TOPBAR_CONTROL_CLASS = 'controls';
+  var TOPBAR_GLOBAL_CONTROL_CLASS = 'global-controls';
 
-    for (var i = selections.length; i--;) {
-      pushSelection(selections[i]);
-    }
+  var Topbar = function () {
+    function Topbar(vis, selection, visData) {
+      var _this = this;
 
-    return mergedSelection;
-  }
+      babelHelpers.classCallCheck(this, Topbar);
 
-  function allTransitionsEnded(transition, callback) {
-    if (transition.size() === 0) {
-      callback();
-    }
-    var n = 0;
-    transition.each(function () {
-      return ++n;
-    }).each('end', function () {
-      if (! --n) callback.apply(this, arguments);
-    });
-  }
+      var that = this;
 
-  var ExtendableError = (function (_Error) {
-    babelHelpers.inherits(ExtendableError, _Error);
-
-    function ExtendableError(message) {
-      babelHelpers.classCallCheck(this, ExtendableError);
-
-      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
-
-      _this.name = _this.constructor.name;
-      _this.message = message;
-      Error.captureStackTrace(_this, _this.constructor.name);
-      return _this;
-    }
-
-    return ExtendableError;
-  })(Error);
-
-  var LimitsUnsupportedFormat = (function (_ExtendableError) {
-    babelHelpers.inherits(LimitsUnsupportedFormat, _ExtendableError);
-
-    function LimitsUnsupportedFormat(message) {
-      babelHelpers.classCallCheck(this, LimitsUnsupportedFormat);
-      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LimitsUnsupportedFormat).call(this, message || 'The limits are wrongly formatted. Please provide an ' + 'object of the following format: `{ x: { min: 0, max: 1 }, y: { min: ' + '0, max: 1 } }`'));
-    }
-
-    return LimitsUnsupportedFormat;
-  })(ExtendableError);
-
-  /**
-   * Drap and drop event handler that works via translation.
-   *
-   * @method  onDragDrop
-   * @author  Fritz Lekschas
-   * @date    2016-01-23
-   * @param   {Object}  selection        D3 selection to listen for the drag
-   *   event.
-   * @param   {Object}           dragMoveHandler  Handler for drag-move.
-   * @param   {Object}           dropHandler      Handler for drag-end, i.e. drop.
-   * @param   {Array}            elsToBeDragged   Array of D3 selections to be
-   *   moved according to the drag event. If empty or undefined `selection` will
-   *   be used.
-   * @param   {String}           orientation      Can either be "horizontal",
-   *   "vertical" or `undefined`, i.e. both directions.
-   * @param   {Object|Function}  limits           X and Y drag limits. E.g.
-   *   `{ x: { min: 0, max: 10 } }`.
-   * @param   {Array}             notWhenTrue     List if function returning a
-   *   Boolean value which should prevent the dragMoveHandler from working.
-   */
-  function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue) {
-    var drag = d3.behavior.drag();
-
-    var appliedLimits = limits || {}; // eslint-disable-line no-param-reassign
-
-    if (dragStartHandler) {
-      drag.on('dragstart', function () {
-        if (typeof limits === 'function') {
-          appliedLimits = limits();
-        }
-        dragStartHandler();
-      });
-    }
-
-    if (dragMoveHandler) {
-      drag.on('drag', function (data) {
-        dragMoveHandler.call(this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue);
-      });
-    }
-
-    if (dropHandler) {
-      drag.on('dragend', dropHandler);
-    }
-
-    selection.each(function (data) {
-      var el = d3.select(this);
-
-      // Set default data if not available.
-      if (!data) {
-        data = { dragX: 0, dragY: 0 }; // eslint-disable-line no-param-reassign
-        el.datum(data);
-      }
-
-      // Add drag event handler
-      el.call(drag);
-    });
-  }
-
-  function dragMoveHandler(data, elsToBeDragged, orientation, limits, notWhenTrue) {
-    for (var i = notWhenTrue.length; i--;) {
-      if (notWhenTrue[i]()) {
-        return;
-      }
-    }
-
-    var els = d3.select(this);
-
-    if (elsToBeDragged && elsToBeDragged.length) {
-      els = mergeSelections(elsToBeDragged);
-    }
-
-    function withinLimits(value, applyingLimits) {
-      var restrictedValue = undefined;
-
-      if (applyingLimits) {
-        try {
-          restrictedValue = Math.min(applyingLimits.max, Math.max(applyingLimits.min, value));
-        } catch (e) {
-          throw new LimitsUnsupportedFormat();
-        }
-      }
-      return restrictedValue;
-    }
-
-    if (orientation === 'horizontal' || orientation === 'vertical') {
-      if (orientation === 'horizontal') {
-        data.dragX += d3.event.dx;
-        data.dragX = withinLimits(data.dragX + d3.event.dx, limits.x);
-        els.style('transform', 'translateX(' + data.dragX + 'px)');
-      }
-      if (orientation === 'vertical') {
-        data.dragY += d3.event.dy;
-        data.dragX = withinLimits(data.dragY + d3.event.dy, limits.y);
-        els.style('transform', 'translateY(' + data.dragY + 'px)');
-      }
-    } else {
-      data.dragX += d3.event.dx;
-      data.dragY += d3.event.dy;
-      els.style('transform', 'translate(' + data.dragX + 'px,' + data.dragY + 'px)');
-    }
-  }
-
-  var SCROLLBAR_CLASS = 'scrollbar';
-
-  var Scrollbars = (function () {
-    function Scrollbars(baseSelection, visData, width) {
-      babelHelpers.classCallCheck(this, Scrollbars);
-
+      this.vis = vis;
       this.visData = visData;
-      this.width = width;
+      // Add base topbar element
+      this.el = selection.select('.' + TOPBAR_CLASS);
 
-      // Add empty scrollbar element
-      this.all = baseSelection.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
-        selection.each(function setScrollBarDomElement() {
-          d3.select(this.parentNode).datum().scrollbar.el = this;
-        });
-      }).attr('x', function (data) {
-        return data.scrollbar.x - 2;
-      }).attr('y', function (data) {
-        return data.scrollbar.y;
-      }).attr('width', this.width).attr('height', function (data) {
-        return data.scrollbar.height;
-      }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
+      if (this.el.empty()) {
+        this.el = selection.insert(TOPBAR_EL, ':first-child').attr('class', TOPBAR_CLASS);
+      }
+
+      this.controlSwitch = this.el.append('div').attr('title', 'Toggle global / local topbar').style('width', this.visData.global.column.padding + 'px').classed('control-switch', true).on('click', this.switch.bind(this));
+
+      this.switchArrow = this.controlSwitch.append('svg').append('use').attr('xlink:href', this.vis.iconPath + '#arrow-down').attr('class', 'switch-arrow');
+
+      this.globalControls = this.el.append(TOPBAR_CONTROL_EL).classed(TOPBAR_GLOBAL_CONTROL_CLASS, true);
+
+      // Add button for sorting by precision
+      this.globalPrecision = this.globalControls.append('li').attr('class', 'control-btn sort-precision').classed('active', function () {
+        if (that.vis.currentSorting.global.type === 'precision') {
+          // Save currently active element. Needed when when re-sorting for the
+          // first time, to be able to de-highlight this element.
+          that.vis.currentSorting.global.el = d3.select(this);
+          return true;
+        }
+        return false;
+      }).on('click', function () {
+        that.sortAllColumns(this, 'precision');
+      }).on('mouseenter', function () {
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightBars(undefined, 'precision');
+        }, []);
+      }).on('mouseleave', function () {
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightBars(undefined, 'precision', true);
+        }, []);
+      });
+
+      this.globalPrecisionWrapper = this.globalPrecision.append('div').attr('class', 'wrapper');
+
+      this.globalPrecisionWrapper.append('span').attr('class', 'label').text('Precision');
+
+      this.globalPrecisionWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'precision').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
+
+      this.globalPrecisionWrapper.append('svg').attr('class', 'icon-sort-asc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'precision' && this.vis.currentSorting.global.order === 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-asc');
+
+      this.globalPrecisionWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'precision' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-desc');
+
+      // Add button for sorting by recall
+      this.globalRecall = this.globalControls.append('li').attr('class', 'control-btn sort-recall').classed('active', function () {
+        if (that.vis.currentSorting.global.type === 'recall') {
+          // See precision
+          that.vis.currentSorting.global.el = d3.select(this);
+          return true;
+        }
+        return false;
+      }).on('click', function () {
+        that.sortAllColumns(this, 'recall');
+      }).on('mouseenter', function () {
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightBars(undefined, 'recall');
+        }, []);
+      }).on('mouseleave', function () {
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightBars(undefined, 'recall', true);
+        }, []);
+      });
+
+      this.globalRecallWrapper = this.globalRecall.append('div').attr('class', 'wrapper');
+
+      this.globalRecallWrapper.append('span').attr('class', 'label').text('Recall');
+
+      this.globalRecallWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'recall').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
+
+      this.globalRecallWrapper.append('svg').attr('class', 'icon-sort-asc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'recall' && this.vis.currentSorting.global.order === 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-asc');
+
+      this.globalRecallWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'recall' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-desc');
+
+      // Add button for sorting by name
+      this.globalName = this.globalControls.append('li').attr('class', 'control-btn sort-name').classed('active', function () {
+        if (that.vis.currentSorting.global.type === 'name') {
+          // See precision
+          that.vis.currentSorting.global.el = d3.select(this);
+          return true;
+        }
+        return false;
+      }).on('click', function () {
+        that.sortAllColumns(this, 'name');
+      }).on('mouseenter', function () {
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightLabels();
+        }, []);
+      }).on('mouseleave', function () {
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightLabels(true);
+        }, []);
+      });
+
+      this.globalNameWrapper = this.globalName.append('div').attr('class', 'wrapper');
+
+      this.globalNameWrapper.append('span').attr('class', 'label').text('Name');
+
+      this.globalNameWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'name').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
+
+      this.globalNameWrapper.append('svg').attr('class', 'icon-sort-asc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'name' && this.vis.currentSorting.global.order === 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-alpha-asc');
+
+      this.globalNameWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'name' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-alpha-desc');
+
+      // Add button for switching to 'one bar'
+      this.globalOneBar = this.globalControls.append('li').attr('class', 'control-btn one-bar').classed('active', this.vis.barMode === 'one').on('click', function () {
+        that.switchBarMode(this, 'one');
+      });
+
+      this.globalOneBarWrapper = this.globalOneBar.append('div').attr('class', 'wrapper').text('One bar');
+
+      this.globalOneBarWrapper.append('svg').attr('class', 'icon-one-bar').append('use').attr('xlink:href', this.vis.iconPath + '#one-bar');
+
+      // Add button for switching to 'two bars'
+      this.globalTwoBars = this.globalControls.append('li').attr('class', 'control-btn two-bars').classed('active', this.vis.barMode === 'two').on('click', function () {
+        that.switchBarMode(this, 'two');
+      });
+
+      this.globalTwoBarsWrapper = this.globalTwoBars.append('div').attr('class', 'wrapper').text('Two bars');
+
+      this.globalTwoBarsWrapper.append('svg').attr('class', 'icon-two-bars').append('use').attr('xlink:href', this.vis.iconPath + '#two-bars');
+
+      // Add button for zoom-out
+      this.globalZoomOut = this.globalControls.append('li').attr('class', 'control-btn zoom-out').classed('active', this.vis.zoomedOut).on('mouseenter', function () {
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.vis.globalView.call(_this.vis);
+        }, []);
+      }).on('mouseleave', function () {
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.vis.zoomedView.call(_this.vis);
+        }, []);
+      }).on('click', function () {
+        that.vis.toggleView.call(that.vis);
+        d3.select(this).classed('active', that.vis.zoomedOut);
+      });
+
+      this.globalZoomOutWrapper = this.globalZoomOut.append('div').attr('class', 'wrapper').text('Zoom Out').style('margin-right', this.visData.global.column.padding + 'px');
+
+      this.globalZoomOutWrapper.append('svg').attr('class', 'icon-zoom-out').append('use').attr('xlink:href', this.vis.iconPath + '#zoom-out');
+
+      this.localControlWrapper = this.el.append('div').classed('local-controls', true);
+
+      this.localControls = this.localControlWrapper.selectAll(TOPBAR_CONTROL_CLASS).data(visData.nodes).enter().append(TOPBAR_CONTROL_EL).classed(TOPBAR_CONTROL_CLASS, true).style('width', this.visData.global.column.width + 'px');
+
+      this.localControls.each(function (data, index) {
+        var control = d3.select(this);
+
+        /*
+         * Order:
+         * 0 = unsorted
+         * 1 = asc
+         * -1 = desc
+         */
+        that.vis.currentSorting.local[index] = {
+          type: data.sortBy,
+          order: data.sortOrder,
+          el: undefined
+        };
+
+        control.append('li').attr('class', 'control-btn toggle').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleColumn);
+
+        control.append('li').attr('class', 'control-btn sort-precision ease-all').classed('active', function () {
+          if (that.vis.currentSorting.local[index].type === 'precision') {
+            // See precision
+            that.vis.currentSorting.local[index].el = d3.select(this);
+            return true;
+          }
+          return false;
+        }).style({
+          width: that.visData.global.column.contentWidth / 2 + 'px',
+          left: that.visData.global.column.padding + 'px'
+        }).on('click', function (controlData) {
+          that.sortColumn(this, controlData.level, 'precision');
+        }).on('mouseenter', function () {
+          that.highlightBars(this.parentNode, 'precision');
+          d3.select(this).style('width', that.visData.global.column.contentWidth - 16 + 'px');
+        }).on('mouseleave', function () {
+          that.highlightBars(this.parentNode, 'precision', true);
+          d3.select(this).style('width', that.visData.global.column.contentWidth / 2 + 'px');
+        }).html('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'precision' ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
+
+        control.append('li').attr('class', 'control-btn sort-recall ease-all').classed('active', function () {
+          if (that.vis.currentSorting.local[index].type === 'recall') {
+            // See recall
+            that.vis.currentSorting.local[index].el = d3.select(this);
+            return true;
+          }
+          return false;
+        }).style({
+          width: that.visData.global.column.contentWidth / 2 + 'px',
+          left: that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
+        }).on('click', function (controlData) {
+          that.sortColumn(this, controlData.level, 'recall');
+        }).on('mouseenter', function () {
+          that.highlightBars(this.parentNode, 'recall');
+          d3.select(this).style({
+            width: that.visData.global.column.contentWidth - 16 + 'px',
+            left: that.visData.global.column.padding + 16 + 'px'
+          });
+        }).on('mouseleave', function () {
+          that.highlightBars(this.parentNode, 'recall', true);
+          d3.select(this).style({
+            width: that.visData.global.column.contentWidth / 2 + 'px',
+            left: that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
+          });
+        }).html('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'recall' ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
+        '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
+
+        control.append('li').attr('class', 'control-btn options').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleOptions).html('<svg class="icon-gear">' + '  <use xlink:href="' + that.vis.iconPath + '#gear"></use>' + '</svg>');
+
+        if (that.vis.currentSorting.local[index].type) {
+          that.vis.currentSorting.local[index].el = control.select('.sort-' + that.vis.currentSorting.local[index].type);
+        }
+      });
     }
 
-    babelHelpers.createClass(Scrollbars, [{
+    // toggleColumn () {
+    //   console.log('Toggle column');
+    // }
+
+    babelHelpers.createClass(Topbar, [{
+      key: 'selectNodesLevel',
+      value: function selectNodesLevel(el) {
+        return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
+      }
+    }, {
+      key: 'highlightLabels',
+      value: function highlightLabels(deHighlight) {
+        this.vis.baseElD3.selectAll('.node').classed('highlight-label', !deHighlight);
+      }
+    }, {
+      key: 'highlightBars',
+      value: function highlightBars(el, type, deHighlight) {
+        var nodes = el ? this.selectNodesLevel(el) : this.vis.baseElD3.selectAll('.node');
+
+        nodes.classed('highlight-bar', !deHighlight).selectAll('.bar.' + type).classed('highlight', !deHighlight);
+      }
+    }, {
+      key: 'sortAllColumns',
+      value: function sortAllColumns(el, type) {
+        if (this.semiActiveSortingEls) {
+          this.resetSemiActiveSortingEls();
+        }
+
+        if (this.vis.currentSorting.global.type !== type) {
+          // Unset class of previous global sorting element
+          if (this.vis.currentSorting.global.el) {
+            this.resetSortEl(this.vis.currentSorting.global.el, type);
+          }
+        }
+
+        this.vis.currentSorting.global.el = d3.select(el);
+        this.vis.currentSorting.global.el.classed('active', true);
+        this.vis.currentSorting.global.type = type;
+
+        var columnKeys = Object.keys(this.vis.currentSorting.local);
+        for (var i = 0, len = columnKeys.length; i < len; i++) {
+          this.sortColumn(el, columnKeys[i], type, true);
+        }
+
+        this.vis.sortAllColumns(type, true);
+      }
+    }, {
+      key: 'sortColumn',
+      value: function sortColumn(el, index, type, global) {
+        // Reset global sorting
+        if (!global) {
+          if (this.semiActiveSortingEls) {
+            this.resetSemiActiveSortingEls();
+          }
+          if (this.vis.currentSorting.global.type) {
+            this.resetSortEl(this.vis.currentSorting.global.el, type);
+          }
+          this.vis.currentSorting.global.type = undefined;
+        }
+
+        var newSortType = false;
+
+        if (this.vis.currentSorting.local[index].el) {
+          if (this.vis.currentSorting.local[index].type !== type) {
+            this.resetSortEl(this.vis.currentSorting.local[index].el, type);
+          }
+        }
+
+        if (this.vis.currentSorting.local[index].type !== type) {
+          newSortType = true;
+          // Reset sort order
+          this.vis.currentSorting.local[index].order = 0;
+        }
+
+        this.vis.currentSorting.local[index].el = d3.select(el);
+        this.vis.currentSorting.local[index].type = type;
+
+        // -1 = desc, 1 = asc
+        if (this.vis.currentSorting.local[index].order === -1) {
+          this.vis.currentSorting.local[index].order = 1;
+          this.vis.currentSorting.local[index].el.select('.icon-sort-desc').classed('visible', false);
+          this.vis.currentSorting.local[index].el.select('.icon-sort-asc').classed('visible', true);
+        } else {
+          this.vis.currentSorting.local[index].order = -1;
+          this.vis.currentSorting.local[index].el.select('.icon-sort-asc').classed('visible', false);
+          this.vis.currentSorting.local[index].el.select('.icon-sort-desc').classed('visible', true);
+        }
+
+        this.vis.currentSorting.local[index].el.select('.icon-unsort').classed('visible', false);
+
+        this.vis.currentSorting.local[index].el.classed('active', true);
+
+        if (!global) {
+          this.vis.sortColumn(index, type, this.vis.currentSorting.local[index].order, newSortType);
+        }
+      }
+    }, {
+      key: 'resetSortEl',
+      value: function resetSortEl(el, newType) {
+        el.classed('active', false);
+        el.select('.icon-sort-desc').classed('visible', false);
+        el.select('.icon-sort-asc').classed('visible', false);
+        el.select('.icon-unsort').classed('visible', true);
+        if (newType === 'name') {
+          el.classed('semi-active', true);
+          this.semiActiveSortingEls = true;
+        }
+      }
+    }, {
+      key: 'resetSemiActiveSortingEls',
+      value: function resetSemiActiveSortingEls() {
+        this.el.selectAll('.semi-active').classed('semi-active', false);
+      }
+
+      // toggleOptions () {
+      //   console.log('Toggle options');
+      // }
+
+    }, {
+      key: 'switch',
+      value: function _switch() {
+        this.el.classed('details', !this.el.classed('details'));
+      }
+    }, {
+      key: 'switchBarMode',
+      value: function switchBarMode(el, mode) {
+        if (this.vis.nodes.barMode !== mode) {
+          if (mode === 'one') {
+            this.globalOneBar.classed('active', true);
+            this.globalTwoBars.classed('active', false);
+          } else {
+            this.globalOneBar.classed('active', false);
+            this.globalTwoBars.classed('active', true);
+          }
+          this.vis.switchBarMode(mode);
+        }
+      }
+    }]);
+    return Topbar;
+  }();
+
+  var COLUMN_CLASS = 'column';
+  var SCROLL_CONTAINER_CLASS = 'scroll-container';
+
+  var Levels = function () {
+    function Levels(selection, vis, visData) {
+      var _this = this;
+
+      babelHelpers.classCallCheck(this, Levels);
+
+      this.vis = vis;
+      this.visData = visData;
+      this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS).classed('active', function (data, index) {
+        if (_this.vis.highlightActiveLevel) {
+          if (!_this.vis.nodes || !_this.vis.nodes.rootedNode) {
+            return index === _this.vis.activeLevel - _this.vis.noRootActiveLevelDiff;
+          }
+          return index === _this.vis.activeLevel;
+        }
+        return false;
+      });
+
+      // We need to add an empty rectangle that fills up the whole column to ensure
+      // that the `g`'s size is at a maximum, otherwise scrolling will be halted
+      // when the cursor leaves an actually drawn element.
+      this.groups.append('rect').attr('class', SCROLL_CONTAINER_CLASS).attr('x', function (data) {
+        return data.x;
+      }).attr('y', function (data) {
+        return data.y;
+      }).attr('width', this.visData.global.column.width + 1).attr('height', this.visData.global.column.height);
+    }
+
+    babelHelpers.createClass(Levels, [{
+      key: 'scrollPreparation',
+      value: function scrollPreparation(vis, scrollbarWidth) {
+        var _this2 = this;
+
+        this.groups.each(function (data, index) {
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this2.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this2.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this2.visData.global.column.height * _this2.visData.global.column.height / contentHeight, 10) : 0;
+
+          data.height = contentHeight;
+          data.linkSelections = {
+            incoming: index > 0 ? vis.selectByLevel(index - 1, '.link') : null,
+            outgoing: vis.selectByLevel(index, '.link')
+          };
+          data.scrollHeight = scrollHeight;
+          data.scrollTop = 0;
+          data.scrollbar = {
+            el: undefined,
+            x: data.x + _this2.visData.global.column.width - scrollbarWidth,
+            y: 0,
+            width: scrollbarWidth,
+            height: scrollbarHeight,
+            scrollHeight: _this2.visData.global.column.height - scrollbarHeight,
+            scrollTop: 0,
+            heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight])
+          };
+          data.invertedHeightScale = data.scrollbar.heightScale.invert;
+        });
+      }
+    }, {
+      key: 'updateScrollProperties',
+      value: function updateScrollProperties() {
+        var _this3 = this;
+
+        this.groups.each(function (data) {
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this3.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this3.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this3.visData.global.column.height * _this3.visData.global.column.height / contentHeight, 10) : 0;
+
+          data.height = contentHeight;
+          data.scrollHeight = scrollHeight;
+          data.scrollTop = 0;
+          data.scrollbar.y = 0;
+          data.scrollbar.height = scrollbarHeight;
+          data.scrollbar.scrollHeight = _this3.visData.global.column.height - scrollbarHeight;
+          data.scrollbar.scrollTop = 0;
+          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this3.visData.global.column.height - scrollbarHeight]);
+        });
+      }
+    }, {
       key: 'updateVisibility',
       value: function updateVisibility() {
-        this.all.transition().duration(TRANSITION_LIGHTNING_FAST).attr({
-          x: function x(data) {
-            return data.scrollbar.x;
-          },
-          height: function height(data) {
-            return data.scrollbar.height;
+        this.groups.each(function () {
+          var group = d3.select(this);
+
+          group.classed('hidden', group.selectAll('.node').filter(function (data) {
+            return !data.hidden;
+          }).empty());
+        });
+      }
+    }, {
+      key: 'focus',
+      value: function focus(level) {
+        if (this.vis.highlightActiveLevel) {
+          this.groups.filter(function (data) {
+            return data.level === level;
+          }).classed('active', true);
+        }
+      }
+    }, {
+      key: 'blur',
+      value: function blur(level) {
+        if (this.vis.highlightActiveLevel) {
+          if (level) {
+            this.groups.filter(function (data) {
+              return data.level === level;
+            }).classed('active', false);
+          } else {
+            this.groups.classed('active', false);
           }
+        }
+      }
+    }, {
+      key: 'className',
+      get: function get() {
+        return COLUMN_CLASS;
+      }
+    }, {
+      key: 'height',
+      get: function get() {
+        return this.visData.global.column.height;
+      }
+    }]);
+    return Levels;
+  }();
+
+  var LINKS_CLASS = 'links';
+  var LINK_CLASS = 'link';
+
+  var Links = function () {
+    function Links(levels, visData, layout) {
+      var _this = this;
+
+      babelHelpers.classCallCheck(this, Links);
+
+      this.visData = visData;
+      this.layout = layout;
+
+      this.groups = levels.append('g').attr('class', LINKS_CLASS).call(function (selection) {
+        selection.each(function () {
+          d3.select(this.parentNode).datum().links = this;
+        });
+      });
+
+      this.links = this.groups.selectAll(LINK_CLASS + '-bg').data(function (data, index) {
+        return _this.layout.links(index);
+      }).enter().append('g').attr('class', LINK_CLASS);
+
+      this.links.append('path').attr({
+        class: LINK_CLASS + '-bg',
+        d: this.diagonal
+      });
+
+      this.links.append('path').attr({
+        class: LINK_CLASS + '-direct',
+        d: this.diagonal
+      });
+    }
+
+    babelHelpers.createClass(Links, [{
+      key: 'highlight',
+      value: function highlight(nodeIds, _highlight, className) {
+        this.links.filter(function (data) {
+          return nodeIds[data.id];
+        }).classed(className, _highlight);
+      }
+    }, {
+      key: 'scroll',
+      value: function scroll(selection, data) {
+        // Update data of `g`.
+        selection.data(data);
+
+        // Next update all paths according to the new data.
+        selection.selectAll('path').attr('d', this.diagonal);
+      }
+    }, {
+      key: 'sort',
+      value: function sort(update) {
+        var start = function start() {
+          d3.select(this).classed('sorting', true);
+        };
+        var end = function end() {
+          d3.select(this).classed('sorting', false);
+        };
+
+        // Update data of `g`.
+        this.links.data(update, function (data) {
+          return data.id;
+        });
+
+        // Next update all paths according to the new data.
+        this.links.selectAll('path').transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal).each('start', start).each('end', end);
+      }
+    }, {
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        this.links.selectAll('path').classed('hidden', function (data) {
+          return data.target.node.hidden || data.source.node.hidden;
+        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal);
+      }
+    }, {
+      key: 'diagonal',
+      get: function get() {
+        var _this2 = this;
+
+        return d3.svg.diagonal().source(function (data) {
+          return {
+            x: data.source.node.y + data.source.offsetY + _this2.visData.global.row.height / 2,
+            y: data.source.node.x + data.source.offsetX + _this2.visData.global.column.contentWidth + _this2.visData.global.column.padding
+          };
+        }).target(function (data) {
+          return {
+            x: data.target.node.y + data.target.offsetY + _this2.visData.global.row.height / 2,
+            y: data.target.node.x + data.target.offsetX + _this2.visData.global.column.padding
+          };
+        }).projection(function (data) {
+          return [data.y, data.x];
         });
       }
     }]);
-    return Scrollbars;
-  })();
+    return Links;
+  }();
+
+  /**
+   * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
+   * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+   *
+   * @static
+   * @memberOf _
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+   * @example
+   *
+   * _.isObject({});
+   * // => true
+   *
+   * _.isObject([1, 2, 3]);
+   * // => true
+   *
+   * _.isObject(_.noop);
+   * // => true
+   *
+   * _.isObject(null);
+   * // => false
+   */
+  function isObject(value) {
+    var type = typeof value;
+    return !!value && (type == 'object' || type == 'function');
+  }
+
+  var funcTag = '[object Function]';
+  var genTag = '[object GeneratorFunction]';
+  /** Used for built-in method references. */
+  var objectProto = Object.prototype;
+
+  /**
+   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+   * of values.
+   */
+  var objectToString = objectProto.toString;
+
+  /**
+   * Checks if `value` is classified as a `Function` object.
+   *
+   * @static
+   * @memberOf _
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+   * @example
+   *
+   * _.isFunction(_);
+   * // => true
+   *
+   * _.isFunction(/abc/);
+   * // => false
+   */
+  function isFunction(value) {
+    // The use of `Object#toString` avoids issues with the `typeof` operator
+    // in Safari 8 which returns 'object' for typed array constructors, and
+    // PhantomJS 1.9 which returns 'function' for `NodeList` instances.
+    var tag = isObject(value) ? objectToString.call(value) : '';
+    return tag == funcTag || tag == genTag;
+  }
+
+  /**
+   * Checks if `value` is a global object.
+   *
+   * @private
+   * @param {*} value The value to check.
+   * @returns {null|Object} Returns `value` if it's a global object, else `null`.
+   */
+  function checkGlobal(value) {
+    return (value && value.Object === Object) ? value : null;
+  }
 
   /** Used to determine if values are of the language type `Object`. */
   var objectTypes = {
@@ -279,19 +800,26 @@ var ListGraph = (function ($,d3) { 'use strict';
   };
 
   /** Detect free variable `exports`. */
-  var freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports;
+  var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
+    ? exports
+    : undefined;
 
   /** Detect free variable `module`. */
-  var freeModule = objectTypes[typeof module] && module && !module.nodeType && module;
+  var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
+    ? module
+    : undefined;
 
   /** Detect free variable `global` from Node.js. */
-  var freeGlobal = freeExports && freeModule && typeof global == 'object' && global && global.Object && global;
+  var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
 
   /** Detect free variable `self`. */
-  var freeSelf = objectTypes[typeof self] && self && self.Object && self;
+  var freeSelf = checkGlobal(objectTypes[typeof self] && self);
 
   /** Detect free variable `window`. */
-  var freeWindow = objectTypes[typeof window] && window && window.Object && window;
+  var freeWindow = checkGlobal(objectTypes[typeof window] && window);
+
+  /** Detect `this` as the global object. */
+  var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
 
   /**
    * Used as a reference to the global object.
@@ -299,15 +827,17 @@ var ListGraph = (function ($,d3) { 'use strict';
    * The `this` value is used if it's the global object to avoid Greasemonkey's
    * restricted `window` object, otherwise the `window` object is used.
    */
-  var root = freeGlobal || ((freeWindow !== (this && this.window)) && freeWindow) || freeSelf || this;
+  var root = freeGlobal ||
+    ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
+      freeSelf || thisGlobal || Function('return this')();
 
-  /* Native method references for those with the same name as other `lodash` methods. */
+  /* Built-in method references for those with the same name as other `lodash` methods. */
   var nativeIsFinite = root.isFinite;
 
   /**
    * Checks if `value` is a finite primitive number.
    *
-   * **Note:** This method is based on [`Number.isFinite`](http://ecma-international.org/ecma-262/6.0/#sec-number.isfinite).
+   * **Note:** This method is based on [`Number.isFinite`](https://mdn.io/Number/isFinite).
    *
    * @static
    * @memberOf _
@@ -316,17 +846,14 @@ var ListGraph = (function ($,d3) { 'use strict';
    * @returns {boolean} Returns `true` if `value` is a finite number, else `false`.
    * @example
    *
-   * _.isFinite(10);
+   * _.isFinite(3);
    * // => true
    *
-   * _.isFinite('10');
-   * // => false
+   * _.isFinite(Number.MAX_VALUE);
+   * // => true
    *
-   * _.isFinite(true);
-   * // => false
-   *
-   * _.isFinite(Object(10));
-   * // => false
+   * _.isFinite(3.14);
+   * // => true
    *
    * _.isFinite(Infinity);
    * // => false
@@ -417,68 +944,6 @@ var ListGraph = (function ($,d3) { 'use strict';
     }
   }
 
-  /**
-   * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
-   * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is an object, else `false`.
-   * @example
-   *
-   * _.isObject({});
-   * // => true
-   *
-   * _.isObject([1, 2, 3]);
-   * // => true
-   *
-   * _.isObject(1);
-   * // => false
-   */
-  function isObject(value) {
-    // Avoid a V8 JIT bug in Chrome 19-20.
-    // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
-    var type = typeof value;
-    return !!value && (type == 'object' || type == 'function');
-  }
-
-  /** `Object#toString` result references. */
-  var funcTag = '[object Function]';
-
-  /** Used for native method references. */
-  var objectProto = Object.prototype;
-
-  /**
-   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
-   * of values.
-   */
-  var objToString = objectProto.toString;
-
-  /**
-   * Checks if `value` is classified as a `Function` object.
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
-   * @example
-   *
-   * _.isFunction(_);
-   * // => true
-   *
-   * _.isFunction(/abc/);
-   * // => false
-   */
-  function isFunction(value) {
-    // The use of `Object#toString` avoids issues with the `typeof` operator
-    // in older versions of Chrome and Safari which return 'function' for regexes
-    // and Safari 8 which returns 'object' for typed array constructors.
-    return isObject(value) && objToString.call(value) == funcTag;
-  }
-
   // Credits go to Mike Bostock: http://bl.ocks.org/mbostock/3468167
   function roundRect(x, y, width, height, radius) {
     var topLeft = radius.topLeft || 0;
@@ -491,7 +956,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
   var BAR_CLASS = 'bar';
 
-  var Bar = (function () {
+  var Bar = function () {
     function Bar(barGroup, barData, nodeData, visData, bars) {
       var _this = this;
 
@@ -635,11 +1100,11 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }]);
     return Bar;
-  })();
+  }();
 
   var BARS_CLASS = 'bars';
 
-  var Bars = (function () {
+  var Bars = function () {
     function Bars(vis, selection, mode, visData) {
       babelHelpers.classCallCheck(this, Bars);
 
@@ -730,7 +1195,40 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }]);
     return Bars;
-  })();
+  }();
+
+  function mergeSelections(selections) {
+    // Create a new empty selection
+    var mergedSelection = d3.selectAll('.d3-list-graph-not-existent');
+
+    function pushSelection(selection) {
+      selection.each(function pushDomNode() {
+        mergedSelection[0].push(this);
+      });
+    }
+
+    for (var i = selections.length; i--;) {
+      pushSelection(selections[i]);
+    }
+
+    return mergedSelection;
+  }
+
+  function allTransitionsEnded(transition, callback) {
+    if (transition.size() === 0) {
+      callback();
+    }
+    var n = 0;
+    transition.each(function () {
+      return ++n;
+    }).each('end', function () {
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      if (! --n) callback.apply(this, args);
+    });
+  }
 
   var CLASS_NODES = 'nodes';
   var CLASS_NODE = 'node';
@@ -743,7 +1241,7 @@ var ListGraph = (function ($,d3) { 'use strict';
   var CLASS_ACTIVE = 'active';
   var CLASS_INACTIVE = 'inactive';
 
-  var Nodes = (function () {
+  var Nodes = function () {
     function Nodes(vis, baseSelection, visData, links, events) {
       var _this = this;
 
@@ -753,7 +1251,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       // Helper
       function drawFullSizeRect(selection, className, shrinking, noRoundBorder) {
-        var shrinkingAmount = shrinking ? shrinking : 0;
+        var shrinkingAmount = shrinking || 0;
 
         selection.attr('x', shrinkingAmount).attr('y', that.visData.global.row.padding + shrinkingAmount).attr('width', that.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', that.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
       }
@@ -778,7 +1276,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       }).attr('transform', function (data) {
         return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
       }).on('mouseenter', function (data) {
-        that.vis.interactionWrapper.call(that.vis, (function (domEl, _data) {
+        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
           var el = d3.select(domEl);
 
           if (!!!this.vis.activeScrollbar) {
@@ -788,9 +1286,9 @@ var ListGraph = (function ($,d3) { 'use strict';
           if (!el.classed('rooted')) {
             el.selectAll('.bg-extension').style('transform', 'translateX(' + (this.vis.querying ? -this.iconDimension * 2 - 10 : -this.iconDimension - 6) + 'px)');
           }
-        }).bind(that), [this, data]);
+        }.bind(that), [this, data]);
       }).on('mouseleave', function (data) {
-        that.vis.interactionWrapper.call(that.vis, (function (domEl, _data) {
+        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
           var el = d3.select(domEl);
 
           if (!!!this.vis.activeScrollbar) {
@@ -804,7 +1302,7 @@ var ListGraph = (function ($,d3) { 'use strict';
               el.selectAll('.bg-extension').style('transform', 'translateX(0px)');
             }
           }
-        }).bind(that), [this, data]);
+        }.bind(that), [this, data]);
       });
 
       this.nodes.append('rect').call(drawFullSizeRect, 'bg-extension').attr('width', Math.max(this.visData.global.column.padding + this.visData.global.column.contentWidth / 2, this.visData.global.column.contentWidth));
@@ -1018,7 +1516,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'focusNodes',
       value: function focusNodes(event) {
-        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]);
+        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones]);
         if (event.zoomOut) {
           this.vis.globalView(this.nodes.filter(function (data) {
             return data.hovering > 0;
@@ -1030,7 +1528,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }, {
       key: 'blurNodes',
       value: function blurNodes(event) {
-        this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]);
+        this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones]);
         if (event.zoomIn) {
           this.vis.zoomedView();
         }
@@ -1051,7 +1549,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             el = d3.select(this).select(subSelectionClass).node();
           }
 
-          callback.apply(that, [el, data].concat(optionalParams ? optionalParams : []));
+          callback.apply(that, [el, data].concat(optionalParams || []));
         });
       }
     }, {
@@ -1133,9 +1631,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         d3.select(el).classed({
           active: true,
           inactive: false,
-          'query-and': mode === 'and' ? true : false,
-          'query-or': mode === 'or' ? true : false,
-          'query-not': mode === 'not' ? true : false
+          'query-and': mode === 'and',
+          'query-or': mode === 'or',
+          'query-not': mode === 'not'
         });
       }
     }, {
@@ -1292,7 +1790,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         var paddedDim = this.iconDimension + 4;
 
-        var x = location === 'left' ? -paddedDim * (position ? position : 1) : this.visData.global.column.contentWidth + 2;
+        var x = location === 'left' ? -paddedDim * (position || 1) : this.visData.global.column.contentWidth + 2;
         var y = this.visData.global.row.padding + (this.visData.global.row.contentHeight - 2 * this.visData.global.cell.padding) / 4;
 
         if (mode === 'bg') {
@@ -1374,22 +1872,22 @@ var ListGraph = (function ($,d3) { 'use strict';
       value: function nodesVisibility(el, data, direction, show) {
         if (show) {
           this.nodes.classed('hidden', false).each(function (nodeData) {
-            return nodeData.hidden = false;
+            nodeData.hidden = false;
           });
         } else {
           // First we set all nodes to `hidden`.
           this.nodes.each(function (nodeData) {
-            return nodeData.hidden = true;
+            nodeData.hidden = true;
           });
 
           // Then we set direct child and parent nodes of the current node visible.
           upAndDown(data, function (nodeData) {
-            return nodeData.hidden = false;
+            nodeData.hidden = false;
           });
 
           // We also show sibling nodes.
           siblings(data, function (nodeData) {
-            return nodeData.hidden = false;
+            nodeData.hidden = false;
           });
 
           this.nodes.classed('hidden', function (nodeData) {
@@ -1407,9 +1905,9 @@ var ListGraph = (function ($,d3) { 'use strict';
         var nodeId = data.id;
         var currentNodeData = data.clone ? data.originalNode : data;
         var includeParents = true;
-        var appliedClassName = className ? className : 'hovering';
-        var includeClones = excludeClones ? false : true;
-        var includeChildren = restriction === 'directParentsOnly' ? false : true;
+        var appliedClassName = className || 'hovering';
+        var includeClones = !!!excludeClones;
+        var includeChildren = restriction !== 'directParentsOnly';
 
         // Store link IDs
         if (!this.currentLinks[appliedClassName]) {
@@ -1541,12 +2039,12 @@ var ListGraph = (function ($,d3) { 'use strict';
       key: 'unhighlightNodes',
       value: function unhighlightNodes(el, data, className, restriction, excludeClones) {
         var traverseCallback = function traverseCallback(nodeData) {
-          return nodeData.hovering = 0;
+          nodeData.hovering = 0;
         };
         var includeParents = true;
-        var appliedClassName = className ? className : 'hovering';
-        var includeClones = excludeClones ? false : true;
-        var includeChildren = restriction === 'directParentsOnly' ? false : true;
+        var appliedClassName = className || 'hovering';
+        var includeClones = !!!excludeClones;
+        var includeChildren = restriction !== 'directParentsOnly';
 
         data.hovering = 0;
         if (includeParents && includeChildren) {
@@ -1674,713 +2172,53 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }]);
     return Nodes;
-  })();
+  }();
 
-  var LINKS_CLASS = 'links';
-  var LINK_CLASS = 'link';
+  var SCROLLBAR_CLASS = 'scrollbar';
 
-  var Links = (function () {
-    function Links(levels, visData, layout) {
-      var _this = this;
-
-      babelHelpers.classCallCheck(this, Links);
+  var Scrollbars = function () {
+    function Scrollbars(baseSelection, visData, width) {
+      babelHelpers.classCallCheck(this, Scrollbars);
 
       this.visData = visData;
-      this.layout = layout;
+      this.width = width;
 
-      this.groups = levels.append('g').attr('class', LINKS_CLASS).call(function (selection) {
-        selection.each(function () {
-          d3.select(this.parentNode).datum().links = this;
+      // Add empty scrollbar element
+      this.all = baseSelection.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
+        selection.each(function setScrollBarDomElement() {
+          d3.select(this.parentNode).datum().scrollbar.el = this;
         });
-      });
-
-      this.links = this.groups.selectAll(LINK_CLASS + '-bg').data(function (data, index) {
-        return _this.layout.links(index);
-      }).enter().append('g').attr('class', LINK_CLASS);
-
-      this.links.append('path').attr({
-        class: LINK_CLASS + '-bg',
-        d: this.diagonal
-      });
-
-      this.links.append('path').attr({
-        class: LINK_CLASS + '-direct',
-        d: this.diagonal
-      });
-    }
-
-    babelHelpers.createClass(Links, [{
-      key: 'highlight',
-      value: function highlight(nodeIds, _highlight, className) {
-        this.links.filter(function (data) {
-          return nodeIds[data.id];
-        }).classed(className, _highlight);
-      }
-    }, {
-      key: 'scroll',
-      value: function scroll(selection, data) {
-        // Update data of `g`.
-        selection.data(data);
-
-        // Next update all paths according to the new data.
-        selection.selectAll('path').attr('d', this.diagonal);
-      }
-    }, {
-      key: 'sort',
-      value: function sort(update) {
-        var start = function start() {
-          d3.select(this).classed('sorting', true);
-        };
-        var end = function end() {
-          d3.select(this).classed('sorting', false);
-        };
-
-        // Update data of `g`.
-        this.links.data(update, function (data) {
-          return data.id;
-        });
-
-        // Next update all paths according to the new data.
-        this.links.selectAll('path').transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal).each('start', start).each('end', end);
-      }
-    }, {
-      key: 'updateVisibility',
-      value: function updateVisibility() {
-        this.links.selectAll('path').classed('hidden', function (data) {
-          return data.target.node.hidden || data.source.node.hidden;
-        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal);
-      }
-    }, {
-      key: 'diagonal',
-      get: function get() {
-        var _this2 = this;
-
-        return d3.svg.diagonal().source(function (data) {
-          return {
-            x: data.source.node.y + data.source.offsetY + _this2.visData.global.row.height / 2,
-            y: data.source.node.x + data.source.offsetX + _this2.visData.global.column.contentWidth + _this2.visData.global.column.padding
-          };
-        }).target(function (data) {
-          return {
-            x: data.target.node.y + data.target.offsetY + _this2.visData.global.row.height / 2,
-            y: data.target.node.x + data.target.offsetX + _this2.visData.global.column.padding
-          };
-        }).projection(function (data) {
-          return [data.y, data.x];
-        });
-      }
-    }]);
-    return Links;
-  })();
-
-  var COLUMN_CLASS = 'column';
-  var SCROLL_CONTAINER_CLASS = 'scroll-container';
-
-  var Levels = (function () {
-    function Levels(selection, vis, visData) {
-      var _this = this;
-
-      babelHelpers.classCallCheck(this, Levels);
-
-      this.vis = vis;
-      this.visData = visData;
-      this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS).classed('active', function (data, index) {
-        if (_this.vis.highlightActiveLevel) {
-          if (!_this.vis.nodes || !_this.vis.nodes.rootedNode) {
-            return index === _this.vis.activeLevel - _this.vis.noRootActiveLevelDiff;
-          }
-          return index === _this.vis.activeLevel;
-        }
-      });
-
-      // We need to add an empty rectangle that fills up the whole column to ensure
-      // that the `g`'s size is at a maximum, otherwise scrolling will be halted
-      // when the cursor leaves an actually drawn element.
-      this.groups.append('rect').attr('class', SCROLL_CONTAINER_CLASS).attr('x', function (data) {
-        return data.x;
+      }).attr('x', function (data) {
+        return data.scrollbar.x - 2;
       }).attr('y', function (data) {
-        return data.y;
-      }).attr('width', this.visData.global.column.width + 1).attr('height', this.visData.global.column.height);
+        return data.scrollbar.y;
+      }).attr('width', this.width).attr('height', function (data) {
+        return data.scrollbar.height;
+      }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
     }
 
-    babelHelpers.createClass(Levels, [{
-      key: 'scrollPreparation',
-      value: function scrollPreparation(vis, scrollbarWidth) {
-        var _this2 = this;
-
-        this.groups.each(function (data, index) {
-          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this2.visData.global.row.padding;
-          var scrollHeight = contentHeight - _this2.visData.global.column.height;
-          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this2.visData.global.column.height * _this2.visData.global.column.height / contentHeight, 10) : 0;
-
-          data.height = contentHeight;
-          data.linkSelections = {
-            incoming: index > 0 ? vis.selectByLevel(index - 1, '.link') : null,
-            outgoing: vis.selectByLevel(index, '.link')
-          };
-          data.scrollHeight = scrollHeight;
-          data.scrollTop = 0;
-          data.scrollbar = {
-            el: undefined,
-            x: data.x + _this2.visData.global.column.width - scrollbarWidth,
-            y: 0,
-            width: scrollbarWidth,
-            height: scrollbarHeight,
-            scrollHeight: _this2.visData.global.column.height - scrollbarHeight,
-            scrollTop: 0,
-            heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight])
-          };
-          data.invertedHeightScale = data.scrollbar.heightScale.invert;
-        });
-      }
-    }, {
-      key: 'updateScrollProperties',
-      value: function updateScrollProperties() {
-        var _this3 = this;
-
-        this.groups.each(function (data) {
-          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this3.visData.global.row.padding;
-          var scrollHeight = contentHeight - _this3.visData.global.column.height;
-          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this3.visData.global.column.height * _this3.visData.global.column.height / contentHeight, 10) : 0;
-
-          data.height = contentHeight;
-          data.scrollHeight = scrollHeight;
-          data.scrollTop = 0;
-          data.scrollbar.y = 0;
-          data.scrollbar.height = scrollbarHeight;
-          data.scrollbar.scrollHeight = _this3.visData.global.column.height - scrollbarHeight;
-          data.scrollbar.scrollTop = 0;
-          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this3.visData.global.column.height - scrollbarHeight]);
-        });
-      }
-    }, {
+    babelHelpers.createClass(Scrollbars, [{
       key: 'updateVisibility',
       value: function updateVisibility() {
-        this.groups.each(function () {
-          var group = d3.select(this);
-
-          group.classed('hidden', group.selectAll('.node').filter(function (data) {
-            return !data.hidden;
-          }).empty());
+        this.all.transition().duration(TRANSITION_LIGHTNING_FAST).attr({
+          x: function x(data) {
+            return data.scrollbar.x;
+          },
+          height: function height(data) {
+            return data.scrollbar.height;
+          }
         });
       }
-    }, {
-      key: 'focus',
-      value: function focus(level) {
-        if (this.vis.highlightActiveLevel) {
-          this.groups.filter(function (data) {
-            return data.level === level;
-          }).classed('active', true);
-        }
-      }
-    }, {
-      key: 'blur',
-      value: function blur(level) {
-        if (this.vis.highlightActiveLevel) {
-          if (level) {
-            this.groups.filter(function (data) {
-              return data.level === level;
-            }).classed('active', false);
-          } else {
-            this.groups.classed('active', false);
-          }
-        }
-      }
-    }, {
-      key: 'className',
-      get: function get() {
-        return COLUMN_CLASS;
-      }
-    }, {
-      key: 'height',
-      get: function get() {
-        return this.visData.global.column.height;
-      }
     }]);
-    return Levels;
-  })();
-
-  var TOPBAR_EL = 'div';
-  var TOPBAR_CLASS = 'top-bar';
-
-  var TOPBAR_CONTROL_EL = 'ul';
-  var TOPBAR_CONTROL_CLASS = 'controls';
-  var TOPBAR_GLOBAL_CONTROL_CLASS = 'global-controls';
-
-  var Topbar = (function () {
-    function Topbar(vis, selection, visData) {
-      var _this = this;
-
-      babelHelpers.classCallCheck(this, Topbar);
-
-      var that = this;
-
-      this.vis = vis;
-      this.visData = visData;
-      // Add base topbar element
-      this.el = selection.select('.' + TOPBAR_CLASS);
-
-      if (this.el.empty()) {
-        this.el = selection.insert(TOPBAR_EL, ':first-child').attr('class', TOPBAR_CLASS);
-      }
-
-      this.controlSwitch = this.el.append('div').attr('title', 'Toggle global / local topbar').style('width', this.visData.global.column.padding + 'px').classed('control-switch', true).on('click', this.switch.bind(this));
-
-      this.switchArrow = this.controlSwitch.append('svg').append('use').attr('xlink:href', this.vis.iconPath + '#arrow-down').attr('class', 'switch-arrow');
-
-      this.globalControls = this.el.append(TOPBAR_CONTROL_EL).classed(TOPBAR_GLOBAL_CONTROL_CLASS, true);
-
-      // Add button for sorting by precision
-      this.globalPrecision = this.globalControls.append('li').attr('class', 'control-btn sort-precision').classed('active', function () {
-        if (that.vis.currentSorting.global.type === 'precision') {
-          // Save currently active element. Needed when when re-sorting for the
-          // first time, to be able to de-highlight this element.
-          that.vis.currentSorting.global.el = d3.select(this);
-          return true;
-        }
-      }).on('click', function () {
-        that.sortAllColumns(this, 'precision');
-      }).on('mouseenter', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightBars(undefined, 'precision');
-        }).bind(_this), []);
-      }).on('mouseleave', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightBars(undefined, 'precision', true);
-        }).bind(_this), []);
-      });
-
-      this.globalPrecisionWrapper = this.globalPrecision.append('div').attr('class', 'wrapper');
-
-      this.globalPrecisionWrapper.append('span').attr('class', 'label').text('Precision');
-
-      this.globalPrecisionWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'precision').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
-
-      this.globalPrecisionWrapper.append('svg').attr('class', 'icon-sort-asc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'precision' && this.vis.currentSorting.global.order === 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-asc');
-
-      this.globalPrecisionWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'precision' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-desc');
-
-      // Add button for sorting by recall
-      this.globalRecall = this.globalControls.append('li').attr('class', 'control-btn sort-recall').classed('active', function () {
-        if (that.vis.currentSorting.global.type === 'recall') {
-          // See precision
-          that.vis.currentSorting.global.el = d3.select(this);
-          return true;
-        }
-      }).on('click', function () {
-        that.sortAllColumns(this, 'recall');
-      }).on('mouseenter', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightBars(undefined, 'recall');
-        }).bind(_this), []);
-      }).on('mouseleave', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightBars(undefined, 'recall', true);
-        }).bind(_this), []);
-      });
-
-      this.globalRecallWrapper = this.globalRecall.append('div').attr('class', 'wrapper');
-
-      this.globalRecallWrapper.append('span').attr('class', 'label').text('Recall');
-
-      this.globalRecallWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'recall').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
-
-      this.globalRecallWrapper.append('svg').attr('class', 'icon-sort-asc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'recall' && this.vis.currentSorting.global.order === 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-asc');
-
-      this.globalRecallWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'recall' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-desc');
-
-      // Add button for sorting by name
-      this.globalName = this.globalControls.append('li').attr('class', 'control-btn sort-name').classed('active', function () {
-        if (that.vis.currentSorting.global.type === 'name') {
-          // See precision
-          that.vis.currentSorting.global.el = d3.select(this);
-          return true;
-        }
-      }).on('click', function () {
-        that.sortAllColumns(this, 'name');
-      }).on('mouseenter', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightLabels();
-        }).bind(_this), []);
-      }).on('mouseleave', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightLabels(true);
-        }).bind(_this), []);
-      });
-
-      this.globalNameWrapper = this.globalName.append('div').attr('class', 'wrapper');
-
-      this.globalNameWrapper.append('span').attr('class', 'label').text('Name');
-
-      this.globalNameWrapper.append('svg').attr('class', 'icon-unsort invisible-default').classed('visible', this.vis.currentSorting.global.type !== 'name').append('use').attr('xlink:href', this.vis.iconPath + '#unsort');
-
-      this.globalNameWrapper.append('svg').attr('class', 'icon-sort-asc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'name' && this.vis.currentSorting.global.order === 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-alpha-asc');
-
-      this.globalNameWrapper.append('svg').attr('class', 'icon-sort-desc invisible-default').classed('visible', this.vis.currentSorting.global.type === 'name' && this.vis.currentSorting.global.order !== 1).append('use').attr('xlink:href', this.vis.iconPath + '#sort-alpha-desc');
-
-      // Add button for switching to 'one bar'
-      this.globalOneBar = this.globalControls.append('li').attr('class', 'control-btn one-bar').classed('active', this.vis.barMode === 'one').on('click', function () {
-        that.switchBarMode(this, 'one');
-      });
-
-      this.globalOneBarWrapper = this.globalOneBar.append('div').attr('class', 'wrapper').text('One bar');
-
-      this.globalOneBarWrapper.append('svg').attr('class', 'icon-one-bar').append('use').attr('xlink:href', this.vis.iconPath + '#one-bar');
-
-      // Add button for switching to 'two bars'
-      this.globalTwoBars = this.globalControls.append('li').attr('class', 'control-btn two-bars').classed('active', this.vis.barMode === 'two').on('click', function () {
-        that.switchBarMode(this, 'two');
-      });
-
-      this.globalTwoBarsWrapper = this.globalTwoBars.append('div').attr('class', 'wrapper').text('Two bars');
-
-      this.globalTwoBarsWrapper.append('svg').attr('class', 'icon-two-bars').append('use').attr('xlink:href', this.vis.iconPath + '#two-bars');
-
-      // Add button for zoom-out
-      this.globalZoomOut = this.globalControls.append('li').attr('class', 'control-btn zoom-out').classed('active', this.vis.zoomedOut).on('mouseenter', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.vis.globalView.call(this.vis);
-        }).bind(_this), []);
-      }).on('mouseleave', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.vis.zoomedView.call(this.vis);
-        }).bind(_this), []);
-      }).on('click', function () {
-        that.vis.toggleView.call(that.vis);
-        d3.select(this).classed('active', that.vis.zoomedOut);
-      });
-
-      this.globalZoomOutWrapper = this.globalZoomOut.append('div').attr('class', 'wrapper').text('Zoom Out').style('margin-right', this.visData.global.column.padding + 'px');
-
-      this.globalZoomOutWrapper.append('svg').attr('class', 'icon-zoom-out').append('use').attr('xlink:href', this.vis.iconPath + '#zoom-out');
-
-      this.localControlWrapper = this.el.append('div').classed('local-controls', true);
-
-      this.localControls = this.localControlWrapper.selectAll(TOPBAR_CONTROL_CLASS).data(visData.nodes).enter().append(TOPBAR_CONTROL_EL).classed(TOPBAR_CONTROL_CLASS, true).style('width', this.visData.global.column.width + 'px');
-
-      this.localControls.each(function (data, index) {
-        var control = d3.select(this);
-
-        /*
-         * Order:
-         * 0 = unsorted
-         * 1 = asc
-         * -1 = desc
-         */
-        that.vis.currentSorting.local[index] = {
-          type: data.sortBy,
-          order: data.sortOrder,
-          el: undefined
-        };
-
-        control.append('li').attr('class', 'control-btn toggle').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleColumn);
-
-        control.append('li').attr('class', 'control-btn sort-precision ease-all').classed('active', function () {
-          if (that.vis.currentSorting.local[index].type === 'precision') {
-            // See precision
-            that.vis.currentSorting.local[index].el = d3.select(this);
-            return true;
-          }
-        }).style({
-          width: that.visData.global.column.contentWidth / 2 + 'px',
-          left: that.visData.global.column.padding + 'px'
-        }).on('click', function (controlData) {
-          that.sortColumn(this, controlData.level, 'precision');
-        }).on('mouseenter', function () {
-          that.highlightBars(this.parentNode, 'precision');
-          d3.select(this).style('width', that.visData.global.column.contentWidth - 16 + 'px');
-        }).on('mouseleave', function () {
-          that.highlightBars(this.parentNode, 'precision', true);
-          d3.select(this).style('width', that.visData.global.column.contentWidth / 2 + 'px');
-        }).html('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'precision' ? 'visible' : '') + '">' + // eslint-disable-line
-        '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + // eslint-disable-line
-        '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
-        '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
-
-        control.append('li').attr('class', 'control-btn sort-recall ease-all').classed('active', function () {
-          if (that.vis.currentSorting.local[index].type === 'recall') {
-            // See recall
-            that.vis.currentSorting.local[index].el = d3.select(this);
-            return true;
-          }
-        }).style({
-          width: that.visData.global.column.contentWidth / 2 + 'px',
-          left: that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
-        }).on('click', function (controlData) {
-          that.sortColumn(this, controlData.level, 'recall');
-        }).on('mouseenter', function () {
-          that.highlightBars(this.parentNode, 'recall');
-          d3.select(this).style({
-            width: that.visData.global.column.contentWidth - 16 + 'px',
-            left: that.visData.global.column.padding + 16 + 'px'
-          });
-        }).on('mouseleave', function () {
-          that.highlightBars(this.parentNode, 'recall', true);
-          d3.select(this).style({
-            width: that.visData.global.column.contentWidth / 2 + 'px',
-            left: that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
-          });
-        }).html('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'recall' ? 'visible' : '') + '">' + // eslint-disable-line
-        '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + // eslint-disable-line
-        '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
-        '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
-
-        control.append('li').attr('class', 'control-btn options').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleOptions).html('<svg class="icon-gear">' + '  <use xlink:href="' + that.vis.iconPath + '#gear"></use>' + '</svg>');
-
-        if (that.vis.currentSorting.local[index].type) {
-          that.vis.currentSorting.local[index].el = control.select('.sort-' + that.vis.currentSorting.local[index].type);
-        }
-      });
-    }
-
-    // toggleColumn () {
-    //   console.log('Toggle column');
-    // }
-
-    babelHelpers.createClass(Topbar, [{
-      key: 'selectNodesLevel',
-      value: function selectNodesLevel(el) {
-        return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
-      }
-    }, {
-      key: 'highlightLabels',
-      value: function highlightLabels(deHighlight) {
-        this.vis.baseElD3.selectAll('.node').classed('highlight-label', !deHighlight);
-      }
-    }, {
-      key: 'highlightBars',
-      value: function highlightBars(el, type, deHighlight) {
-        var nodes = el ? this.selectNodesLevel(el) : this.vis.baseElD3.selectAll('.node');
-
-        nodes.classed('highlight-bar', !deHighlight).selectAll('.bar.' + type).classed('highlight', !deHighlight);
-      }
-    }, {
-      key: 'sortAllColumns',
-      value: function sortAllColumns(el, type) {
-        if (this.semiActiveSortingEls) {
-          this.resetSemiActiveSortingEls();
-        }
-
-        if (this.vis.currentSorting.global.type !== type) {
-          // Unset class of previous global sorting element
-          if (this.vis.currentSorting.global.el) {
-            this.resetSortEl(this.vis.currentSorting.global.el, type);
-          }
-        }
-
-        this.vis.currentSorting.global.el = d3.select(el);
-        this.vis.currentSorting.global.el.classed('active', true);
-        this.vis.currentSorting.global.type = type;
-
-        var columnKeys = Object.keys(this.vis.currentSorting.local);
-        for (var i = 0, len = columnKeys.length; i < len; i++) {
-          this.sortColumn(el, columnKeys[i], type, true);
-        }
-
-        this.vis.sortAllColumns(type, true);
-      }
-    }, {
-      key: 'sortColumn',
-      value: function sortColumn(el, index, type, global) {
-        // Reset global sorting
-        if (!global) {
-          if (this.semiActiveSortingEls) {
-            this.resetSemiActiveSortingEls();
-          }
-          if (this.vis.currentSorting.global.type) {
-            this.resetSortEl(this.vis.currentSorting.global.el, type);
-          }
-          this.vis.currentSorting.global.type = undefined;
-        }
-
-        var newSortType = false;
-
-        if (this.vis.currentSorting.local[index].el) {
-          if (this.vis.currentSorting.local[index].type !== type) {
-            this.resetSortEl(this.vis.currentSorting.local[index].el, type);
-          }
-        }
-
-        if (this.vis.currentSorting.local[index].type !== type) {
-          newSortType = true;
-          // Reset sort order
-          this.vis.currentSorting.local[index].order = 0;
-        }
-
-        this.vis.currentSorting.local[index].el = d3.select(el);
-        this.vis.currentSorting.local[index].type = type;
-
-        // -1 = desc, 1 = asc
-        if (this.vis.currentSorting.local[index].order === -1) {
-          this.vis.currentSorting.local[index].order = 1;
-          this.vis.currentSorting.local[index].el.select('.icon-sort-desc').classed('visible', false);
-          this.vis.currentSorting.local[index].el.select('.icon-sort-asc').classed('visible', true);
-        } else {
-          this.vis.currentSorting.local[index].order = -1;
-          this.vis.currentSorting.local[index].el.select('.icon-sort-asc').classed('visible', false);
-          this.vis.currentSorting.local[index].el.select('.icon-sort-desc').classed('visible', true);
-        }
-
-        this.vis.currentSorting.local[index].el.select('.icon-unsort').classed('visible', false);
-
-        this.vis.currentSorting.local[index].el.classed('active', true);
-
-        if (!global) {
-          this.vis.sortColumn(index, type, this.vis.currentSorting.local[index].order, newSortType);
-        }
-      }
-    }, {
-      key: 'resetSortEl',
-      value: function resetSortEl(el, newType) {
-        el.classed('active', false);
-        el.select('.icon-sort-desc').classed('visible', false);
-        el.select('.icon-sort-asc').classed('visible', false);
-        el.select('.icon-unsort').classed('visible', true);
-        if (newType === 'name') {
-          el.classed('semi-active', true);
-          this.semiActiveSortingEls = true;
-        }
-      }
-    }, {
-      key: 'resetSemiActiveSortingEls',
-      value: function resetSemiActiveSortingEls() {
-        this.el.selectAll('.semi-active').classed('semi-active', false);
-      }
-
-      // toggleOptions () {
-      //   console.log('Toggle options');
-      // }
-
-    }, {
-      key: 'switch',
-      value: function _switch() {
-        this.el.classed('details', !this.el.classed('details'));
-      }
-    }, {
-      key: 'switchBarMode',
-      value: function switchBarMode(el, mode) {
-        if (this.vis.nodes.barMode !== mode) {
-          if (mode === 'one') {
-            this.globalOneBar.classed('active', true);
-            this.globalTwoBars.classed('active', false);
-          } else {
-            this.globalOneBar.classed('active', false);
-            this.globalTwoBars.classed('active', true);
-          }
-          this.vis.switchBarMode(mode);
-        }
-      }
-    }]);
-    return Topbar;
-  })();
-
-  /**
-   * Checks if `value` is object-like.
-   *
-   * @private
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
-   */
-  function isObjectLike(value) {
-    return !!value && typeof value == 'object';
-  }
-
-  /** Used to detect host constructors (Safari > 5). */
-  var reIsHostCtor = /^\[object .+?Constructor\]$/;
-
-  /** Used for native method references. */
-  var objectProto$2 = Object.prototype;
-
-  /** Used to resolve the decompiled source of functions. */
-  var fnToString = Function.prototype.toString;
-
-  /** Used to check objects for own properties. */
-  var hasOwnProperty = objectProto$2.hasOwnProperty;
-
-  /** Used to detect if a method is native. */
-  var reIsNative = RegExp('^' +
-    fnToString.call(hasOwnProperty).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
-    .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
-  );
-
-  /**
-   * Checks if `value` is a native function.
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a native function, else `false`.
-   * @example
-   *
-   * _.isNative(Array.prototype.push);
-   * // => true
-   *
-   * _.isNative(_);
-   * // => false
-   */
-  function isNative(value) {
-    if (value == null) {
-      return false;
-    }
-    if (isFunction(value)) {
-      return reIsNative.test(fnToString.call(value));
-    }
-    return isObjectLike(value) && reIsHostCtor.test(value);
-  }
-
-  /**
-   * Gets the native function at `key` of `object`.
-   *
-   * @private
-   * @param {Object} object The object to query.
-   * @param {string} key The key of the method to get.
-   * @returns {*} Returns the function if it's native, else `undefined`.
-   */
-  function getNative(object, key) {
-    var value = object == null ? undefined : object[key];
-    return isNative(value) ? value : undefined;
-  }
-
-  /**
-   * Used as the [maximum length](http://ecma-international.org/ecma-262/6.0/#sec-number.max_safe_integer)
-   * of an array-like value.
-   */
-  var MAX_SAFE_INTEGER = 9007199254740991;
-
-  /**
-   * Checks if `value` is a valid array-like length.
-   *
-   * **Note:** This function is based on [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
-   *
-   * @private
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
-   */
-  function isLength(value) {
-    return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-  }
-
-  /** `Object#toString` result references. */
-  var arrayTag = '[object Array]';
-
-  /** Used for native method references. */
-  var objectProto$1 = Object.prototype;
-
-  /**
-   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
-   * of values.
-   */
-  var objToString$1 = objectProto$1.toString;
-
-  /* Native method references for those with the same name as other `lodash` methods. */
-  var nativeIsArray = getNative(Array, 'isArray');
+    return Scrollbars;
+  }();
 
   /**
    * Checks if `value` is classified as an `Array` object.
    *
    * @static
    * @memberOf _
+   * @type {Function}
    * @category Lang
    * @param {*} value The value to check.
    * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
@@ -2389,36 +2227,18 @@ var ListGraph = (function ($,d3) { 'use strict';
    * _.isArray([1, 2, 3]);
    * // => true
    *
-   * _.isArray(function() { return arguments; }());
+   * _.isArray(document.body.children);
+   * // => false
+   *
+   * _.isArray('abc');
+   * // => false
+   *
+   * _.isArray(_.noop);
    * // => false
    */
-  var isArray = nativeIsArray || function(value) {
-    return isObjectLike(value) && isLength(value.length) && objToString$1.call(value) == arrayTag;
-  };
+  var isArray = Array.isArray;
 
-  var LayoutNotAvailable = (function (_ExtendableError) {
-    babelHelpers.inherits(LayoutNotAvailable, _ExtendableError);
-
-    function LayoutNotAvailable(message) {
-      babelHelpers.classCallCheck(this, LayoutNotAvailable);
-      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LayoutNotAvailable).call(this, message || 'D3.layout.listGraph.js has not been loaded yet.'));
-    }
-
-    return LayoutNotAvailable;
-  })(ExtendableError);
-
-  var EventDispatcherNoFunction = (function (_ExtendableError2) {
-    babelHelpers.inherits(EventDispatcherNoFunction, _ExtendableError2);
-
-    function EventDispatcherNoFunction(message) {
-      babelHelpers.classCallCheck(this, EventDispatcherNoFunction);
-      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(EventDispatcherNoFunction).call(this, message || 'Dispatcher needs to be a function.'));
-    }
-
-    return EventDispatcherNoFunction;
-  })(ExtendableError);
-
-  var Events = (function () {
+  var Events = function () {
     function Events(el, broadcast) {
       babelHelpers.classCallCheck(this, Events);
 
@@ -2428,7 +2248,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.el = el;
       this._stack = {};
-      this.dispatch = broadcast ? broadcast : this._dispatchEvent;
+      this.dispatch = broadcast || this._dispatchEvent;
     }
 
     babelHelpers.createClass(Events, [{
@@ -2539,17 +2359,130 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }]);
     return Events;
-  })();
+  }();
+
+  var LimitsUnsupportedFormat = function (_ExtendableError) {
+    babelHelpers.inherits(LimitsUnsupportedFormat, _ExtendableError);
+
+    function LimitsUnsupportedFormat(message) {
+      babelHelpers.classCallCheck(this, LimitsUnsupportedFormat);
+      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LimitsUnsupportedFormat).call(this, message || 'The limits are wrongly formatted. Please provide an ' + 'object of the following format: `{ x: { min: 0, max: 1 }, y: { min: ' + '0, max: 1 } }`'));
+    }
+
+    return LimitsUnsupportedFormat;
+  }(ExtendableError);
+
+  /**
+   * Drap and drop event handler that works via translation.
+   *
+   * @method  onDragDrop
+   * @author  Fritz Lekschas
+   * @date    2016-01-23
+   * @param   {Object}  selection        D3 selection to listen for the drag
+   *   event.
+   * @param   {Object}           dragMoveHandler  Handler for drag-move.
+   * @param   {Object}           dropHandler      Handler for drag-end, i.e. drop.
+   * @param   {Array}            elsToBeDragged   Array of D3 selections to be
+   *   moved according to the drag event. If empty or undefined `selection` will
+   *   be used.
+   * @param   {String}           orientation      Can either be "horizontal",
+   *   "vertical" or `undefined`, i.e. both directions.
+   * @param   {Object|Function}  limits           X and Y drag limits. E.g.
+   *   `{ x: { min: 0, max: 10 } }`.
+   * @param   {Array}             notWhenTrue     List if function returning a
+   *   Boolean value which should prevent the dragMoveHandler from working.
+   */
+  function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue) {
+    var drag = d3.behavior.drag();
+
+    var appliedLimits = limits || {}; // eslint-disable-line no-param-reassign
+
+    if (dragStartHandler) {
+      drag.on('dragstart', function () {
+        if (typeof limits === 'function') {
+          appliedLimits = limits();
+        }
+        dragStartHandler();
+      });
+    }
+
+    if (dragMoveHandler) {
+      drag.on('drag', function (data) {
+        dragMoveHandler.call(this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue);
+      });
+    }
+
+    if (dropHandler) {
+      drag.on('dragend', dropHandler);
+    }
+
+    selection.each(function (data) {
+      var el = d3.select(this);
+
+      // Set default data if not available.
+      if (!data) {
+        data = { dragX: 0, dragY: 0 }; // eslint-disable-line no-param-reassign
+        el.datum(data);
+      }
+
+      // Add drag event handler
+      el.call(drag);
+    });
+  }
+
+  function dragMoveHandler(data, elsToBeDragged, orientation, limits, notWhenTrue) {
+    for (var i = notWhenTrue.length; i--;) {
+      if (notWhenTrue[i]()) {
+        return;
+      }
+    }
+
+    var els = d3.select(this);
+
+    if (elsToBeDragged && elsToBeDragged.length) {
+      els = mergeSelections(elsToBeDragged);
+    }
+
+    function withinLimits(value, applyingLimits) {
+      var restrictedValue = undefined;
+
+      if (applyingLimits) {
+        try {
+          restrictedValue = Math.min(applyingLimits.max, Math.max(applyingLimits.min, value));
+        } catch (e) {
+          throw new LimitsUnsupportedFormat();
+        }
+      }
+      return restrictedValue;
+    }
+
+    if (orientation === 'horizontal' || orientation === 'vertical') {
+      if (orientation === 'horizontal') {
+        data.dragX += d3.event.dx;
+        data.dragX = withinLimits(data.dragX + d3.event.dx, limits.x);
+        els.style('transform', 'translateX(' + data.dragX + 'px)');
+      }
+      if (orientation === 'vertical') {
+        data.dragY += d3.event.dy;
+        data.dragX = withinLimits(data.dragY + d3.event.dy, limits.y);
+        els.style('transform', 'translateY(' + data.dragY + 'px)');
+      }
+    } else {
+      data.dragX += d3.event.dx;
+      data.dragY += d3.event.dy;
+      els.style('transform', 'translate(' + data.dragX + 'px,' + data.dragY + 'px)');
+    }
+  }
 
   function setOption(value, defaultValue, noFalsyValue) {
     if (noFalsyValue) {
-      return value ? value : defaultValue;
+      return value || defaultValue;
     }
 
     return typeof value !== 'undefined' ? value : defaultValue;
   }
 
-  var ListGraph = (function () {
+  var ListGraph = function () {
     function ListGraph(init) {
       var _this = this;
 
@@ -3064,8 +2997,8 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }]);
     return ListGraph;
-  })();
+  }();
 
   return ListGraph;
 
-})($,d3);
+}($,d3));

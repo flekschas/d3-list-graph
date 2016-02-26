@@ -1,7 +1,7 @@
 // External
-import isArray from '../../../node_modules/lodash-es/lang/isArray';
-import isFinite from '../../../node_modules/lodash-es/lang/isFinite';
-import isFunction from '../../../node_modules/lodash-es/lang/isFunction';
+import isArray from '../../../node_modules/lodash-es/isArray';
+import isFinite from '../../../node_modules/lodash-es/isFinite';
+import isFunction from '../../../node_modules/lodash-es/isFunction';
 
 // Internal
 import { EventDispatcherNoFunction } from './errors';
@@ -14,7 +14,7 @@ class Events {
 
     this.el = el;
     this._stack = {};
-    this.dispatch = broadcast ? broadcast : this._dispatchEvent;
+    this.dispatch = broadcast || this._dispatchEvent;
   }
 
   get stack () {
