@@ -8,7 +8,8 @@ const LINKS_CLASS = 'links';
 const LINK_CLASS = 'link';
 
 class Links {
-  constructor (levels, visData, layout) {
+  constructor (vis, levels, visData, layout) {
+    this.vis = vis;
     this.visData = visData;
     this.layout = layout;
 
@@ -20,11 +21,12 @@ class Links {
         });
       });
 
-    this.links = this.groups.selectAll(LINK_CLASS + '-bg')
+    this.links = this.groups.selectAll(LINK_CLASS)
       .data((data, index) => this.layout.links(index))
       .enter()
       .append('g')
-        .attr('class', LINK_CLASS);
+        .attr('class', LINK_CLASS)
+        .classed('visible', this.linkVisibility.bind(this));
 
     this.links.append('path')
       .attr({
@@ -57,6 +59,10 @@ class Links {
       .projection(data => [data.y, data.x]);
   }
 
+  linkVisibility (data) {
+    return !this.vis.pointsOutside.call(this.vis, data);
+  }
+
   highlight (nodeIds, highlight, className) {
     this.links
       .filter(data => nodeIds[data.id])
@@ -65,10 +71,11 @@ class Links {
 
   scroll (selection, data) {
     // Update data of `g`.
-    selection.data(data);
+    selection.data(data).classed('visible', this.linkVisibility.bind(this));
 
-    // Next update all paths according to the new data.
-    selection.selectAll('path').attr('d', this.diagonal);
+    // Next, update all paths according to the new data.
+    selection.selectAll('path')
+      .attr('d', this.diagonal);
   }
 
   sort (update) {

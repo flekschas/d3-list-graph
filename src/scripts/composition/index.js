@@ -137,7 +137,7 @@ class ListGraph {
 
     this.levels = new Levels(this.container, this, this.visData);
 
-    this.links = new Links(this.levels.groups, this.visData, this.layout);
+    this.links = new Links(this, this.levels.groups, this.visData, this.layout);
     this.nodes = new Nodes(
       this,
       this.levels.groups,
@@ -671,6 +671,17 @@ class ListGraph {
       boundingRect.top >= this.top + this.height ||
       boundingRect.left >= this.left + this.width
     );
+  }
+
+  pointsOutside (data) {
+    const source = this.linkPointsOutside(data.source);
+    const target = this.linkPointsOutside(data.target);
+    return source || target;
+  }
+
+  linkPointsOutside (data) {
+    const y = data.node.y + data.offsetY;
+    return y >= this.height || y + this.visData.global.row.height <= 0;
   }
 }
 

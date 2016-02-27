@@ -371,21 +371,24 @@
 
     .link-direct {
       stroke: #000;
-      stroke-opacity: 0.2;
       stroke-width: 2;
+      stroke-opacity: 0;
       transition: all $transitionFast $easeInOutCubic;
     }
+    &.visible .link-direct {
+      stroke-opacity: 0.2;
+    }
 
-    &.hovering .link-direct {
+    &.visible.hovering .link-direct {
       stroke-opacity: 0.75;
       stroke-width: 4;
     }
 
-    &.lock .link-direct {
+    &.visible.lock .link-direct {
       stroke-opacity: 0.75;
     }
 
-    &.focus .link-direct {
+    &.visible.focus .link-direct {
       stroke-opacity: 0.5;
     }
 
@@ -395,11 +398,11 @@
       stroke-width: 6;
     }
 
-    &.lock .link-bg {
+    &.visible.lock .link-bg {
       stroke-opacity: 0.75;
     }
 
-    &.focus .link-bg {
+    &.visible.focus .link-bg {
       stroke-opacity: 0.5;
     }
 
