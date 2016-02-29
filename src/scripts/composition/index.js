@@ -43,9 +43,13 @@ class ListGraph {
       this.svgJq = $(this.svgD3.node());
     }
 
+    // Array of root node IDs.
     this.rootNodes = init.rootNodes;
 
+    // Width of the vis. If `undefined` the SVG's width will be used.
     this.width = setOption(init.width, this.svgJq.width(), true);
+
+    // Height of the vis. If `undefined` the SVG's height will be used.
     this.height = setOption(init.height, this.svgJq.height(), true);
 
     // Refresh top and left position of the base `svg` everytime the user enters
@@ -56,13 +60,27 @@ class ListGraph {
       that.getBoundingRect.call(that, this);
     });
 
+    // With of the column's scrollbars
     this.scrollbarWidth = setOption(
       init.scrollbarWidth, config.SCROLLBAR_WIDTH, true
     );
+
+    // Number of visible columns
     this.columns = setOption(init.columns, config.COLUMNS, true);
+
+    // Number of visible rows.
     this.rows = setOption(init.rows, config.ROWS, true);
+
+    // Path to SVG icon file.
     this.iconPath = setOption(init.iconPath, config.ICON_PATH, true);
+
+    // If `true` query icons and controls are enabled.
     this.querying = setOption(init.querying, config.QUERYING);
+
+    // If `true` hide links that point to invisible nodes.
+    this.hideOutwardsLinks = setOption(
+      init.hideOutwardsLinks, config.HIDE_OUTWARDS_LINKS
+    );
 
     this.highlightActiveLevel = setOption(
       init.highlightActiveLevel, config.HIGHLIGHT_ACTIVE_LEVEL
@@ -76,12 +94,19 @@ class ListGraph {
       init.noRootActiveLevelDiff, config.NO_ROOT_ACTIVE_LEVEL_DIFF
     );
 
+    // Determine the level of transitions
+    // - 0 [Default]: Show all transitions
+    // - 1: Show only CSS transitions
+    // - 2: Show no transitions
     this.lessTransitionsJs = init.lessTransitions > 0;
     this.lessTransitionsCss = init.lessTransitions > 1;
 
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
+    // Holds the key of the property to be sorted initially. E.g. `precision`.
     this.sortBy = init.sortBy;
+
+    // Initial sort order. Anything other than `asc` will fall back to `desc`.
     this.sortOrder = init.sortOrder === 'asc' ? 1 : config.DEFAULT_SORT_ORDER;
 
     this.events = new Events(this.baseEl, init.dispatcher);
@@ -603,7 +628,7 @@ class ListGraph {
       let width = 0;
       let height = 0;
       let bBox;
-      let cRect;
+      let cRect = undefined;
 
       const globalCRect = this.svgD3.node().getBoundingClientRect();
 

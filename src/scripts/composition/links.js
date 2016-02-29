@@ -26,7 +26,10 @@ class Links {
       .enter()
       .append('g')
         .attr('class', LINK_CLASS)
-        .classed('visible', this.linkVisibility.bind(this));
+        .classed(
+          'visible',
+          !this.vis.hideOutwardsLinks || this.linkVisibility.bind(this)
+        );
 
     this.links.append('path')
       .attr({
@@ -71,7 +74,12 @@ class Links {
 
   scroll (selection, data) {
     // Update data of `g`.
-    selection.data(data).classed('visible', this.linkVisibility.bind(this));
+    selection.data(data);
+
+    if (this.vis.hideOutwardsLinks) {
+      // Check if links point outwards.
+      selection.classed('visible', this.linkVisibility.bind(this));
+    }
 
     // Next, update all paths according to the new data.
     selection.selectAll('path')
