@@ -24,12 +24,6 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
   const visited = {};
   const queue = [];
 
-  let child;
-  let childId;
-  let clone;
-  let node;
-  let cloneId;
-
   /**
    * Ensure that the bar values are in [0,1] and that the structure of `bars`
    * is unified.
@@ -78,7 +72,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    * @memberOf  traverseGraph
    * @param  {Object}  node  Node to be processed.
    */
-  function processBars (node) {  // eslint-disable-line no-shadow
+  function processBars (node) {
     if (node.data.bars) {
       if (isArray(node.data.bars)) {
         node.data.barRefs = {};
@@ -158,7 +152,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    * @param  {Boolean}  duplication  If `true` node needs to be duplicated or
    *   cloned.
    */
-  function processNode (id, node, parent, duplication) {  // eslint-disable-line no-shadow
+  function processNode (id, node, parent, duplication) {
     let _id = id.toString();
     let _node = node;
     let skip = false;
@@ -179,7 +173,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
       // Clone node only when the parent is **not** just one level before the
       // clone because then the parent can simple link to the _original node_.
       if (parent.depth + 1 !== node.depth && !skip) {
-        cloneId = id + '.' + (node.clones.length + 1);
+        const cloneId = id + '.' + (node.clones.length + 1);
         graph[cloneId] = {
           children: [],
           clone: true,
@@ -273,19 +267,19 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     visited[starts[i]] = true;
 
     while (queue.length > 0) {
-      node = graph[queue.shift()];
+      const node = graph[queue.shift()];
 
       for (let j = node.children.length; j--;) {
-        childId = node.children[j];
-        child = graph[childId];
+        const childId = node.children[j];
+        const child = graph[childId];
 
         if (!!child) {
+          let clone = true;
+
           if (!visited[childId]) {
             queue.push(childId);
             visited[childId] = true;
             clone = false;
-          } else {
-            clone = true;
           }
 
           processNode(
