@@ -135,7 +135,6 @@ class ListGraphLayout {
   nodesToMatrix (level) {
     const arr = [];
 
-    let keys;
     let start = 0;
     let end = Object.keys(this.columnCache).length;
 
@@ -153,7 +152,7 @@ class ListGraphLayout {
         sortBy: this.columnSorting[i].by,
         sortOrder: this.columnSorting[i].order
       });
-      keys = Object.keys(this.columnCache[i]);
+      const keys = Object.keys(this.columnCache[i]);
       for (let j = keys.length; j--;) {
         arr[i - start].rows.push(this.data[keys[j]]);
       }
@@ -359,18 +358,15 @@ class ListGraphLayout {
    *   links.
    */
   links (startLevel, endLevel) {
-    const allLinks = [];
+    let allLinks = [];
 
     let keys = [];
-    let nodeLinks;
-    let normStartLevel;
-    let normEndLevel;
 
     if (!isFinite(startLevel)) {
       keys = Object.keys(this.data);
     } else {
-      normStartLevel = Math.max(startLevel, 0);
-      normEndLevel = isFinite(endLevel) ?
+      const normStartLevel = Math.max(startLevel, 0);
+      const normEndLevel = isFinite(endLevel) ?
         Math.min(endLevel, Object.keys(this.columnCache).length) :
         normStartLevel + 1;
 
@@ -380,10 +376,8 @@ class ListGraphLayout {
     }
 
     for (let i = keys.length; i--;) {
-      nodeLinks = this.data[keys[i]].links;
-      for (let j = nodeLinks.length; j--;) {
-        allLinks.push(nodeLinks[j]);
-      }
+      allLinks = allLinks.concat(this.data[keys[i]].links);
+      console.log(this.data[keys[i]].links);
     }
 
     return allLinks;
