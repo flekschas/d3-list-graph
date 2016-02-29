@@ -377,7 +377,6 @@ class ListGraphLayout {
 
     for (let i = keys.length; i--;) {
       allLinks = allLinks.concat(this.data[keys[i]].links);
-      console.log(this.data[keys[i]].links);
     }
 
     return allLinks;
