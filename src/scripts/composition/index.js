@@ -82,6 +82,7 @@ class ListGraph {
       init.hideOutwardsLinks, config.HIDE_OUTWARDS_LINKS
     );
 
+    // If `true` the currently rooted level will softly be highlighted.
     this.highlightActiveLevel = setOption(
       init.highlightActiveLevel, config.HIGHLIGHT_ACTIVE_LEVEL
     );
@@ -90,6 +91,13 @@ class ListGraph {
     // Zero means that the level of the rooted node is regarded.
     this.activeLevel = setOption(init.activeLevel, config.ACTIVE_LEVEL);
 
+    // When no manually rooted node is available the active level will be
+    // `this.activeLevel` minus `this.noRootActiveLevelDiff`.
+    // WAT?
+    // In some cases it makes sense to hide the original root node just to save
+    // a column, so having no manually set root node means that the invisible
+    // root node is active. Using this option it can be assured that the
+    // approriate column is being highlighted.
     this.noRootActiveLevelDiff = setOption(
       init.noRootActiveLevelDiff, config.NO_ROOT_ACTIVE_LEVEL_DIFF
     );
