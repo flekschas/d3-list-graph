@@ -17,6 +17,7 @@ export const ACTIVE_LEVEL = 0;
 export const NO_ROOT_ACTIVE_LEVEL_DIFF = 0;
 export const QUERYING = false;
 export const HIDE_OUTWARDS_LINKS = false;
+export const SHOW_LINK_LOCATION = false;
 
 export const TRANSITION_LIGHTNING_FAST = 150;
 export const TRANSITION_FAST = 200;
