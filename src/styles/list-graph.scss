@@ -626,13 +626,19 @@
     transition: all $transitionFast $easeInOutCubic;
   }
 
-  &.unselectable .label {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+  &.unselectable {
+    * {
+      cursor: default;
+    }
+
+    .label {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
   }
 
   &.less-animations * {
