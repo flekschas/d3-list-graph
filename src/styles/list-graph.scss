@@ -585,6 +585,18 @@
     fill-opacity: 1 !important;
   }
 
+  .link-indicator {
+    opacity: 0;
+
+    &.visible {
+      opacity: 1;
+    }
+  }
+
+  .link-location-indicator {
+    transition: all $transitionFast $easeInOutCubic;
+  }
+
   .sorting {
     opacity: 0.33;
   }
