@@ -45,25 +45,31 @@ class Links {
   }
 
   get diagonal () {
+    const extraOffsetX = this.vis.showLinkLocation ? 6 : 0;
+
     return d3.svg.diagonal()
       .source(data => ({
         x: data.source.node.y + data.source.offsetY +
           this.visData.global.row.height / 2,
         y: data.source.node.x + data.source.offsetX +
           this.visData.global.column.contentWidth +
-          this.visData.global.column.padding
+          this.visData.global.column.padding +
+          extraOffsetX
       }))
       .target(data => ({
         x: data.target.node.y + data.target.offsetY +
           this.visData.global.row.height / 2,
         y: data.target.node.x + data.target.offsetX +
-          this.visData.global.column.padding
+          this.visData.global.column.padding -
+          extraOffsetX
       }))
       .projection(data => [data.y, data.x]);
   }
 
   linkVisibility (data) {
-    return !this.vis.pointsOutside.call(this.vis, data);
+    // Cache visibility.
+    data.hidden = this.vis.pointsOutside.call(this.vis, data);
+    return data.hidden === 0;
   }
 
   highlight (nodeIds, highlight, className) {
