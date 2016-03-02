@@ -14,13 +14,11 @@ import isObject from '../../../node_modules/lodash-es/isObject.js';
  * @param  {Object}  graph  Graph to be traversed
  * @param  {Array}  starts  Array of node IDs for start the traversal.
  * @param  {Object}  columnCache  Cache storing node IDs per column.
- * @param  {Object|Function}  scaleX  D3 linear scale function for the
- *    x-axis, e.g. columns.
- * @param  {Object|Function}  scaleY  D3 linear scale function for the
- *    y-axis, e.g. rows.
+ * @param  {Object}  scale  D3 linear scale functions for the
+ *    x-axis (columns), y-axis (rows) and other stuff.
+ * œparam  {Object}  links  Object storing links data.
  */
-function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
-  scaleY) {
+function traverseGraph (graph, starts, columnCache, nodeOrder, scale, links) {
   const visited = {};
   const queue = [];
 
@@ -119,8 +117,10 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    * @param  {Object}  target  Target node.
    */
   function processLink (source, target) {
-    source.links.push({
-      id: '(' + source.id + ')->(' + target.id + ')',
+    const id = '(' + source.id + ')->(' + target.id + ')';
+
+    links[id] = {
+      id,
       source: {
         node: source,
         offsetX: 0,
@@ -131,7 +131,13 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
         offsetX: 0,
         offsetY: 0
       }
-    });
+    };
+
+    source.links.outgoing.refs.push(links[id]);
+    target.links.incoming.refs.push(links[id]);
+
+    source.links.outgoing.total++;
+    target.links.incoming.total++;
   }
 
   /**
@@ -220,7 +226,20 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     }
 
     if (!_node.links) {
-      _node.links = [];
+      _node.links = {
+        incoming: {
+          refs: [],
+          above: 0,
+          below: 0,
+          total: 0
+        },
+        outgoing: {
+          refs: [],
+          above: 0,
+          below: 0,
+          total: 0
+        }
+      };
     }
 
     if (!columnCache[_node.depth]) {
@@ -231,8 +250,8 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     if (!columnCache[_node.depth][_id]) {
       columnCache[_node.depth][_id] = true;
       nodeOrder[_node.depth].push(_node);
-      _node.x = scaleX(_node.depth);
-      _node.y = scaleY(Object.keys(columnCache[_node.depth]).length - 1);
+      _node.x = scale.x(_node.depth);
+      _node.y = scale.y(Object.keys(columnCache[_node.depth]).length - 1);
     }
 
     processBars(_node);

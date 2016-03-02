@@ -7,6 +7,7 @@ import * as traverse from './traversal';
 import * as config from './config';
 import Bars from './bars';
 import { allTransitionsEnded } from '../commons/d3-utils';
+import { roundRect } from '../commons/charts';
 
 const CLASS_NODES = 'nodes';
 const CLASS_NODE = 'node';
@@ -18,10 +19,84 @@ const CLASS_QUERY = 'query';
 const CLASS_LOCK = 'lock';
 const CLASS_ACTIVE = 'active';
 const CLASS_INACTIVE = 'inactive';
+const CLASS_INDICATOR_BAR = 'link-indicator';
+const CLASS_INDICATOR_LOCATION = 'link-location-indicator';
+const CLASS_INDICATOR_INCOMING = 'incoming';
+const CLASS_INDICATOR_OUTGOING = 'outgoing';
+const CLASS_INDICATOR_ABOVE = 'above';
+const CLASS_INDICATOR_BELOW = 'below';
 
 class Nodes {
   constructor (vis, baseSelection, visData, links, events) {
     const that = this;
+
+    this.vis = vis;
+    this.visData = visData;
+    this.links = links;
+    this.events = events;
+    this.currentLinks = {};
+    this.iconDimension = Math.min(
+      (this.visData.global.row.contentHeight / 2 -
+      this.visData.global.cell.padding * 2),
+      this.visData.global.column.padding / 2 - 4
+    );
+
+    const linkDensityBg = d3.scale.linear()
+      .domain([1, this.vis.rows])
+      .range(['#ccc', '#000']);
+
+    function drawLinkIndicator (selection, direction) {
+      const incoming = direction === 'incoming';
+
+      selection
+        .attr(
+          'class',
+          CLASS_INDICATOR_BAR + ' ' + (incoming ?
+            CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING)
+        )
+        .attr(
+          'd',
+          roundRect(
+            incoming ? -7 : this.visData.global.column.contentWidth,
+            this.visData.global.row.height / 2 - 1,
+            7,
+            2,
+            {
+              topLeft: incoming ? 1 : 0,
+              topRight: incoming ? 0 : 1,
+              bottomLeft: incoming ? 1 : 0,
+              bottomRight: incoming ? 0 : 1
+            }
+          )
+        )
+        .attr('fill', data => linkDensityBg(data.links[direction].refs.length))
+        .classed('visible', data => data.links[direction].refs.length > 0);
+    }
+
+    function drawLinkLocationIndicator (selection, direction, position) {
+      const above = position === 'above';
+      const incoming = direction === 'incoming';
+
+      const className = CLASS_INDICATOR_LOCATION + ' ' + (
+        incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING
+      ) + ' ' + (
+        above ? CLASS_INDICATOR_ABOVE : CLASS_INDICATOR_BELOW
+      );
+
+      selection
+        .datum(data => data.links[direction])
+        .attr('class', className)
+        .attr('x', incoming ? -5 : this.visData.global.column.contentWidth + 2)
+        .attr(
+          'y',
+          above ?
+            this.visData.global.row.height / 2 - 1 :
+            this.visData.global.row.height / 2 + 1
+        )
+        .attr('width', 3)
+        .attr('height', 3)
+        .attr('fill', data => linkDensityBg(data.refs.length));
+    }
 
     // Helper
     function drawFullSizeRect (selection, className, shrinking, noRoundBorder) {
@@ -42,17 +117,6 @@ class Nodes {
         .attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount)
         .classed(className, true);
     }
-
-    this.vis = vis;
-    this.visData = visData;
-    this.links = links;
-    this.events = events;
-    this.currentLinks = {};
-    this.iconDimension = Math.min(
-      (this.visData.global.row.contentHeight / 2 -
-      this.visData.global.cell.padding * 2),
-      this.visData.global.column.padding / 2 - 4
-    );
 
     this.groups = baseSelection.append('g')
       .attr('class', CLASS_NODES)
@@ -117,25 +181,39 @@ class Nodes {
           }.bind(that), [this, data]);
         });
 
-    this.nodes
-      .append('rect')
-        .call(drawFullSizeRect, 'bg-extension')
-        .attr(
-          'width',
-          Math.max(
-            this.visData.global.column.padding +
-              this.visData.global.column.contentWidth / 2,
-            this.visData.global.column.contentWidth
-          )
-        );
+    this.nodes.append('rect')
+      .call(drawFullSizeRect, 'bg-extension')
+      .attr(
+        'width',
+        Math.max(
+          this.visData.global.column.padding +
+            this.visData.global.column.contentWidth / 2,
+          this.visData.global.column.contentWidth
+        )
+      );
 
-    this.nodes
-      .append('rect')
-        .call(drawFullSizeRect, 'bg-border');
+    this.nodes.append('rect').call(drawFullSizeRect, 'bg-border');
 
-    this.nodes
-      .append('rect')
-        .call(drawFullSizeRect, 'bg', 1, true);
+    this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
+
+    if (this.vis.showLinkLocation) {
+      this.nodes.append('rect')
+          .call(drawLinkLocationIndicator.bind(this), 'incoming', 'above');
+      this.nodes.append('rect')
+          .call(drawLinkLocationIndicator.bind(this), 'incoming', 'bottom');
+      this.nodes.append('rect')
+          .call(drawLinkLocationIndicator.bind(this), 'outgoing', 'above');
+      this.nodes.append('rect')
+          .call(drawLinkLocationIndicator.bind(this), 'outgoing', 'bottom');
+
+      this.nodes.append('path').call(drawLinkIndicator.bind(this), 'incoming');
+      this.nodes.append('path').call(drawLinkIndicator.bind(this), 'outgoing');
+
+      // Set all the link location indicator bars.
+      this.groups.each((data, index) => {
+        this.calcHeightLinkLocationIndicator(index, true, true);
+      });
+    }
 
     // Rooting icons
     const nodeRooted = this.nodes.append('g')
@@ -334,6 +412,86 @@ class Nodes {
   get classRoot () { return CLASS_ROOT; }
   get classQuery () { return CLASS_QUERY; }
   get classLock () { return CLASS_LOCK; }
+
+  updateLinkLocationIndicators (left, right) {
+    this.calcHeightLinkLocationIndicator(left, false, true);
+    this.calcHeightLinkLocationIndicator(right, true, false);
+  }
+
+  calcHeightLinkLocationIndicator (level, incoming, outgoing) {
+    const nodes = this.nodes.filter(data => data.depth === level);
+    nodes.each(data => {
+      if (incoming) {
+        data.links.incoming.above = 0;
+        data.links.incoming.below = 0;
+        for (let i = data.links.incoming.total; i--;) {
+          // We are checking the source location of the incoming link. The
+          // source location is the location of the node of the column being
+          // scrolled.
+          if ((data.links.incoming.refs[i].hidden & 1) > 0) {
+            data.links.incoming.above++;
+          }
+          if ((data.links.incoming.refs[i].hidden & 2) > 0) {
+            data.links.incoming.below++;
+          }
+        }
+      }
+      if (outgoing) {
+        data.links.outgoing.above = 0;
+        data.links.outgoing.below = 0;
+        for (let i = data.links.outgoing.total; i--;) {
+          // We are checking the target location of the outgoing link. The
+          // source location is the location of the node of the column being
+          // scrolled.
+          if ((data.links.outgoing.refs[i].hidden & 4) > 0) {
+            data.links.outgoing.above++;
+          }
+          if ((data.links.outgoing.refs[i].hidden & 8) > 0) {
+            data.links.outgoing.below++;
+          }
+        }
+      }
+    });
+
+    if (incoming) {
+      this.updateHeightLinkLocationIndicatorBars(nodes);
+    }
+
+    if (outgoing) {
+      this.updateHeightLinkLocationIndicatorBars(nodes, true);
+    }
+  }
+
+  updateHeightLinkLocationIndicatorBars (selection, outgoing) {
+    const barRefHeight = this.visData.global.row.contentHeight / 2 - 1;
+    const barAboveRefTop = this.visData.global.row.height / 2 - 1;
+
+    const baseClassName = '.' + CLASS_INDICATOR_LOCATION +
+      '.' + (
+        outgoing ? CLASS_INDICATOR_OUTGOING : CLASS_INDICATOR_INCOMING
+      );
+
+    selection.selectAll(
+      baseClassName +
+      '.' + CLASS_INDICATOR_ABOVE
+    ).attr(
+      'y',
+      data => data.total ?
+        barAboveRefTop - data.above / data.total * barRefHeight :
+        barAboveRefTop
+    ).attr(
+      'height',
+      data => data.total ? data.above / data.total * barRefHeight : 0
+    );
+
+    selection.selectAll(
+      baseClassName +
+      '.' + CLASS_INDICATOR_BELOW
+    ).attr(
+      'height',
+      data => data.total ? data.below / data.total * barRefHeight : 0
+    );
+  }
 
   clickHandler (el, data) {
     this.toggleQueryMode(el.parentNode, data);
@@ -889,13 +1047,13 @@ class Nodes {
 
     const traverseCallbackUp = (nodeData, childData) => {
       nodeData.hovering = 2;
-      for (let i = nodeData.links.length; i--;) {
+      for (let i = nodeData.links.outgoing.refs.length; i--;) {
         // Only push direct parent child connections. E.g.
         // Store: (parent)->(child)
         // Ignore: (parent)->(siblings of child)
-        if (nodeData.links[i].target.node.id === childData.id) {
+        if (nodeData.links.outgoing.refs[i].target.node.id === childData.id) {
           this.currentLinks[appliedClassName][nodeId][
-            nodeData.links[i].id
+            nodeData.links.outgoing.refs[i].id
           ] = true;
         }
       }
@@ -903,9 +1061,9 @@ class Nodes {
 
     const traverseCallbackDown = nodeData => {
       nodeData.hovering = 2;
-      for (let i = nodeData.links.length; i--;) {
+      for (let i = nodeData.links.outgoing.refs.length; i--;) {
         this.currentLinks[appliedClassName][nodeId][
-          nodeData.links[i].id
+          nodeData.links.outgoing.refs[i].id
         ] = true;
       }
     };
