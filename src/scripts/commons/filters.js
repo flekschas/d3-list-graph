@@ -1,5 +1,5 @@
 // Adapted from: http://bl.ocks.org/cpbotha/5200394
-export function dropShadow (el, name, dx, dy, blur) {
+export function dropShadow (el, name, dx, dy, blur, opacity) {
   let defs = el.select('defs');
 
   if (defs.empty()) {
@@ -25,6 +25,10 @@ export function dropShadow (el, name, dx, dy, blur) {
     .attr('dx', dx)
     .attr('dy', dy)
     .attr('result', 'offsetBlur');
+
+  filter.append('feComponentTransfer').append('feFuncA')
+    .attr('type', 'linear')
+    .attr('slope', opacity || 1);
 
   // overlay original SourceGraphic over translated blurred opacity by using
   // feMerge filter. Order of specifying inputs is important!
