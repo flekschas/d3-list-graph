@@ -18,10 +18,27 @@ class NodeContextMenu {
     this.height = this.visData.global.row.height * this.numButtonRows;
 
     this.bg = this.el.append('path')
+      .attr('class', 'bgBorder')
+      .attr('d', dropMenu({
+        x: -1,
+        y: -1,
+        width: this.visData.global.column.width + 2,
+        height: this.height + 2,
+        radius: 5,
+        arrowSize: 7
+      }))
+      .style('filter', 'url(#drop-shadow-context-menu)');
+
+    this.bg = this.el.append('path')
       .attr('class', 'bg')
-      .attr('d', dropMenu(
-        0, 0, this.visData.global.column.width, this.height, 4, 6
-      ))
+      .attr('d', dropMenu({
+        x: 0,
+        y: 0,
+        width: this.visData.global.column.width,
+        height: this.height,
+        radius: 4,
+        arrowSize: 6
+      }))
       .style('filter', 'url(#drop-shadow-context-menu)');
 
     this.buttonQuery = this.el.append('g')
