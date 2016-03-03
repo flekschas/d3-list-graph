@@ -17,18 +17,41 @@ export function roundRect (x, y, width, height, radius) {
     'z';
 }
 
-export function dropMenu (x, y, width, height, radius, arrowSize) {
-  return 'M' + (x + radius) + ',' + y +
-    'h' + (width - radius * 2) +
-    'a' + radius + ',' + radius + ' 0 0 1 ' + radius + ',' + radius +
-    'v' + (height - radius * 2) +
-    'a' + radius + ',' + radius + ' 0 0 1 ' + -radius + ',' + radius +
-    'h' + (-(width - radius * 2 - arrowSize * 2) / 2) +
-    'l' + (-arrowSize) + ',' + (arrowSize) +
-    'l' + (-arrowSize) + ',' + (-arrowSize) +
-    'h' + (-(width - radius * 2 - arrowSize * 2) / 2) +
-    'a' + radius + ',' + radius + ' 0 0 1 ' + -radius + ',' + -radius +
-    'v' + (radius - (height - radius)) +
-    'a' + radius + ',' + radius + ' 0 0 1 ' + radius + ',' + -radius +
+/**
+ * Creates a path that looks like a drop menu
+ *
+ * @example
+ * The following is an example how to create a drop menu path:
+ * ```javascript
+ * import { dropMenu } from './charts';
+ * const dropMenuPath = dropMenu({
+ *   x: 0,
+ *   y: 0,
+ *   width: 50,
+ *   height: 100,
+ *   radius: 5,
+ *   arrowSize: 5
+ * });
+ * ```
+ *
+ * @method  dropMenu
+ * @author  Fritz Lekschas
+ * @date    2016-03-03
+ * @param   {Object}  c  Config object that needs to contain the following
+ *   properties: x, y, width, height, radius and arrowSize.
+ */
+export function dropMenu (c) {
+  return 'M' + (c.x + c.radius) + ',' + c.y +
+    'h' + (c.width - c.radius * 2) +
+    'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + c.radius + ',' + c.radius +
+    'v' + (c.height - c.radius * 2) +
+    'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + -c.radius + ',' + c.radius +
+    'h' + (-(c.width - c.radius * 2 - c.arrowSize * 2) / 2) +
+    'l' + (-c.arrowSize) + ',' + (c.arrowSize) +
+    'l' + (-c.arrowSize) + ',' + (-c.arrowSize) +
+    'h' + (-(c.width - c.radius * 2 - c.arrowSize * 2) / 2) +
+    'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + -c.radius + ',' + -c.radius +
+    'v' + (c.radius - (c.height - c.radius)) +
+    'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + c.radius + ',' + -c.radius +
     'z';
 }
