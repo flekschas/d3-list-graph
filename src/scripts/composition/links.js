@@ -47,23 +47,38 @@ class Links {
   get diagonal () {
     const extraOffsetX = this.vis.showLinkLocation ? 6 : 0;
 
-    return d3.svg.diagonal()
-      .source(data => ({
-        x: data.source.node.y + data.source.offsetY +
-          this.visData.global.row.height / 2,
-        y: data.source.node.x + data.source.offsetX +
-          this.visData.global.column.contentWidth +
-          this.visData.global.column.padding +
-          extraOffsetX
-      }))
-      .target(data => ({
-        x: data.target.node.y + data.target.offsetY +
-          this.visData.global.row.height / 2,
-        y: data.target.node.x + data.target.offsetX +
-          this.visData.global.column.padding -
-          extraOffsetX
-      }))
-      .projection(data => [data.y, data.x]);
+    function getSourceX (source) {
+      return source.node.x + source.offsetX +
+        this.visData.global.column.contentWidth +
+        this.visData.global.column.padding;
+    }
+
+    function getTargetX (source) {
+      return source.node.x + source.offsetX +
+        this.visData.global.column.padding;
+    }
+
+    function getY (source) {
+      return source.node.y + source.offsetY +
+        this.visData.global.row.height / 2;
+    }
+
+    return data => {
+      const sourceY = getY.call(this, data.source);
+      const sourceX = getSourceX.call(this, data.source);
+      const targetY = getY.call(this, data.target);
+      const targetX = getTargetX.call(this, data.target);
+      const middleX = (sourceX + targetX) / 2;
+
+      return (
+        'M' + sourceX + ',' + sourceY +
+        'h' + extraOffsetX +
+        'C' + (middleX + extraOffsetX) + ',' + sourceY +
+        ' ' + (middleX - extraOffsetX) + ',' + targetY +
+        ' ' + (targetX - extraOffsetX) + ',' + targetY +
+        'h' + extraOffsetX
+      );
+    };
   }
 
   linkVisibility (data) {
