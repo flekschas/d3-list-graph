@@ -45,19 +45,20 @@ class Topbar {
           that.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
+        return false;
       })
       .on('click', function () {
         that.sortAllColumns(this, 'precision');
       })
       .on('mouseenter', () => {
-        this.vis.interactionWrapper.call(this.vis, function () {
+        this.vis.interactionWrapper.call(this.vis, () => {
           this.highlightBars(undefined, 'precision');
-        }.bind(this), []);
+        }, []);
       })
       .on('mouseleave', () => {
-        this.vis.interactionWrapper.call(this.vis, function () {
+        this.vis.interactionWrapper.call(this.vis, () => {
           this.highlightBars(undefined, 'precision', true);
-        }.bind(this), []);
+        }, []);
       });
 
     this.globalPrecisionWrapper = this.globalPrecision.append('div')
@@ -102,19 +103,20 @@ class Topbar {
           that.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
+        return false;
       })
       .on('click', function () {
         that.sortAllColumns(this, 'recall');
       })
       .on('mouseenter', () => {
-        this.vis.interactionWrapper.call(this.vis, function () {
+        this.vis.interactionWrapper.call(this.vis, () => {
           this.highlightBars(undefined, 'recall');
-        }.bind(this), []);
+        }, []);
       })
       .on('mouseleave', () => {
-        this.vis.interactionWrapper.call(this.vis, function () {
+        this.vis.interactionWrapper.call(this.vis, () => {
           this.highlightBars(undefined, 'recall', true);
-        }.bind(this), []);
+        }, []);
       });
 
     this.globalRecallWrapper = this.globalRecall.append('div')
@@ -159,19 +161,20 @@ class Topbar {
           that.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
+        return false;
       })
       .on('click', function () {
         that.sortAllColumns(this, 'name');
       })
       .on('mouseenter', () => {
-        this.vis.interactionWrapper.call(this.vis, function () {
+        this.vis.interactionWrapper.call(this.vis, () => {
           this.highlightLabels();
-        }.bind(this), []);
+        }, []);
       })
       .on('mouseleave', () => {
-        this.vis.interactionWrapper.call(this.vis, function () {
+        this.vis.interactionWrapper.call(this.vis, () => {
           this.highlightLabels(true);
-        }.bind(this), []);
+        }, []);
       });
 
     this.globalNameWrapper = this.globalName.append('div')
@@ -246,14 +249,14 @@ class Topbar {
       .attr('class', 'control-btn zoom-out')
       .classed('active', this.vis.zoomedOut)
       .on('mouseenter', () => {
-        this.vis.interactionWrapper.call(this.vis, function () {
+        this.vis.interactionWrapper.call(this.vis, () => {
           this.vis.globalView.call(this.vis);
-        }.bind(this), []);
+        }, []);
       })
       .on('mouseleave', () => {
-        this.vis.interactionWrapper.call(this.vis, function () {
+        this.vis.interactionWrapper.call(this.vis, () => {
           this.vis.zoomedView.call(this.vis);
-        }.bind(this), []);
+        }, []);
       })
       .on('click', function () {
         that.vis.toggleView.call(that.vis);
@@ -294,7 +297,7 @@ class Topbar {
       that.vis.currentSorting.local[index] = {
         type: data.sortBy,
         order: data.sortOrder,
-        el: undefined,
+        el: undefined
       };
 
       control.append('li')
@@ -310,10 +313,11 @@ class Topbar {
             that.vis.currentSorting.local[index].el = d3.select(this);
             return true;
           }
+          return false;
         })
         .style({
           width: that.visData.global.column.contentWidth / 2 + 'px',
-          left: that.visData.global.column.padding + 'px',
+          left: that.visData.global.column.padding + 'px'
         })
         .on('click', function (controlData) {
           that.sortColumn(this, controlData.level, 'precision');
@@ -363,11 +367,12 @@ class Topbar {
             that.vis.currentSorting.local[index].el = d3.select(this);
             return true;
           }
+          return false;
         })
         .style({
           width: that.visData.global.column.contentWidth / 2 + 'px',
           left: that.visData.global.column.contentWidth / 2 +
-            that.visData.global.column.padding + 'px',
+            that.visData.global.column.padding + 'px'
         })
         .on('click', function (controlData) {
           that.sortColumn(this, controlData.level, 'recall');
@@ -376,7 +381,7 @@ class Topbar {
           that.highlightBars(this.parentNode, 'recall');
           d3.select(this).style({
             width: (that.visData.global.column.contentWidth - 16) + 'px',
-            left: (that.visData.global.column.padding + 16) + 'px',
+            left: (that.visData.global.column.padding + 16) + 'px'
           });
         })
         .on('mouseleave', function () {
@@ -384,7 +389,7 @@ class Topbar {
           d3.select(this).style({
             width: (that.visData.global.column.contentWidth) / 2 + 'px',
             left: (that.visData.global.column.contentWidth / 2 +
-              that.visData.global.column.padding) + 'px',
+              that.visData.global.column.padding) + 'px'
           });
         })
         .html(

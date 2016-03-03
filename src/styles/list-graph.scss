@@ -371,21 +371,24 @@
 
     .link-direct {
       stroke: #000;
-      stroke-opacity: 0.2;
       stroke-width: 2;
+      stroke-opacity: 0;
       transition: all $transitionFast $easeInOutCubic;
     }
+    &.visible .link-direct {
+      stroke-opacity: 0.2;
+    }
 
-    &.hovering .link-direct {
+    &.visible.hovering .link-direct {
       stroke-opacity: 0.75;
       stroke-width: 4;
     }
 
-    &.lock .link-direct {
+    &.visible.lock .link-direct {
       stroke-opacity: 0.75;
     }
 
-    &.focus .link-direct {
+    &.visible.focus .link-direct {
       stroke-opacity: 0.5;
     }
 
@@ -395,11 +398,11 @@
       stroke-width: 6;
     }
 
-    &.lock .link-bg {
+    &.visible.lock .link-bg {
       stroke-opacity: 0.75;
     }
 
-    &.focus .link-bg {
+    &.visible.focus .link-bg {
       stroke-opacity: 0.5;
     }
 
@@ -600,6 +603,49 @@
     }
   }
 
+  .link-indicator {
+    opacity: 0;
+    transition: all $transitionFast $easeInOutCubic;
+
+    &.visible {
+      opacity: 1;
+    }
+
+    &.incoming {
+      transform-origin: right center;
+    }
+
+    &.outgoing {
+      transform-origin: left center;
+    }
+  }
+
+  .lock-directly .link-indicator,
+  .lock-indirectly .link-indicator,
+  .hovering-directly .link-indicator,
+  .hovering-indirectly .link-indicator {
+    fill: #000;
+  }
+
+  .hovering-directly .link-indicator,
+  .hovering-indirectly .link-indicator {
+    transform: scale(1.5);
+  }
+
+  .link-location-indicator {
+    transition: all $transitionFast $easeInOutCubic;
+  }
+
+  .hovering-directly .link-location-indicator.above,
+  .hovering-indirectly .link-location-indicator.above {
+    transform: translateY(-1px);
+  }
+
+  .hovering-directly .link-location-indicator.below,
+  .hovering-indirectly .link-location-indicator.below {
+    transform: translateY(1px);
+  }
+
   .sorting {
     opacity: 0.33;
   }
@@ -629,13 +675,19 @@
     transition: all $transitionFast $easeInOutCubic;
   }
 
-  &.unselectable .label {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+  &.unselectable {
+    * {
+      cursor: default;
+    }
+
+    .label {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
   }
 
   &.less-animations * {

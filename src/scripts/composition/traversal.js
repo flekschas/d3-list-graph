@@ -1,5 +1,5 @@
 // External
-import isFinite from '../../../node_modules/lodash-es/lang/isFinite';
+import isFinite from '../../../node_modules/lodash-es/isFinite';
 
 // Internal
 import { collectInclClones } from './utils';

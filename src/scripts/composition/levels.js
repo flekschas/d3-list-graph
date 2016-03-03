@@ -24,6 +24,7 @@ class Levels {
               }
               return index === this.vis.activeLevel;
             }
+            return false;
           }
         );
 
@@ -58,7 +59,7 @@ class Levels {
       data.linkSelections = {
         incoming: index > 0 ?
           vis.selectByLevel(index - 1, '.link') : null,
-        outgoing: vis.selectByLevel(index, '.link'),
+        outgoing: vis.selectByLevel(index, '.link')
       };
       data.scrollHeight = scrollHeight;
       data.scrollTop = 0;
@@ -72,7 +73,7 @@ class Levels {
         scrollTop: 0,
         heightScale: d3.scale.linear()
           .domain([0, scrollHeight])
-          .range([0, this.visData.global.column.height - scrollbarHeight]),
+          .range([0, this.visData.global.column.height - scrollbarHeight])
       };
       data.invertedHeightScale = data.scrollbar.heightScale.invert;
     });

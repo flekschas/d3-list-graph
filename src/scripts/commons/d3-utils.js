@@ -25,7 +25,7 @@ export function allTransitionsEnded (transition, callback) {
   let n = 0;
   transition
     .each(() => ++n)
-    .each('end', function () {
-      if (!--n) callback.apply(this, arguments);
+    .each('end', function (...args) {
+      if (!--n) callback.apply(this, args);
     });
 }

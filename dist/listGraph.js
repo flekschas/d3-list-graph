@@ -1,5 +1,6 @@
 /* Copyright Fritz Lekschas: D3 example visualization app using list-based graphs */
-var ListGraph = (function ($,d3) { 'use strict';
+var ListGraph = (function ($,d3) {
+  'use strict';
 
   var babelHelpers = {};
 
@@ -9,7 +10,7 @@ var ListGraph = (function ($,d3) { 'use strict';
     }
   };
 
-  babelHelpers.createClass = (function () {
+  babelHelpers.createClass = function () {
     function defineProperties(target, props) {
       for (var i = 0; i < props.length; i++) {
         var descriptor = props[i];
@@ -25,7 +26,7 @@ var ListGraph = (function ($,d3) { 'use strict';
       if (staticProps) defineProperties(Constructor, staticProps);
       return Constructor;
     };
-  })();
+  }();
 
   babelHelpers.inherits = function (subClass, superClass) {
     if (typeof superClass !== "function" && superClass !== null) {
@@ -52,6 +53,46 @@ var ListGraph = (function ($,d3) { 'use strict';
   };
 
   babelHelpers;
+
+  var ExtendableError = function (_Error) {
+    babelHelpers.inherits(ExtendableError, _Error);
+
+    function ExtendableError(message) {
+      babelHelpers.classCallCheck(this, ExtendableError);
+
+      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
+
+      _this.name = _this.constructor.name;
+      _this.message = message;
+      Error.captureStackTrace(_this, _this.constructor.name);
+      return _this;
+    }
+
+    return ExtendableError;
+  }(Error);
+
+  var LayoutNotAvailable = function (_ExtendableError) {
+    babelHelpers.inherits(LayoutNotAvailable, _ExtendableError);
+
+    function LayoutNotAvailable(message) {
+      babelHelpers.classCallCheck(this, LayoutNotAvailable);
+      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LayoutNotAvailable).call(this, message || 'D3.layout.listGraph.js has not been loaded yet.'));
+    }
+
+    return LayoutNotAvailable;
+  }(ExtendableError);
+
+  var EventDispatcherNoFunction = function (_ExtendableError2) {
+    babelHelpers.inherits(EventDispatcherNoFunction, _ExtendableError2);
+
+    function EventDispatcherNoFunction(message) {
+      babelHelpers.classCallCheck(this, EventDispatcherNoFunction);
+      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(EventDispatcherNoFunction).call(this, message || 'Dispatcher needs to be a function.'));
+    }
+
+    return EventDispatcherNoFunction;
+  }(ExtendableError);
+
   var CLASSNAME = 'list-graph';
 
   var SCROLLBAR_WIDTH = 6;
@@ -70,1833 +111,11 @@ var ListGraph = (function ($,d3) { 'use strict';
   var ACTIVE_LEVEL = 0;
   var NO_ROOT_ACTIVE_LEVEL_DIFF = 0;
   var QUERYING = false;
+  var HIDE_OUTWARDS_LINKS = false;
+  var SHOW_LINK_LOCATION = false;
 
   var TRANSITION_LIGHTNING_FAST = 150;
   var TRANSITION_SEMI_FAST = 250;
-
-  function mergeSelections(selections) {
-    // Create a new empty selection
-    var mergedSelection = d3.selectAll('.d3-list-graph-not-existent');
-
-    function pushSelection(selection) {
-      selection.each(function pushDomNode() {
-        mergedSelection[0].push(this);
-      });
-    }
-
-    for (var i = selections.length; i--;) {
-      pushSelection(selections[i]);
-    }
-
-    return mergedSelection;
-  }
-
-  function allTransitionsEnded(transition, callback) {
-    if (transition.size() === 0) {
-      callback();
-    }
-    var n = 0;
-    transition.each(function () {
-      return ++n;
-    }).each('end', function () {
-      if (! --n) callback.apply(this, arguments);
-    });
-  }
-
-  var ExtendableError = (function (_Error) {
-    babelHelpers.inherits(ExtendableError, _Error);
-
-    function ExtendableError(message) {
-      babelHelpers.classCallCheck(this, ExtendableError);
-
-      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
-
-      _this.name = _this.constructor.name;
-      _this.message = message;
-      Error.captureStackTrace(_this, _this.constructor.name);
-      return _this;
-    }
-
-    return ExtendableError;
-  })(Error);
-
-  var LimitsUnsupportedFormat = (function (_ExtendableError) {
-    babelHelpers.inherits(LimitsUnsupportedFormat, _ExtendableError);
-
-    function LimitsUnsupportedFormat(message) {
-      babelHelpers.classCallCheck(this, LimitsUnsupportedFormat);
-      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LimitsUnsupportedFormat).call(this, message || 'The limits are wrongly formatted. Please provide an ' + 'object of the following format: `{ x: { min: 0, max: 1 }, y: { min: ' + '0, max: 1 } }`'));
-    }
-
-    return LimitsUnsupportedFormat;
-  })(ExtendableError);
-
-  /**
-   * Drap and drop event handler that works via translation.
-   *
-   * @method  onDragDrop
-   * @author  Fritz Lekschas
-   * @date    2016-01-23
-   * @param   {Object}  selection        D3 selection to listen for the drag
-   *   event.
-   * @param   {Object}           dragMoveHandler  Handler for drag-move.
-   * @param   {Object}           dropHandler      Handler for drag-end, i.e. drop.
-   * @param   {Array}            elsToBeDragged   Array of D3 selections to be
-   *   moved according to the drag event. If empty or undefined `selection` will
-   *   be used.
-   * @param   {String}           orientation      Can either be "horizontal",
-   *   "vertical" or `undefined`, i.e. both directions.
-   * @param   {Object|Function}  limits           X and Y drag limits. E.g.
-   *   `{ x: { min: 0, max: 10 } }`.
-   * @param   {Array}             notWhenTrue     List if function returning a
-   *   Boolean value which should prevent the dragMoveHandler from working.
-   */
-  function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue) {
-    var drag = d3.behavior.drag();
-
-    var appliedLimits = limits || {}; // eslint-disable-line no-param-reassign
-
-    if (dragStartHandler) {
-      drag.on('dragstart', function () {
-        if (typeof limits === 'function') {
-          appliedLimits = limits();
-        }
-        dragStartHandler();
-      });
-    }
-
-    if (dragMoveHandler) {
-      drag.on('drag', function (data) {
-        dragMoveHandler.call(this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue);
-      });
-    }
-
-    if (dropHandler) {
-      drag.on('dragend', dropHandler);
-    }
-
-    selection.each(function (data) {
-      var el = d3.select(this);
-
-      // Set default data if not available.
-      if (!data) {
-        data = { dragX: 0, dragY: 0 }; // eslint-disable-line no-param-reassign
-        el.datum(data);
-      }
-
-      // Add drag event handler
-      el.call(drag);
-    });
-  }
-
-  function dragMoveHandler(data, elsToBeDragged, orientation, limits, notWhenTrue) {
-    for (var i = notWhenTrue.length; i--;) {
-      if (notWhenTrue[i]()) {
-        return;
-      }
-    }
-
-    var els = d3.select(this);
-
-    if (elsToBeDragged && elsToBeDragged.length) {
-      els = mergeSelections(elsToBeDragged);
-    }
-
-    function withinLimits(value, applyingLimits) {
-      var restrictedValue = undefined;
-
-      if (applyingLimits) {
-        try {
-          restrictedValue = Math.min(applyingLimits.max, Math.max(applyingLimits.min, value));
-        } catch (e) {
-          throw new LimitsUnsupportedFormat();
-        }
-      }
-      return restrictedValue;
-    }
-
-    if (orientation === 'horizontal' || orientation === 'vertical') {
-      if (orientation === 'horizontal') {
-        data.dragX += d3.event.dx;
-        data.dragX = withinLimits(data.dragX + d3.event.dx, limits.x);
-        els.style('transform', 'translateX(' + data.dragX + 'px)');
-      }
-      if (orientation === 'vertical') {
-        data.dragY += d3.event.dy;
-        data.dragX = withinLimits(data.dragY + d3.event.dy, limits.y);
-        els.style('transform', 'translateY(' + data.dragY + 'px)');
-      }
-    } else {
-      data.dragX += d3.event.dx;
-      data.dragY += d3.event.dy;
-      els.style('transform', 'translate(' + data.dragX + 'px,' + data.dragY + 'px)');
-    }
-  }
-
-  var SCROLLBAR_CLASS = 'scrollbar';
-
-  var Scrollbars = (function () {
-    function Scrollbars(baseSelection, visData, width) {
-      babelHelpers.classCallCheck(this, Scrollbars);
-
-      this.visData = visData;
-      this.width = width;
-
-      // Add empty scrollbar element
-      this.all = baseSelection.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
-        selection.each(function setScrollBarDomElement() {
-          d3.select(this.parentNode).datum().scrollbar.el = this;
-        });
-      }).attr('x', function (data) {
-        return data.scrollbar.x - 2;
-      }).attr('y', function (data) {
-        return data.scrollbar.y;
-      }).attr('width', this.width).attr('height', function (data) {
-        return data.scrollbar.height;
-      }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
-    }
-
-    babelHelpers.createClass(Scrollbars, [{
-      key: 'updateVisibility',
-      value: function updateVisibility() {
-        this.all.transition().duration(TRANSITION_LIGHTNING_FAST).attr({
-          x: function x(data) {
-            return data.scrollbar.x;
-          },
-          height: function height(data) {
-            return data.scrollbar.height;
-          }
-        });
-      }
-    }]);
-    return Scrollbars;
-  })();
-
-  /** Used to determine if values are of the language type `Object`. */
-  var objectTypes = {
-    'function': true,
-    'object': true
-  };
-
-  /** Detect free variable `exports`. */
-  var freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports;
-
-  /** Detect free variable `module`. */
-  var freeModule = objectTypes[typeof module] && module && !module.nodeType && module;
-
-  /** Detect free variable `global` from Node.js. */
-  var freeGlobal = freeExports && freeModule && typeof global == 'object' && global && global.Object && global;
-
-  /** Detect free variable `self`. */
-  var freeSelf = objectTypes[typeof self] && self && self.Object && self;
-
-  /** Detect free variable `window`. */
-  var freeWindow = objectTypes[typeof window] && window && window.Object && window;
-
-  /**
-   * Used as a reference to the global object.
-   *
-   * The `this` value is used if it's the global object to avoid Greasemonkey's
-   * restricted `window` object, otherwise the `window` object is used.
-   */
-  var root = freeGlobal || ((freeWindow !== (this && this.window)) && freeWindow) || freeSelf || this;
-
-  /* Native method references for those with the same name as other `lodash` methods. */
-  var nativeIsFinite = root.isFinite;
-
-  /**
-   * Checks if `value` is a finite primitive number.
-   *
-   * **Note:** This method is based on [`Number.isFinite`](http://ecma-international.org/ecma-262/6.0/#sec-number.isfinite).
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a finite number, else `false`.
-   * @example
-   *
-   * _.isFinite(10);
-   * // => true
-   *
-   * _.isFinite('10');
-   * // => false
-   *
-   * _.isFinite(true);
-   * // => false
-   *
-   * _.isFinite(Object(10));
-   * // => false
-   *
-   * _.isFinite(Infinity);
-   * // => false
-   */
-  function isFinite(value) {
-    return typeof value == 'number' && nativeIsFinite(value);
-  }
-
-  /**
-   * Collect all cloned nodes, including the original node.
-   *
-   * @method  collectInclClones
-   * @author  Fritz Lekschas
-   * @date    2015-12-30
-   * @param   {Object}  node  Start node
-   * @return  {Array}         Array of original and cloned nodes.
-   */
-  function collectInclClones(node) {
-    var originalNode = node;
-
-    if (node.clone) {
-      originalNode = node.originalNode;
-    }
-
-    var clones = [originalNode];
-
-    if (originalNode.clones.length) {
-      clones = clones.concat(originalNode.clones);
-    }
-
-    return clones;
-  }
-
-  function up(node, callback, depth, includeClones, child) {
-    var nodesInclClones = includeClones ? collectInclClones(node) : [node];
-
-    for (var i = nodesInclClones.length; i--;) {
-      if (child) {
-        callback(nodesInclClones[i], child);
-      }
-
-      if (!isFinite(depth) || depth > 0) {
-        var parentsId = Object.keys(nodesInclClones[i].parents);
-        for (var j = parentsId.length; j--;) {
-          up(nodesInclClones[i].parents[parentsId[j]], callback, depth - 1, includeClones, nodesInclClones[i]);
-        }
-      }
-    }
-  }
-
-  function down(node, callback, depth, includeClones) {
-    var nodesInclClones = includeClones ? collectInclClones(node) : [node];
-
-    for (var i = nodesInclClones.length; i--;) {
-      callback(nodesInclClones[i]);
-
-      if (!isFinite(depth) || depth > 0) {
-        for (var j = nodesInclClones[i].childRefs.length; j--;) {
-          down(nodesInclClones[i].childRefs[j], callback, depth - 1, includeClones);
-        }
-      }
-    }
-  }
-
-  function upAndDown(node, callbackUp, callbackDown, depth, includeClones) {
-    if (callbackDown) {
-      up(node, callbackUp, depth, includeClones);
-      down(node, callbackDown, depth, includeClones);
-    } else {
-      up(node, callbackUp, depth, includeClones);
-      down(node, callbackUp, depth, includeClones);
-    }
-  }
-
-  function siblings(node, callback) {
-    var parentsId = Object.keys(node.parents);
-    for (var i = parentsId.length; i--;) {
-      for (var j = node.parents[parentsId[i]].childRefs.length; j--;) {
-        callback(node.parents[parentsId[i]].childRefs[j]);
-      }
-    }
-    // The root node doesn't have a `parents` property but might have `siblings`.
-    if (node.siblings) {
-      var siblingsId = Object.keys(node.siblings);
-      for (var i = siblingsId.length; i--;) {
-        callback(node.siblings[siblingsId[i]]);
-      }
-    }
-  }
-
-  /**
-   * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
-   * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is an object, else `false`.
-   * @example
-   *
-   * _.isObject({});
-   * // => true
-   *
-   * _.isObject([1, 2, 3]);
-   * // => true
-   *
-   * _.isObject(1);
-   * // => false
-   */
-  function isObject(value) {
-    // Avoid a V8 JIT bug in Chrome 19-20.
-    // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
-    var type = typeof value;
-    return !!value && (type == 'object' || type == 'function');
-  }
-
-  /** `Object#toString` result references. */
-  var funcTag = '[object Function]';
-
-  /** Used for native method references. */
-  var objectProto = Object.prototype;
-
-  /**
-   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
-   * of values.
-   */
-  var objToString = objectProto.toString;
-
-  /**
-   * Checks if `value` is classified as a `Function` object.
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
-   * @example
-   *
-   * _.isFunction(_);
-   * // => true
-   *
-   * _.isFunction(/abc/);
-   * // => false
-   */
-  function isFunction(value) {
-    // The use of `Object#toString` avoids issues with the `typeof` operator
-    // in older versions of Chrome and Safari which return 'function' for regexes
-    // and Safari 8 which returns 'object' for typed array constructors.
-    return isObject(value) && objToString.call(value) == funcTag;
-  }
-
-  // Credits go to Mike Bostock: http://bl.ocks.org/mbostock/3468167
-  function roundRect(x, y, width, height, radius) {
-    var topLeft = radius.topLeft || 0;
-    var topRight = radius.topRight || 0;
-    var bottomLeft = radius.bottomLeft || 0;
-    var bottomRight = radius.bottomRight || 0;
-
-    return 'M' + (x + topLeft) + ',' + y + 'h' + (width - topLeft - topRight) + 'a' + topRight + ',' + topRight + ' 0 0 1 ' + topRight + ',' + topRight + 'v' + (height - (topRight + bottomRight)) + 'a' + bottomRight + ',' + bottomRight + ' 0 0 1 ' + -bottomRight + ',' + bottomRight + 'h' + (bottomLeft - (width - bottomRight)) + 'a' + bottomLeft + ',' + bottomLeft + ' 0 0 1 ' + -bottomLeft + ',' + -bottomLeft + 'v' + (topLeft - (height - bottomLeft)) + 'a' + topLeft + ',' + topLeft + ' 0 0 1 ' + topLeft + ',' + -topLeft + 'z';
-  }
-
-  var BAR_CLASS = 'bar';
-
-  var Bar = (function () {
-    function Bar(barGroup, barData, nodeData, visData, bars) {
-      var _this = this;
-
-      babelHelpers.classCallCheck(this, Bar);
-
-      this.data = barData;
-      this.nodeData = nodeData;
-      this.visData = visData;
-      this.bars = bars;
-
-      this.data.x = nodeData.x;
-      this.data.level = nodeData.depth;
-
-      this.height = this.visData.global.row.contentHeight / (this.data.length * 2) - this.visData.global.cell.padding * 2;
-
-      this.activeHeight = this.visData.global.row.contentHeight - 2;
-
-      this.inactiveheight = this.visData.global.cell.padding * 2 - 1;
-
-      this.selection = barGroup.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
-        return BAR_CLASS + ' ' + data.id;
-      }).classed('active', function (data) {
-        return data.id === _this.visData.nodes[_this.nodeData.depth].sortBy;
-      });
-
-      // Local helper method to avoid code duplication.
-      // Calling a class method from within the consructor is possible but `this`
-      // is not available. Thus, we need to create local function and pass in
-      // `this` as `that`, which feels very hacky but it works.
-      function setupMagnitude(selection) {
-        var _this2 = this;
-
-        var currentSorting = this.visData.nodes[this.nodeData.depth].sortBy;
-
-        selection.attr('d', function (data) {
-          return Bar.generatePath(data, _this2.bars.mode, currentSorting, _this2.visData);
-        }).classed('bar-magnitude', true);
-      }
-
-      function setupBorder(selection) {
-        selection.attr('x', 0).attr('y', this.visData.global.row.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
-      }
-
-      function setupIndicator(selection) {
-        selection.attr({
-          class: 'bar-indicator',
-          x: 0,
-          y: this.visData.global.row.padding,
-          width: 2,
-          height: 4
-        });
-      }
-
-      this.selection.append('rect').call(setupBorder.bind(this));
-
-      this.selection.append('path').call(setupMagnitude.bind(this));
-
-      this.selection.append('rect').call(setupIndicator.bind(this));
-    }
-
-    babelHelpers.createClass(Bar, null, [{
-      key: 'updateIndicator',
-      value: function updateIndicator(selection, contentWidth, contentHeight, referenceValue, lessTransitions, reference) {
-        var y = Math.min(contentWidth * Math.min(referenceValue, 1) - 1, contentWidth - 2);
-
-        // Stop previous transitions.
-        selection.attr({
-          height: contentHeight,
-          x: reference ? y : 0
-        }).classed('positive', function (data) {
-          return data.value >= referenceValue;
-        }).transition().duration(0).attr('width', reference ? 2 : lessTransitions ? y : 0 // eslint-disable-line no-nested-ternary
-        );
-
-        if (!lessTransitions && !reference) {
-          selection.transition().duration(TRANSITION_SEMI_FAST).attr('width', y);
-        }
-      }
-    }, {
-      key: 'generatePath',
-      value: function generatePath(data, mode, currentSorting, visData, indicator, adjustWidth, bottom) {
-        if (mode === 'two') {
-          return Bar.generateTwoBarsPath(data, visData, bottom);
-        }
-        return Bar.generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth);
-      }
-    }, {
-      key: 'generateOneBarPath',
-      value: function generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth) {
-        var height = visData.global.row.contentHeight;
-        var normValue = Math.min(data.value, 1);
-        var normIndicator = Math.min(indicator, 1);
-
-        var x = 0;
-        var width = 2;
-
-        var radius = {
-          topLeft: 2,
-          bottomLeft: 2
-        };
-
-        if (indicator) {
-          radius = {};
-        }
-
-        if (data.id !== currentSorting && typeof indicator === 'undefined') {
-          x = normValue * visData.global.column.contentWidth - 3;
-          radius = {};
-        } else if (indicator) {
-          x = normIndicator * visData.global.column.contentWidth;
-          if (adjustWidth) {
-            if (normValue < normIndicator) {
-              x = normValue * visData.global.column.contentWidth;
-            }
-            width = Math.max(Math.abs(normIndicator - normValue) * visData.global.column.contentWidth, 2);
-          }
-        } else {
-          width = visData.global.column.contentWidth * normValue;
-        }
-
-        x = Math.min(x, visData.global.column.contentWidth - 2);
-
-        return roundRect(x, visData.global.row.padding, width, height, radius);
-      }
-    }, {
-      key: 'generateTwoBarsPath',
-      value: function generateTwoBarsPath(data, visData, bottom) {
-        var normValue = Math.min(data.value, 1);
-        var height = visData.global.row.contentHeight / 2;
-        var width = visData.global.column.contentWidth * normValue;
-
-        var y = visData.global.row.padding;
-        var radius = { topLeft: 2 };
-
-        if (bottom) {
-          radius = { bottomLeft: 2 };
-          y += height;
-        }
-
-        return roundRect(0, y, width, height, radius);
-      }
-    }]);
-    return Bar;
-  })();
-
-  var BARS_CLASS = 'bars';
-
-  var Bars = (function () {
-    function Bars(vis, selection, mode, visData) {
-      babelHelpers.classCallCheck(this, Bars);
-
-      var that = this;
-
-      this.vis = vis;
-      this.mode = mode;
-      this.visData = visData;
-
-      this.selection = selection.append('g').attr('class', BARS_CLASS);
-
-      this.selection.each(function (datum) {
-        new Bar(d3.select(this), datum.data.bars, datum, that.visData, that);
-      });
-    }
-
-    babelHelpers.createClass(Bars, [{
-      key: 'updateAll',
-      value: function updateAll(update, sortBy) {
-        var _this = this;
-
-        this.selection.selectAll('.bar-magnitude').data(update, function (data) {
-          return data.barId;
-        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-          return Bar.generatePath(data, _this.mode, sortBy, _this.visData);
-        });
-      }
-    }, {
-      key: 'update',
-      value: function update(selection, sortBy) {
-        var _this2 = this;
-
-        selection.each(function (data) {
-          var el = d3.select(this);
-
-          if (data.id === sortBy && !el.classed('active')) {
-            el.classed('active', true);
-            // Ensure that the active bars we are places before any other bar,
-            // thus placing them in the background
-            this.parentNode.insertBefore(this, this.parentNode.children[0]);
-          }
-
-          if (data.id !== sortBy) {
-            el.classed('active', false);
-          }
-        });
-
-        selection.selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-          return Bar.generatePath(data, _this2.mode, sortBy, _this2.visData);
-        });
-      }
-    }, {
-      key: 'updateIndicator',
-      value: function updateIndicator(bars, referenceValue, direct) {
-        Bar.updateIndicator(bars, this.visData.global.column.contentWidth, direct ? this.visData.global.row.contentHeight : 4, referenceValue, this.vis.lessTransitionsJs, direct);
-      }
-    }, {
-      key: 'switchMode',
-      value: function switchMode(mode, currentSorting) {
-        var _this3 = this;
-
-        if (this.mode !== mode) {
-          if (mode === 'one') {
-            if (currentSorting.global.type) {
-              this.selection.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-                return Bar.generateOneBarPath(data, currentSorting.global.type, _this3.visData);
-              });
-            } else {
-              // console.error(
-              //   'Switching magnitude visualization after individual sorting is ' +
-              //   'not supported yet.'
-              // );
-            }
-          }
-
-          if (mode === 'two') {
-            this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return Bar.generateTwoBarsPath(data, _this3.visData);
-            });
-
-            this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return Bar.generateTwoBarsPath(data, _this3.visData, true);
-            });
-          }
-
-          this.mode = mode;
-        }
-      }
-    }]);
-    return Bars;
-  })();
-
-  var CLASS_NODES = 'nodes';
-  var CLASS_NODE = 'node';
-  var CLASS_CLONE = 'clone';
-  var CLASS_LABEL_WRAPPER = 'label-wrapper';
-  var CLASS_FOCUS_CONTROLS = 'focus-controls';
-  var CLASS_ROOT = 'root';
-  var CLASS_QUERY = 'query';
-  var CLASS_LOCK = 'lock';
-  var CLASS_ACTIVE = 'active';
-  var CLASS_INACTIVE = 'inactive';
-
-  var Nodes = (function () {
-    function Nodes(vis, baseSelection, visData, links, events) {
-      var _this = this;
-
-      babelHelpers.classCallCheck(this, Nodes);
-
-      var that = this;
-
-      // Helper
-      function drawFullSizeRect(selection, className, shrinking, noRoundBorder) {
-        var shrinkingAmount = shrinking ? shrinking : 0;
-
-        selection.attr('x', shrinkingAmount).attr('y', that.visData.global.row.padding + shrinkingAmount).attr('width', that.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', that.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
-      }
-
-      this.vis = vis;
-      this.visData = visData;
-      this.links = links;
-      this.events = events;
-      this.currentLinks = {};
-      this.iconDimension = Math.min(this.visData.global.row.contentHeight / 2 - this.visData.global.cell.padding * 2, this.visData.global.column.padding / 2 - 4);
-
-      this.groups = baseSelection.append('g').attr('class', CLASS_NODES).call(function (selection) {
-        selection.each(function storeLinkToGroupNode() {
-          d3.select(this.parentNode).datum().nodes = this;
-        });
-      });
-
-      this.nodes = this.groups.selectAll('.' + CLASS_NODE).data(function (data) {
-        return data.rows;
-      }).enter().append('g').classed(CLASS_NODE, true).classed(CLASS_CLONE, function (data) {
-        return data.clone;
-      }).attr('transform', function (data) {
-        return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
-      }).on('mouseenter', function (data) {
-        that.vis.interactionWrapper.call(that.vis, (function (domEl, _data) {
-          var el = d3.select(domEl);
-
-          if (!!!this.vis.activeScrollbar) {
-            this.enterHandler.call(this, domEl, _data);
-          }
-
-          if (!el.classed('rooted')) {
-            el.selectAll('.bg-extension').style('transform', 'translateX(' + -(this.iconDimension * 2 + 10) + 'px)');
-          }
-        }).bind(that), [this, data]);
-      }).on('mouseleave', function (data) {
-        that.vis.interactionWrapper.call(that.vis, (function (domEl, _data) {
-          var el = d3.select(domEl);
-
-          if (!!!this.vis.activeScrollbar) {
-            this.leaveHandler.call(this, domEl, _data);
-          }
-
-          if (!el.classed('rooted')) {
-            if (_data.data.queryMode) {
-              el.selectAll('.bg-extension').style('transform', 'translateX(' + (-this.iconDimension - 6) + 'px)');
-            } else {
-              el.selectAll('.bg-extension').style('transform', 'translateX(0px)');
-            }
-          }
-        }).bind(that), [this, data]);
-      });
-
-      this.nodes.append('rect').call(drawFullSizeRect, 'bg-extension').attr('width', Math.max(this.visData.global.column.padding + this.visData.global.column.contentWidth / 2, this.visData.global.column.contentWidth));
-
-      this.nodes.append('rect').call(drawFullSizeRect, 'bg-border');
-
-      this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
-
-      // Rooting icons
-      var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT + ' ' + CLASS_INACTIVE);
-
-      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 2, 'hover-helper', 'hover-helper');
-
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 2, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
-
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 2, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
-
-      // Rooting icons
-      var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY + ' ' + CLASS_INACTIVE);
-
-      nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'left', 1, 'hover-helper', 'hover-helper');
-
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#set-inactive');
-
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
-
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
-
-      var nodeLocks = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_LOCK + ' ' + CLASS_INACTIVE);
-
-      nodeLocks.append('circle').call(this.setUpFocusControls.bind(this), 'right', 0, 'bg', 'bg');
-
-      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
-
-      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
-
-      this.bars = new Bars(this.vis, this.nodes, this.vis.barMode, this.visData);
-
-      this.nodes.append('rect').call(drawFullSizeRect, 'border');
-
-      // Add node label
-      this.nodes.append('foreignObject').attr('x', this.visData.global.cell.padding).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2).attr('class', CLASS_LABEL_WRAPPER).append('xhtml:div').attr('class', 'label').attr('title', function (data) {
-        return data.data.name;
-      }).style('line-height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').text(function (data) {
-        return data.data.name;
-      });
-
-      if (isFunction(this.events.on)) {
-        // this.events.on('d3ListGraphNodeClick', dataSetIds => {
-        //   console.log('d3ListGraphNodeClick', dataSetIds);
-        // });
-
-        this.events.on('d3ListGraphFocusNodes', function (event) {
-          return _this.focusNodes(event);
-        });
-
-        this.events.on('d3ListGraphBlurNodes', function (event) {
-          return _this.blurNodes(event);
-        });
-
-        this.events.on('d3ListGraphNodeEnter', function (nodeIds) {
-          return _this.eventHelper(nodeIds, _this.highlightNodes);
-        });
-
-        this.events.on('d3ListGraphNodeLeave', function (nodeIds) {
-          return _this.eventHelper(nodeIds, _this.unhighlightNodes);
-        });
-
-        this.events.on('d3ListGraphNodeLock', function (nodeIds) {
-          return _this.eventHelper(nodeIds, _this.toggleLock, [], '.lock');
-        });
-
-        this.events.on('d3ListGraphNodeUnlock', function (nodeIds) {
-          return _this.eventHelper(nodeIds, _this.toggleLock, [true], '.lock');
-        });
-
-        this.events.on('d3ListGraphNodeRoot', function (data) {
-          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [], '.root');
-        });
-
-        this.events.on('d3ListGraphNodeUnroot', function (data) {
-          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true], '.root');
-        });
-      }
-    }
-
-    babelHelpers.createClass(Nodes, [{
-      key: 'clickHandler',
-      value: function clickHandler(el, data) {
-        this.toggleQueryMode(el.parentNode, data);
-        // this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
-      }
-    }, {
-      key: 'enterHandler',
-      value: function enterHandler(el, data) {
-        this.highlightNodes(el, data);
-
-        var eventData = {
-          id: data.id,
-          clone: false,
-          clonedFromId: undefined
-        };
-
-        if (data.clone) {
-          eventData.clone = true;
-          eventData.clonedFromId = data.originalNode.id;
-        }
-
-        this.events.broadcast('d3ListGraphNodeEnter', eventData);
-      }
-    }, {
-      key: 'leaveHandler',
-      value: function leaveHandler(el, data) {
-        this.unhighlightNodes(el, data);
-
-        var eventData = {
-          id: data.id,
-          clone: false,
-          clonedFromId: undefined
-        };
-
-        if (data.clone) {
-          eventData.clone = true;
-          eventData.clonedFromId = data.originalNode.id;
-        }
-
-        this.events.broadcast('d3ListGraphNodeLeave', eventData);
-      }
-    }, {
-      key: 'lockHandler',
-      value: function lockHandler(el) {
-        var events = this.toggleLock(el);
-
-        if (events.locked && events.unlocked) {
-          if (events.locked) {
-            this.events.broadcast('d3ListGraphNodeLockChange', {
-              lock: {
-                id: events.locked.id,
-                clone: events.locked.clone,
-                clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
-              },
-              unlock: {
-                id: events.unlocked.id,
-                clone: events.unlocked.clone,
-                clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
-              }
-            });
-          }
-        } else {
-          if (events.locked) {
-            this.events.broadcast('d3ListGraphNodeLock', {
-              id: events.locked.id,
-              clone: events.locked.clone,
-              clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
-            });
-          }
-
-          if (events.unlocked) {
-            this.events.broadcast('d3ListGraphNodeUnlock', {
-              id: events.unlocked.id,
-              clone: events.unlocked.clone,
-              clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
-            });
-          }
-        }
-      }
-    }, {
-      key: 'rootHandler',
-      value: function rootHandler(el) {
-        var events = this.toggleRoot(el);
-
-        if (events.rooted && events.unrooted) {
-          this.events.broadcast('d3ListGraphNodeReroot', {
-            rooted: {
-              id: events.rooted.id,
-              clone: events.rooted.clone,
-              clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
-            },
-            unrooted: {
-              id: events.unrooted.id,
-              clone: events.unrooted.clone,
-              clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
-            }
-          });
-        } else {
-          if (events.rooted) {
-            this.events.broadcast('d3ListGraphNodeRoot', {
-              id: events.rooted.id,
-              clone: events.rooted.clone,
-              clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
-            });
-          }
-
-          if (events.unrooted) {
-            this.events.broadcast('d3ListGraphNodeUnroot', {
-              id: events.unrooted.id,
-              clone: events.unrooted.clone,
-              clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
-            });
-          }
-        }
-
-        this.events.broadcast('d3ListGraphUpdateBarsRequest', {
-          id: events.rooted.id,
-          clone: events.rooted.clone,
-          clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
-        });
-      }
-    }, {
-      key: 'focusNodes',
-      value: function focusNodes(event) {
-        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]);
-        if (event.zoomOut) {
-          this.vis.globalView(this.nodes.filter(function (data) {
-            return data.hovering > 0;
-          }));
-        } else {
-          this.vis.zoomedView();
-        }
-      }
-    }, {
-      key: 'blurNodes',
-      value: function blurNodes(event) {
-        this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones ? true : false]);
-        if (event.zoomIn) {
-          this.vis.zoomedView();
-        }
-      }
-    }, {
-      key: 'eventHelper',
-      value: function eventHelper(nodeIds, callback, optionalParams, subSelectionClass) {
-        var that = this;
-
-        this.nodes
-        // Filter by node ID
-        .filter(function (data) {
-          return !! ~nodeIds.indexOf(data.id);
-        }).each(function triggerCallback(data) {
-          var el = this;
-
-          if (subSelectionClass) {
-            el = d3.select(this).select(subSelectionClass).node();
-          }
-
-          callback.apply(that, [el, data].concat(optionalParams ? optionalParams : []));
-        });
-      }
-    }, {
-      key: 'toggleLock',
-      value: function toggleLock(el, nodeData, setFalse) {
-        var d3El = d3.select(el);
-        var data = d3El.datum();
-        var events = { locked: false, unlocked: false };
-
-        if (this.lockedNode) {
-          this.lockedNode.classed(CLASS_ACTIVE, false).classed(CLASS_INACTIVE, true);
-          if (this.lockedNode.datum().id === data.id) {
-            this.unlockNode(this.lockedNode.datum().id);
-            events.unlocked = this.lockedNode.datum();
-            this.lockedNode = undefined;
-          } else {
-            // Reset previously locked node;
-            this.unlockNode(this.lockedNode.datum().id);
-            events.unlocked = this.lockedNode.datum();
-
-            if (!setFalse) {
-              d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
-              this.lockNode(data.id);
-              events.locked = data;
-              this.lockedNode = d3El;
-            }
-          }
-        } else {
-          if (!setFalse) {
-            d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
-            this.lockNode(data.id);
-            events.locked = data;
-            this.lockedNode = d3El;
-          }
-        }
-
-        return events;
-      }
-    }, {
-      key: 'lockNode',
-      value: function lockNode(id) {
-        var that = this;
-        var els = this.nodes.filter(function (data) {
-          return data.id === id;
-        });
-
-        els.each(function triggerHighlighter(data) {
-          that.highlightNodes(this, data, 'lock', undefined);
-        });
-
-        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', function width() {
-          return parseInt(d3.select(this).attr('width'), 10) + that.visData.global.row.height / 2;
-        });
-      }
-    }, {
-      key: 'unlockNode',
-      value: function unlockNode(id) {
-        var that = this;
-        var els = this.nodes.filter(function (data) {
-          return data.id === id;
-        });
-        var start = function animationStart() {
-          d3.select(this.parentNode).classed('animating', true);
-        };
-        var end = function animationEnd() {
-          d3.select(this.parentNode).classed('animating', false);
-        };
-
-        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', this.visData.global.column.contentWidth).each('start', start).each('end', end);
-
-        els.each(function (data) {
-          that.unhighlightNodes(this, data, 'lock', undefined);
-        });
-      }
-    }, {
-      key: 'queryNode',
-      value: function queryNode(el, data, mode) {
-        data.data.queryMode = mode;
-        d3.select(el).classed({
-          active: true,
-          inactive: false,
-          'query-and': mode === 'and' ? true : false,
-          'query-or': mode === 'or' ? true : false,
-          'query-not': mode === 'not' ? true : false
-        });
-      }
-    }, {
-      key: 'unqueryNode',
-      value: function unqueryNode(el, data) {
-        data.data.queryMode = undefined;
-        data.data.queryBeforeRooting = undefined;
-        d3.select(el).classed({
-          active: false,
-          inactive: true,
-          'query-and': false,
-          'query-or': false,
-          'query-not': false
-        });
-        if (this.rootedNode) {
-          this.updateVisibility();
-        }
-      }
-    }, {
-      key: 'toggleQueryMode',
-      value: function toggleQueryMode(el, data) {
-        var previousMode = data.data.queryMode;
-
-        if (data.rooted) {
-          if (previousMode !== 'or') {
-            this.queryNode(el, data, 'or');
-          } else {
-            this.queryNode(el, data, 'and');
-          }
-        } else {
-          switch (previousMode) {
-            case 'or':
-              this.queryNode(el, data, 'and');
-              break;
-            case 'and':
-              this.queryNode(el, data, 'not');
-              break;
-            case 'not':
-              this.unqueryNode(el, data);
-              break;
-            default:
-              this.queryNode(el, data, 'or');
-              break;
-          }
-        }
-
-        if (data.data.queryMode) {
-          if (data.data.queryMode !== previousMode) {
-            this.events.broadcast('d3ListGraphNodeQuery', {
-              id: data.id,
-              clone: data.clone,
-              clonedFromId: data.clone ? data.originalNode.id : undefined,
-              mode: data.data.queryMode
-            });
-          }
-        } else {
-          this.events.broadcast('d3ListGraphNodeUnquery', {
-            id: data.id,
-            clone: data.clone,
-            clonedFromId: data.clone ? data.originalNode.id : undefined
-          });
-        }
-      }
-    }, {
-      key: 'progToggleQueryMode',
-      value: function progToggleQueryMode(el, data) {
-        this.toggleQueryMode(d3.select(el).selectAll('.focus-controls.query')[0].node(), data);
-      }
-    }, {
-      key: 'toggleRoot',
-      value: function toggleRoot(el, setFalse) {
-        var d3El = d3.select(el);
-        var data = d3El.datum();
-        var events = { rooted: false, unrooted: false };
-
-        // Blur current levels
-        this.vis.levels.blur();
-
-        if (this.rootedNode) {
-          // Reset current root node
-          this.rootedNode.classed({ active: false, inactive: true });
-          this.unrootNode(this.rootedNode.node(), this.rootedNode.datum());
-          events.unrooted = this.rootedNode.datum();
-
-          // Activate new root
-          if (this.rootedNode.datum().id !== data.id && !setFalse) {
-            d3El.classed({ active: true, inactive: false });
-            this.rootNode(el, data);
-            this.rootedNode = d3El;
-            events.rooted = data;
-          } else {
-            this.rootedNode = undefined;
-            // Highlight first level
-            this.vis.levels.focus(this.vis.activeLevel - this.vis.noRootActiveLevelDiff);
-          }
-        } else {
-          if (!setFalse) {
-            d3El.classed({ active: true, inactive: false });
-            this.rootNode(el, data);
-            events.rooted = data;
-            this.rootedNode = d3El;
-          }
-        }
-
-        return events;
-      }
-    }, {
-      key: 'rootNode',
-      value: function rootNode(el, data) {
-        var d3El = d3.select(el.parentNode);
-
-        data.rooted = true;
-        d3El.classed('rooted', true);
-        this.hideNodes(d3El.node(), data, 'downStream');
-
-        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + -(this.iconDimension * 2 + 10) + 'px)');
-
-        // Highlight level
-        this.vis.levels.focus(data.depth + this.vis.activeLevel);
-
-        if (!data.data.queryMode || data.data.queryMode === 'not') {
-          this.toggleQueryMode(d3El.node(), data);
-          data.data.queryBeforeRooting = false;
-        } else {
-          data.data.queryBeforeRooting = true;
-        }
-      }
-    }, {
-      key: 'unrootNode',
-      value: function unrootNode(el, data) {
-        var d3El = d3.select(el.parentNode);
-
-        var x = 0;
-
-        if (data.data.queryMode) {
-          x = -this.iconDimension - 6;
-        }
-
-        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + x + 'px)');
-
-        data.rooted = false;
-        d3El.classed('rooted', false);
-        this.showNodes(d3El.node(), data, 'downStream');
-
-        if (!data.data.queryBeforeRooting) {
-          this.unqueryNode(d3El.node(), data);
-        }
-      }
-    }, {
-      key: 'setUpFocusControls',
-      value: function setUpFocusControls(selection, location, position, mode, className) {
-        // const height = (this.visData.global.row.contentHeight / 2 -
-        //   this.visData.global.cell.padding * 2);
-
-        var paddedDim = this.iconDimension + 4;
-
-        var x = location === 'left' ? -paddedDim * (position ? position : 1) : this.visData.global.column.contentWidth + 2;
-        var y = this.visData.global.row.padding + (this.visData.global.row.contentHeight - 2 * this.visData.global.cell.padding) / 4;
-
-        if (mode === 'bg') {
-          selection.attr({
-            class: className,
-            cx: x + this.iconDimension / 2,
-            cy: y + this.iconDimension / 2,
-            r: this.iconDimension * 3 / 4
-          });
-        } else if (mode === 'hover-helper') {
-          selection.attr({
-            class: className,
-            x: x - 2,
-            y: y - 2,
-            width: this.iconDimension + 4,
-            height: this.iconDimension + 4
-          });
-        } else {
-          selection.attr({
-            class: className,
-            x: x,
-            y: y,
-            width: this.iconDimension,
-            height: this.iconDimension
-          });
-        }
-      }
-
-      /**
-       * Helper method to hide nodes.
-       *
-       * @method  hideNodes
-       * @author  Fritz Lekschas
-       * @date    2016-02-21
-       * @param   {Object}  el         DOM element.
-       * @param   {Object}  data       D3 data object of `el`.
-       * @param   {String}  direction  Defines whether upstream or downstream nodes
-       *   should be hidden.
-       */
-
-    }, {
-      key: 'hideNodes',
-      value: function hideNodes(el, data, direction) {
-        this.nodesVisibility(el, data, direction);
-      }
-
-      /**
-       * Helper method to show nodes.
-       *
-       * @method  showNodes
-       * @author  Fritz Lekschas
-       * @date    2016-02-21
-       * @param   {Object}  el         DOM element.
-       * @param   {Object}  data       D3 data object of `el`.
-       * @param   {String}  direction  Defines whether upstream or downstream nodes
-       *   should be shown.
-       */
-
-    }, {
-      key: 'showNodes',
-      value: function showNodes(el, data, direction) {
-        this.nodesVisibility(el, data, direction, true);
-      }
-
-      /**
-       * Sets the nodes' visibility
-       *
-       * @method  nodesVisibility
-       * @author  Fritz Lekschas
-       * @date    2016-02-21
-       * @param   {Object}   el         DOM element.
-       * @param   {Object}   data       D3 data object of `el`.
-       * @param   {String}   direction  Defines whether upstream or downstream nodes
-       * @param   {Boolean}  show       If `true` nodes will be shown.
-       */
-
-    }, {
-      key: 'nodesVisibility',
-      value: function nodesVisibility(el, data, direction, show) {
-        if (show) {
-          this.nodes.classed('hidden', false).each(function (nodeData) {
-            return nodeData.hidden = false;
-          });
-        } else {
-          // First we set all nodes to `hidden`.
-          this.nodes.each(function (nodeData) {
-            return nodeData.hidden = true;
-          });
-
-          // Then we set direct child and parent nodes of the current node visible.
-          upAndDown(data, function (nodeData) {
-            return nodeData.hidden = false;
-          });
-
-          // We also show sibling nodes.
-          siblings(data, function (nodeData) {
-            return nodeData.hidden = false;
-          });
-
-          this.nodes.classed('hidden', function (nodeData) {
-            return nodeData.hidden && !nodeData.data.queryMode;
-          });
-        }
-        this.updateVisibility();
-      }
-    }, {
-      key: 'highlightNodes',
-      value: function highlightNodes(el, data, className, restriction, excludeClones) {
-        var _this2 = this;
-
-        var that = this;
-        var nodeId = data.id;
-        var currentNodeData = data.clone ? data.originalNode : data;
-        var includeParents = true;
-        var appliedClassName = className ? className : 'hovering';
-        var includeClones = excludeClones ? false : true;
-        var includeChildren = restriction === 'directParentsOnly' ? false : true;
-
-        // Store link IDs
-        if (!this.currentLinks[appliedClassName]) {
-          this.currentLinks[appliedClassName] = {};
-        }
-        this.currentLinks[appliedClassName][nodeId] = {};
-
-        var currentlyActiveBar = d3.select(el).selectAll('.bar.active .bar-magnitude');
-        if (!currentlyActiveBar.empty()) {
-          currentlyActiveBar = currentlyActiveBar.datum();
-        } else {
-          currentlyActiveBar = undefined;
-        }
-
-        var traverseCallbackUp = function traverseCallbackUp(nodeData, childData) {
-          nodeData.hovering = 2;
-          for (var i = nodeData.links.length; i--;) {
-            // Only push direct parent child connections. E.g.
-            // Store: (parent)->(child)
-            // Ignore: (parent)->(siblings of child)
-            if (nodeData.links[i].target.node.id === childData.id) {
-              _this2.currentLinks[appliedClassName][nodeId][nodeData.links[i].id] = true;
-            }
-          }
-        };
-
-        var traverseCallbackDown = function traverseCallbackDown(nodeData) {
-          nodeData.hovering = 2;
-          for (var i = nodeData.links.length; i--;) {
-            _this2.currentLinks[appliedClassName][nodeId][nodeData.links[i].id] = true;
-          }
-        };
-
-        if (includeParents && includeChildren) {
-          upAndDown(data, traverseCallbackUp, traverseCallbackDown, undefined, includeClones);
-        }
-        if (includeParents && !includeChildren) {
-          up(data, traverseCallbackUp, undefined, includeClones);
-        }
-        if (!includeParents && includeChildren) {
-          down(data, traverseCallbackUp, undefined, includeClones);
-        }
-
-        currentNodeData.hovering = 1;
-
-        if (includeClones) {
-          for (var i = currentNodeData.clones.length; i--;) {
-            currentNodeData.clones[i].hovering = 1;
-          }
-        }
-
-        /**
-         * Helper method to assess the node visibility.
-         *
-         * @method  checkNodeVisibility
-         * @author  Fritz Lekschas
-         * @date    2016-02-25
-         * @param   {Object}  _el    [description]
-         * @param   {Object}  _data  [description]
-         * @return  {Boolean}        If `true` element is hidden.
-         */
-        function checkNodeVisibility(_el, _data) {
-          return !_data.hidden && !that.vis.isHidden.call(that.vis, _el);
-        }
-
-        /**
-         * Helper method to filter out directly hovered nodes.
-         *
-         * @method  checkNodeDirect
-         * @author  Fritz Lekschas
-         * @date    2016-02-25
-         * @param   {Object}  nodeData  The node's data object.
-         * @return  {Boolean}           If `true` element will not be filtered out.
-         */
-        function checkNodeDirect(nodeData) {
-          return nodeData.hovering === 1 && checkNodeVisibility(this, nodeData);
-        }
-
-        /**
-         * Helper method to filter out indirectly hovered nodes.
-         *
-         * @method  checkNodeIndirect
-         * @author  Fritz Lekschas
-         * @date    2016-02-25
-         * @param   {Object}  nodeData  The node's data object.
-         * @return  {Boolean}           If `true` element will not be filtered out.
-         */
-        function checkNodeIndirect(nodeData) {
-          return nodeData.hovering === 2 && checkNodeVisibility(this, nodeData);
-        }
-
-        /**
-         * Helper method to update bar indicators of the directly hovered node and
-         * clones.
-         *
-         * @method  updateDirectBarIndicator
-         * @author  Fritz Lekschas
-         * @date    2016-02-25
-         * @param   {Object}  selection  D3 node selection.
-         */
-        function updateDirectBarIndicator(selection) {
-          that.bars.updateIndicator(selection, currentlyActiveBar.value, true);
-        }
-
-        /**
-         * Helper method to update bar indicators of the indirectly hovered nodes.
-         *
-         * @method  updateDirectBarIndicator
-         * @author  Fritz Lekschas
-         * @date    2016-02-25
-         * @param   {Object}  selection  D3 node selection.
-         */
-        function updateIndirectBarIndicator(selection) {
-          that.bars.updateIndicator(selection, currentlyActiveBar.value);
-        }
-
-        var barIndicatorClass = currentlyActiveBar ? '.bar.' + currentlyActiveBar.id + ' .bar-indicator' : '';
-        var directNodes = this.nodes.filter(checkNodeDirect).classed(appliedClassName + '-directly', true);
-        var indirectNodes = this.nodes.filter(checkNodeIndirect).classed(appliedClassName + '-indirectly', true);
-
-        if (currentlyActiveBar) {
-          directNodes.select(barIndicatorClass).call(updateDirectBarIndicator);
-          indirectNodes.select(barIndicatorClass).call(updateIndirectBarIndicator);
-        }
-
-        this.links.highlight(this.currentLinks[appliedClassName][data.id], true, appliedClassName);
-      }
-    }, {
-      key: 'unhighlightNodes',
-      value: function unhighlightNodes(el, data, className, restriction, excludeClones) {
-        var traverseCallback = function traverseCallback(nodeData) {
-          return nodeData.hovering = 0;
-        };
-        var includeParents = true;
-        var appliedClassName = className ? className : 'hovering';
-        var includeClones = excludeClones ? false : true;
-        var includeChildren = restriction === 'directParentsOnly' ? false : true;
-
-        data.hovering = 0;
-        if (includeParents && includeChildren) {
-          upAndDown(data, traverseCallback, undefined, undefined, includeClones);
-        }
-        if (includeParents && !includeChildren) {
-          up(data, traverseCallback, undefined, includeClones);
-        }
-        if (!includeParents && includeChildren) {
-          down(data, traverseCallback, undefined, includeClones);
-        }
-
-        if (data.clone) {
-          data.originalNode.hovering = 0;
-        } else {
-          if (includeClones) {
-            for (var i = data.clones.length; i--;) {
-              data.clones[i].hovering = 0;
-            }
-          }
-        }
-
-        this.nodes.classed(appliedClassName + '-directly', false);
-        this.nodes.classed(appliedClassName + '-indirectly', false);
-
-        if (this.currentLinks[appliedClassName][data.id]) {
-          this.links.highlight(this.currentLinks[appliedClassName][data.id], false, appliedClassName);
-        }
-      }
-    }, {
-      key: 'sort',
-      value: function sort(update, newSortType) {
-        var _this3 = this;
-
-        for (var i = update.length; i--;) {
-          var selection = this.nodes.data(update[i].rows, function (data) {
-            return data.id;
-          });
-
-          this.vis.svgD3.classed('sorting', true);
-          selection.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-            return 'translate(' + (data.x + _this3.visData.global.column.padding) + ', ' + data.y + ')';
-          }).call(allTransitionsEnded, function () {
-            _this3.vis.svgD3.classed('sorting', false);
-            _this3.vis.updateLevelsVisibility();
-            _this3.vis.updateScrolling();
-          });
-
-          if (newSortType && this.vis.currentSorting.local[update[i].level].type !== 'name') {
-            this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
-          }
-        }
-      }
-
-      /**
-       * Updates the nodes' visibility visually.
-       *
-       * @method  updateVisibility
-       * @author  Fritz Lekschas
-       * @date    2016-02-21
-       */
-
-    }, {
-      key: 'updateVisibility',
-      value: function updateVisibility() {
-        var _this4 = this;
-
-        // Calls the D3 list graph layout method to update the nodes position.
-        this.vis.layout.updateNodesVisibility();
-
-        // Transition to the updated position
-        this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-          return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
-        }).call(allTransitionsEnded, function () {
-          _this4.vis.updateLevelsVisibility();
-          _this4.vis.updateScrolling();
-        });
-
-        this.vis.links.updateVisibility();
-      }
-    }, {
-      key: 'classNnodes',
-      get: function get() {
-        return CLASS_NODES;
-      }
-    }, {
-      key: 'classNode',
-      get: function get() {
-        return CLASS_NODE;
-      }
-    }, {
-      key: 'classClone',
-      get: function get() {
-        return CLASS_CLONE;
-      }
-    }, {
-      key: 'classLabelWrapper',
-      get: function get() {
-        return CLASS_LABEL_WRAPPER;
-      }
-    }, {
-      key: 'classFocusControls',
-      get: function get() {
-        return CLASS_FOCUS_CONTROLS;
-      }
-    }, {
-      key: 'classRoot',
-      get: function get() {
-        return CLASS_ROOT;
-      }
-    }, {
-      key: 'classQuery',
-      get: function get() {
-        return CLASS_QUERY;
-      }
-    }, {
-      key: 'classLock',
-      get: function get() {
-        return CLASS_LOCK;
-      }
-    }, {
-      key: 'barMode',
-      get: function get() {
-        return this.bars.mode;
-      }
-    }]);
-    return Nodes;
-  })();
-
-  var LINKS_CLASS = 'links';
-  var LINK_CLASS = 'link';
-
-  var Links = (function () {
-    function Links(levels, visData, layout) {
-      var _this = this;
-
-      babelHelpers.classCallCheck(this, Links);
-
-      this.visData = visData;
-      this.layout = layout;
-
-      this.groups = levels.append('g').attr('class', LINKS_CLASS).call(function (selection) {
-        selection.each(function () {
-          d3.select(this.parentNode).datum().links = this;
-        });
-      });
-
-      this.links = this.groups.selectAll(LINK_CLASS + '-bg').data(function (data, index) {
-        return _this.layout.links(index);
-      }).enter().append('g').attr('class', LINK_CLASS);
-
-      this.links.append('path').attr({
-        class: LINK_CLASS + '-bg',
-        d: this.diagonal
-      });
-
-      this.links.append('path').attr({
-        class: LINK_CLASS + '-direct',
-        d: this.diagonal
-      });
-    }
-
-    babelHelpers.createClass(Links, [{
-      key: 'highlight',
-      value: function highlight(nodeIds, _highlight, className) {
-        this.links.filter(function (data) {
-          return nodeIds[data.id];
-        }).classed(className, _highlight);
-      }
-    }, {
-      key: 'scroll',
-      value: function scroll(selection, data) {
-        // Update data of `g`.
-        selection.data(data);
-
-        // Next update all paths according to the new data.
-        selection.selectAll('path').attr('d', this.diagonal);
-      }
-    }, {
-      key: 'sort',
-      value: function sort(update) {
-        var start = function start() {
-          d3.select(this).classed('sorting', true);
-        };
-        var end = function end() {
-          d3.select(this).classed('sorting', false);
-        };
-
-        // Update data of `g`.
-        this.links.data(update, function (data) {
-          return data.id;
-        });
-
-        // Next update all paths according to the new data.
-        this.links.selectAll('path').transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal).each('start', start).each('end', end);
-      }
-    }, {
-      key: 'updateVisibility',
-      value: function updateVisibility() {
-        this.links.selectAll('path').classed('hidden', function (data) {
-          return data.target.node.hidden || data.source.node.hidden;
-        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal);
-      }
-    }, {
-      key: 'diagonal',
-      get: function get() {
-        var _this2 = this;
-
-        return d3.svg.diagonal().source(function (data) {
-          return {
-            x: data.source.node.y + data.source.offsetY + _this2.visData.global.row.height / 2,
-            y: data.source.node.x + data.source.offsetX + _this2.visData.global.column.contentWidth + _this2.visData.global.column.padding
-          };
-        }).target(function (data) {
-          return {
-            x: data.target.node.y + data.target.offsetY + _this2.visData.global.row.height / 2,
-            y: data.target.node.x + data.target.offsetX + _this2.visData.global.column.padding
-          };
-        }).projection(function (data) {
-          return [data.y, data.x];
-        });
-      }
-    }]);
-    return Links;
-  })();
-
-  var COLUMN_CLASS = 'column';
-  var SCROLL_CONTAINER_CLASS = 'scroll-container';
-
-  var Levels = (function () {
-    function Levels(selection, vis, visData) {
-      var _this = this;
-
-      babelHelpers.classCallCheck(this, Levels);
-
-      this.vis = vis;
-      this.visData = visData;
-      this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS).classed('active', function (data, index) {
-        if (_this.vis.highlightActiveLevel) {
-          if (!_this.vis.nodes || !_this.vis.nodes.rootedNode) {
-            return index === _this.vis.activeLevel - _this.vis.noRootActiveLevelDiff;
-          }
-          return index === _this.vis.activeLevel;
-        }
-      });
-
-      // We need to add an empty rectangle that fills up the whole column to ensure
-      // that the `g`'s size is at a maximum, otherwise scrolling will be halted
-      // when the cursor leaves an actually drawn element.
-      this.groups.append('rect').attr('class', SCROLL_CONTAINER_CLASS).attr('x', function (data) {
-        return data.x;
-      }).attr('y', function (data) {
-        return data.y;
-      }).attr('width', this.visData.global.column.width + 1).attr('height', this.visData.global.column.height);
-    }
-
-    babelHelpers.createClass(Levels, [{
-      key: 'scrollPreparation',
-      value: function scrollPreparation(vis, scrollbarWidth) {
-        var _this2 = this;
-
-        this.groups.each(function (data, index) {
-          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this2.visData.global.row.padding;
-          var scrollHeight = contentHeight - _this2.visData.global.column.height;
-          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this2.visData.global.column.height * _this2.visData.global.column.height / contentHeight, 10) : 0;
-
-          data.height = contentHeight;
-          data.linkSelections = {
-            incoming: index > 0 ? vis.selectByLevel(index - 1, '.link') : null,
-            outgoing: vis.selectByLevel(index, '.link')
-          };
-          data.scrollHeight = scrollHeight;
-          data.scrollTop = 0;
-          data.scrollbar = {
-            el: undefined,
-            x: data.x + _this2.visData.global.column.width - scrollbarWidth,
-            y: 0,
-            width: scrollbarWidth,
-            height: scrollbarHeight,
-            scrollHeight: _this2.visData.global.column.height - scrollbarHeight,
-            scrollTop: 0,
-            heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight])
-          };
-          data.invertedHeightScale = data.scrollbar.heightScale.invert;
-        });
-      }
-    }, {
-      key: 'updateScrollProperties',
-      value: function updateScrollProperties() {
-        var _this3 = this;
-
-        this.groups.each(function (data) {
-          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this3.visData.global.row.padding;
-          var scrollHeight = contentHeight - _this3.visData.global.column.height;
-          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this3.visData.global.column.height * _this3.visData.global.column.height / contentHeight, 10) : 0;
-
-          data.height = contentHeight;
-          data.scrollHeight = scrollHeight;
-          data.scrollTop = 0;
-          data.scrollbar.y = 0;
-          data.scrollbar.height = scrollbarHeight;
-          data.scrollbar.scrollHeight = _this3.visData.global.column.height - scrollbarHeight;
-          data.scrollbar.scrollTop = 0;
-          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this3.visData.global.column.height - scrollbarHeight]);
-        });
-      }
-    }, {
-      key: 'updateVisibility',
-      value: function updateVisibility() {
-        this.groups.each(function () {
-          var group = d3.select(this);
-
-          group.classed('hidden', group.selectAll('.node').filter(function (data) {
-            return !data.hidden;
-          }).empty());
-        });
-      }
-    }, {
-      key: 'focus',
-      value: function focus(level) {
-        if (this.vis.highlightActiveLevel) {
-          this.groups.filter(function (data) {
-            return data.level === level;
-          }).classed('active', true);
-        }
-      }
-    }, {
-      key: 'blur',
-      value: function blur(level) {
-        if (this.vis.highlightActiveLevel) {
-          if (level) {
-            this.groups.filter(function (data) {
-              return data.level === level;
-            }).classed('active', false);
-          } else {
-            this.groups.classed('active', false);
-          }
-        }
-      }
-    }, {
-      key: 'className',
-      get: function get() {
-        return COLUMN_CLASS;
-      }
-    }, {
-      key: 'height',
-      get: function get() {
-        return this.visData.global.column.height;
-      }
-    }]);
-    return Levels;
-  })();
 
   var TOPBAR_EL = 'div';
   var TOPBAR_CLASS = 'top-bar';
@@ -1905,7 +124,7 @@ var ListGraph = (function ($,d3) { 'use strict';
   var TOPBAR_CONTROL_CLASS = 'controls';
   var TOPBAR_GLOBAL_CONTROL_CLASS = 'global-controls';
 
-  var Topbar = (function () {
+  var Topbar = function () {
     function Topbar(vis, selection, visData) {
       var _this = this;
 
@@ -1936,16 +155,17 @@ var ListGraph = (function ($,d3) { 'use strict';
           that.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
+        return false;
       }).on('click', function () {
         that.sortAllColumns(this, 'precision');
       }).on('mouseenter', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightBars(undefined, 'precision');
-        }).bind(_this), []);
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightBars(undefined, 'precision');
+        }, []);
       }).on('mouseleave', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightBars(undefined, 'precision', true);
-        }).bind(_this), []);
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightBars(undefined, 'precision', true);
+        }, []);
       });
 
       this.globalPrecisionWrapper = this.globalPrecision.append('div').attr('class', 'wrapper');
@@ -1965,16 +185,17 @@ var ListGraph = (function ($,d3) { 'use strict';
           that.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
+        return false;
       }).on('click', function () {
         that.sortAllColumns(this, 'recall');
       }).on('mouseenter', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightBars(undefined, 'recall');
-        }).bind(_this), []);
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightBars(undefined, 'recall');
+        }, []);
       }).on('mouseleave', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightBars(undefined, 'recall', true);
-        }).bind(_this), []);
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightBars(undefined, 'recall', true);
+        }, []);
       });
 
       this.globalRecallWrapper = this.globalRecall.append('div').attr('class', 'wrapper');
@@ -1994,16 +215,17 @@ var ListGraph = (function ($,d3) { 'use strict';
           that.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
+        return false;
       }).on('click', function () {
         that.sortAllColumns(this, 'name');
       }).on('mouseenter', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightLabels();
-        }).bind(_this), []);
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightLabels();
+        }, []);
       }).on('mouseleave', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.highlightLabels(true);
-        }).bind(_this), []);
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.highlightLabels(true);
+        }, []);
       });
 
       this.globalNameWrapper = this.globalName.append('div').attr('class', 'wrapper');
@@ -2036,13 +258,13 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       // Add button for zoom-out
       this.globalZoomOut = this.globalControls.append('li').attr('class', 'control-btn zoom-out').classed('active', this.vis.zoomedOut).on('mouseenter', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.vis.globalView.call(this.vis);
-        }).bind(_this), []);
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.vis.globalView.call(_this.vis);
+        }, []);
       }).on('mouseleave', function () {
-        _this.vis.interactionWrapper.call(_this.vis, (function () {
-          this.vis.zoomedView.call(this.vis);
-        }).bind(_this), []);
+        _this.vis.interactionWrapper.call(_this.vis, function () {
+          _this.vis.zoomedView.call(_this.vis);
+        }, []);
       }).on('click', function () {
         that.vis.toggleView.call(that.vis);
         d3.select(this).classed('active', that.vis.zoomedOut);
@@ -2079,6 +301,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             that.vis.currentSorting.local[index].el = d3.select(this);
             return true;
           }
+          return false;
         }).style({
           width: that.visData.global.column.contentWidth / 2 + 'px',
           left: that.visData.global.column.padding + 'px'
@@ -2101,6 +324,7 @@ var ListGraph = (function ($,d3) { 'use strict';
             that.vis.currentSorting.local[index].el = d3.select(this);
             return true;
           }
+          return false;
         }).style({
           width: that.visData.global.column.contentWidth / 2 + 'px',
           left: that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px'
@@ -2270,112 +494,297 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }]);
     return Topbar;
-  })();
+  }();
+
+  var COLUMN_CLASS = 'column';
+  var SCROLL_CONTAINER_CLASS = 'scroll-container';
+
+  var Levels = function () {
+    function Levels(selection, vis, visData) {
+      var _this = this;
+
+      babelHelpers.classCallCheck(this, Levels);
+
+      this.vis = vis;
+      this.visData = visData;
+      this.groups = selection.selectAll('g').data(this.visData.nodes).enter().append('g').attr('class', COLUMN_CLASS).classed('active', function (data, index) {
+        if (_this.vis.highlightActiveLevel) {
+          if (!_this.vis.nodes || !_this.vis.nodes.rootedNode) {
+            return index === _this.vis.activeLevel - _this.vis.noRootActiveLevelDiff;
+          }
+          return index === _this.vis.activeLevel;
+        }
+        return false;
+      });
+
+      // We need to add an empty rectangle that fills up the whole column to ensure
+      // that the `g`'s size is at a maximum, otherwise scrolling will be halted
+      // when the cursor leaves an actually drawn element.
+      this.groups.append('rect').attr('class', SCROLL_CONTAINER_CLASS).attr('x', function (data) {
+        return data.x;
+      }).attr('y', function (data) {
+        return data.y;
+      }).attr('width', this.visData.global.column.width + 1).attr('height', this.visData.global.column.height);
+    }
+
+    babelHelpers.createClass(Levels, [{
+      key: 'scrollPreparation',
+      value: function scrollPreparation(vis, scrollbarWidth) {
+        var _this2 = this;
+
+        this.groups.each(function (data, index) {
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this2.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this2.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this2.visData.global.column.height * _this2.visData.global.column.height / contentHeight, 10) : 0;
+
+          data.height = contentHeight;
+          data.linkSelections = {
+            incoming: index > 0 ? vis.selectByLevel(index - 1, '.link') : null,
+            outgoing: vis.selectByLevel(index, '.link')
+          };
+          data.scrollHeight = scrollHeight;
+          data.scrollTop = 0;
+          data.scrollbar = {
+            el: undefined,
+            x: data.x + _this2.visData.global.column.width - scrollbarWidth,
+            y: 0,
+            width: scrollbarWidth,
+            height: scrollbarHeight,
+            scrollHeight: _this2.visData.global.column.height - scrollbarHeight,
+            scrollTop: 0,
+            heightScale: d3.scale.linear().domain([0, scrollHeight]).range([0, _this2.visData.global.column.height - scrollbarHeight])
+          };
+          data.invertedHeightScale = data.scrollbar.heightScale.invert;
+        });
+      }
+    }, {
+      key: 'updateScrollProperties',
+      value: function updateScrollProperties() {
+        var _this3 = this;
+
+        this.groups.each(function (data) {
+          var contentHeight = data.nodes.getBoundingClientRect().height + 2 * _this3.visData.global.row.padding;
+          var scrollHeight = contentHeight - _this3.visData.global.column.height;
+          var scrollbarHeight = scrollHeight > 0 ? Math.max(_this3.visData.global.column.height * _this3.visData.global.column.height / contentHeight, 10) : 0;
+
+          data.height = contentHeight;
+          data.scrollHeight = scrollHeight;
+          data.scrollTop = 0;
+          data.scrollbar.y = 0;
+          data.scrollbar.height = scrollbarHeight;
+          data.scrollbar.scrollHeight = _this3.visData.global.column.height - scrollbarHeight;
+          data.scrollbar.scrollTop = 0;
+          data.scrollbar.heightScale = d3.scale.linear().domain([0, scrollHeight]).range([0, _this3.visData.global.column.height - scrollbarHeight]);
+        });
+      }
+    }, {
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        this.groups.each(function () {
+          var group = d3.select(this);
+
+          group.classed('hidden', group.selectAll('.node').filter(function (data) {
+            return !data.hidden;
+          }).empty());
+        });
+      }
+    }, {
+      key: 'focus',
+      value: function focus(level) {
+        if (this.vis.highlightActiveLevel) {
+          this.groups.filter(function (data) {
+            return data.level === level;
+          }).classed('active', true);
+        }
+      }
+    }, {
+      key: 'blur',
+      value: function blur(level) {
+        if (this.vis.highlightActiveLevel) {
+          if (level) {
+            this.groups.filter(function (data) {
+              return data.level === level;
+            }).classed('active', false);
+          } else {
+            this.groups.classed('active', false);
+          }
+        }
+      }
+    }, {
+      key: 'className',
+      get: function get() {
+        return COLUMN_CLASS;
+      }
+    }, {
+      key: 'height',
+      get: function get() {
+        return this.visData.global.column.height;
+      }
+    }]);
+    return Levels;
+  }();
+
+  var LINKS_CLASS = 'links';
+  var LINK_CLASS = 'link';
+
+  var Links = function () {
+    function Links(vis, levels, visData, layout) {
+      var _this = this;
+
+      babelHelpers.classCallCheck(this, Links);
+
+      this.vis = vis;
+      this.visData = visData;
+      this.layout = layout;
+
+      this.groups = levels.append('g').attr('class', LINKS_CLASS).call(function (selection) {
+        selection.each(function () {
+          d3.select(this.parentNode).datum().links = this;
+        });
+      });
+
+      this.links = this.groups.selectAll(LINK_CLASS).data(function (data, index) {
+        return _this.layout.links(index);
+      }).enter().append('g').attr('class', LINK_CLASS).classed('visible', !this.vis.hideOutwardsLinks || this.linkVisibility.bind(this));
+
+      this.links.append('path').attr({
+        class: LINK_CLASS + '-bg',
+        d: this.diagonal
+      });
+
+      this.links.append('path').attr({
+        class: LINK_CLASS + '-direct',
+        d: this.diagonal
+      });
+    }
+
+    babelHelpers.createClass(Links, [{
+      key: 'linkVisibility',
+      value: function linkVisibility(data) {
+        // Cache visibility.
+        data.hidden = this.vis.pointsOutside.call(this.vis, data);
+        return data.hidden === 0;
+      }
+    }, {
+      key: 'highlight',
+      value: function highlight(nodeIds, _highlight, className) {
+        this.links.filter(function (data) {
+          return nodeIds[data.id];
+        }).classed(className, _highlight);
+      }
+    }, {
+      key: 'scroll',
+      value: function scroll(selection, data) {
+        // Update data of `g`.
+        selection.data(data);
+
+        if (this.vis.hideOutwardsLinks) {
+          // Check if links point outwards.
+          selection.classed('visible', this.linkVisibility.bind(this));
+        }
+
+        // Next, update all paths according to the new data.
+        selection.selectAll('path').attr('d', this.diagonal);
+      }
+    }, {
+      key: 'sort',
+      value: function sort(update) {
+        var start = function start() {
+          d3.select(this).classed('sorting', true);
+        };
+        var end = function end() {
+          d3.select(this).classed('sorting', false);
+        };
+
+        // Update data of `g`.
+        this.links.data(update, function (data) {
+          return data.id;
+        });
+
+        // Next update all paths according to the new data.
+        this.links.selectAll('path').transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal).each('start', start).each('end', end);
+      }
+    }, {
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        this.links.selectAll('path').classed('hidden', function (data) {
+          return data.target.node.hidden || data.source.node.hidden;
+        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal);
+      }
+    }, {
+      key: 'diagonal',
+      get: function get() {
+        var _this2 = this;
+
+        var extraOffsetX = this.vis.showLinkLocation ? 6 : 0;
+
+        function getSourceX(source) {
+          return source.node.x + source.offsetX + this.visData.global.column.contentWidth + this.visData.global.column.padding;
+        }
+
+        function getTargetX(source) {
+          return source.node.x + source.offsetX + this.visData.global.column.padding;
+        }
+
+        function getY(source) {
+          return source.node.y + source.offsetY + this.visData.global.row.height / 2;
+        }
+
+        return function (data) {
+          var sourceY = getY.call(_this2, data.source);
+          var sourceX = getSourceX.call(_this2, data.source);
+          var targetY = getY.call(_this2, data.target);
+          var targetX = getTargetX.call(_this2, data.target);
+          var middleX = (sourceX + targetX) / 2;
+
+          return 'M' + sourceX + ',' + sourceY + 'h' + extraOffsetX + 'C' + (middleX + extraOffsetX) + ',' + sourceY + ' ' + (middleX - extraOffsetX) + ',' + targetY + ' ' + (targetX - extraOffsetX) + ',' + targetY + 'h' + extraOffsetX;
+        };
+      }
+    }]);
+    return Links;
+  }();
 
   /**
-   * Checks if `value` is object-like.
-   *
-   * @private
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
-   */
-  function isObjectLike(value) {
-    return !!value && typeof value == 'object';
-  }
-
-  /** Used to detect host constructors (Safari > 5). */
-  var reIsHostCtor = /^\[object .+?Constructor\]$/;
-
-  /** Used for native method references. */
-  var objectProto$2 = Object.prototype;
-
-  /** Used to resolve the decompiled source of functions. */
-  var fnToString = Function.prototype.toString;
-
-  /** Used to check objects for own properties. */
-  var hasOwnProperty = objectProto$2.hasOwnProperty;
-
-  /** Used to detect if a method is native. */
-  var reIsNative = RegExp('^' +
-    fnToString.call(hasOwnProperty).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
-    .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
-  );
-
-  /**
-   * Checks if `value` is a native function.
+   * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
+   * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
    *
    * @static
    * @memberOf _
    * @category Lang
    * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a native function, else `false`.
+   * @returns {boolean} Returns `true` if `value` is an object, else `false`.
    * @example
    *
-   * _.isNative(Array.prototype.push);
+   * _.isObject({});
    * // => true
    *
-   * _.isNative(_);
+   * _.isObject([1, 2, 3]);
+   * // => true
+   *
+   * _.isObject(_.noop);
+   * // => true
+   *
+   * _.isObject(null);
    * // => false
    */
-  function isNative(value) {
-    if (value == null) {
-      return false;
-    }
-    if (isFunction(value)) {
-      return reIsNative.test(fnToString.call(value));
-    }
-    return isObjectLike(value) && reIsHostCtor.test(value);
+  function isObject(value) {
+    var type = typeof value;
+    return !!value && (type == 'object' || type == 'function');
   }
 
-  /**
-   * Gets the native function at `key` of `object`.
-   *
-   * @private
-   * @param {Object} object The object to query.
-   * @param {string} key The key of the method to get.
-   * @returns {*} Returns the function if it's native, else `undefined`.
-   */
-  function getNative(object, key) {
-    var value = object == null ? undefined : object[key];
-    return isNative(value) ? value : undefined;
-  }
-
-  /**
-   * Used as the [maximum length](http://ecma-international.org/ecma-262/6.0/#sec-number.max_safe_integer)
-   * of an array-like value.
-   */
-  var MAX_SAFE_INTEGER = 9007199254740991;
-
-  /**
-   * Checks if `value` is a valid array-like length.
-   *
-   * **Note:** This function is based on [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
-   *
-   * @private
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
-   */
-  function isLength(value) {
-    return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-  }
-
-  /** `Object#toString` result references. */
-  var arrayTag = '[object Array]';
-
-  /** Used for native method references. */
-  var objectProto$1 = Object.prototype;
+  var funcTag = '[object Function]';
+  var genTag = '[object GeneratorFunction]';
+  /** Used for built-in method references. */
+  var objectProto = Object.prototype;
 
   /**
    * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
    * of values.
    */
-  var objToString$1 = objectProto$1.toString;
-
-  /* Native method references for those with the same name as other `lodash` methods. */
-  var nativeIsArray = getNative(Array, 'isArray');
+  var objectToString = objectProto.toString;
 
   /**
-   * Checks if `value` is classified as an `Array` object.
+   * Checks if `value` is classified as a `Function` object.
    *
    * @static
    * @memberOf _
@@ -2384,39 +793,1599 @@ var ListGraph = (function ($,d3) { 'use strict';
    * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
    * @example
    *
+   * _.isFunction(_);
+   * // => true
+   *
+   * _.isFunction(/abc/);
+   * // => false
+   */
+  function isFunction(value) {
+    // The use of `Object#toString` avoids issues with the `typeof` operator
+    // in Safari 8 which returns 'object' for typed array constructors, and
+    // PhantomJS 1.9 which returns 'function' for `NodeList` instances.
+    var tag = isObject(value) ? objectToString.call(value) : '';
+    return tag == funcTag || tag == genTag;
+  }
+
+  /**
+   * Checks if `value` is a global object.
+   *
+   * @private
+   * @param {*} value The value to check.
+   * @returns {null|Object} Returns `value` if it's a global object, else `null`.
+   */
+  function checkGlobal(value) {
+    return (value && value.Object === Object) ? value : null;
+  }
+
+  /** Used to determine if values are of the language type `Object`. */
+  var objectTypes = {
+    'function': true,
+    'object': true
+  };
+
+  /** Detect free variable `exports`. */
+  var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
+    ? exports
+    : undefined;
+
+  /** Detect free variable `module`. */
+  var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
+    ? module
+    : undefined;
+
+  /** Detect free variable `global` from Node.js. */
+  var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
+
+  /** Detect free variable `self`. */
+  var freeSelf = checkGlobal(objectTypes[typeof self] && self);
+
+  /** Detect free variable `window`. */
+  var freeWindow = checkGlobal(objectTypes[typeof window] && window);
+
+  /** Detect `this` as the global object. */
+  var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
+
+  /**
+   * Used as a reference to the global object.
+   *
+   * The `this` value is used if it's the global object to avoid Greasemonkey's
+   * restricted `window` object, otherwise the `window` object is used.
+   */
+  var root = freeGlobal ||
+    ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
+      freeSelf || thisGlobal || Function('return this')();
+
+  /* Built-in method references for those with the same name as other `lodash` methods. */
+  var nativeIsFinite = root.isFinite;
+
+  /**
+   * Checks if `value` is a finite primitive number.
+   *
+   * **Note:** This method is based on [`Number.isFinite`](https://mdn.io/Number/isFinite).
+   *
+   * @static
+   * @memberOf _
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is a finite number, else `false`.
+   * @example
+   *
+   * _.isFinite(3);
+   * // => true
+   *
+   * _.isFinite(Number.MAX_VALUE);
+   * // => true
+   *
+   * _.isFinite(3.14);
+   * // => true
+   *
+   * _.isFinite(Infinity);
+   * // => false
+   */
+  function isFinite(value) {
+    return typeof value == 'number' && nativeIsFinite(value);
+  }
+
+  /**
+   * Collect all cloned nodes, including the original node.
+   *
+   * @method  collectInclClones
+   * @author  Fritz Lekschas
+   * @date    2015-12-30
+   * @param   {Object}  node  Start node
+   * @return  {Array}         Array of original and cloned nodes.
+   */
+  function collectInclClones(node) {
+    var originalNode = node;
+
+    if (node.clone) {
+      originalNode = node.originalNode;
+    }
+
+    var clones = [originalNode];
+
+    if (originalNode.clones.length) {
+      clones = clones.concat(originalNode.clones);
+    }
+
+    return clones;
+  }
+
+  function up(node, callback, depth, includeClones, child) {
+    var nodesInclClones = includeClones ? collectInclClones(node) : [node];
+
+    for (var i = nodesInclClones.length; i--;) {
+      if (child) {
+        callback(nodesInclClones[i], child);
+      }
+
+      if (!isFinite(depth) || depth > 0) {
+        var parentsId = Object.keys(nodesInclClones[i].parents);
+        for (var j = parentsId.length; j--;) {
+          up(nodesInclClones[i].parents[parentsId[j]], callback, depth - 1, includeClones, nodesInclClones[i]);
+        }
+      }
+    }
+  }
+
+  function down(node, callback, depth, includeClones) {
+    var nodesInclClones = includeClones ? collectInclClones(node) : [node];
+
+    for (var i = nodesInclClones.length; i--;) {
+      callback(nodesInclClones[i]);
+
+      if (!isFinite(depth) || depth > 0) {
+        for (var j = nodesInclClones[i].childRefs.length; j--;) {
+          down(nodesInclClones[i].childRefs[j], callback, depth - 1, includeClones);
+        }
+      }
+    }
+  }
+
+  function upAndDown(node, callbackUp, callbackDown, depth, includeClones) {
+    if (callbackDown) {
+      up(node, callbackUp, depth, includeClones);
+      down(node, callbackDown, depth, includeClones);
+    } else {
+      up(node, callbackUp, depth, includeClones);
+      down(node, callbackUp, depth, includeClones);
+    }
+  }
+
+  function siblings(node, callback) {
+    var parentsId = Object.keys(node.parents);
+    for (var i = parentsId.length; i--;) {
+      for (var j = node.parents[parentsId[i]].childRefs.length; j--;) {
+        callback(node.parents[parentsId[i]].childRefs[j]);
+      }
+    }
+    // The root node doesn't have a `parents` property but might have `siblings`.
+    if (node.siblings) {
+      var siblingsId = Object.keys(node.siblings);
+      for (var i = siblingsId.length; i--;) {
+        callback(node.siblings[siblingsId[i]]);
+      }
+    }
+  }
+
+  // Credits go to Mike Bostock: http://bl.ocks.org/mbostock/3468167
+  function roundRect(x, y, width, height, radius) {
+    var topLeft = radius.topLeft || 0;
+    var topRight = radius.topRight || 0;
+    var bottomLeft = radius.bottomLeft || 0;
+    var bottomRight = radius.bottomRight || 0;
+
+    return 'M' + (x + topLeft) + ',' + y + 'h' + (width - topLeft - topRight) + 'a' + topRight + ',' + topRight + ' 0 0 1 ' + topRight + ',' + topRight + 'v' + (height - (topRight + bottomRight)) + 'a' + bottomRight + ',' + bottomRight + ' 0 0 1 ' + -bottomRight + ',' + bottomRight + 'h' + (bottomLeft - (width - bottomRight)) + 'a' + bottomLeft + ',' + bottomLeft + ' 0 0 1 ' + -bottomLeft + ',' + -bottomLeft + 'v' + (topLeft - (height - bottomLeft)) + 'a' + topLeft + ',' + topLeft + ' 0 0 1 ' + topLeft + ',' + -topLeft + 'z';
+  }
+
+  var BAR_CLASS = 'bar';
+
+  var Bar = function () {
+    function Bar(barGroup, barData, nodeData, visData, bars) {
+      var _this = this;
+
+      babelHelpers.classCallCheck(this, Bar);
+
+      this.data = barData;
+      this.nodeData = nodeData;
+      this.visData = visData;
+      this.bars = bars;
+
+      this.data.x = nodeData.x;
+      this.data.level = nodeData.depth;
+
+      this.height = this.visData.global.row.contentHeight / (this.data.length * 2) - this.visData.global.cell.padding * 2;
+
+      this.activeHeight = this.visData.global.row.contentHeight - 2;
+
+      this.inactiveheight = this.visData.global.cell.padding * 2 - 1;
+
+      this.selection = barGroup.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
+        return BAR_CLASS + ' ' + data.id;
+      }).classed('active', function (data) {
+        return data.id === _this.visData.nodes[_this.nodeData.depth].sortBy;
+      });
+
+      // Local helper method to avoid code duplication.
+      // Calling a class method from within the consructor is possible but `this`
+      // is not available. Thus, we need to create local function and pass in
+      // `this` as `that`, which feels very hacky but it works.
+      function setupMagnitude(selection) {
+        var _this2 = this;
+
+        var currentSorting = this.visData.nodes[this.nodeData.depth].sortBy;
+
+        selection.attr('d', function (data) {
+          return Bar.generatePath(data, _this2.bars.mode, currentSorting, _this2.visData);
+        }).classed('bar-magnitude', true);
+      }
+
+      function setupBorder(selection) {
+        selection.attr('x', 0).attr('y', this.visData.global.row.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
+      }
+
+      function setupIndicator(selection) {
+        selection.attr({
+          class: 'bar-indicator',
+          x: 0,
+          y: this.visData.global.row.padding,
+          width: 2,
+          height: 4
+        });
+      }
+
+      this.selection.append('rect').call(setupBorder.bind(this));
+
+      this.selection.append('path').call(setupMagnitude.bind(this));
+
+      this.selection.append('rect').call(setupIndicator.bind(this));
+    }
+
+    babelHelpers.createClass(Bar, null, [{
+      key: 'updateIndicator',
+      value: function updateIndicator(selection, contentWidth, contentHeight, referenceValue, lessTransitions, reference) {
+        var y = Math.min(contentWidth * Math.min(referenceValue, 1) - 1, contentWidth - 2);
+
+        // Stop previous transitions.
+        selection.attr({
+          height: contentHeight,
+          x: reference ? y : 0
+        }).classed('positive', function (data) {
+          return data.value >= referenceValue;
+        }).transition().duration(0).attr('width', reference ? 2 : lessTransitions ? y : 0 // eslint-disable-line no-nested-ternary
+        );
+
+        if (!lessTransitions && !reference) {
+          selection.transition().duration(TRANSITION_SEMI_FAST).attr('width', y);
+        }
+      }
+    }, {
+      key: 'generatePath',
+      value: function generatePath(data, mode, currentSorting, visData, indicator, adjustWidth, bottom) {
+        if (mode === 'two') {
+          return Bar.generateTwoBarsPath(data, visData, bottom);
+        }
+        return Bar.generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth);
+      }
+    }, {
+      key: 'generateOneBarPath',
+      value: function generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth) {
+        var height = visData.global.row.contentHeight;
+        var normValue = Math.min(data.value, 1);
+        var normIndicator = Math.min(indicator, 1);
+
+        var x = 0;
+        var width = 2;
+
+        var radius = {
+          topLeft: 2,
+          bottomLeft: 2
+        };
+
+        if (indicator) {
+          radius = {};
+        }
+
+        if (data.id !== currentSorting && typeof indicator === 'undefined') {
+          x = normValue * visData.global.column.contentWidth - 3;
+          radius = {};
+        } else if (indicator) {
+          x = normIndicator * visData.global.column.contentWidth;
+          if (adjustWidth) {
+            if (normValue < normIndicator) {
+              x = normValue * visData.global.column.contentWidth;
+            }
+            width = Math.max(Math.abs(normIndicator - normValue) * visData.global.column.contentWidth, 2);
+          }
+        } else {
+          width = visData.global.column.contentWidth * normValue;
+        }
+
+        x = Math.min(x, visData.global.column.contentWidth - 2);
+
+        return roundRect(x, visData.global.row.padding, width, height, radius);
+      }
+    }, {
+      key: 'generateTwoBarsPath',
+      value: function generateTwoBarsPath(data, visData, bottom) {
+        var normValue = Math.min(data.value, 1);
+        var height = visData.global.row.contentHeight / 2;
+        var width = visData.global.column.contentWidth * normValue;
+
+        var y = visData.global.row.padding;
+        var radius = { topLeft: 2 };
+
+        if (bottom) {
+          radius = { bottomLeft: 2 };
+          y += height;
+        }
+
+        return roundRect(0, y, width, height, radius);
+      }
+    }]);
+    return Bar;
+  }();
+
+  var BARS_CLASS = 'bars';
+
+  var Bars = function () {
+    function Bars(vis, selection, mode, visData) {
+      babelHelpers.classCallCheck(this, Bars);
+
+      var that = this;
+
+      this.vis = vis;
+      this.mode = mode;
+      this.visData = visData;
+
+      this.selection = selection.append('g').attr('class', BARS_CLASS);
+
+      this.selection.each(function (datum) {
+        new Bar(d3.select(this), datum.data.bars, datum, that.visData, that);
+      });
+    }
+
+    babelHelpers.createClass(Bars, [{
+      key: 'updateAll',
+      value: function updateAll(update, sortBy) {
+        var _this = this;
+
+        this.selection.selectAll('.bar-magnitude').data(update, function (data) {
+          return data.barId;
+        }).transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+          return Bar.generatePath(data, _this.mode, sortBy, _this.visData);
+        });
+      }
+    }, {
+      key: 'update',
+      value: function update(selection, sortBy) {
+        var _this2 = this;
+
+        selection.each(function (data) {
+          var el = d3.select(this);
+
+          if (data.id === sortBy && !el.classed('active')) {
+            el.classed('active', true);
+            // Ensure that the active bars we are places before any other bar,
+            // thus placing them in the background
+            this.parentNode.insertBefore(this, this.parentNode.children[0]);
+          }
+
+          if (data.id !== sortBy) {
+            el.classed('active', false);
+          }
+        });
+
+        selection.selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+          return Bar.generatePath(data, _this2.mode, sortBy, _this2.visData);
+        });
+      }
+    }, {
+      key: 'updateIndicator',
+      value: function updateIndicator(bars, referenceValue, direct) {
+        Bar.updateIndicator(bars, this.visData.global.column.contentWidth, direct ? this.visData.global.row.contentHeight : 4, referenceValue, this.vis.lessTransitionsJs, direct);
+      }
+    }, {
+      key: 'switchMode',
+      value: function switchMode(mode, currentSorting) {
+        var _this3 = this;
+
+        if (this.mode !== mode) {
+          if (mode === 'one') {
+            if (currentSorting.global.type) {
+              this.selection.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+                return Bar.generateOneBarPath(data, currentSorting.global.type, _this3.visData);
+              });
+            } else {
+              // console.error(
+              //   'Switching magnitude visualization after individual sorting is ' +
+              //   'not supported yet.'
+              // );
+            }
+          }
+
+          if (mode === 'two') {
+            this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+              return Bar.generateTwoBarsPath(data, _this3.visData);
+            });
+
+            this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+              return Bar.generateTwoBarsPath(data, _this3.visData, true);
+            });
+          }
+
+          this.mode = mode;
+        }
+      }
+    }]);
+    return Bars;
+  }();
+
+  function mergeSelections(selections) {
+    // Create a new empty selection
+    var mergedSelection = d3.selectAll('.d3-list-graph-not-existent');
+
+    function pushSelection(selection) {
+      selection.each(function pushDomNode() {
+        mergedSelection[0].push(this);
+      });
+    }
+
+    for (var i = selections.length; i--;) {
+      pushSelection(selections[i]);
+    }
+
+    return mergedSelection;
+  }
+
+  function allTransitionsEnded(transition, callback) {
+    if (transition.size() === 0) {
+      callback();
+    }
+    var n = 0;
+    transition.each(function () {
+      return ++n;
+    }).each('end', function () {
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      if (! --n) callback.apply(this, args);
+    });
+  }
+
+  var CLASS_NODES = 'nodes';
+  var CLASS_NODE = 'node';
+  var CLASS_CLONE = 'clone';
+  var CLASS_LABEL_WRAPPER = 'label-wrapper';
+  var CLASS_FOCUS_CONTROLS = 'focus-controls';
+  var CLASS_ROOT = 'root';
+  var CLASS_QUERY = 'query';
+  var CLASS_LOCK = 'lock';
+  var CLASS_ACTIVE = 'active';
+  var CLASS_INACTIVE = 'inactive';
+  var CLASS_INDICATOR_BAR = 'link-indicator';
+  var CLASS_INDICATOR_LOCATION = 'link-location-indicator';
+  var CLASS_INDICATOR_INCOMING = 'incoming';
+  var CLASS_INDICATOR_OUTGOING = 'outgoing';
+  var CLASS_INDICATOR_ABOVE = 'above';
+  var CLASS_INDICATOR_BELOW = 'below';
+
+  var Nodes = function () {
+    function Nodes(vis, baseSelection, visData, links, events) {
+      var _this = this;
+
+      babelHelpers.classCallCheck(this, Nodes);
+
+      var that = this;
+
+      this.vis = vis;
+      this.visData = visData;
+      this.links = links;
+      this.events = events;
+      this.currentLinks = {};
+      this.iconDimension = Math.min(this.visData.global.row.contentHeight / 2 - this.visData.global.cell.padding * 2, this.visData.global.column.padding / 2 - 4);
+
+      var linkDensityBg = d3.scale.linear().domain([1, this.vis.rows]).range(['#ccc', '#000']);
+
+      function drawLinkIndicator(selection, direction) {
+        var incoming = direction === 'incoming';
+
+        selection.attr('class', CLASS_INDICATOR_BAR + ' ' + (incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING)).attr('d', roundRect(incoming ? -7 : this.visData.global.column.contentWidth, this.visData.global.row.height / 2 - 1, 7, 2, {
+          topLeft: incoming ? 1 : 0,
+          topRight: incoming ? 0 : 1,
+          bottomLeft: incoming ? 1 : 0,
+          bottomRight: incoming ? 0 : 1
+        })).attr('fill', function (data) {
+          return linkDensityBg(data.links[direction].refs.length);
+        }).classed('visible', function (data) {
+          return data.links[direction].refs.length > 0;
+        });
+      }
+
+      function drawLinkLocationIndicator(selection, direction, position) {
+        var above = position === 'above';
+        var incoming = direction === 'incoming';
+
+        var className = CLASS_INDICATOR_LOCATION + ' ' + (incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING) + ' ' + (above ? CLASS_INDICATOR_ABOVE : CLASS_INDICATOR_BELOW);
+
+        selection.datum(function (data) {
+          return data.links[direction];
+        }).attr('class', className).attr('x', incoming ? -5 : this.visData.global.column.contentWidth + 2).attr('y', above ? this.visData.global.row.height / 2 - 1 : this.visData.global.row.height / 2 + 1).attr('width', 3).attr('height', 3).attr('fill', function (data) {
+          return linkDensityBg(data.refs.length);
+        });
+      }
+
+      // Helper
+      function drawFullSizeRect(selection, className, shrinking, noRoundBorder) {
+        var shrinkingAmount = shrinking || 0;
+
+        selection.attr('x', shrinkingAmount).attr('y', that.visData.global.row.padding + shrinkingAmount).attr('width', that.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', that.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
+      }
+
+      this.groups = baseSelection.append('g').attr('class', CLASS_NODES).call(function (selection) {
+        selection.each(function storeLinkToGroupNode() {
+          d3.select(this.parentNode).datum().nodes = this;
+        });
+      });
+
+      this.nodes = this.groups.selectAll('.' + CLASS_NODE).data(function (data) {
+        return data.rows;
+      }).enter().append('g').classed(CLASS_NODE, true).classed(CLASS_CLONE, function (data) {
+        return data.clone;
+      }).attr('transform', function (data) {
+        return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
+      }).on('mouseenter', function (data) {
+        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
+          var el = d3.select(domEl);
+
+          if (!!!this.vis.activeScrollbar) {
+            this.enterHandler.call(this, domEl, _data);
+          }
+
+          if (!el.classed('rooted')) {
+            el.selectAll('.bg-extension').style('transform', 'translateX(' + (this.vis.querying ? -this.iconDimension * 2 - 10 : -this.iconDimension - 6) + 'px)');
+          }
+        }.bind(that), [this, data]);
+      }).on('mouseleave', function (data) {
+        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
+          var el = d3.select(domEl);
+
+          if (!!!this.vis.activeScrollbar) {
+            this.leaveHandler.call(this, domEl, _data);
+          }
+
+          if (!el.classed('rooted')) {
+            if (_data.data.queryMode) {
+              el.selectAll('.bg-extension').style('transform', 'translateX(' + (-this.iconDimension - 6) + 'px)');
+            } else {
+              el.selectAll('.bg-extension').style('transform', 'translateX(0px)');
+            }
+          }
+        }.bind(that), [this, data]);
+      });
+
+      this.nodes.append('rect').call(drawFullSizeRect, 'bg-extension').attr('width', Math.max(this.visData.global.column.padding + this.visData.global.column.contentWidth / 2, this.visData.global.column.contentWidth));
+
+      this.nodes.append('rect').call(drawFullSizeRect, 'bg-border');
+
+      this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
+
+      if (this.vis.showLinkLocation) {
+        this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'incoming', 'above');
+        this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'incoming', 'bottom');
+        this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'outgoing', 'above');
+        this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'outgoing', 'bottom');
+
+        this.nodes.append('path').call(drawLinkIndicator.bind(this), 'incoming');
+        this.nodes.append('path').call(drawLinkIndicator.bind(this), 'outgoing');
+
+        // Set all the link location indicator bars.
+        this.groups.each(function (data, index) {
+          _this.calcHeightLinkLocationIndicator(index, true, true);
+        });
+      }
+
+      // Rooting icons
+      var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT + ' ' + CLASS_INACTIVE);
+
+      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'hover-helper', 'hover-helper');
+
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+
+      // Querying icons
+      if (this.vis.querying) {
+        var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY + ' ' + CLASS_INACTIVE);
+
+        nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'left', 1, 'hover-helper', 'hover-helper');
+
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#set-inactive');
+
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
+
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
+      }
+
+      var nodeLocks = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_LOCK + ' ' + CLASS_INACTIVE);
+
+      nodeLocks.append('circle').call(this.setUpFocusControls.bind(this), 'right', 0, 'bg', 'bg');
+
+      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+
+      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+
+      this.bars = new Bars(this.vis, this.nodes, this.vis.barMode, this.visData);
+
+      this.nodes.append('rect').call(drawFullSizeRect, 'border');
+
+      // Add node label
+      this.nodes.append('foreignObject').attr('x', this.visData.global.cell.padding).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2).attr('class', CLASS_LABEL_WRAPPER).append('xhtml:div').attr('class', 'label').attr('title', function (data) {
+        return data.data.name;
+      }).style('line-height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').text(function (data) {
+        return data.data.name;
+      });
+
+      if (isFunction(this.events.on)) {
+        // this.events.on('d3ListGraphNodeClick', dataSetIds => {
+        //   console.log('d3ListGraphNodeClick', dataSetIds);
+        // });
+
+        this.events.on('d3ListGraphFocusNodes', function (event) {
+          return _this.focusNodes(event);
+        });
+
+        this.events.on('d3ListGraphBlurNodes', function (event) {
+          return _this.blurNodes(event);
+        });
+
+        this.events.on('d3ListGraphNodeEnter', function (nodeIds) {
+          return _this.eventHelper(nodeIds, _this.highlightNodes);
+        });
+
+        this.events.on('d3ListGraphNodeLeave', function (nodeIds) {
+          return _this.eventHelper(nodeIds, _this.unhighlightNodes);
+        });
+
+        this.events.on('d3ListGraphNodeLock', function (nodeIds) {
+          return _this.eventHelper(nodeIds, _this.toggleLock, [], '.lock');
+        });
+
+        this.events.on('d3ListGraphNodeUnlock', function (nodeIds) {
+          return _this.eventHelper(nodeIds, _this.toggleLock, [true], '.lock');
+        });
+
+        this.events.on('d3ListGraphNodeRoot', function (data) {
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [], '.root');
+        });
+
+        this.events.on('d3ListGraphNodeUnroot', function (data) {
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true], '.root');
+        });
+      }
+    }
+
+    babelHelpers.createClass(Nodes, [{
+      key: 'updateLinkLocationIndicators',
+      value: function updateLinkLocationIndicators(left, right) {
+        this.calcHeightLinkLocationIndicator(left, false, true);
+        this.calcHeightLinkLocationIndicator(right, true, false);
+      }
+    }, {
+      key: 'calcHeightLinkLocationIndicator',
+      value: function calcHeightLinkLocationIndicator(level, incoming, outgoing) {
+        var nodes = this.nodes.filter(function (data) {
+          return data.depth === level;
+        });
+        nodes.each(function (data) {
+          if (incoming) {
+            data.links.incoming.above = 0;
+            data.links.incoming.below = 0;
+            for (var i = data.links.incoming.total; i--;) {
+              // We are checking the source location of the incoming link. The
+              // source location is the location of the node of the column being
+              // scrolled.
+              if ((data.links.incoming.refs[i].hidden & 1) > 0) {
+                data.links.incoming.above++;
+              }
+              if ((data.links.incoming.refs[i].hidden & 2) > 0) {
+                data.links.incoming.below++;
+              }
+            }
+          }
+          if (outgoing) {
+            data.links.outgoing.above = 0;
+            data.links.outgoing.below = 0;
+            for (var i = data.links.outgoing.total; i--;) {
+              // We are checking the target location of the outgoing link. The
+              // source location is the location of the node of the column being
+              // scrolled.
+              if ((data.links.outgoing.refs[i].hidden & 4) > 0) {
+                data.links.outgoing.above++;
+              }
+              if ((data.links.outgoing.refs[i].hidden & 8) > 0) {
+                data.links.outgoing.below++;
+              }
+            }
+          }
+        });
+
+        if (incoming) {
+          this.updateHeightLinkLocationIndicatorBars(nodes);
+        }
+
+        if (outgoing) {
+          this.updateHeightLinkLocationIndicatorBars(nodes, true);
+        }
+      }
+    }, {
+      key: 'updateHeightLinkLocationIndicatorBars',
+      value: function updateHeightLinkLocationIndicatorBars(selection, outgoing) {
+        var barRefHeight = this.visData.global.row.contentHeight / 2 - 1;
+        var barAboveRefTop = this.visData.global.row.height / 2 - 1;
+
+        var baseClassName = '.' + CLASS_INDICATOR_LOCATION + '.' + (outgoing ? CLASS_INDICATOR_OUTGOING : CLASS_INDICATOR_INCOMING);
+
+        selection.selectAll(baseClassName + '.' + CLASS_INDICATOR_ABOVE).attr('y', function (data) {
+          return data.total ? barAboveRefTop - data.above / data.total * barRefHeight : barAboveRefTop;
+        }).attr('height', function (data) {
+          return data.total ? data.above / data.total * barRefHeight : 0;
+        });
+
+        selection.selectAll(baseClassName + '.' + CLASS_INDICATOR_BELOW).attr('height', function (data) {
+          return data.total ? data.below / data.total * barRefHeight : 0;
+        });
+      }
+    }, {
+      key: 'clickHandler',
+      value: function clickHandler(el, data) {
+        this.toggleQueryMode(el.parentNode, data);
+        // this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
+      }
+    }, {
+      key: 'enterHandler',
+      value: function enterHandler(el, data) {
+        this.highlightNodes(el, data);
+
+        var eventData = {
+          id: data.id,
+          clone: false,
+          clonedFromId: undefined
+        };
+
+        if (data.clone) {
+          eventData.clone = true;
+          eventData.clonedFromId = data.originalNode.id;
+        }
+
+        this.events.broadcast('d3ListGraphNodeEnter', eventData);
+      }
+    }, {
+      key: 'leaveHandler',
+      value: function leaveHandler(el, data) {
+        this.unhighlightNodes(el, data);
+
+        var eventData = {
+          id: data.id,
+          clone: false,
+          clonedFromId: undefined
+        };
+
+        if (data.clone) {
+          eventData.clone = true;
+          eventData.clonedFromId = data.originalNode.id;
+        }
+
+        this.events.broadcast('d3ListGraphNodeLeave', eventData);
+      }
+    }, {
+      key: 'lockHandler',
+      value: function lockHandler(el) {
+        var events = this.toggleLock(el);
+
+        if (events.locked && events.unlocked) {
+          if (events.locked) {
+            this.events.broadcast('d3ListGraphNodeLockChange', {
+              lock: {
+                id: events.locked.id,
+                clone: events.locked.clone,
+                clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+              },
+              unlock: {
+                id: events.unlocked.id,
+                clone: events.unlocked.clone,
+                clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+              }
+            });
+          }
+        } else {
+          if (events.locked) {
+            this.events.broadcast('d3ListGraphNodeLock', {
+              id: events.locked.id,
+              clone: events.locked.clone,
+              clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+            });
+          }
+
+          if (events.unlocked) {
+            this.events.broadcast('d3ListGraphNodeUnlock', {
+              id: events.unlocked.id,
+              clone: events.unlocked.clone,
+              clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+            });
+          }
+        }
+      }
+    }, {
+      key: 'rootHandler',
+      value: function rootHandler(el) {
+        var events = this.toggleRoot(el);
+
+        if (events.rooted && events.unrooted) {
+          this.events.broadcast('d3ListGraphNodeReroot', {
+            rooted: {
+              id: events.rooted.id,
+              clone: events.rooted.clone,
+              clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
+            },
+            unrooted: {
+              id: events.unrooted.id,
+              clone: events.unrooted.clone,
+              clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
+            }
+          });
+        } else {
+          if (events.rooted) {
+            this.events.broadcast('d3ListGraphNodeRoot', {
+              id: events.rooted.id,
+              clone: events.rooted.clone,
+              clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
+            });
+          }
+
+          if (events.unrooted) {
+            this.events.broadcast('d3ListGraphNodeUnroot', {
+              id: events.unrooted.id,
+              clone: events.unrooted.clone,
+              clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
+            });
+          }
+        }
+
+        this.events.broadcast('d3ListGraphUpdateBarsRequest', {
+          id: events.rooted.id,
+          clone: events.rooted.clone,
+          clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
+        });
+      }
+    }, {
+      key: 'focusNodes',
+      value: function focusNodes(event) {
+        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones]);
+        if (event.zoomOut) {
+          this.vis.globalView(this.nodes.filter(function (data) {
+            return data.hovering > 0;
+          }));
+        } else {
+          this.vis.zoomedView();
+        }
+      }
+    }, {
+      key: 'blurNodes',
+      value: function blurNodes(event) {
+        this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones]);
+        if (event.zoomIn) {
+          this.vis.zoomedView();
+        }
+      }
+    }, {
+      key: 'eventHelper',
+      value: function eventHelper(nodeIds, callback, optionalParams, subSelectionClass) {
+        var that = this;
+
+        this.nodes
+        // Filter by node ID
+        .filter(function (data) {
+          return !! ~nodeIds.indexOf(data.id);
+        }).each(function triggerCallback(data) {
+          var el = this;
+
+          if (subSelectionClass) {
+            el = d3.select(this).select(subSelectionClass).node();
+          }
+
+          callback.apply(that, [el, data].concat(optionalParams || []));
+        });
+      }
+    }, {
+      key: 'toggleLock',
+      value: function toggleLock(el, nodeData, setFalse) {
+        var d3El = d3.select(el);
+        var data = d3El.datum();
+        var events = { locked: false, unlocked: false };
+
+        if (this.lockedNode) {
+          this.lockedNode.classed(CLASS_ACTIVE, false).classed(CLASS_INACTIVE, true);
+          if (this.lockedNode.datum().id === data.id) {
+            this.unlockNode(this.lockedNode.datum().id);
+            events.unlocked = this.lockedNode.datum();
+            this.lockedNode = undefined;
+          } else {
+            // Reset previously locked node;
+            this.unlockNode(this.lockedNode.datum().id);
+            events.unlocked = this.lockedNode.datum();
+
+            if (!setFalse) {
+              d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
+              this.lockNode(data.id);
+              events.locked = data;
+              this.lockedNode = d3El;
+            }
+          }
+        } else {
+          if (!setFalse) {
+            d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
+            this.lockNode(data.id);
+            events.locked = data;
+            this.lockedNode = d3El;
+          }
+        }
+
+        return events;
+      }
+    }, {
+      key: 'lockNode',
+      value: function lockNode(id) {
+        var that = this;
+        var els = this.nodes.filter(function (data) {
+          return data.id === id;
+        });
+
+        els.each(function triggerHighlighter(data) {
+          that.highlightNodes(this, data, 'lock', undefined);
+        });
+
+        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', function width() {
+          return parseInt(d3.select(this).attr('width'), 10) + that.visData.global.row.height / 2;
+        });
+      }
+    }, {
+      key: 'unlockNode',
+      value: function unlockNode(id) {
+        var that = this;
+        var els = this.nodes.filter(function (data) {
+          return data.id === id;
+        });
+        var start = function animationStart() {
+          d3.select(this.parentNode).classed('animating', true);
+        };
+        var end = function animationEnd() {
+          d3.select(this.parentNode).classed('animating', false);
+        };
+
+        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', this.visData.global.column.contentWidth).each('start', start).each('end', end);
+
+        els.each(function (data) {
+          that.unhighlightNodes(this, data, 'lock', undefined);
+        });
+      }
+    }, {
+      key: 'queryNode',
+      value: function queryNode(el, data, mode) {
+        data.data.queryMode = mode;
+        d3.select(el).classed({
+          active: true,
+          inactive: false,
+          'query-and': mode === 'and',
+          'query-or': mode === 'or',
+          'query-not': mode === 'not'
+        });
+      }
+    }, {
+      key: 'unqueryNode',
+      value: function unqueryNode(el, data) {
+        data.data.queryMode = undefined;
+        data.data.queryBeforeRooting = undefined;
+        d3.select(el).classed({
+          active: false,
+          inactive: true,
+          'query-and': false,
+          'query-or': false,
+          'query-not': false
+        });
+        if (this.rootedNode) {
+          this.updateVisibility();
+        }
+      }
+    }, {
+      key: 'toggleQueryMode',
+      value: function toggleQueryMode(el, data) {
+        var previousMode = data.data.queryMode;
+
+        if (data.rooted) {
+          if (previousMode !== 'or') {
+            this.queryNode(el, data, 'or');
+          } else {
+            this.queryNode(el, data, 'and');
+          }
+        } else {
+          switch (previousMode) {
+            case 'or':
+              this.queryNode(el, data, 'and');
+              break;
+            case 'and':
+              this.queryNode(el, data, 'not');
+              break;
+            case 'not':
+              this.unqueryNode(el, data);
+              break;
+            default:
+              this.queryNode(el, data, 'or');
+              break;
+          }
+        }
+
+        if (data.data.queryMode) {
+          if (data.data.queryMode !== previousMode) {
+            this.events.broadcast('d3ListGraphNodeQuery', {
+              id: data.id,
+              clone: data.clone,
+              clonedFromId: data.clone ? data.originalNode.id : undefined,
+              mode: data.data.queryMode
+            });
+          }
+        } else {
+          this.events.broadcast('d3ListGraphNodeUnquery', {
+            id: data.id,
+            clone: data.clone,
+            clonedFromId: data.clone ? data.originalNode.id : undefined
+          });
+        }
+      }
+    }, {
+      key: 'progToggleQueryMode',
+      value: function progToggleQueryMode(el, data) {
+        this.toggleQueryMode(d3.select(el).selectAll('.focus-controls.query')[0].node(), data);
+      }
+    }, {
+      key: 'toggleRoot',
+      value: function toggleRoot(el, setFalse) {
+        var d3El = d3.select(el);
+        var data = d3El.datum();
+        var events = { rooted: false, unrooted: false };
+
+        // Blur current levels
+        this.vis.levels.blur();
+
+        if (this.rootedNode) {
+          // Reset current root node
+          this.rootedNode.classed({ active: false, inactive: true });
+          this.unrootNode(this.rootedNode.node(), this.rootedNode.datum());
+          events.unrooted = this.rootedNode.datum();
+
+          // Activate new root
+          if (this.rootedNode.datum().id !== data.id && !setFalse) {
+            d3El.classed({ active: true, inactive: false });
+            this.rootNode(el, data);
+            this.rootedNode = d3El;
+            events.rooted = data;
+          } else {
+            this.rootedNode = undefined;
+            // Highlight first level
+            this.vis.levels.focus(this.vis.activeLevel - this.vis.noRootActiveLevelDiff);
+          }
+        } else {
+          if (!setFalse) {
+            d3El.classed({ active: true, inactive: false });
+            this.rootNode(el, data);
+            events.rooted = data;
+            this.rootedNode = d3El;
+          }
+        }
+
+        return events;
+      }
+    }, {
+      key: 'rootNode',
+      value: function rootNode(el, data) {
+        var d3El = d3.select(el.parentNode);
+
+        data.rooted = true;
+        d3El.classed('rooted', true);
+        this.hideNodes(d3El.node(), data, 'downStream');
+
+        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + (this.vis.querying ? -this.iconDimension * 2 - 10 : -this.iconDimension - 6) + 'px)');
+
+        // Highlight level
+        this.vis.levels.focus(data.depth + this.vis.activeLevel);
+
+        if (!data.data.queryMode || data.data.queryMode === 'not') {
+          this.toggleQueryMode(d3El.node(), data);
+          data.data.queryBeforeRooting = false;
+        } else {
+          data.data.queryBeforeRooting = true;
+        }
+      }
+    }, {
+      key: 'unrootNode',
+      value: function unrootNode(el, data) {
+        var d3El = d3.select(el.parentNode);
+
+        var x = 0;
+
+        if (data.data.queryMode) {
+          x = -this.iconDimension - 6;
+        }
+
+        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + x + 'px)');
+
+        data.rooted = false;
+        d3El.classed('rooted', false);
+        this.showNodes(d3El.node(), data, 'downStream');
+
+        if (!data.data.queryBeforeRooting) {
+          this.unqueryNode(d3El.node(), data);
+        }
+      }
+    }, {
+      key: 'setUpFocusControls',
+      value: function setUpFocusControls(selection, location, position, mode, className) {
+        // const height = (this.visData.global.row.contentHeight / 2 -
+        //   this.visData.global.cell.padding * 2);
+
+        var paddedDim = this.iconDimension + 4;
+
+        var x = location === 'left' ? -paddedDim * (position || 1) : this.visData.global.column.contentWidth + 2;
+        var y = this.visData.global.row.padding + (this.visData.global.row.contentHeight - 2 * this.visData.global.cell.padding) / 4;
+
+        if (mode === 'bg') {
+          selection.attr({
+            class: className,
+            cx: x + this.iconDimension / 2,
+            cy: y + this.iconDimension / 2,
+            r: this.iconDimension * 3 / 4
+          });
+        } else if (mode === 'hover-helper') {
+          selection.attr({
+            class: className,
+            x: x - 2,
+            y: y - 2,
+            width: this.iconDimension + 4,
+            height: this.iconDimension + 4
+          });
+        } else {
+          selection.attr({
+            class: className,
+            x: x,
+            y: y,
+            width: this.iconDimension,
+            height: this.iconDimension
+          });
+        }
+      }
+
+      /**
+       * Helper method to hide nodes.
+       *
+       * @method  hideNodes
+       * @author  Fritz Lekschas
+       * @date    2016-02-21
+       * @param   {Object}  el         DOM element.
+       * @param   {Object}  data       D3 data object of `el`.
+       * @param   {String}  direction  Defines whether upstream or downstream nodes
+       *   should be hidden.
+       */
+
+    }, {
+      key: 'hideNodes',
+      value: function hideNodes(el, data, direction) {
+        this.nodesVisibility(el, data, direction);
+      }
+
+      /**
+       * Helper method to show nodes.
+       *
+       * @method  showNodes
+       * @author  Fritz Lekschas
+       * @date    2016-02-21
+       * @param   {Object}  el         DOM element.
+       * @param   {Object}  data       D3 data object of `el`.
+       * @param   {String}  direction  Defines whether upstream or downstream nodes
+       *   should be shown.
+       */
+
+    }, {
+      key: 'showNodes',
+      value: function showNodes(el, data, direction) {
+        this.nodesVisibility(el, data, direction, true);
+      }
+
+      /**
+       * Sets the nodes' visibility
+       *
+       * @method  nodesVisibility
+       * @author  Fritz Lekschas
+       * @date    2016-02-21
+       * @param   {Object}   el         DOM element.
+       * @param   {Object}   data       D3 data object of `el`.
+       * @param   {String}   direction  Defines whether upstream or downstream nodes
+       * @param   {Boolean}  show       If `true` nodes will be shown.
+       */
+
+    }, {
+      key: 'nodesVisibility',
+      value: function nodesVisibility(el, data, direction, show) {
+        if (show) {
+          this.nodes.classed('hidden', false).each(function (nodeData) {
+            nodeData.hidden = false;
+          });
+        } else {
+          // First we set all nodes to `hidden`.
+          this.nodes.each(function (nodeData) {
+            nodeData.hidden = true;
+          });
+
+          // Then we set direct child and parent nodes of the current node visible.
+          upAndDown(data, function (nodeData) {
+            nodeData.hidden = false;
+          });
+
+          // We also show sibling nodes.
+          siblings(data, function (nodeData) {
+            nodeData.hidden = false;
+          });
+
+          this.nodes.classed('hidden', function (nodeData) {
+            return nodeData.hidden && !nodeData.data.queryMode;
+          });
+        }
+        this.updateVisibility();
+      }
+    }, {
+      key: 'highlightNodes',
+      value: function highlightNodes(el, data, className, restriction, excludeClones) {
+        var _this2 = this;
+
+        var that = this;
+        var nodeId = data.id;
+        var currentNodeData = data.clone ? data.originalNode : data;
+        var includeParents = true;
+        var appliedClassName = className || 'hovering';
+        var includeClones = !!!excludeClones;
+        var includeChildren = restriction !== 'directParentsOnly';
+
+        // Store link IDs
+        if (!this.currentLinks[appliedClassName]) {
+          this.currentLinks[appliedClassName] = {};
+        }
+        this.currentLinks[appliedClassName][nodeId] = {};
+
+        var currentlyActiveBar = d3.select(el).selectAll('.bar.active .bar-magnitude');
+        if (!currentlyActiveBar.empty()) {
+          currentlyActiveBar = currentlyActiveBar.datum();
+        } else {
+          currentlyActiveBar = undefined;
+        }
+
+        var traverseCallbackUp = function traverseCallbackUp(nodeData, childData) {
+          nodeData.hovering = 2;
+          for (var i = nodeData.links.outgoing.refs.length; i--;) {
+            // Only push direct parent child connections. E.g.
+            // Store: (parent)->(child)
+            // Ignore: (parent)->(siblings of child)
+            if (nodeData.links.outgoing.refs[i].target.node.id === childData.id) {
+              _this2.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
+            }
+          }
+        };
+
+        var traverseCallbackDown = function traverseCallbackDown(nodeData) {
+          nodeData.hovering = 2;
+          for (var i = nodeData.links.outgoing.refs.length; i--;) {
+            _this2.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
+          }
+        };
+
+        if (includeParents && includeChildren) {
+          upAndDown(data, traverseCallbackUp, traverseCallbackDown, undefined, includeClones);
+        }
+        if (includeParents && !includeChildren) {
+          up(data, traverseCallbackUp, undefined, includeClones);
+        }
+        if (!includeParents && includeChildren) {
+          down(data, traverseCallbackUp, undefined, includeClones);
+        }
+
+        currentNodeData.hovering = 1;
+
+        if (includeClones) {
+          for (var i = currentNodeData.clones.length; i--;) {
+            currentNodeData.clones[i].hovering = 1;
+          }
+        }
+
+        /**
+         * Helper method to assess the node visibility.
+         *
+         * @method  checkNodeVisibility
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  _el    [description]
+         * @param   {Object}  _data  [description]
+         * @return  {Boolean}        If `true` element is hidden.
+         */
+        function checkNodeVisibility(_el, _data) {
+          return !_data.hidden && !that.vis.isHidden.call(that.vis, _el);
+        }
+
+        /**
+         * Helper method to filter out directly hovered nodes.
+         *
+         * @method  checkNodeDirect
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  nodeData  The node's data object.
+         * @return  {Boolean}           If `true` element will not be filtered out.
+         */
+        function checkNodeDirect(nodeData) {
+          return nodeData.hovering === 1 && checkNodeVisibility(this, nodeData);
+        }
+
+        /**
+         * Helper method to filter out indirectly hovered nodes.
+         *
+         * @method  checkNodeIndirect
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  nodeData  The node's data object.
+         * @return  {Boolean}           If `true` element will not be filtered out.
+         */
+        function checkNodeIndirect(nodeData) {
+          return nodeData.hovering === 2 && checkNodeVisibility(this, nodeData);
+        }
+
+        /**
+         * Helper method to update bar indicators of the directly hovered node and
+         * clones.
+         *
+         * @method  updateDirectBarIndicator
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  selection  D3 node selection.
+         */
+        function updateDirectBarIndicator(selection) {
+          that.bars.updateIndicator(selection, currentlyActiveBar.value, true);
+        }
+
+        /**
+         * Helper method to update bar indicators of the indirectly hovered nodes.
+         *
+         * @method  updateDirectBarIndicator
+         * @author  Fritz Lekschas
+         * @date    2016-02-25
+         * @param   {Object}  selection  D3 node selection.
+         */
+        function updateIndirectBarIndicator(selection) {
+          that.bars.updateIndicator(selection, currentlyActiveBar.value);
+        }
+
+        var barIndicatorClass = currentlyActiveBar ? '.bar.' + currentlyActiveBar.id + ' .bar-indicator' : '';
+        var directNodes = this.nodes.filter(checkNodeDirect).classed(appliedClassName + '-directly', true);
+        var indirectNodes = this.nodes.filter(checkNodeIndirect).classed(appliedClassName + '-indirectly', true);
+
+        if (currentlyActiveBar) {
+          directNodes.select(barIndicatorClass).call(updateDirectBarIndicator);
+          indirectNodes.select(barIndicatorClass).call(updateIndirectBarIndicator);
+        }
+
+        this.links.highlight(this.currentLinks[appliedClassName][data.id], true, appliedClassName);
+      }
+    }, {
+      key: 'unhighlightNodes',
+      value: function unhighlightNodes(el, data, className, restriction, excludeClones) {
+        var traverseCallback = function traverseCallback(nodeData) {
+          nodeData.hovering = 0;
+        };
+        var includeParents = true;
+        var appliedClassName = className || 'hovering';
+        var includeClones = !!!excludeClones;
+        var includeChildren = restriction !== 'directParentsOnly';
+
+        data.hovering = 0;
+        if (includeParents && includeChildren) {
+          upAndDown(data, traverseCallback, undefined, undefined, includeClones);
+        }
+        if (includeParents && !includeChildren) {
+          up(data, traverseCallback, undefined, includeClones);
+        }
+        if (!includeParents && includeChildren) {
+          down(data, traverseCallback, undefined, includeClones);
+        }
+
+        if (data.clone) {
+          data.originalNode.hovering = 0;
+        } else {
+          if (includeClones) {
+            for (var i = data.clones.length; i--;) {
+              data.clones[i].hovering = 0;
+            }
+          }
+        }
+
+        this.nodes.classed(appliedClassName + '-directly', false);
+        this.nodes.classed(appliedClassName + '-indirectly', false);
+
+        if (this.currentLinks[appliedClassName][data.id]) {
+          this.links.highlight(this.currentLinks[appliedClassName][data.id], false, appliedClassName);
+        }
+      }
+    }, {
+      key: 'sort',
+      value: function sort(update, newSortType) {
+        var _this3 = this;
+
+        for (var i = update.length; i--;) {
+          var selection = this.nodes.data(update[i].rows, function (data) {
+            return data.id;
+          });
+
+          this.vis.svgD3.classed('sorting', true);
+          selection.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
+            return 'translate(' + (data.x + _this3.visData.global.column.padding) + ', ' + data.y + ')';
+          }).call(allTransitionsEnded, function () {
+            _this3.vis.svgD3.classed('sorting', false);
+            _this3.vis.updateLevelsVisibility();
+            _this3.vis.updateScrolling();
+          });
+
+          if (newSortType && this.vis.currentSorting.local[update[i].level].type !== 'name') {
+            this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
+          }
+        }
+      }
+
+      /**
+       * Updates the nodes' visibility visually.
+       *
+       * @method  updateVisibility
+       * @author  Fritz Lekschas
+       * @date    2016-02-21
+       */
+
+    }, {
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        var _this4 = this;
+
+        // Calls the D3 list graph layout method to update the nodes position.
+        this.vis.layout.updateNodesVisibility();
+
+        // Transition to the updated position
+        this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
+          return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
+        }).call(allTransitionsEnded, function () {
+          _this4.vis.updateLevelsVisibility();
+          _this4.vis.updateScrolling();
+        });
+
+        this.vis.links.updateVisibility();
+      }
+    }, {
+      key: 'classNnodes',
+      get: function get() {
+        return CLASS_NODES;
+      }
+    }, {
+      key: 'classNode',
+      get: function get() {
+        return CLASS_NODE;
+      }
+    }, {
+      key: 'classClone',
+      get: function get() {
+        return CLASS_CLONE;
+      }
+    }, {
+      key: 'classLabelWrapper',
+      get: function get() {
+        return CLASS_LABEL_WRAPPER;
+      }
+    }, {
+      key: 'classFocusControls',
+      get: function get() {
+        return CLASS_FOCUS_CONTROLS;
+      }
+    }, {
+      key: 'classRoot',
+      get: function get() {
+        return CLASS_ROOT;
+      }
+    }, {
+      key: 'classQuery',
+      get: function get() {
+        return CLASS_QUERY;
+      }
+    }, {
+      key: 'classLock',
+      get: function get() {
+        return CLASS_LOCK;
+      }
+    }, {
+      key: 'barMode',
+      get: function get() {
+        return this.bars.mode;
+      }
+    }]);
+    return Nodes;
+  }();
+
+  var SCROLLBAR_CLASS = 'scrollbar';
+
+  var Scrollbars = function () {
+    function Scrollbars(baseSelection, visData, width) {
+      babelHelpers.classCallCheck(this, Scrollbars);
+
+      this.visData = visData;
+      this.width = width;
+
+      // Add empty scrollbar element
+      this.all = baseSelection.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
+        selection.each(function setScrollBarDomElement() {
+          d3.select(this.parentNode).datum().scrollbar.el = this;
+        });
+      }).attr('x', function (data) {
+        return data.scrollbar.x - 2;
+      }).attr('y', function (data) {
+        return data.scrollbar.y;
+      }).attr('width', this.width).attr('height', function (data) {
+        return data.scrollbar.height;
+      }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
+    }
+
+    babelHelpers.createClass(Scrollbars, [{
+      key: 'updateVisibility',
+      value: function updateVisibility() {
+        this.all.transition().duration(TRANSITION_LIGHTNING_FAST).attr({
+          x: function x(data) {
+            return data.scrollbar.x;
+          },
+          height: function height(data) {
+            return data.scrollbar.height;
+          }
+        });
+      }
+    }]);
+    return Scrollbars;
+  }();
+
+  /**
+   * Checks if `value` is classified as an `Array` object.
+   *
+   * @static
+   * @memberOf _
+   * @type {Function}
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+   * @example
+   *
    * _.isArray([1, 2, 3]);
    * // => true
    *
-   * _.isArray(function() { return arguments; }());
+   * _.isArray(document.body.children);
+   * // => false
+   *
+   * _.isArray('abc');
+   * // => false
+   *
+   * _.isArray(_.noop);
    * // => false
    */
-  var isArray = nativeIsArray || function(value) {
-    return isObjectLike(value) && isLength(value.length) && objToString$1.call(value) == arrayTag;
-  };
+  var isArray = Array.isArray;
 
-  var LayoutNotAvailable = (function (_ExtendableError) {
-    babelHelpers.inherits(LayoutNotAvailable, _ExtendableError);
-
-    function LayoutNotAvailable(message) {
-      babelHelpers.classCallCheck(this, LayoutNotAvailable);
-      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LayoutNotAvailable).call(this, message || 'D3.layout.listGraph.js has not been loaded yet.'));
-    }
-
-    return LayoutNotAvailable;
-  })(ExtendableError);
-
-  var EventDispatcherNoFunction = (function (_ExtendableError2) {
-    babelHelpers.inherits(EventDispatcherNoFunction, _ExtendableError2);
-
-    function EventDispatcherNoFunction(message) {
-      babelHelpers.classCallCheck(this, EventDispatcherNoFunction);
-      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(EventDispatcherNoFunction).call(this, message || 'Dispatcher needs to be a function.'));
-    }
-
-    return EventDispatcherNoFunction;
-  })(ExtendableError);
-
-  var Events = (function () {
+  var Events = function () {
     function Events(el, broadcast) {
       babelHelpers.classCallCheck(this, Events);
 
@@ -2426,7 +2395,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.el = el;
       this._stack = {};
-      this.dispatch = broadcast ? broadcast : this._dispatchEvent;
+      this.dispatch = broadcast || this._dispatchEvent;
     }
 
     babelHelpers.createClass(Events, [{
@@ -2537,17 +2506,130 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }]);
     return Events;
-  })();
+  }();
+
+  var LimitsUnsupportedFormat = function (_ExtendableError) {
+    babelHelpers.inherits(LimitsUnsupportedFormat, _ExtendableError);
+
+    function LimitsUnsupportedFormat(message) {
+      babelHelpers.classCallCheck(this, LimitsUnsupportedFormat);
+      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LimitsUnsupportedFormat).call(this, message || 'The limits are wrongly formatted. Please provide an ' + 'object of the following format: `{ x: { min: 0, max: 1 }, y: { min: ' + '0, max: 1 } }`'));
+    }
+
+    return LimitsUnsupportedFormat;
+  }(ExtendableError);
+
+  /**
+   * Drap and drop event handler that works via translation.
+   *
+   * @method  onDragDrop
+   * @author  Fritz Lekschas
+   * @date    2016-01-23
+   * @param   {Object}  selection        D3 selection to listen for the drag
+   *   event.
+   * @param   {Object}           dragMoveHandler  Handler for drag-move.
+   * @param   {Object}           dropHandler      Handler for drag-end, i.e. drop.
+   * @param   {Array}            elsToBeDragged   Array of D3 selections to be
+   *   moved according to the drag event. If empty or undefined `selection` will
+   *   be used.
+   * @param   {String}           orientation      Can either be "horizontal",
+   *   "vertical" or `undefined`, i.e. both directions.
+   * @param   {Object|Function}  limits           X and Y drag limits. E.g.
+   *   `{ x: { min: 0, max: 10 } }`.
+   * @param   {Array}             notWhenTrue     List if function returning a
+   *   Boolean value which should prevent the dragMoveHandler from working.
+   */
+  function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue) {
+    var drag = d3.behavior.drag();
+
+    var appliedLimits = limits || {}; // eslint-disable-line no-param-reassign
+
+    if (dragStartHandler) {
+      drag.on('dragstart', function () {
+        if (typeof limits === 'function') {
+          appliedLimits = limits();
+        }
+        dragStartHandler();
+      });
+    }
+
+    if (dragMoveHandler) {
+      drag.on('drag', function (data) {
+        dragMoveHandler.call(this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue);
+      });
+    }
+
+    if (dropHandler) {
+      drag.on('dragend', dropHandler);
+    }
+
+    selection.each(function (data) {
+      var el = d3.select(this);
+
+      // Set default data if not available.
+      if (!data) {
+        data = { dragX: 0, dragY: 0 }; // eslint-disable-line no-param-reassign
+        el.datum(data);
+      }
+
+      // Add drag event handler
+      el.call(drag);
+    });
+  }
+
+  function dragMoveHandler(data, elsToBeDragged, orientation, limits, notWhenTrue) {
+    for (var i = notWhenTrue.length; i--;) {
+      if (notWhenTrue[i]()) {
+        return;
+      }
+    }
+
+    var els = d3.select(this);
+
+    if (elsToBeDragged && elsToBeDragged.length) {
+      els = mergeSelections(elsToBeDragged);
+    }
+
+    function withinLimits(value, applyingLimits) {
+      var restrictedValue = undefined;
+
+      if (applyingLimits) {
+        try {
+          restrictedValue = Math.min(applyingLimits.max, Math.max(applyingLimits.min, value));
+        } catch (e) {
+          throw new LimitsUnsupportedFormat();
+        }
+      }
+      return restrictedValue;
+    }
+
+    if (orientation === 'horizontal' || orientation === 'vertical') {
+      if (orientation === 'horizontal') {
+        data.dragX += d3.event.dx;
+        data.dragX = withinLimits(data.dragX + d3.event.dx, limits.x);
+        els.style('transform', 'translateX(' + data.dragX + 'px)');
+      }
+      if (orientation === 'vertical') {
+        data.dragY += d3.event.dy;
+        data.dragX = withinLimits(data.dragY + d3.event.dy, limits.y);
+        els.style('transform', 'translateY(' + data.dragY + 'px)');
+      }
+    } else {
+      data.dragX += d3.event.dx;
+      data.dragY += d3.event.dy;
+      els.style('transform', 'translate(' + data.dragX + 'px,' + data.dragY + 'px)');
+    }
+  }
 
   function setOption(value, defaultValue, noFalsyValue) {
     if (noFalsyValue) {
-      return value ? value : defaultValue;
+      return value || defaultValue;
     }
 
     return typeof value !== 'undefined' ? value : defaultValue;
   }
 
-  var ListGraph = (function () {
+  var ListGraph = function () {
     function ListGraph(init) {
       var _this = this;
 
@@ -2572,9 +2654,13 @@ var ListGraph = (function ($,d3) { 'use strict';
         this.svgJq = $(this.svgD3.node());
       }
 
+      // Array of root node IDs.
       this.rootNodes = init.rootNodes;
 
+      // Width of the vis. If `undefined` the SVG's width will be used.
       this.width = setOption(init.width, this.svgJq.width(), true);
+
+      // Height of the vis. If `undefined` the SVG's height will be used.
       this.height = setOption(init.height, this.svgJq.height(), true);
 
       // Refresh top and left position of the base `svg` everytime the user enters
@@ -2585,26 +2671,60 @@ var ListGraph = (function ($,d3) { 'use strict';
         that.getBoundingRect.call(that, this);
       });
 
+      // With of the column's scrollbars
       this.scrollbarWidth = setOption(init.scrollbarWidth, SCROLLBAR_WIDTH, true);
+
+      // Number of visible columns
       this.columns = setOption(init.columns, COLUMNS, true);
+
+      // Number of visible rows.
       this.rows = setOption(init.rows, ROWS, true);
+
+      // Path to SVG icon file.
       this.iconPath = setOption(init.iconPath, ICON_PATH, true);
+
+      // If `true` query icons and controls are enabled.
       this.querying = setOption(init.querying, QUERYING);
 
+      // If `true` hide links that point to invisible nodes.
+      this.hideOutwardsLinks = setOption(init.hideOutwardsLinks, HIDE_OUTWARDS_LINKS);
+
+      // If `true` and `this.hideOutwardsLinks === true` indicates the location of
+      // target nodes of invisible nodes connected via links.
+      this.showLinkLocation = setOption(init.showLinkLocation, SHOW_LINK_LOCATION);
+
+      // The visual size of a location bucket. E.g. `3` pixel.
+      this.linkLocationBucketSize = init.linkLocationBucketSize;
+
+      // If `true` the currently rooted level will softly be highlighted.
       this.highlightActiveLevel = setOption(init.highlightActiveLevel, HIGHLIGHT_ACTIVE_LEVEL);
 
       // Determines which level from the rooted node will be regarded as active.
       // Zero means that the level of the rooted node is regarded.
       this.activeLevel = setOption(init.activeLevel, ACTIVE_LEVEL);
 
+      // When no manually rooted node is available the active level will be
+      // `this.activeLevel` minus `this.noRootActiveLevelDiff`.
+      // WAT?
+      // In some cases it makes sense to hide the original root node just to save
+      // a column, so having no manually set root node means that the invisible
+      // root node is active. Using this option it can be assured that the
+      // approriate column is being highlighted.
       this.noRootActiveLevelDiff = setOption(init.noRootActiveLevelDiff, NO_ROOT_ACTIVE_LEVEL_DIFF);
 
+      // Determine the level of transitions
+      // - 0 [Default]: Show all transitions
+      // - 1: Show only CSS transitions
+      // - 2: Show no transitions
       this.lessTransitionsJs = init.lessTransitions > 0;
       this.lessTransitionsCss = init.lessTransitions > 1;
 
       this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
+      // Holds the key of the property to be sorted initially. E.g. `precision`.
       this.sortBy = init.sortBy;
+
+      // Initial sort order. Anything other than `asc` will fall back to `desc`.
       this.sortOrder = init.sortOrder === 'asc' ? 1 : DEFAULT_SORT_ORDER;
 
       this.events = new Events(this.baseEl, init.dispatcher);
@@ -2620,6 +2740,8 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.data = init.data;
       this.visData = this.layout.process(this.data, this.rootNodes, {
+        showLinkLocation: this.showLinkLocation,
+        linkLocationBucketSize: this.linkLocationBucketSize,
         sortBy: this.sortBy,
         sortOrder: this.sortOrder
       });
@@ -2648,7 +2770,7 @@ var ListGraph = (function ($,d3) { 'use strict';
 
       this.levels = new Levels(this.container, this, this.visData);
 
-      this.links = new Links(this.levels.groups, this.visData, this.layout);
+      this.links = new Links(this, this.levels.groups, this.visData, this.layout);
       this.nodes = new Nodes(this, this.levels.groups, this.visData, this.links, this.events);
       this.levels.scrollPreparation(this, this.scrollbarWidth);
       this.scrollbars = new Scrollbars(this.levels.groups, this.visData, this.scrollbarWidth);
@@ -2662,17 +2784,21 @@ var ListGraph = (function ($,d3) { 'use strict';
       });
 
       // Add jQuery delegated event listeners instead of direct listeners of D3.
-      this.svgJq.on('click', '.' + this.nodes.classLabelWrapper, function () {
-        that.nodes.clickHandler.call(that.nodes, this, d3.select(this).datum());
-      });
+      if (this.querying) {
+        this.svgJq.on('click', '.' + this.nodes.classLabelWrapper, function () {
+          that.nodes.toggleQueryMode.call(that.nodes, this.parentNode, d3.select(this).datum());
+        });
+      }
 
       this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classRoot, function () {
         that.nodes.rootHandler.call(that.nodes, this, d3.select(this).datum());
       });
 
-      this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classQuery, function () {
-        that.nodes.toggleQueryMode.call(that.nodes, this.parentNode, d3.select(this).datum());
-      });
+      if (this.querying) {
+        this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classQuery, function () {
+          that.nodes.toggleQueryMode.call(that.nodes, this.parentNode, d3.select(this).datum());
+        });
+      }
 
       this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classLock, function () {
         that.nodes.lockHandler.call(that.nodes, this, d3.select(this).datum());
@@ -2822,9 +2948,17 @@ var ListGraph = (function ($,d3) { 'use strict';
           ListGraph.scrollElVertically(data.nodes, contentScrollTop);
 
           // Scroll Links
-          this.links.scroll(data.linkSelections.outgoing, this.layout.offsetLinks(data.level, contentScrollTop, 'source'));
+          if (data.level !== this.visData.nodes.length) {
+            this.links.scroll(data.linkSelections.outgoing, this.layout.offsetLinks(data.level, contentScrollTop, 'source'));
+          }
 
-          this.links.scroll(data.linkSelections.incoming, this.layout.offsetLinks(data.level - 1, contentScrollTop, 'target'));
+          if (data.level > 0) {
+            this.links.scroll(data.linkSelections.incoming, this.layout.offsetLinks(data.level - 1, contentScrollTop, 'target'));
+          }
+
+          if (this.showLinkLocation) {
+            this.nodes.updateLinkLocationIndicators(data.level - 1, data.level + 1);
+          }
         }
       }
     }, {
@@ -2851,13 +2985,15 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }, {
       key: 'scrollY',
-      value: function scrollY(columnData) {
+      value: function scrollY(columnData, scrollbarDragging) {
         ListGraph.scrollElVertically(columnData.nodes, columnData.scrollTop);
 
-        // Scroll scrollbar
-        columnData.scrollbar.scrollTop = columnData.scrollbar.heightScale(-columnData.scrollTop);
+        if (true || !scrollbarDragging) {
+          // Scroll scrollbar
+          columnData.scrollbar.scrollTop = columnData.scrollbar.heightScale(-columnData.scrollTop);
 
-        ListGraph.scrollElVertically(columnData.scrollbar.el, columnData.scrollbar.scrollTop);
+          ListGraph.scrollElVertically(columnData.scrollbar.el, columnData.scrollbar.scrollTop);
+        }
 
         // Scroll Links
         if (columnData.level !== this.visData.nodes.length) {
@@ -2866,6 +3002,10 @@ var ListGraph = (function ($,d3) { 'use strict';
 
         if (columnData.level > 0) {
           this.links.scroll(columnData.linkSelections.incoming, this.layout.offsetLinks(columnData.level - 1, columnData.scrollTop, 'target'));
+        }
+
+        if (this.showLinkLocation) {
+          this.nodes.updateLinkLocationIndicators(columnData.level - 1, columnData.level + 1);
         }
       }
     }, {
@@ -3027,6 +3167,81 @@ var ListGraph = (function ($,d3) { 'use strict';
         var boundingRect = el.getBoundingClientRect();
         return boundingRect.top + boundingRect.height <= this.top || boundingRect.left + boundingRect.width <= this.left || boundingRect.top >= this.top + this.height || boundingRect.left >= this.left + this.width;
       }
+
+      /**
+       * Assesses any of the two ends of a link points outwards.
+       *
+       * @description
+       * In order to be able to determine where a link points to the output of
+       * `linkPointsOutside` for the source and target location is shifted bitwise
+       * in such a way that this method return 9 unique numbers.
+       * - 0: link is completely inwards
+       * - 1: source is outwards to the top
+       * - 2: source is outwards to the bottom
+       * - 4: target is outwards to the top
+       * - 8: target is outwards to the bottom
+       * - 5: source and target are outwards to the top
+       * - 6: source is outwards to the bottom and target is outwards to the top
+       * - 9: source is outwards to the top and target is outwards to the bottom
+       * - 10: source and target are outwards to the bottom
+       *
+       * If you're asking yourself: "WAT?!?!!" Think of a 4x4 matrix:
+       * |    target    |    source    |
+       * | bottom | top | bottom | top |
+       * |    0   |  0  |    0   |  0  | (=0)
+       * |    0   |  0  |    0   |  1  | (=1)
+       * |    0   |  0  |    1   |  0  | (=2)
+       * |    0   |  1  |    0   |  0  | (=4)
+       * |    1   |  0  |    0   |  0  | (=8)
+       * |    0   |  1  |    0   |  1  | (=5)
+       * |    0   |  1  |    1   |  0  | (=6)
+       * |    1   |  0  |    0   |  1  | (=9)
+       * |    1   |  0  |    1   |  0  | (=10)
+       *
+       * Checker whether the source or target location is above, below or within the
+       * global SVG container is very simple. For example, to find out if the target
+       * location is above, all we need to do is `<VALUE> & 4 > 0`. This performs a
+       * bit-wise AND operation with only two possible outcomes: 4 and 0.
+       *
+       * @method  pointsOutside
+       * @author  Fritz Lekschas
+       * @date    2016-02-29
+       * @param   {Object}  data  Link data.
+       * @return  {Number}  Numberical represenation of the links constallation. See
+       *   description for details.
+       */
+
+    }, {
+      key: 'pointsOutside',
+      value: function pointsOutside(data) {
+        var source = this.linkPointsOutside(data.source);
+        var target = this.linkPointsOutside(data.target) << 2;
+        return source | target;
+      }
+
+      /**
+       * Assesses whether a link's end points outwards
+       *
+       * @method  linkPointsOutside
+       * @author  Fritz Lekschas
+       * @date    2016-02-29
+       * @param   {Object}  data  Link data.
+       * @return  {Number}  If link ends inwards returns `0`, if it points outwards
+       *   to the top returns `1` otherwise `2`.
+       */
+
+    }, {
+      key: 'linkPointsOutside',
+      value: function linkPointsOutside(data) {
+        var y = data.node.y + data.offsetY;
+        if (y + this.visData.global.row.height <= 0) {
+          return 1;
+        }
+        if (y >= this.height) {
+          return 2;
+        }
+        return 0;
+      }
     }, {
       key: 'area',
       get: function get() {
@@ -3058,8 +3273,8 @@ var ListGraph = (function ($,d3) { 'use strict';
       }
     }]);
     return ListGraph;
-  })();
+  }();
 
   return ListGraph;
 
-})($,d3);
+}($,d3));
