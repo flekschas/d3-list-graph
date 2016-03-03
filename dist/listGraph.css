@@ -248,23 +248,25 @@
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
     .list-graph .link .link-direct {
       stroke: #000;
-      stroke-opacity: 0.2;
       stroke-width: 2;
+      stroke-opacity: 0;
       transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-    .list-graph .link.hovering .link-direct {
+    .list-graph .link.visible .link-direct {
+      stroke-opacity: 0.2; }
+    .list-graph .link.visible.hovering .link-direct {
       stroke-opacity: 0.75;
       stroke-width: 4; }
-    .list-graph .link.lock .link-direct {
+    .list-graph .link.visible.lock .link-direct {
       stroke-opacity: 0.75; }
-    .list-graph .link.focus .link-direct {
+    .list-graph .link.visible.focus .link-direct {
       stroke-opacity: 0.5; }
     .list-graph .link .link-bg {
       stroke: #f23e00;
       stroke-opacity: 0;
       stroke-width: 6; }
-    .list-graph .link.lock .link-bg {
+    .list-graph .link.visible.lock .link-bg {
       stroke-opacity: 0.75; }
-    .list-graph .link.focus .link-bg {
+    .list-graph .link.visible.focus .link-bg {
       stroke-opacity: 0.5; }
     .list-graph .link.lock.hovering .link-bg {
       stroke-width: 8; }
@@ -378,6 +380,31 @@
   .list-graph .bar.highlight .bar-magnitude {
     fill: #ff8459;
     fill-opacity: 1 !important; }
+  .list-graph .link-indicator {
+    opacity: 0;
+    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+    .list-graph .link-indicator.visible {
+      opacity: 1; }
+    .list-graph .link-indicator.incoming {
+      transform-origin: right center; }
+    .list-graph .link-indicator.outgoing {
+      transform-origin: left center; }
+  .list-graph .lock-directly .link-indicator,
+  .list-graph .lock-indirectly .link-indicator,
+  .list-graph .hovering-directly .link-indicator,
+  .list-graph .hovering-indirectly .link-indicator {
+    fill: #000; }
+  .list-graph .hovering-directly .link-indicator,
+  .list-graph .hovering-indirectly .link-indicator {
+    transform: scale(1.5); }
+  .list-graph .link-location-indicator {
+    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .hovering-directly .link-location-indicator.above,
+  .list-graph .hovering-indirectly .link-location-indicator.above {
+    transform: translateY(-1px); }
+  .list-graph .hovering-directly .link-location-indicator.below,
+  .list-graph .hovering-indirectly .link-location-indicator.below {
+    transform: translateY(1px); }
   .list-graph .sorting {
     opacity: 0.33; }
   .list-graph .hidden {
@@ -393,6 +420,8 @@
       opacity: 1; }
   .list-graph .ease-all {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph.unselectable * {
+    cursor: default; }
   .list-graph.unselectable .label {
     -webkit-touch-callout: none;
     -webkit-user-select: none;

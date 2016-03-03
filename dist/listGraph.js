@@ -111,6 +111,8 @@ var ListGraph = (function ($,d3) {
   var ACTIVE_LEVEL = 0;
   var NO_ROOT_ACTIVE_LEVEL_DIFF = 0;
   var QUERYING = false;
+  var HIDE_OUTWARDS_LINKS = false;
+  var SHOW_LINK_LOCATION = false;
 
   var TRANSITION_LIGHTNING_FAST = 150;
   var TRANSITION_SEMI_FAST = 250;
@@ -626,11 +628,12 @@ var ListGraph = (function ($,d3) {
   var LINK_CLASS = 'link';
 
   var Links = function () {
-    function Links(levels, visData, layout) {
+    function Links(vis, levels, visData, layout) {
       var _this = this;
 
       babelHelpers.classCallCheck(this, Links);
 
+      this.vis = vis;
       this.visData = visData;
       this.layout = layout;
 
@@ -640,9 +643,9 @@ var ListGraph = (function ($,d3) {
         });
       });
 
-      this.links = this.groups.selectAll(LINK_CLASS + '-bg').data(function (data, index) {
+      this.links = this.groups.selectAll(LINK_CLASS).data(function (data, index) {
         return _this.layout.links(index);
-      }).enter().append('g').attr('class', LINK_CLASS);
+      }).enter().append('g').attr('class', LINK_CLASS).classed('visible', !this.vis.hideOutwardsLinks || this.linkVisibility.bind(this));
 
       this.links.append('path').attr({
         class: LINK_CLASS + '-bg',
@@ -656,6 +659,13 @@ var ListGraph = (function ($,d3) {
     }
 
     babelHelpers.createClass(Links, [{
+      key: 'linkVisibility',
+      value: function linkVisibility(data) {
+        // Cache visibility.
+        data.hidden = this.vis.pointsOutside.call(this.vis, data);
+        return data.hidden === 0;
+      }
+    }, {
       key: 'highlight',
       value: function highlight(nodeIds, _highlight, className) {
         this.links.filter(function (data) {
@@ -668,7 +678,12 @@ var ListGraph = (function ($,d3) {
         // Update data of `g`.
         selection.data(data);
 
-        // Next update all paths according to the new data.
+        if (this.vis.hideOutwardsLinks) {
+          // Check if links point outwards.
+          selection.classed('visible', this.linkVisibility.bind(this));
+        }
+
+        // Next, update all paths according to the new data.
         selection.selectAll('path').attr('d', this.diagonal);
       }
     }, {
@@ -701,19 +716,29 @@ var ListGraph = (function ($,d3) {
       get: function get() {
         var _this2 = this;
 
-        return d3.svg.diagonal().source(function (data) {
-          return {
-            x: data.source.node.y + data.source.offsetY + _this2.visData.global.row.height / 2,
-            y: data.source.node.x + data.source.offsetX + _this2.visData.global.column.contentWidth + _this2.visData.global.column.padding
-          };
-        }).target(function (data) {
-          return {
-            x: data.target.node.y + data.target.offsetY + _this2.visData.global.row.height / 2,
-            y: data.target.node.x + data.target.offsetX + _this2.visData.global.column.padding
-          };
-        }).projection(function (data) {
-          return [data.y, data.x];
-        });
+        var extraOffsetX = this.vis.showLinkLocation ? 6 : 0;
+
+        function getSourceX(source) {
+          return source.node.x + source.offsetX + this.visData.global.column.contentWidth + this.visData.global.column.padding;
+        }
+
+        function getTargetX(source) {
+          return source.node.x + source.offsetX + this.visData.global.column.padding;
+        }
+
+        function getY(source) {
+          return source.node.y + source.offsetY + this.visData.global.row.height / 2;
+        }
+
+        return function (data) {
+          var sourceY = getY.call(_this2, data.source);
+          var sourceX = getSourceX.call(_this2, data.source);
+          var targetY = getY.call(_this2, data.target);
+          var targetX = getTargetX.call(_this2, data.target);
+          var middleX = (sourceX + targetX) / 2;
+
+          return 'M' + sourceX + ',' + sourceY + 'h' + extraOffsetX + 'C' + (middleX + extraOffsetX) + ',' + sourceY + ' ' + (middleX - extraOffsetX) + ',' + targetY + ' ' + (targetX - extraOffsetX) + ',' + targetY + 'h' + extraOffsetX;
+        };
       }
     }]);
     return Links;
@@ -1240,6 +1265,12 @@ var ListGraph = (function ($,d3) {
   var CLASS_LOCK = 'lock';
   var CLASS_ACTIVE = 'active';
   var CLASS_INACTIVE = 'inactive';
+  var CLASS_INDICATOR_BAR = 'link-indicator';
+  var CLASS_INDICATOR_LOCATION = 'link-location-indicator';
+  var CLASS_INDICATOR_INCOMING = 'incoming';
+  var CLASS_INDICATOR_OUTGOING = 'outgoing';
+  var CLASS_INDICATOR_ABOVE = 'above';
+  var CLASS_INDICATOR_BELOW = 'below';
 
   var Nodes = function () {
     function Nodes(vis, baseSelection, visData, links, events) {
@@ -1249,19 +1280,49 @@ var ListGraph = (function ($,d3) {
 
       var that = this;
 
-      // Helper
-      function drawFullSizeRect(selection, className, shrinking, noRoundBorder) {
-        var shrinkingAmount = shrinking || 0;
-
-        selection.attr('x', shrinkingAmount).attr('y', that.visData.global.row.padding + shrinkingAmount).attr('width', that.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', that.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
-      }
-
       this.vis = vis;
       this.visData = visData;
       this.links = links;
       this.events = events;
       this.currentLinks = {};
       this.iconDimension = Math.min(this.visData.global.row.contentHeight / 2 - this.visData.global.cell.padding * 2, this.visData.global.column.padding / 2 - 4);
+
+      var linkDensityBg = d3.scale.linear().domain([1, this.vis.rows]).range(['#ccc', '#000']);
+
+      function drawLinkIndicator(selection, direction) {
+        var incoming = direction === 'incoming';
+
+        selection.attr('class', CLASS_INDICATOR_BAR + ' ' + (incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING)).attr('d', roundRect(incoming ? -7 : this.visData.global.column.contentWidth, this.visData.global.row.height / 2 - 1, 7, 2, {
+          topLeft: incoming ? 1 : 0,
+          topRight: incoming ? 0 : 1,
+          bottomLeft: incoming ? 1 : 0,
+          bottomRight: incoming ? 0 : 1
+        })).attr('fill', function (data) {
+          return linkDensityBg(data.links[direction].refs.length);
+        }).classed('visible', function (data) {
+          return data.links[direction].refs.length > 0;
+        });
+      }
+
+      function drawLinkLocationIndicator(selection, direction, position) {
+        var above = position === 'above';
+        var incoming = direction === 'incoming';
+
+        var className = CLASS_INDICATOR_LOCATION + ' ' + (incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING) + ' ' + (above ? CLASS_INDICATOR_ABOVE : CLASS_INDICATOR_BELOW);
+
+        selection.datum(function (data) {
+          return data.links[direction];
+        }).attr('class', className).attr('x', incoming ? -5 : this.visData.global.column.contentWidth + 2).attr('y', above ? this.visData.global.row.height / 2 - 1 : this.visData.global.row.height / 2 + 1).attr('width', 3).attr('height', 3).attr('fill', function (data) {
+          return linkDensityBg(data.refs.length);
+        });
+      }
+
+      // Helper
+      function drawFullSizeRect(selection, className, shrinking, noRoundBorder) {
+        var shrinkingAmount = shrinking || 0;
+
+        selection.attr('x', shrinkingAmount).attr('y', that.visData.global.row.padding + shrinkingAmount).attr('width', that.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', that.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
+      }
 
       this.groups = baseSelection.append('g').attr('class', CLASS_NODES).call(function (selection) {
         selection.each(function storeLinkToGroupNode() {
@@ -1310,6 +1371,21 @@ var ListGraph = (function ($,d3) {
       this.nodes.append('rect').call(drawFullSizeRect, 'bg-border');
 
       this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
+
+      if (this.vis.showLinkLocation) {
+        this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'incoming', 'above');
+        this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'incoming', 'bottom');
+        this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'outgoing', 'above');
+        this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'outgoing', 'bottom');
+
+        this.nodes.append('path').call(drawLinkIndicator.bind(this), 'incoming');
+        this.nodes.append('path').call(drawLinkIndicator.bind(this), 'outgoing');
+
+        // Set all the link location indicator bars.
+        this.groups.each(function (data, index) {
+          _this.calcHeightLinkLocationIndicator(index, true, true);
+        });
+      }
 
       // Rooting icons
       var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT + ' ' + CLASS_INACTIVE);
@@ -1392,6 +1468,77 @@ var ListGraph = (function ($,d3) {
     }
 
     babelHelpers.createClass(Nodes, [{
+      key: 'updateLinkLocationIndicators',
+      value: function updateLinkLocationIndicators(left, right) {
+        this.calcHeightLinkLocationIndicator(left, false, true);
+        this.calcHeightLinkLocationIndicator(right, true, false);
+      }
+    }, {
+      key: 'calcHeightLinkLocationIndicator',
+      value: function calcHeightLinkLocationIndicator(level, incoming, outgoing) {
+        var nodes = this.nodes.filter(function (data) {
+          return data.depth === level;
+        });
+        nodes.each(function (data) {
+          if (incoming) {
+            data.links.incoming.above = 0;
+            data.links.incoming.below = 0;
+            for (var i = data.links.incoming.total; i--;) {
+              // We are checking the source location of the incoming link. The
+              // source location is the location of the node of the column being
+              // scrolled.
+              if ((data.links.incoming.refs[i].hidden & 1) > 0) {
+                data.links.incoming.above++;
+              }
+              if ((data.links.incoming.refs[i].hidden & 2) > 0) {
+                data.links.incoming.below++;
+              }
+            }
+          }
+          if (outgoing) {
+            data.links.outgoing.above = 0;
+            data.links.outgoing.below = 0;
+            for (var i = data.links.outgoing.total; i--;) {
+              // We are checking the target location of the outgoing link. The
+              // source location is the location of the node of the column being
+              // scrolled.
+              if ((data.links.outgoing.refs[i].hidden & 4) > 0) {
+                data.links.outgoing.above++;
+              }
+              if ((data.links.outgoing.refs[i].hidden & 8) > 0) {
+                data.links.outgoing.below++;
+              }
+            }
+          }
+        });
+
+        if (incoming) {
+          this.updateHeightLinkLocationIndicatorBars(nodes);
+        }
+
+        if (outgoing) {
+          this.updateHeightLinkLocationIndicatorBars(nodes, true);
+        }
+      }
+    }, {
+      key: 'updateHeightLinkLocationIndicatorBars',
+      value: function updateHeightLinkLocationIndicatorBars(selection, outgoing) {
+        var barRefHeight = this.visData.global.row.contentHeight / 2 - 1;
+        var barAboveRefTop = this.visData.global.row.height / 2 - 1;
+
+        var baseClassName = '.' + CLASS_INDICATOR_LOCATION + '.' + (outgoing ? CLASS_INDICATOR_OUTGOING : CLASS_INDICATOR_INCOMING);
+
+        selection.selectAll(baseClassName + '.' + CLASS_INDICATOR_ABOVE).attr('y', function (data) {
+          return data.total ? barAboveRefTop - data.above / data.total * barRefHeight : barAboveRefTop;
+        }).attr('height', function (data) {
+          return data.total ? data.above / data.total * barRefHeight : 0;
+        });
+
+        selection.selectAll(baseClassName + '.' + CLASS_INDICATOR_BELOW).attr('height', function (data) {
+          return data.total ? data.below / data.total * barRefHeight : 0;
+        });
+      }
+    }, {
       key: 'clickHandler',
       value: function clickHandler(el, data) {
         this.toggleQueryMode(el.parentNode, data);
@@ -1924,20 +2071,20 @@ var ListGraph = (function ($,d3) {
 
         var traverseCallbackUp = function traverseCallbackUp(nodeData, childData) {
           nodeData.hovering = 2;
-          for (var i = nodeData.links.length; i--;) {
+          for (var i = nodeData.links.outgoing.refs.length; i--;) {
             // Only push direct parent child connections. E.g.
             // Store: (parent)->(child)
             // Ignore: (parent)->(siblings of child)
-            if (nodeData.links[i].target.node.id === childData.id) {
-              _this2.currentLinks[appliedClassName][nodeId][nodeData.links[i].id] = true;
+            if (nodeData.links.outgoing.refs[i].target.node.id === childData.id) {
+              _this2.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
             }
           }
         };
 
         var traverseCallbackDown = function traverseCallbackDown(nodeData) {
           nodeData.hovering = 2;
-          for (var i = nodeData.links.length; i--;) {
-            _this2.currentLinks[appliedClassName][nodeId][nodeData.links[i].id] = true;
+          for (var i = nodeData.links.outgoing.refs.length; i--;) {
+            _this2.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
           }
         };
 
@@ -2507,9 +2654,13 @@ var ListGraph = (function ($,d3) {
         this.svgJq = $(this.svgD3.node());
       }
 
+      // Array of root node IDs.
       this.rootNodes = init.rootNodes;
 
+      // Width of the vis. If `undefined` the SVG's width will be used.
       this.width = setOption(init.width, this.svgJq.width(), true);
+
+      // Height of the vis. If `undefined` the SVG's height will be used.
       this.height = setOption(init.height, this.svgJq.height(), true);
 
       // Refresh top and left position of the base `svg` everytime the user enters
@@ -2520,26 +2671,60 @@ var ListGraph = (function ($,d3) {
         that.getBoundingRect.call(that, this);
       });
 
+      // With of the column's scrollbars
       this.scrollbarWidth = setOption(init.scrollbarWidth, SCROLLBAR_WIDTH, true);
+
+      // Number of visible columns
       this.columns = setOption(init.columns, COLUMNS, true);
+
+      // Number of visible rows.
       this.rows = setOption(init.rows, ROWS, true);
+
+      // Path to SVG icon file.
       this.iconPath = setOption(init.iconPath, ICON_PATH, true);
+
+      // If `true` query icons and controls are enabled.
       this.querying = setOption(init.querying, QUERYING);
 
+      // If `true` hide links that point to invisible nodes.
+      this.hideOutwardsLinks = setOption(init.hideOutwardsLinks, HIDE_OUTWARDS_LINKS);
+
+      // If `true` and `this.hideOutwardsLinks === true` indicates the location of
+      // target nodes of invisible nodes connected via links.
+      this.showLinkLocation = setOption(init.showLinkLocation, SHOW_LINK_LOCATION);
+
+      // The visual size of a location bucket. E.g. `3` pixel.
+      this.linkLocationBucketSize = init.linkLocationBucketSize;
+
+      // If `true` the currently rooted level will softly be highlighted.
       this.highlightActiveLevel = setOption(init.highlightActiveLevel, HIGHLIGHT_ACTIVE_LEVEL);
 
       // Determines which level from the rooted node will be regarded as active.
       // Zero means that the level of the rooted node is regarded.
       this.activeLevel = setOption(init.activeLevel, ACTIVE_LEVEL);
 
+      // When no manually rooted node is available the active level will be
+      // `this.activeLevel` minus `this.noRootActiveLevelDiff`.
+      // WAT?
+      // In some cases it makes sense to hide the original root node just to save
+      // a column, so having no manually set root node means that the invisible
+      // root node is active. Using this option it can be assured that the
+      // approriate column is being highlighted.
       this.noRootActiveLevelDiff = setOption(init.noRootActiveLevelDiff, NO_ROOT_ACTIVE_LEVEL_DIFF);
 
+      // Determine the level of transitions
+      // - 0 [Default]: Show all transitions
+      // - 1: Show only CSS transitions
+      // - 2: Show no transitions
       this.lessTransitionsJs = init.lessTransitions > 0;
       this.lessTransitionsCss = init.lessTransitions > 1;
 
       this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
+      // Holds the key of the property to be sorted initially. E.g. `precision`.
       this.sortBy = init.sortBy;
+
+      // Initial sort order. Anything other than `asc` will fall back to `desc`.
       this.sortOrder = init.sortOrder === 'asc' ? 1 : DEFAULT_SORT_ORDER;
 
       this.events = new Events(this.baseEl, init.dispatcher);
@@ -2555,6 +2740,8 @@ var ListGraph = (function ($,d3) {
 
       this.data = init.data;
       this.visData = this.layout.process(this.data, this.rootNodes, {
+        showLinkLocation: this.showLinkLocation,
+        linkLocationBucketSize: this.linkLocationBucketSize,
         sortBy: this.sortBy,
         sortOrder: this.sortOrder
       });
@@ -2583,7 +2770,7 @@ var ListGraph = (function ($,d3) {
 
       this.levels = new Levels(this.container, this, this.visData);
 
-      this.links = new Links(this.levels.groups, this.visData, this.layout);
+      this.links = new Links(this, this.levels.groups, this.visData, this.layout);
       this.nodes = new Nodes(this, this.levels.groups, this.visData, this.links, this.events);
       this.levels.scrollPreparation(this, this.scrollbarWidth);
       this.scrollbars = new Scrollbars(this.levels.groups, this.visData, this.scrollbarWidth);
@@ -2761,9 +2948,17 @@ var ListGraph = (function ($,d3) {
           ListGraph.scrollElVertically(data.nodes, contentScrollTop);
 
           // Scroll Links
-          this.links.scroll(data.linkSelections.outgoing, this.layout.offsetLinks(data.level, contentScrollTop, 'source'));
+          if (data.level !== this.visData.nodes.length) {
+            this.links.scroll(data.linkSelections.outgoing, this.layout.offsetLinks(data.level, contentScrollTop, 'source'));
+          }
 
-          this.links.scroll(data.linkSelections.incoming, this.layout.offsetLinks(data.level - 1, contentScrollTop, 'target'));
+          if (data.level > 0) {
+            this.links.scroll(data.linkSelections.incoming, this.layout.offsetLinks(data.level - 1, contentScrollTop, 'target'));
+          }
+
+          if (this.showLinkLocation) {
+            this.nodes.updateLinkLocationIndicators(data.level - 1, data.level + 1);
+          }
         }
       }
     }, {
@@ -2790,13 +2985,15 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'scrollY',
-      value: function scrollY(columnData) {
+      value: function scrollY(columnData, scrollbarDragging) {
         ListGraph.scrollElVertically(columnData.nodes, columnData.scrollTop);
 
-        // Scroll scrollbar
-        columnData.scrollbar.scrollTop = columnData.scrollbar.heightScale(-columnData.scrollTop);
+        if (true || !scrollbarDragging) {
+          // Scroll scrollbar
+          columnData.scrollbar.scrollTop = columnData.scrollbar.heightScale(-columnData.scrollTop);
 
-        ListGraph.scrollElVertically(columnData.scrollbar.el, columnData.scrollbar.scrollTop);
+          ListGraph.scrollElVertically(columnData.scrollbar.el, columnData.scrollbar.scrollTop);
+        }
 
         // Scroll Links
         if (columnData.level !== this.visData.nodes.length) {
@@ -2805,6 +3002,10 @@ var ListGraph = (function ($,d3) {
 
         if (columnData.level > 0) {
           this.links.scroll(columnData.linkSelections.incoming, this.layout.offsetLinks(columnData.level - 1, columnData.scrollTop, 'target'));
+        }
+
+        if (this.showLinkLocation) {
+          this.nodes.updateLinkLocationIndicators(columnData.level - 1, columnData.level + 1);
         }
       }
     }, {
@@ -2965,6 +3166,81 @@ var ListGraph = (function ($,d3) {
       value: function isHidden(el) {
         var boundingRect = el.getBoundingClientRect();
         return boundingRect.top + boundingRect.height <= this.top || boundingRect.left + boundingRect.width <= this.left || boundingRect.top >= this.top + this.height || boundingRect.left >= this.left + this.width;
+      }
+
+      /**
+       * Assesses any of the two ends of a link points outwards.
+       *
+       * @description
+       * In order to be able to determine where a link points to the output of
+       * `linkPointsOutside` for the source and target location is shifted bitwise
+       * in such a way that this method return 9 unique numbers.
+       * - 0: link is completely inwards
+       * - 1: source is outwards to the top
+       * - 2: source is outwards to the bottom
+       * - 4: target is outwards to the top
+       * - 8: target is outwards to the bottom
+       * - 5: source and target are outwards to the top
+       * - 6: source is outwards to the bottom and target is outwards to the top
+       * - 9: source is outwards to the top and target is outwards to the bottom
+       * - 10: source and target are outwards to the bottom
+       *
+       * If you're asking yourself: "WAT?!?!!" Think of a 4x4 matrix:
+       * |    target    |    source    |
+       * | bottom | top | bottom | top |
+       * |    0   |  0  |    0   |  0  | (=0)
+       * |    0   |  0  |    0   |  1  | (=1)
+       * |    0   |  0  |    1   |  0  | (=2)
+       * |    0   |  1  |    0   |  0  | (=4)
+       * |    1   |  0  |    0   |  0  | (=8)
+       * |    0   |  1  |    0   |  1  | (=5)
+       * |    0   |  1  |    1   |  0  | (=6)
+       * |    1   |  0  |    0   |  1  | (=9)
+       * |    1   |  0  |    1   |  0  | (=10)
+       *
+       * Checker whether the source or target location is above, below or within the
+       * global SVG container is very simple. For example, to find out if the target
+       * location is above, all we need to do is `<VALUE> & 4 > 0`. This performs a
+       * bit-wise AND operation with only two possible outcomes: 4 and 0.
+       *
+       * @method  pointsOutside
+       * @author  Fritz Lekschas
+       * @date    2016-02-29
+       * @param   {Object}  data  Link data.
+       * @return  {Number}  Numberical represenation of the links constallation. See
+       *   description for details.
+       */
+
+    }, {
+      key: 'pointsOutside',
+      value: function pointsOutside(data) {
+        var source = this.linkPointsOutside(data.source);
+        var target = this.linkPointsOutside(data.target) << 2;
+        return source | target;
+      }
+
+      /**
+       * Assesses whether a link's end points outwards
+       *
+       * @method  linkPointsOutside
+       * @author  Fritz Lekschas
+       * @date    2016-02-29
+       * @param   {Object}  data  Link data.
+       * @return  {Number}  If link ends inwards returns `0`, if it points outwards
+       *   to the top returns `1` otherwise `2`.
+       */
+
+    }, {
+      key: 'linkPointsOutside',
+      value: function linkPointsOutside(data) {
+        var y = data.node.y + data.offsetY;
+        if (y + this.visData.global.row.height <= 0) {
+          return 1;
+        }
+        if (y >= this.height) {
+          return 2;
+        }
+        return 0;
       }
     }, {
       key: 'area',
