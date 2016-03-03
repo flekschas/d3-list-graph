@@ -9,7 +9,7 @@
   .top-bar {
     position: relative;
     height: 1.5rem;
-    border-bottom: 1px solid #efefef;
+    border-bottom: 1px solid $lightGrey;
     overflow: hidden;
   }
 
@@ -19,7 +19,7 @@
     top: 0;
     right: 0;
     height: 100%;
-    background: #efefef;
+    background: $lightGrey;
 
     &:hover {
       color: $colorHighlightBlue;
@@ -74,7 +74,7 @@
   .top-bar .controls {
     display: inline-block;
     white-space: normal;
-    box-shadow: -1px 0 0 0 #efefef;
+    box-shadow: -1px 0 0 0 $lightGrey;
   }
 
   .top-bar .control-btn {
@@ -103,7 +103,7 @@
     }
 
     &:hover {
-      background: #efefef;
+      background: $lightGrey;
     }
 
     &.active {
@@ -135,7 +135,7 @@
     position: relative;
     float: left;
     width: 16.666666667%;
-    box-shadow: 1px 0 0 0 #efefef;
+    box-shadow: 1px 0 0 0 $lightGrey;
   }
 
   .top-bar .controls .control-btn {
@@ -420,14 +420,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: #666;
+    color: $normalTextColor;
     font-size: 0.75rem;
     line-height: 0.75rem;
     transition: all $transitionFast $easeInOutCubic;
   }
 
   .column.active .node .label {
-    color: #333;
+    color: $semiHighlightTextColor;
   }
 
   .node.hovering-directly .label,
@@ -437,12 +437,9 @@
     color: #fff;
   }
 
-  .node.hovering-indirectly .label {
-    color: #000;
-  }
-
+  .node.hovering-indirectly .label,
   .node.highlight-bar .label {
-    color: #000;
+    color: $highlightTextColor;
   }
 
   .node.highlight-label .label,
@@ -586,19 +583,21 @@
   }
 
   .context-menu {
-    .bg {
-      fill: #ccc;
+    >.bg {
+      fill: #fff;
     }
 
-    .arrow {
-      fill: #ccc;
+    >.bgBorder {
+      fill: #000;
+      fill-opacity: 0.1;
     }
 
     .button .bg {
-      fill: #808080;
+      fill: $lightGrey;
     }
 
     .button .label {
+      color: $normalTextColor;
       font-size: 0.75rem;
     }
   }
