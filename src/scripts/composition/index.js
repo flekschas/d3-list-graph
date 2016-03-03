@@ -206,7 +206,7 @@ class ListGraph {
       this.querying
     );
 
-    dropShadow(this.svgD3, 'context-menu', 1, 1, 3);
+    dropShadow(this.svgD3, 'context-menu', 1, 1, 2, 0.2);
 
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
     // We are using delegated event listeners to provide better scaling
