@@ -164,7 +164,7 @@ class Nodes {
             }
 
             if (!el.classed('rooted')) {
-              if (_data.data.queryMode) {
+              if (_data.data.state.query) {
                 el.selectAll('.bg-extension')
                   .style(
                     'transform',
@@ -494,7 +494,7 @@ class Nodes {
   }
 
   clickHandler (el, data) {
-    this.toggleQueryMode(el.parentNode, data);
+    this.toggleQueryMode(el, data);
     // this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
   }
 
@@ -649,16 +649,16 @@ class Nodes {
     this.nodes
       // Filter by node ID
       .filter(data => !!~nodeIds.indexOf(data.id))
-      .each(function triggerCallback (data) {
-        let el = this;
+      .each(function triggerCallback () {
+        let d3El = d3.select(this);
 
         if (subSelectionClass) {
-          el = d3.select(this).select(subSelectionClass).node();
+          d3El = d3El.select(subSelectionClass);
         }
 
         callback.apply(
           that,
-          [el, data].concat(optionalParams || [])
+          [d3El].concat(optionalParams || [])
         );
       });
   }
@@ -667,8 +667,7 @@ class Nodes {
     return this.bars.mode;
   }
 
-  toggleLock (el, nodeData, setFalse) {
-    const d3El = d3.select(el);
+  toggleLock (d3El, setFalse) {
     const data = d3El.datum();
     const events = { locked: false, unlocked: false };
 
@@ -710,6 +709,7 @@ class Nodes {
 
     els.each(function triggerHighlighter (data) {
       that.highlightNodes(this, data, 'lock', undefined);
+      data.state.locked = true;
     });
 
     els.selectAll('.bg-border')
@@ -741,11 +741,12 @@ class Nodes {
 
     els.each(function (data) {
       that.unhighlightNodes(this, data, 'lock', undefined);
+      data.state.locked = undefined;
     });
   }
 
   queryNode (el, data, mode) {
-    data.data.queryMode = mode;
+    data.data.state.query = mode;
     d3.select(el).classed({
       active: true,
       inactive: false,
@@ -756,7 +757,7 @@ class Nodes {
   }
 
   unqueryNode (el, data) {
-    data.data.queryMode = undefined;
+    data.data.state.query = undefined;
     data.data.queryBeforeRooting = undefined;
     d3.select(el).classed({
       active: false,
@@ -771,9 +772,9 @@ class Nodes {
   }
 
   toggleQueryMode (el, data) {
-    const previousMode = data.data.queryMode;
+    const previousMode = data.data.state.query;
 
-    if (data.rooted) {
+    if (data.state.root) {
       if (previousMode !== 'or') {
         this.queryNode(el, data, 'or');
       } else {
@@ -796,14 +797,14 @@ class Nodes {
       }
     }
 
-    if (data.data.queryMode) {
-      if (data.data.queryMode !== previousMode) {
+    if (data.data.state.query) {
+      if (data.data.state.query !== previousMode) {
         this.events.broadcast('d3ListGraphNodeQuery', {
           id: data.id,
           clone: data.clone,
           clonedFromId: data.clone ?
             data.originalNode.id : undefined,
-          mode: data.data.queryMode
+          mode: data.data.state.query
         });
       }
     } else {
@@ -818,13 +819,11 @@ class Nodes {
 
   progToggleQueryMode (el, data) {
     this.toggleQueryMode(
-      d3.select(el).selectAll('.focus-controls.query')[0].node(),
-      data
+      d3.select(el).selectAll('.focus-controls.query')[0].node(), data
     );
   }
 
-  toggleRoot (el, setFalse) {
-    const d3El = d3.select(el);
+  toggleRoot (d3El, setFalse) {
     const data = d3El.datum();
     const events = { rooted: false, unrooted: false };
 
@@ -840,7 +839,7 @@ class Nodes {
       // Activate new root
       if (this.rootedNode.datum().id !== data.id && !setFalse) {
         d3El.classed({ active: true, inactive: false });
-        this.rootNode(el, data);
+        this.rootNode(d3El);
         this.rootedNode = d3El;
         events.rooted = data;
       } else {
@@ -853,7 +852,7 @@ class Nodes {
     } else {
       if (!setFalse) {
         d3El.classed({ active: true, inactive: false });
-        this.rootNode(el, data);
+        this.rootNode(d3El);
         events.rooted = data;
         this.rootedNode = d3El;
       }
@@ -862,10 +861,10 @@ class Nodes {
     return events;
   }
 
-  rootNode (el, data) {
-    const d3El = d3.select(el.parentNode);
+  rootNode (d3El) {
+    const data = d3El.datum();
 
-    data.rooted = true;
+    data.state.root = true;
     d3El.classed('rooted', true);
     this.hideNodes(d3El.node(), data, 'downStream');
 
@@ -881,7 +880,7 @@ class Nodes {
     // Highlight level
     this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
-    if (!data.data.queryMode || data.data.queryMode === 'not') {
+    if (!data.data.state.query || data.data.state.query === 'not') {
       this.toggleQueryMode(d3El.node(), data);
       data.data.queryBeforeRooting = false;
     } else {
@@ -894,7 +893,7 @@ class Nodes {
 
     let x = 0;
 
-    if (data.data.queryMode) {
+    if (data.data.state.query) {
       x = -this.iconDimension - 6;
     }
 
@@ -904,7 +903,7 @@ class Nodes {
         'translateX(' + x + 'px)'
       );
 
-    data.rooted = false;
+    data.state.root = false;
     d3El.classed('rooted', false);
     this.showNodes(d3El.node(), data, 'downStream');
 
@@ -1015,7 +1014,7 @@ class Nodes {
 
       this.nodes.classed(
         'hidden',
-        nodeData => nodeData.hidden && !nodeData.data.queryMode
+        nodeData => nodeData.hidden && !nodeData.data.state.query
       );
     }
     this.updateVisibility();
