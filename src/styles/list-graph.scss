@@ -348,7 +348,10 @@
     stroke-opacity: 0;
   }
 
-  .node.rooted {
+  .node.rooted,
+  .node.query-and,
+  .node.query-or,
+  .node.query-not {
     .border {
       stroke: $grey-semi-dark;
     }
@@ -447,18 +450,48 @@
     transition: all $transition-fast $ease-in-out-cubic;
   }
 
-  .node.rooted .focus-controls:hover .hover-helper {
-    fill-opacity: 0.5;
-  }
-
-  .node.rooted .focus-controls:hover .icon {
-    color: $color-highlight-red;
-    opacity: 1;
+  .node.rooted .focus-controls:hover,
+  .node.query-and .focus-controls:hover,
+  .node.query-or .focus-controls:hover,
+  .node.query-not .focus-controls:hover {
     cursor: pointer;
   }
 
-  .node.rooted .focus-controls.root .state-active {
+  .node.rooted .focus-controls:hover .hover-helper,
+  .node.query-and .focus-controls:hover .hover-helper,
+  .node.query-or .focus-controls:hover .hover-helper,
+  .node.query-not .focus-controls:hover .hover-helper {
+    fill-opacity: 0.5;
+  }
+
+  .node.rooted .focus-controls:hover .icon,
+  .node.query-and .focus-controls:hover .state-and-or,
+  .node.query-or .focus-controls:hover .state-and-or,
+  .node.query-not .focus-controls:hover .state-not {
+    color: $color-highlight-red;
+    opacity: 1;
+  }
+
+  .node.query-and .query .state-inactive,
+  .node.query-or .query .state-inactive,
+  .node.query-not .query .state-inactive {
+    opacity: 0 !important;
+  }
+
+  .node.rooted .focus-controls.root .state-active,
+  .node.query-and .focus-controls .state-and-or,
+  .node.query-or .focus-controls .state-and-or,
+  .node.query-not .focus-controls .state-not {
     opacity: 0.33;
+  }
+
+  .node .focus-controls .state-and-or use {
+    transition: all $transition-fast $ease-in-out-cubic;
+    transform-origin: 50% 50%;
+  }
+
+  .node.query-and .focus-controls .state-and-or use {
+    transform: scale(1, -1);
   }
 
   .bar-border,
