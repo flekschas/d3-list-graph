@@ -123,6 +123,12 @@ class ListGraph {
     this.lessTransitionsJs = init.lessTransitions > 0;
     this.lessTransitionsCss = init.lessTransitions > 1;
 
+    // Enable or disable
+    this.disableDebouncedContextMenu = setOption(
+      init.disableDebouncedContextMenu,
+      config.DISABLE_DEBOUNCED_CONTEXT_MENU
+    );
+
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
     // Holds the key of the property to be sorted initially. E.g. `precision`.
