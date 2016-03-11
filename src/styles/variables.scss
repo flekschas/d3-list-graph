@@ -21,9 +21,11 @@ $grey-semi-dark: #666;
 $grey-medium: #808080;
 $grey-light: #ccc;
 $grey-lighter: #e5e5e5;
+$grey-lightest: #f2f2f2;
 $white: #fff;
 
 // Text
+$text-color-inactive: $grey-light;
 $text-color-normal: $grey-semi-dark;
 $text-color-semi-highlight: $grey-dark;
 $text-color-highlight: $black;
