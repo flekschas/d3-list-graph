@@ -1,13 +1,19 @@
 // External
 import Promise from '../../../node_modules/es6-promise/lib/es6-promise/Promise';
+import debounce from '../../../node_modules/lodash-es/debounce';
 
 // Internal
 import { dropMenu } from '../commons/charts';
 import { requestNextAnimationFrame } from '../commons/shims';
+import { allTransitionsEnded } from '../commons/d3-utils';
 
 const CLASS_NAME = 'context-menu';
 const CLASS_CHECKBOX = 'checkbox';
 const TRANSITION_SPEED = 125;
+const BUTTON_QUERY_DEBOUNCE = 666;
+const BUTTON_ROOT_DEBOUNCE = 500;
+const BUTTON_DEFAULT_DEBOUNCE = 150;
+const BUTTON_BAM_EFFECT_ANIMATION_TIME = 700;
 
 class NodeContextMenu {
   constructor (vis, visData, baseEl, events, querying) {
@@ -61,11 +67,14 @@ class NodeContextMenu {
         distanceFromCenter: 1,
         fullWidth: true,
         label: 'Query:',
-        labelTwo: 'query-mode'
+        labelTwo: 'query-mode',
+        bamEffect: true
       })
       .on('click', function () {
         that.clickQueryHandler.call(that, this);
       });
+    this.buttonQueryFill = this.buttonQuery.select('.bg-fill-effect');
+    this.buttonQueryBamEffect = this.buttonQuery.select('.bg-bam-effect');
 
     this.buttonRoot = this.wrapper.append('g')
       .call(this.createButton.bind(this), {
@@ -78,6 +87,7 @@ class NodeContextMenu {
       .on('click', function () {
         that.clickRootHandler.call(that, this);
       });
+    this.buttonRootFill = this.buttonRoot.select('.bg-fill-effect');
     this.checkboxRoot = this.createCheckbox(this.buttonRoot);
 
     this.buttonLock = this.wrapper.append('g')
@@ -86,11 +96,14 @@ class NodeContextMenu {
         classNames: [],
         distanceFromCenter: 0,
         fullWidth: false,
-        label: 'Focus'
+        label: 'Focus',
+        bamEffect: true
       })
       .on('click', function () {
         that.clickLockHandler.call(that, this);
       });
+    this.buttonLockFill = this.buttonLock.select('.bg-fill-effect');
+    this.buttonLockBamEffect = this.buttonLock.select('.bg-bam-effect');
     this.checkboxLock = this.createCheckbox(this.buttonLock);
   }
 
@@ -104,8 +117,10 @@ class NodeContextMenu {
     selection
       .datum(properties)
       .call(
-        this.createButtonBg.bind(this),
-        properties.fullWidth
+        this.createButtonBg.bind(this), {
+          bamEffect: properties.bamEffect,
+          fullWidth: properties.fullWidth
+        }
       )
       .call(
         this.addLabel.bind(this),
@@ -117,28 +132,98 @@ class NodeContextMenu {
         properties.distanceFromCenter,
         properties.alignRight
       );
+
+    this.debouncedQueryHandler = debounce(
+      this.queryHanlder, BUTTON_QUERY_DEBOUNCE
+    );
+    this.debouncedRootHandler = debounce(
+      this.rootHandler, BUTTON_ROOT_DEBOUNCE
+    );
+  }
+
+  queryHanlder (debounced) {
+    if (debounced) {
+      if (this.tempQueryMode !== this.currentQueryMode) {
+        if (this.tempQueryMode) {
+          this.vis.nodes.queryByNode(this.node, this.tempQueryMode);
+          this.triggerButtonBamEffect(this.buttonQueryBamEffect);
+          this.buttonQuery.classed('active', true);
+        } else {
+          this.vis.nodes.unqueryByNode(this.node, this.tempQueryMode);
+          this.buttonQuery.classed('active', false);
+        }
+      }
+    } else {
+      this.vis.nodes.toggleQueryByNode(this.node);
+    }
+
+    // Reset temporary query modes.
+    this.tempQueryMode = undefined;
+    this.currentQueryMode = undefined;
+    this.buttonQuery.classed('fill-effect', false);
   }
 
   clickQueryHandler () {
-    this.vis.nodes.toggleQueryMode(this.node);
-    this.updateQuery();
+    this.buttonQuery.classed('fill-effect', true);
+    this.updateQuery(true, BUTTON_QUERY_DEBOUNCE);
+    if (!this.vis.disableDebouncedContextMenu) {
+      this.debouncedQueryHandler(true);
+    } else {
+      this.queryHandler();
+    }
+  }
+
+  rootHandler (debounced) {
+    if (!debounced || this.tempRoot !== this.currentRootState) {
+      this.close();
+      this.vis.nodes.toggleRoot(this.node);
+    }
+
+    // Reset temporary root values.
+    this.tempRoot = undefined;
+    this.currentRootState = undefined;
+    this.buttonRoot.classed('fill-effect', false);
   }
 
   clickRootHandler () {
-    this.vis.nodes.toggleRoot(this.node);
-    this.close();
+    this.buttonRoot.classed('fill-effect', true);
+    this.checkRoot(true, BUTTON_ROOT_DEBOUNCE);
+    if (!this.vis.disableDebouncedContextMenu) {
+      this.debouncedRootHandler(true);
+    } else {
+      this.rootHandler();
+    }
   }
 
   clickLockHandler () {
+    this.buttonLock.classed('fill-effect', true);
     this.vis.nodes.toggleLock(this.node);
-    this.checkLock();
+    const checked = this.checkLock();
+    if (!this.vis.disableDebouncedContextMenu) {
+      if (checked) {
+        setTimeout(() => {
+          this.triggerButtonBamEffect(this.buttonLockBamEffect);
+          this.buttonLock.classed('fill-effect', false);
+        }, BUTTON_DEFAULT_DEBOUNCE);
+        this.buttonLock.classed('active', true);
+      } else {
+        this.buttonLock.classed('active', false);
+      }
+    }
   }
 
-  createButtonBg (selection, fullWidth) {
+  triggerButtonBamEffect (button) {
+    button.classed('active', true);
+    setTimeout(() => {
+      button.classed('active', false);
+    }, BUTTON_BAM_EFFECT_ANIMATION_TIME);
+  }
+
+  createButtonBg (selection, params) {
     selection.datum(data => {
       data.x = this.visData.global.row.padding;
       data.y = this.visData.global.row.padding;
-      data.width = this.visData.global.column.width * (fullWidth ? 1 : 0.5) -
+      data.width = this.visData.global.column.width * (params.fullWidth ? 1 : 0.5) -
         this.visData.global.row.padding * 2;
       data.height = this.visData.global.row.contentHeight;
       data.rx = 2;
@@ -153,6 +238,26 @@ class NodeContextMenu {
       .attr('height', data => data.height)
       .attr('rx', data => data.rx)
       .attr('ry', data => data.ry);
+
+    selection.append('rect')
+      .attr('class', 'bg-fill-effect')
+      .attr('x', data => data.x)
+      .attr('y', data => data.y)
+      .attr('width', data => data.width)
+      .attr('height', 0)
+      .attr('rx', data => data.rx)
+      .attr('ry', data => data.ry);
+
+    if (params.bamEffect) {
+      selection.append('rect')
+        .attr('class', 'bg-bam-effect')
+        .attr('x', data => data.x)
+        .attr('y', data => data.y)
+        .attr('width', data => data.width)
+        .attr('height', data => data.height)
+        .attr('rx', data => data.rx)
+        .attr('ry', data => data.ry);
+    }
   }
 
   createCheckbox (selection) {
@@ -307,30 +412,154 @@ class NodeContextMenu {
 
   checkLock () {
     const checked = this.node.datum().data.state.lock;
-    this.buttonLock.classed('active', checked);
+    this.buttonLock.classed('semi-active', checked);
     this.checkboxLock.style(
       'transform',
       'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
     );
+    if (checked) {
+      this.fillButton(this.buttonLockFill);
+    } else {
+      this.emptyButton(this.buttonLockFill);
+    }
+    return checked;
   }
 
-  checkRoot () {
-    const checked = this.node.datum().data.state.root;
-    this.buttonRoot.classed('active', checked);
+  checkRoot (debounced, time) {
+    const state = this.node.datum().data.state.root;
+    let checked = state;
+
+    if (debounced) {
+      if (typeof this.currentRootState === 'undefined') {
+        this.currentRootState = !!state;
+      }
+      if (typeof this.tempRoot === 'undefined') {
+        this.tempRoot = this.currentRootState;
+      }
+      this.tempRoot = !this.tempRoot;
+      checked = this.tempRoot;
+    }
+
+    if (!state) {
+      if (debounced) {
+        if (checked) {
+          this.fillButton(this.buttonRootFill, time);
+        } else {
+          this.hideFillButton(this.buttonRootFill);
+        }
+      } else {
+        this.emptyButton(this.buttonRootFill, time);
+      }
+    } else {
+      if (debounced) {
+        if (!checked) {
+          this.emptyButton(this.buttonRootFill, time);
+        } else {
+          this.showFillButton(this.buttonRootFill);
+        }
+      } else {
+        this.fillButton(this.buttonRootFill, time);
+      }
+    }
+
+    this.buttonRoot.classed('semi-active active', checked);
     this.checkboxRoot.style(
       'transform',
       'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
     );
   }
 
-  updateQuery () {
-    const queryMode = this.node.datum().data.state.query;
+  updateQuery (debounced, time) {
+    const state = this.node.datum().data.state.query;
+    let queryMode = state;
+
+    function nextQueryMode (mode) {
+      switch (mode) {
+        case 'or':
+          return 'and';
+        case 'and':
+          return 'not';
+        case 'not':
+          return null;
+        default:
+          return 'or';
+      }
+    }
+
+    if (debounced) {
+      if (typeof this.currentQueryMode === 'undefined') {
+        this.currentQueryMode = state;
+      }
+      if (typeof this.tempQueryMode === 'undefined') {
+        this.tempQueryMode = this.currentQueryMode;
+      }
+      this.tempQueryMode = nextQueryMode(this.tempQueryMode);
+      queryMode = this.tempQueryMode;
+    }
+
+    if (debounced) {
+      if (queryMode) {
+        if (queryMode === state) {
+          this.showFillButton(this.buttonQueryFill);
+        } else {
+          this.fillButton(this.buttonQueryFill, time);
+        }
+      } else {
+        if (state) {
+          this.emptyButton(this.buttonQueryFill, time);
+        } else {
+          this.hideFillButton(this.buttonQueryFill);
+        }
+      }
+    } else {
+      this.emptyButton(this.buttonQueryFill, time);
+    }
 
     this.buttonQuery
-      .classed('active', !!queryMode)
+      .classed('semi-active', !!queryMode)
+      .classed('active', !!state)
       .select('.query-mode')
         .text(queryMode || 'not queried')
         .classed('inactive', !queryMode);
+  }
+
+  fillButton (selection, time) {
+    selection
+      .transition()
+      .duration(0)
+      .attr('y', data => data.y)
+      .attr('height', 0)
+      .call(allTransitionsEnded, () => {
+        selection
+          .transition()
+          .duration(time || BUTTON_DEFAULT_DEBOUNCE)
+          .ease('linear')
+          .attr('height', data => data.height);
+      });
+  }
+
+  emptyButton (selection, time) {
+    selection
+      .transition()
+      .duration(0)
+      .attr('y', data => data.y)
+      .attr('height', data => data.height)
+      .call(allTransitionsEnded, () => {
+        selection
+          .transition()
+          .duration(time || BUTTON_DEFAULT_DEBOUNCE)
+          .ease('linear')
+          .attr('y', data => data.height)
+          .attr('height', 0);
+      });
+  }
+
+  hideFillButton (selection) {
+    selection.transition().duration(0).attr('height', 0);
+  }
+
+  showFillButton (selection) {
+    selection.transition().duration(0).attr('height', data => data.height);
   }
 }
 
