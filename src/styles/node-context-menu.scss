@@ -1,0 +1,102 @@
+.list-graph {
+  .context-menu {
+    display: none;
+    opacity: 0;
+
+    &.transitionable {
+      display: block;
+      transition: all $transition-lightning-fast $ease-in-out-cubic;
+    }
+    &.open {
+      opacity: 1;
+    }
+
+    >.bg {
+      fill: $white;
+    }
+
+    >.bgBorder {
+      fill: $black;
+      fill-opacity: 0.1;
+    }
+
+    .button .bg {
+      fill: $grey-lightest;
+      transition: all $transition-lightning-fast $ease-in-out-cubic;
+    }
+
+    .button .label,
+    .button .label-two {
+      display: block;
+      float: left;
+      height: 100%;
+      color: $text-color-normal;
+      font-size: 0.75rem;
+      line-height: inherit;
+
+      &.inactive {
+        color: $text-color-inactive;
+      }
+    }
+
+    .label-two {
+      margin-left: 0.25rem;
+    }
+
+    .button:hover {
+      cursor: pointer;
+
+      .bg {
+        fill: $grey-light;
+      }
+
+      .label,
+      .label-two {
+        color: $text-color-semi-highlight;
+      }
+    }
+
+    .checkbox {
+      .icon-unchecked {
+        opacity: 0.66;
+      }
+
+      &.checked .icon-unchecked {
+        opacity: 0;
+      }
+
+      .icon-checked {
+        opacity: 0;
+      }
+
+      &.checked .icon-checked {
+        opacity: 1;
+      }
+
+      .checkbox-bg {
+        fill: $white;
+      }
+
+      .checkbox-knob {
+        fill: $grey-light;
+        transition: all $transition-lightning-fast $ease-in-out-cubic;
+      }
+    }
+
+    .button.active {
+      .bg {
+        fill: lighten($color-highlight-blue, 40%);
+      }
+
+      .label,
+      .label-two {
+        color: $black;
+        font-weight: bold;
+      }
+
+      .checkbox-knob {
+        fill: $color-highlight-blue;
+      }
+    }
+  }
+}

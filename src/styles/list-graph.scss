@@ -441,67 +441,18 @@
     text-shadow: 0 0 3px transparentize($color-highlight-red, 0.75);
   }
 
-  .node .focus-controls .bg {
-    fill: #fff;
-    fill-opacity: 0;
-    stroke: #fff;
-    stroke-width: 1;
-    stroke-opacity: 0;
-  }
-
   .node .focus-controls .hover-helper {
     fill-opacity: 0;
   }
 
-  .node:hover .focus-controls .bg {
-    fill-opacity: 0.66;
-    stroke-opacity: 0.66;
-  }
-
-  .node .focus-controls:hover .bg {
-    fill-opacity: 0.85;
-    stroke-opacity: 1;
-  }
-
-  .node .focus-controls.active .bg,
-  .node.animating .focus-controls .bg {
-    fill-opacity: 0 !important;
-    stroke-opacity: 0 !important;
-  }
-
-  .node .focus-controls:hover .icon {
+  .node.rooted .focus-controls:hover .icon {
     color: $color-highlight-red;
-  }
-
-  .node.active .root .icon,
-  .node .focus-controls.active .icon,
-  .node .focus-controls.active:hover .icon,
-  .node.active .focus-controls:hover .icon {
-    color: $black;
-  }
-
-  .node.query-and .query .state-inactive,
-  .node.query-or .query .state-inactive,
-  .node.query-not .query .state-inactive {
-    opacity: 0 !important;
-  }
-
-  .node:hover .focus-controls.inactive .state-inactive,
-  .node .focus-controls.active .state-active,
-  .node.query-and .focus-controls .state-and-or,
-  .node.query-or .focus-controls .state-and-or,
-  .node.query-not .focus-controls .state-not,
-  .node.rooted .focus-controls.root .state-active {
     opacity: 1;
+    cursor: pointer;
   }
 
-  .node .focus-controls .state-and-or use {
-    transition: all $transition-fast $ease-in-out-cubic;
-    transform-origin: 50% 50%;
-  }
-
-  .node.query-and .focus-controls .state-and-or use {
-    transform: scale(1, -1);
+  .node.rooted .focus-controls.root .state-active {
+    opacity: 0.33;
   }
 
   .bar-border,
@@ -573,56 +524,6 @@
   .bar.highlight .bar-magnitude {
     fill: lighten($color-highlight-red, 20%);
     fill-opacity: 1 !important;
-  }
-
-  .context-menu {
-    display: none;
-    opacity: 0;
-
-    &.transitionable {
-      display: block;
-      transition: all $transition-lightning-fast $ease-in-out-cubic;
-    }
-    &.open {
-      opacity: 1;
-    }
-
-    >.bg {
-      fill: #fff;
-    }
-
-    >.bgBorder {
-      fill: #000;
-      fill-opacity: 0.1;
-    }
-
-    .button .bg {
-      fill: $grey-lighter;
-      transition: all $transition-lightning-fast $ease-in-out-cubic;
-    }
-
-    .button .label {
-      color: $text-color-normal;
-      font-size: 0.75rem;
-    }
-
-    .button:hover {
-      cursor: pointer;
-
-      .bg {
-        fill: $grey-light;
-      }
-
-      .label {
-        color: $text-color-semi-highlight;
-      }
-    }
-
-    .checkbox {
-      &.checked .invisible-default {
-        opacity: 1;
-      }
-    }
   }
 
   .link-indicator {
