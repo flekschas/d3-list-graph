@@ -640,8 +640,8 @@ class Nodes {
     });
   }
 
-  queryNode (d3El, data, mode) {
-    data.data.state.query = mode;
+  queryByNode (d3El, mode) {
+    d3El.datum().data.state.query = mode;
     d3El.classed({
       active: true,
       inactive: false,
@@ -651,9 +651,12 @@ class Nodes {
     });
   }
 
-  unqueryNode (d3El, data) {
+  unqueryByNode (d3El) {
+    const data = d3El.datum();
+
     data.data.state.query = undefined;
     data.data.queryBeforeRooting = undefined;
+
     d3El.classed({
       active: false,
       inactive: true,
@@ -661,34 +664,35 @@ class Nodes {
       'query-or': false,
       'query-not': false
     });
+
     if (this.rootedNode) {
       this.updateVisibility();
     }
   }
 
-  toggleQueryMode (d3El) {
+  toggleQueryByNode (d3El) {
     const data = d3El.datum();
     const previousMode = data.data.state.query;
 
     if (data.data.state.root) {
       if (previousMode !== 'or') {
-        this.queryNode(d3El, data, 'or');
+        this.queryByNode(d3El, 'or');
       } else {
-        this.queryNode(d3El, data, 'and');
+        this.queryByNode(d3El, 'and');
       }
     } else {
       switch (previousMode) {
         case 'or':
-          this.queryNode(d3El, data, 'and');
+          this.queryByNode(d3El, 'and');
           break;
         case 'and':
-          this.queryNode(d3El, data, 'not');
+          this.queryByNode(d3El, 'not');
           break;
         case 'not':
-          this.unqueryNode(d3El, data);
+          this.unqueryByNode(d3El);
           break;
         default:
-          this.queryNode(d3El, data, 'or');
+          this.queryByNode(d3El, 'or');
           break;
       }
     }
@@ -777,7 +781,7 @@ class Nodes {
     this.showNodes();
 
     if (!data.data.queryBeforeRooting) {
-      this.unqueryNode(d3El, data);
+      this.unqueryByNode(d3El, data);
     }
   }
 
