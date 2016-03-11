@@ -183,6 +183,8 @@ class NodeContextMenu {
     this.tempRoot = undefined;
     this.currentRootState = undefined;
     this.buttonRoot.classed('fill-effect', false);
+
+    this.buttonRoot.classed('active', this.node.datum().data.state.root);
   }
 
   clickRootHandler () {
@@ -465,7 +467,7 @@ class NodeContextMenu {
       }
     }
 
-    this.buttonRoot.classed('semi-active active', checked);
+    this.buttonRoot.classed('semi-active', checked);
     this.checkboxRoot.style(
       'transform',
       'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
