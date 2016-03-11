@@ -11,13 +11,14 @@ import { roundRect } from '../commons/charts';
 
 const CLASS_NODES = 'nodes';
 const CLASS_NODE = 'node';
+const CLASS_NODE_VISIBLE = 'visible-node';
 const CLASS_CLONE = 'clone';
 const CLASS_LABEL_WRAPPER = 'label-wrapper';
 const CLASS_FOCUS_CONTROLS = 'focus-controls';
 const CLASS_ROOT = 'root';
 const CLASS_QUERY = 'query';
 const CLASS_LOCK = 'lock';
-const CLASS_ACTIVE = 'active';
+// const CLASS_ACTIVE = 'active';
 const CLASS_INACTIVE = 'inactive';
 const CLASS_INDICATOR_BAR = 'link-indicator';
 const CLASS_INDICATOR_LOCATION = 'link-location-indicator';
@@ -134,67 +135,28 @@ class Nodes {
         .classed(CLASS_NODE, true)
         .classed(CLASS_CLONE, data => data.clone)
         .attr('transform', data => 'translate(' +
-          (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
-        .on('mouseenter', function (data) {
-          that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
-            const el = d3.select(domEl);
+          (data.x + this.visData.global.column.padding) + ', ' + data.y + ')');
 
-            if (!!!this.vis.activeScrollbar) {
-              this.enterHandler.call(this, domEl, _data);
-            }
+    this.visNodes = this.nodes.append('g')
+      .attr('class', CLASS_NODE_VISIBLE)
+      .on('mouseenter', function (data) {
+        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
+          if (!!!this.vis.activeScrollbar) {
+            this.enterHandler.call(this, domEl, _data);
+          }
+        }.bind(that), [this, data]);
+      })
+      .on('mouseleave', function (data) {
+        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
+          if (!!!this.vis.activeScrollbar) {
+            this.leaveHandler.call(this, domEl, _data);
+          }
+        }.bind(that), [this, data]);
+      });
 
-            if (!el.classed('rooted')) {
-              el.selectAll('.bg-extension')
-                .style(
-                  'transform',
-                  'translateX(' + (
-                    this.vis.querying ?
-                      -this.iconDimension * 2 - 10 : -this.iconDimension - 6
-                  ) + 'px)'
-                );
-            }
-          }.bind(that), [this, data]);
-        })
-        .on('mouseleave', function (data) {
-          that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
-            const el = d3.select(domEl);
+    this.visNodes.append('rect').call(drawFullSizeRect, 'bg-border');
 
-            if (!!!this.vis.activeScrollbar) {
-              this.leaveHandler.call(this, domEl, _data);
-            }
-
-            if (!el.classed('rooted')) {
-              if (_data.data.state.query) {
-                el.selectAll('.bg-extension')
-                  .style(
-                    'transform',
-                    'translateX(' + (-this.iconDimension - 6) + 'px)'
-                  );
-              } else {
-                el.selectAll('.bg-extension')
-                  .style(
-                    'transform',
-                    'translateX(0px)'
-                  );
-              }
-            }
-          }.bind(that), [this, data]);
-        });
-
-    this.nodes.append('rect')
-      .call(drawFullSizeRect, 'bg-extension')
-      .attr(
-        'width',
-        Math.max(
-          this.visData.global.column.padding +
-            this.visData.global.column.contentWidth / 2,
-          this.visData.global.column.contentWidth
-        )
-      );
-
-    this.nodes.append('rect').call(drawFullSizeRect, 'bg-border');
-
-    this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
+    this.visNodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
 
     if (this.vis.showLinkLocation) {
       this.nodes.append('rect')
@@ -223,7 +185,7 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        this.vis.querying ? 2 : 1,
+        1.5,
         'hover-helper',
         'hover-helper'
       );
@@ -232,7 +194,7 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        this.vis.querying ? 2 : 1,
+        1.5,
         'icon',
         'ease-all state-inactive invisible-default icon'
       )
@@ -243,99 +205,21 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        this.vis.querying ? 2 : 1,
+        1.5,
         'icon',
         'ease-all state-active invisible-default icon'
       )
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#locked');
 
-    // Querying icons
-    if (this.vis.querying) {
-      const nodeQuery = this.nodes.append('g')
-        .attr(
-          'class', `${CLASS_FOCUS_CONTROLS} ${CLASS_QUERY} ${CLASS_INACTIVE}`
-        );
+    this.bars = new Bars(this.vis, this.visNodes, this.vis.barMode, this.visData);
 
-      nodeQuery.append('rect')
-        .call(
-          this.setUpFocusControls.bind(this),
-          'left',
-          1,
-          'hover-helper',
-          'hover-helper'
-        );
-
-      nodeQuery.append('svg')
-        .call(
-          this.setUpFocusControls.bind(this),
-          'left',
-          1,
-          'icon',
-          'ease-all state-inactive invisible-default icon'
-        )
-        .append('use')
-          .attr('xlink:href', this.vis.iconPath + '#set-inactive');
-
-      nodeQuery.append('svg')
-        .call(
-          this.setUpFocusControls.bind(this),
-          'left',
-          1,
-          'icon',
-          'ease-all state-and-or invisible-default icon'
-        )
-        .append('use')
-          .attr('xlink:href', this.vis.iconPath + '#union');
-
-      nodeQuery.append('svg')
-        .call(
-          this.setUpFocusControls.bind(this),
-          'left',
-          1,
-          'icon',
-          'ease-all state-not invisible-default icon'
-        )
-        .append('use')
-          .attr('xlink:href', this.vis.iconPath + '#not');
-    }
-
-    const nodeLocks = this.nodes.append('g')
-      .attr('class', `${CLASS_FOCUS_CONTROLS} ${CLASS_LOCK} ${CLASS_INACTIVE}`);
-
-    nodeLocks.append('circle')
-      .call(this.setUpFocusControls.bind(this), 'right', 0, 'bg', 'bg');
-
-    nodeLocks.append('svg')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'right',
-        0,
-        'icon',
-        'ease-all state-inactive invisible-default icon'
-      )
-      .append('use')
-        .attr('xlink:href', this.vis.iconPath + '#unlocked');
-
-    nodeLocks.append('svg')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'right',
-        0,
-        'icon',
-        'ease-all state-active invisible-default icon'
-      )
-      .append('use')
-        .attr('xlink:href', this.vis.iconPath + '#locked');
-
-    this.bars = new Bars(this.vis, this.nodes, this.vis.barMode, this.visData);
-
-    this.nodes
+    this.visNodes
       .append('rect')
         .call(drawFullSizeRect, 'border');
 
     // Add node label
-    this.nodes.append('foreignObject')
+    this.visNodes.append('foreignObject')
       .attr('x', this.visData.global.cell.padding)
       .attr('y', this.visData.global.row.padding +
         this.visData.global.cell.padding)
@@ -352,10 +236,6 @@ class Nodes {
           .text(data => data.data.name);
 
     if (isFunction(this.events.on)) {
-      // this.events.on('d3ListGraphNodeClick', dataSetIds => {
-      //   console.log('d3ListGraphNodeClick', dataSetIds);
-      // });
-
       this.events.on('d3ListGraphFocusNodes', event => this.focusNodes(event));
 
       this.events.on('d3ListGraphBlurNodes', event => this.blurNodes(event));
@@ -406,6 +286,7 @@ class Nodes {
 
   get classNnodes () { return CLASS_NODES; }
   get classNode () { return CLASS_NODE; }
+  get classNodeVisible () { return CLASS_NODE_VISIBLE; }
   get classClone () { return CLASS_CLONE; }
   get classLabelWrapper () { return CLASS_LABEL_WRAPPER; }
   get classFocusControls () { return CLASS_FOCUS_CONTROLS; }
@@ -493,13 +374,8 @@ class Nodes {
     );
   }
 
-  clickHandler (el, data) {
-    this.toggleQueryMode(el, data);
-    // this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
-  }
-
   enterHandler (el, data) {
-    this.highlightNodes(el, data);
+    this.highlightNodes(d3.select(el));
 
     const eventData = {
       id: data.id,
@@ -516,7 +392,7 @@ class Nodes {
   }
 
   leaveHandler (el, data) {
-    this.unhighlightNodes(el, data);
+    this.unhighlightNodes(d3.select(el));
 
     const eventData = {
       id: data.id,
@@ -573,8 +449,8 @@ class Nodes {
     }
   }
 
-  rootHandler (el) {
-    const events = this.toggleRoot(el);
+  rootHandler (d3El) {
+    const events = this.toggleRoot(d3El);
 
     if (events.rooted && events.unrooted) {
       this.events.broadcast('d3ListGraphNodeReroot', {
@@ -625,10 +501,40 @@ class Nodes {
       this.highlightNodes,
       ['focus', 'directParentsOnly', !!event.excludeClones]
     );
+
     if (event.zoomOut) {
       this.vis.globalView(this.nodes.filter(data => data.hovering > 0));
     } else {
       this.vis.zoomedView();
+    }
+
+    if (event.hideUnrelatedNodes) {
+      this.tempHidingUnrelatedNodes = true;
+
+      this.nodes.filter(data => !data.hovering)
+        .classed(
+          'hidden', true
+        )
+        .each(data => {
+          // Store old value for `hidden` temporarily
+          data._hidden = data.hidden;
+          data.hidden = true;
+        });
+
+      this.updateVisibility();
+    } else if (this.tempHidingUnrelatedNodes) {
+      this.tempHidingUnrelatedNodes = false;
+
+      this.nodes.filter(data => !data.hovering)
+        .classed(
+          'hidden', data => data._hidden
+        )
+        .each(data => {
+          data.hidden = data._hidden;
+          data._hidden = undefined;
+        });
+
+      this.updateVisibility();
     }
   }
 
@@ -638,8 +544,24 @@ class Nodes {
       this.unhighlightNodes,
       ['focus', 'directParentsOnly', !!event.excludeClones]
     );
+
     if (event.zoomIn) {
       this.vis.zoomedView();
+    }
+
+    if (this.tempHidingUnrelatedNodes) {
+      this.tempHidingUnrelatedNodes = false;
+
+      this.nodes.filter(data => !data.hovering)
+        .classed(
+          'hidden', data => data._hidden
+        )
+        .each(data => {
+          data.hidden = data._hidden;
+          data._hidden = undefined;
+        });
+
+      this.updateVisibility();
     }
   }
 
@@ -672,9 +594,6 @@ class Nodes {
     const events = { locked: false, unlocked: false };
 
     if (this.lockedNode) {
-      this.lockedNode
-        .classed(CLASS_ACTIVE, false)
-        .classed(CLASS_INACTIVE, true);
       if (this.lockedNode.datum().id === data.id) {
         this.unlockNode(this.lockedNode.datum().id);
         events.unlocked = this.lockedNode.datum();
@@ -685,7 +604,6 @@ class Nodes {
         events.unlocked = this.lockedNode.datum();
 
         if (!setFalse) {
-          d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
           this.lockNode(data.id);
           events.locked = data;
           this.lockedNode = d3El;
@@ -693,7 +611,6 @@ class Nodes {
       }
     } else {
       if (!setFalse) {
-        d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
         this.lockNode(data.id);
         events.locked = data;
         this.lockedNode = d3El;
@@ -707,47 +624,25 @@ class Nodes {
     const that = this;
     const els = this.nodes.filter(data => data.id === id);
 
-    els.each(function triggerHighlighter (data) {
-      that.highlightNodes(this, data, 'lock', undefined);
-      data.state.locked = true;
+    els.each(function (data) {
+      that.highlightNodes(d3.select(this), 'lock', undefined);
+      data.data.state.lock = true;
     });
-
-    els.selectAll('.bg-border')
-      .transition()
-      .duration(config.TRANSITION_SEMI_FAST)
-      .attr('width', function width () {
-        return parseInt(
-          d3.select(this).attr('width'), 10
-        ) + that.visData.global.row.height / 2;
-      });
   }
 
   unlockNode (id) {
     const that = this;
     const els = this.nodes.filter(data => data.id === id);
-    const start = function animationStart () {
-      d3.select(this.parentNode).classed('animating', true);
-    };
-    const end = function animationEnd () {
-      d3.select(this.parentNode).classed('animating', false);
-    };
-
-    els.selectAll('.bg-border')
-      .transition()
-      .duration(config.TRANSITION_SEMI_FAST)
-      .attr('width', this.visData.global.column.contentWidth)
-      .each('start', start)
-      .each('end', end);
 
     els.each(function (data) {
-      that.unhighlightNodes(this, data, 'lock', undefined);
-      data.state.locked = undefined;
+      that.unhighlightNodes(d3.select(this), 'lock', undefined);
+      data.data.state.lock = undefined;
     });
   }
 
-  queryNode (el, data, mode) {
+  queryNode (d3El, data, mode) {
     data.data.state.query = mode;
-    d3.select(el).classed({
+    d3El.classed({
       active: true,
       inactive: false,
       'query-and': mode === 'and',
@@ -756,10 +651,10 @@ class Nodes {
     });
   }
 
-  unqueryNode (el, data) {
+  unqueryNode (d3El, data) {
     data.data.state.query = undefined;
     data.data.queryBeforeRooting = undefined;
-    d3.select(el).classed({
+    d3El.classed({
       active: false,
       inactive: true,
       'query-and': false,
@@ -771,28 +666,29 @@ class Nodes {
     }
   }
 
-  toggleQueryMode (el, data) {
+  toggleQueryMode (d3El) {
+    const data = d3El.datum();
     const previousMode = data.data.state.query;
 
-    if (data.state.root) {
+    if (data.data.state.root) {
       if (previousMode !== 'or') {
-        this.queryNode(el, data, 'or');
+        this.queryNode(d3El, data, 'or');
       } else {
-        this.queryNode(el, data, 'and');
+        this.queryNode(d3El, data, 'and');
       }
     } else {
       switch (previousMode) {
         case 'or':
-          this.queryNode(el, data, 'and');
+          this.queryNode(d3El, data, 'and');
           break;
         case 'and':
-          this.queryNode(el, data, 'not');
+          this.queryNode(d3El, data, 'not');
           break;
         case 'not':
-          this.unqueryNode(el, data);
+          this.unqueryNode(d3El, data);
           break;
         default:
-          this.queryNode(el, data, 'or');
+          this.queryNode(d3El, data, 'or');
           break;
       }
     }
@@ -817,12 +713,6 @@ class Nodes {
     }
   }
 
-  progToggleQueryMode (el, data) {
-    this.toggleQueryMode(
-      d3.select(el).selectAll('.focus-controls.query')[0].node(), data
-    );
-  }
-
   toggleRoot (d3El, setFalse) {
     const data = d3El.datum();
     const events = { rooted: false, unrooted: false };
@@ -833,7 +723,7 @@ class Nodes {
     if (this.rootedNode) {
       // Reset current root node
       this.rootedNode.classed({ active: false, inactive: true });
-      this.unrootNode(this.rootedNode.node(), this.rootedNode.datum());
+      this.unrootNode(this.rootedNode);
       events.unrooted = this.rootedNode.datum();
 
       // Activate new root
@@ -864,51 +754,30 @@ class Nodes {
   rootNode (d3El) {
     const data = d3El.datum();
 
-    data.state.root = true;
+    data.data.state.root = true;
     d3El.classed('rooted', true);
-    this.hideNodes(d3El.node(), data, 'downStream');
-
-    d3El.selectAll('.bg-extension')
-      .style(
-        'transform',
-        'translateX(' + (
-          this.vis.querying ?
-            -this.iconDimension * 2 - 10 : -this.iconDimension - 6
-        ) + 'px)'
-      );
+    this.hideNodes(data);
 
     // Highlight level
     this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
     if (!data.data.state.query || data.data.state.query === 'not') {
-      this.toggleQueryMode(d3El.node(), data);
+      this.toggleQueryMode(d3El);
       data.data.queryBeforeRooting = false;
     } else {
       data.data.queryBeforeRooting = true;
     }
   }
 
-  unrootNode (el, data) {
-    const d3El = d3.select(el.parentNode);
+  unrootNode (d3El) {
+    const data = d3El.datum();
 
-    let x = 0;
-
-    if (data.data.state.query) {
-      x = -this.iconDimension - 6;
-    }
-
-    d3El.selectAll('.bg-extension')
-      .style(
-        'transform',
-        'translateX(' + x + 'px)'
-      );
-
-    data.state.root = false;
+    data.data.state.root = false;
     d3El.classed('rooted', false);
-    this.showNodes(d3El.node(), data, 'downStream');
+    this.showNodes();
 
     if (!data.data.queryBeforeRooting) {
-      this.unqueryNode(d3El.node(), data);
+      this.unqueryNode(d3El, data);
     }
   }
 
@@ -962,13 +831,10 @@ class Nodes {
    * @method  hideNodes
    * @author  Fritz Lekschas
    * @date    2016-02-21
-   * @param   {Object}  el         DOM element.
-   * @param   {Object}  data       D3 data object of `el`.
-   * @param   {String}  direction  Defines whether upstream or downstream nodes
-   *   should be hidden.
+   * @param   {Object}   data        Node data object.
    */
-  hideNodes (el, data, direction) {
-    this.nodesVisibility(el, data, direction);
+  hideNodes (data) {
+    this.nodesVisibility(data);
   }
 
   /**
@@ -977,13 +843,10 @@ class Nodes {
    * @method  showNodes
    * @author  Fritz Lekschas
    * @date    2016-02-21
-   * @param   {Object}  el         DOM element.
-   * @param   {Object}  data       D3 data object of `el`.
-   * @param   {String}  direction  Defines whether upstream or downstream nodes
-   *   should be shown.
+   * @param   {Object}  data       Node data object.
    */
-  showNodes (el, data, direction) {
-    this.nodesVisibility(el, data, direction, true);
+  showNodes () {
+    this.nodesVisibility(undefined, true);
   }
 
   /**
@@ -992,12 +855,10 @@ class Nodes {
    * @method  nodesVisibility
    * @author  Fritz Lekschas
    * @date    2016-02-21
-   * @param   {Object}   el         DOM element.
-   * @param   {Object}   data       D3 data object of `el`.
-   * @param   {String}   direction  Defines whether upstream or downstream nodes
-   * @param   {Boolean}  show       If `true` nodes will be shown.
+   * @param   {Object}   data        Node data object.
+   * @param   {Boolean}  show        If `true` nodes will be shown.
    */
-  nodesVisibility (el, data, direction, show) {
+  nodesVisibility (data, show) {
     if (show) {
       this.nodes
         .classed('hidden', false)
@@ -1020,8 +881,9 @@ class Nodes {
     this.updateVisibility();
   }
 
-  highlightNodes (el, data, className, restriction, excludeClones) {
+  highlightNodes (d3El, className, restriction, excludeClones) {
     const that = this;
+    const data = d3El.datum();
     const nodeId = data.id;
     const currentNodeData = data.clone ? data.originalNode : data;
     const includeParents = true;
@@ -1035,7 +897,7 @@ class Nodes {
     }
     this.currentLinks[appliedClassName][nodeId] = {};
 
-    let currentlyActiveBar = d3.select(el).selectAll(
+    let currentlyActiveBar = d3El.selectAll(
       '.bar.active .bar-magnitude'
     );
     if (!currentlyActiveBar.empty()) {
@@ -1181,7 +1043,8 @@ class Nodes {
     );
   }
 
-  unhighlightNodes (el, data, className, restriction, excludeClones) {
+  unhighlightNodes (d3El, className, restriction, excludeClones) {
+    const data = d3El.datum();
     const traverseCallback = nodeData => { nodeData.hovering = 0; };
     const includeParents = true;
     const appliedClassName = className || 'hovering';
