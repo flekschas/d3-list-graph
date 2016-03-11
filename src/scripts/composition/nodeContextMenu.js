@@ -107,6 +107,166 @@ class NodeContextMenu {
     this.checkboxLock = this.createCheckbox(this.buttonLock);
   }
 
+  /* ---------------------------------------------------------------------------
+   * Getter / Setter
+   * ------------------------------------------------------------------------ */
+
+  get scale () {
+    return 'scale(' + (this.opened ? 1 : 0.5) + ')';
+  }
+
+  get translate () {
+    return 'translate(' + this._x + 'px,' + (this._y + this._yOffset) + 'px)';
+  }
+
+  set translate (position) {
+    this._x = position.x;
+    this._y = position.y;
+  }
+
+  /* ---------------------------------------------------------------------------
+   * Methods
+   * ------------------------------------------------------------------------ */
+
+  /* ---------------------------------- A ----------------------------------- */
+
+  addLabel (selection, label, labelTwo) {
+    const div = selection.append('foreignObject')
+      .attr('x', this.visData.global.row.padding * 2)
+      .attr('y', this.visData.global.row.padding +
+        this.visData.global.cell.padding)
+      .attr('width', this.visData.global.column.contentWidth)
+      .attr('height', this.visData.global.row.contentHeight -
+        this.visData.global.cell.padding * 2)
+      .attr('class', 'label-wrapper')
+      .append('xhtml:div')
+        .style('line-height', (this.visData.global.row.contentHeight -
+          this.visData.global.cell.padding * 2) + 'px');
+
+    div.append('xhtml:span')
+      .attr('class', 'label')
+      .attr('title', label)
+      .text(label);
+
+    if (labelTwo) {
+      div.append('xhtml:span').attr('class', `label-two ${labelTwo}`);
+    }
+  }
+
+  /* ---------------------------------- C ----------------------------------- */
+
+  checkLock () {
+    const checked = this.node.datum().data.state.lock;
+    this.buttonLock.classed('semi-active', checked);
+    this.checkboxLock.style(
+      'transform',
+      'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
+    );
+    if (checked) {
+      this.fillButton(this.buttonLockFill);
+    } else {
+      this.emptyButton(this.buttonLockFill);
+    }
+    return checked;
+  }
+
+  checkRoot (debounced, time) {
+    const state = this.node.datum().data.state.root;
+    let checked = state;
+
+    if (debounced) {
+      if (typeof this.currentRootState === 'undefined') {
+        this.currentRootState = !!state;
+      }
+      if (typeof this.tempRoot === 'undefined') {
+        this.tempRoot = this.currentRootState;
+      }
+      this.tempRoot = !this.tempRoot;
+      checked = this.tempRoot;
+    }
+
+    if (!state) {
+      if (debounced) {
+        if (checked) {
+          this.fillButton(this.buttonRootFill, time);
+        } else {
+          this.hideFillButton(this.buttonRootFill);
+        }
+      } else {
+        this.emptyButton(this.buttonRootFill, time);
+      }
+    } else {
+      if (debounced) {
+        if (!checked) {
+          this.emptyButton(this.buttonRootFill, time);
+        } else {
+          this.showFillButton(this.buttonRootFill);
+        }
+      } else {
+        this.fillButton(this.buttonRootFill, time);
+      }
+    }
+
+    this.buttonRoot.classed('semi-active', checked);
+    this.checkboxRoot.style(
+      'transform',
+      'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
+    );
+  }
+
+  clickLockHandler () {
+    this.buttonLock.classed('fill-effect', true);
+    this.vis.nodes.toggleLock(this.node);
+    const checked = this.checkLock();
+    if (checked) {
+      this.buttonLock.classed('active', true);
+    } else {
+      this.buttonLock.classed('active', false);
+    }
+    setTimeout(() => {
+      if (checked) {
+        this.triggerButtonBamEffect(this.buttonLockBamEffect);
+      }
+      this.buttonLock.classed('fill-effect', false);
+    }, BUTTON_DEFAULT_DEBOUNCE);
+  }
+
+  clickQueryHandler () {
+    this.buttonQuery.classed('fill-effect', true);
+    this.updateQuery(true, BUTTON_QUERY_DEBOUNCE);
+    if (!this.vis.disableDebouncedContextMenu) {
+      this.debouncedQueryHandler(true);
+    } else {
+      this.queryHandler();
+    }
+  }
+
+  clickRootHandler () {
+    this.buttonRoot.classed('fill-effect', true);
+    this.checkRoot(true, BUTTON_ROOT_DEBOUNCE);
+    if (!this.vis.disableDebouncedContextMenu) {
+      this.debouncedRootHandler(true);
+    } else {
+      this.rootHandler();
+    }
+  }
+
+  close () {
+    if (!this.closing) {
+      this.closing = new Promise(resolve => {
+        this.opened = false;
+        this.wrapper.call(this.updateAppearance.bind(this));
+
+        setTimeout(() => {
+          this.visible = false;
+          this.wrapper.call(this.updateAppearance.bind(this));
+          resolve(this.node.datum().id);
+          this.node = undefined;
+        }, TRANSITION_SPEED);
+      });
+    }
+    return this.closing;
+  }
   createButton (selection, properties) {
     let classNames = 'button';
     if (properties.classNames && properties.classNames.length) {
@@ -134,91 +294,11 @@ class NodeContextMenu {
       );
 
     this.debouncedQueryHandler = debounce(
-      this.queryHanlder, BUTTON_QUERY_DEBOUNCE
+      this.queryHandler, BUTTON_QUERY_DEBOUNCE
     );
     this.debouncedRootHandler = debounce(
       this.rootHandler, BUTTON_ROOT_DEBOUNCE
     );
-  }
-
-  queryHanlder (debounced) {
-    if (debounced) {
-      if (this.tempQueryMode !== this.currentQueryMode) {
-        if (this.tempQueryMode) {
-          this.vis.nodes.queryByNode(this.node, this.tempQueryMode);
-          this.triggerButtonBamEffect(this.buttonQueryBamEffect);
-          this.buttonQuery.classed('active', true);
-        } else {
-          this.vis.nodes.unqueryByNode(this.node, this.tempQueryMode);
-          this.buttonQuery.classed('active', false);
-        }
-      }
-    } else {
-      this.vis.nodes.toggleQueryByNode(this.node);
-    }
-
-    // Reset temporary query modes.
-    this.tempQueryMode = undefined;
-    this.currentQueryMode = undefined;
-    this.buttonQuery.classed('fill-effect', false);
-  }
-
-  clickQueryHandler () {
-    this.buttonQuery.classed('fill-effect', true);
-    this.updateQuery(true, BUTTON_QUERY_DEBOUNCE);
-    if (!this.vis.disableDebouncedContextMenu) {
-      this.debouncedQueryHandler(true);
-    } else {
-      this.queryHandler();
-    }
-  }
-
-  rootHandler (debounced) {
-    if (!debounced || this.tempRoot !== this.currentRootState) {
-      this.close();
-      this.vis.nodes.toggleRoot(this.node);
-    }
-
-    // Reset temporary root values.
-    this.tempRoot = undefined;
-    this.currentRootState = undefined;
-    this.buttonRoot.classed('fill-effect', false);
-
-    this.buttonRoot.classed('active', this.node.datum().data.state.root);
-  }
-
-  clickRootHandler () {
-    this.buttonRoot.classed('fill-effect', true);
-    this.checkRoot(true, BUTTON_ROOT_DEBOUNCE);
-    if (!this.vis.disableDebouncedContextMenu) {
-      this.debouncedRootHandler(true);
-    } else {
-      this.rootHandler();
-    }
-  }
-
-  clickLockHandler () {
-    this.buttonLock.classed('fill-effect', true);
-    this.vis.nodes.toggleLock(this.node);
-    const checked = this.checkLock();
-    if (checked) {
-      this.buttonLock.classed('active', true);
-    } else {
-      this.buttonLock.classed('active', false);
-    }
-    setTimeout(() => {
-      if (checked) {
-        this.triggerButtonBamEffect(this.buttonLockBamEffect);
-      }
-      this.buttonLock.classed('fill-effect', false);
-    }, BUTTON_DEFAULT_DEBOUNCE);
-  }
-
-  triggerButtonBamEffect (button) {
-    button.classed('active', true);
-    setTimeout(() => {
-      button.classed('active', false);
-    }, BUTTON_BAM_EFFECT_ANIMATION_TIME);
   }
 
   createButtonBg (selection, params) {
@@ -288,63 +368,48 @@ class NodeContextMenu {
       .attr('rx', height - 2);
   }
 
-  positionButton (selection, distanceFromCenter, alignRight) {
-    const x = alignRight ? this.visData.global.column.width / 2 : 0;
-    // When the buttons are created I assume that the menu is positioned
-    // above the node; i.e. `distanceFromCenter` needs to be inverted.
-    const y = this.visData.global.row.height *
-      (this.numButtonRows - distanceFromCenter - 1);
+  /* ---------------------------------- E ----------------------------------- */
 
-    selection.attr('transform', `translate(${x}, ${y})`);
-  }
-
-  addLabel (selection, label, labelTwo) {
-    const div = selection.append('foreignObject')
-      .attr('x', this.visData.global.row.padding * 2)
-      .attr('y', this.visData.global.row.padding +
-        this.visData.global.cell.padding)
-      .attr('width', this.visData.global.column.contentWidth)
-      .attr('height', this.visData.global.row.contentHeight -
-        this.visData.global.cell.padding * 2)
-      .attr('class', 'label-wrapper')
-      .append('xhtml:div')
-        .style('line-height', (this.visData.global.row.contentHeight -
-          this.visData.global.cell.padding * 2) + 'px');
-
-    div.append('xhtml:span')
-      .attr('class', 'label')
-      .attr('title', label)
-      .text(label);
-
-    if (labelTwo) {
-      div.append('xhtml:span').attr('class', `label-two ${labelTwo}`);
-    }
-  }
-
-  get translate () {
-    return 'translate(' + this._x + 'px,' + (this._y + this._yOffset) + 'px)';
-  }
-
-  set translate (position) {
-    this._x = position.x;
-    this._y = position.y;
-  }
-
-  get scale () {
-    return 'scale(' + (this.opened ? 1 : 0.5) + ')';
-  }
-
-  updateAppearance (selection) {
+  emptyButton (selection, time) {
     selection
-      .classed('transitionable', this.visible)
-      .classed('open', this.opened)
-      .style('transform', this.translate + ' ' + this.scale)
-      .style(
-        'transform-origin',
-        (this.visData.global.column.width / 2) + 'px ' +
-        (this.height + this.visData.global.row.height) + 'px'
-      );
+      .transition()
+      .duration(0)
+      .attr('y', data => data.y)
+      .attr('height', data => data.height)
+      .call(allTransitionsEnded, () => {
+        selection
+          .transition()
+          .duration(time || BUTTON_DEFAULT_DEBOUNCE)
+          .ease('linear')
+          .attr('y', data => data.height)
+          .attr('height', 0);
+      });
   }
+
+  /* ---------------------------------- F ----------------------------------- */
+
+  fillButton (selection, time) {
+    selection
+      .transition()
+      .duration(0)
+      .attr('y', data => data.y)
+      .attr('height', 0)
+      .call(allTransitionsEnded, () => {
+        selection
+          .transition()
+          .duration(time || BUTTON_DEFAULT_DEBOUNCE)
+          .ease('linear')
+          .attr('height', data => data.height);
+      });
+  }
+
+  /* ---------------------------------- H ----------------------------------- */
+
+  hideFillButton (selection) {
+    selection.transition().duration(0).attr('height', 0);
+  }
+
+  /* ---------------------------------- O ----------------------------------- */
 
   open (node) {
     return new Promise(resolve => {
@@ -368,22 +433,70 @@ class NodeContextMenu {
     });
   }
 
-  close () {
-    if (!this.closing) {
-      this.closing = new Promise(resolve => {
-        this.opened = false;
-        this.wrapper.call(this.updateAppearance.bind(this));
+  /* ---------------------------------- P ----------------------------------- */
 
-        setTimeout(() => {
-          this.visible = false;
-          this.wrapper.call(this.updateAppearance.bind(this));
-          resolve(this.node.datum().id);
-          this.node = undefined;
-        }, TRANSITION_SPEED);
-      });
-    }
-    return this.closing;
+  positionButton (selection, distanceFromCenter, alignRight) {
+    const x = alignRight ? this.visData.global.column.width / 2 : 0;
+    // When the buttons are created I assume that the menu is positioned
+    // above the node; i.e. `distanceFromCenter` needs to be inverted.
+    const y = this.visData.global.row.height *
+      (this.numButtonRows - distanceFromCenter - 1);
+
+    selection.attr('transform', `translate(${x}, ${y})`);
   }
+
+  /* ---------------------------------- Q ----------------------------------- */
+
+  queryHandler (debounced) {
+    if (debounced) {
+      if (this.tempQueryMode !== this.currentQueryMode) {
+        if (this.tempQueryMode) {
+          this.vis.nodes.queryByNode(this.node, this.tempQueryMode);
+          this.triggerButtonBamEffect(this.buttonQueryBamEffect);
+          this.buttonQuery.classed('active', true);
+        } else {
+          this.vis.nodes.unqueryByNode(this.node, this.tempQueryMode);
+          this.buttonQuery.classed('active', false);
+        }
+      }
+    } else {
+      this.vis.nodes.toggleQueryByNode(this.node);
+    }
+
+    // Reset temporary query modes.
+    this.tempQueryMode = undefined;
+    this.currentQueryMode = undefined;
+    this.buttonQuery.classed('fill-effect', false);
+  }
+
+  /* ---------------------------------- R ----------------------------------- */
+
+  rootHandler (debounced) {
+    if (!debounced || this.tempRoot !== this.currentRootState) {
+      this.close();
+      this.vis.nodes.toggleRoot(this.node);
+    }
+
+    // Reset temporary root values.
+    this.tempRoot = undefined;
+    this.currentRootState = undefined;
+    this.buttonRoot.classed('fill-effect', false);
+
+    this.buttonRoot.classed('active', this.node.datum().data.state.root);
+  }
+
+  /* ---------------------------------- S ----------------------------------- */
+
+  scrollY (offset) {
+    this._yOffset = offset;
+    this.wrapper.call(this.updateAppearance.bind(this));
+  }
+
+  showFillButton (selection) {
+    selection.transition().duration(0).attr('height', data => data.height);
+  }
+
+  /* ---------------------------------- T ----------------------------------- */
 
   toggle (node) {
     return new Promise(resolve => {
@@ -404,74 +517,25 @@ class NodeContextMenu {
     });
   }
 
-  scrollY (offset) {
-    this._yOffset = offset;
-    this.wrapper.call(this.updateAppearance.bind(this));
+  triggerButtonBamEffect (button) {
+    button.classed('active', true);
+    setTimeout(() => {
+      button.classed('active', false);
+    }, BUTTON_BAM_EFFECT_ANIMATION_TIME);
   }
 
-  updateStates () {
-    this.checkLock();
-    this.checkRoot();
-    this.updateQuery();
-  }
+  /* ---------------------------------- U ----------------------------------- */
 
-  checkLock () {
-    const checked = this.node.datum().data.state.lock;
-    this.buttonLock.classed('semi-active', checked);
-    this.checkboxLock.style(
-      'transform',
-      'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
-    );
-    if (checked) {
-      this.fillButton(this.buttonLockFill);
-    } else {
-      this.emptyButton(this.buttonLockFill);
-    }
-    return checked;
-  }
-
-  checkRoot (debounced, time) {
-    const state = this.node.datum().data.state.root;
-    let checked = state;
-
-    if (debounced) {
-      if (typeof this.currentRootState === 'undefined') {
-        this.currentRootState = !!state;
-      }
-      if (typeof this.tempRoot === 'undefined') {
-        this.tempRoot = this.currentRootState;
-      }
-      this.tempRoot = !this.tempRoot;
-      checked = this.tempRoot;
-    }
-
-    if (!state) {
-      if (debounced) {
-        if (checked) {
-          this.fillButton(this.buttonRootFill, time);
-        } else {
-          this.hideFillButton(this.buttonRootFill);
-        }
-      } else {
-        this.emptyButton(this.buttonRootFill, time);
-      }
-    } else {
-      if (debounced) {
-        if (!checked) {
-          this.emptyButton(this.buttonRootFill, time);
-        } else {
-          this.showFillButton(this.buttonRootFill);
-        }
-      } else {
-        this.fillButton(this.buttonRootFill, time);
-      }
-    }
-
-    this.buttonRoot.classed('semi-active', checked);
-    this.checkboxRoot.style(
-      'transform',
-      'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
-    );
+  updateAppearance (selection) {
+    selection
+      .classed('transitionable', this.visible)
+      .classed('open', this.opened)
+      .style('transform', this.translate + ' ' + this.scale)
+      .style(
+        'transform-origin',
+        (this.visData.global.column.width / 2) + 'px ' +
+        (this.height + this.visData.global.row.height) + 'px'
+      );
   }
 
   updateQuery (debounced, time) {
@@ -528,43 +592,10 @@ class NodeContextMenu {
         .classed('inactive', !queryMode);
   }
 
-  fillButton (selection, time) {
-    selection
-      .transition()
-      .duration(0)
-      .attr('y', data => data.y)
-      .attr('height', 0)
-      .call(allTransitionsEnded, () => {
-        selection
-          .transition()
-          .duration(time || BUTTON_DEFAULT_DEBOUNCE)
-          .ease('linear')
-          .attr('height', data => data.height);
-      });
-  }
-
-  emptyButton (selection, time) {
-    selection
-      .transition()
-      .duration(0)
-      .attr('y', data => data.y)
-      .attr('height', data => data.height)
-      .call(allTransitionsEnded, () => {
-        selection
-          .transition()
-          .duration(time || BUTTON_DEFAULT_DEBOUNCE)
-          .ease('linear')
-          .attr('y', data => data.height)
-          .attr('height', 0);
-      });
-  }
-
-  hideFillButton (selection) {
-    selection.transition().duration(0).attr('height', 0);
-  }
-
-  showFillButton (selection) {
-    selection.transition().duration(0).attr('height', data => data.height);
+  updateStates () {
+    this.checkLock();
+    this.checkRoot();
+    this.updateQuery();
   }
 }
 
