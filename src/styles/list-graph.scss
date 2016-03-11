@@ -22,7 +22,7 @@
     background: $grey-lighter;
 
     &:hover {
-      color: $colorHighlightBlue;
+      color: $color-highlight-blue;
       cursor: pointer;
     }
   }
@@ -206,7 +206,7 @@
   .top-bar .sort-name:hover {
     z-index: 2;
     color: #fff;
-    background: $colorHighlightRed;
+    background: $color-highlight-red;
     transition: all $transition-fast $ease-in-out-cubic, color $transition-lightning-fast $ease-in-out-cubic;
 
     [class^='icon-'],
@@ -281,8 +281,8 @@
   }
 
   .node .bg-border {
-    fill: $colorHighlightRed;
-    stroke: $colorHighlightRed;
+    fill: $color-highlight-red;
+    stroke: $color-highlight-red;
     stroke-width: 6px;
     opacity: 0;
   }
@@ -325,7 +325,7 @@
   }
 
   .node.focus-directly .bg {
-    fill: $colorHighlightRed;
+    fill: $color-highlight-red;
   }
 
   .node.hovering-directly .border,
@@ -341,7 +341,7 @@
 
   .node.focus-directly .border,
   .column.active .node.focus-directly .border {
-    stroke: $colorHighlightRed;
+    stroke: $color-highlight-red;
   }
 
   .node.highlight-bar .border {
@@ -386,7 +386,7 @@
     }
 
     .link-bg {
-      stroke: $colorHighlightRed;
+      stroke: $color-highlight-red;
       stroke-opacity: 0;
       stroke-width: 6;
     }
@@ -437,8 +437,8 @@
 
   .node.highlight-label .label,
   .column.active .node.highlight-label .label {
-    color: $colorHighlightRed;
-    text-shadow: 0 0 3px transparentize($colorHighlightRed, 0.75);
+    color: $color-highlight-red;
+    text-shadow: 0 0 3px transparentize($color-highlight-red, 0.75);
   }
 
   .node .focus-controls .bg {
@@ -470,14 +470,14 @@
   }
 
   .node .focus-controls:hover .icon {
-    color: $colorHighlightRed;
+    color: $color-highlight-red;
   }
 
   .node.active .root .icon,
   .node .focus-controls.active .icon,
   .node .focus-controls.active:hover .icon,
   .node.active .focus-controls:hover .icon {
-    color: #000;
+    color: $black;
   }
 
   .node.query-and .query .state-inactive,
@@ -490,7 +490,8 @@
   .node .focus-controls.active .state-active,
   .node.query-and .focus-controls .state-and-or,
   .node.query-or .focus-controls .state-and-or,
-  .node.query-not .focus-controls .state-not {
+  .node.query-not .focus-controls .state-not,
+  .node.rooted .focus-controls.root .state-active {
     opacity: 1;
   }
 
@@ -523,7 +524,7 @@
   }
 
   .bar-indicator {
-    fill: $colorHighlightRed;
+    fill: $color-highlight-red;
     opacity: 0;
     transition: opacity $transition-fast $ease-in-out-cubic;
   }
@@ -546,7 +547,7 @@
 
   .bar-border {
     fill: none;
-    stroke: mix(lighten($colorHighlightRed, 20%), #fff, 25%);
+    stroke: mix(lighten($color-highlight-red, 20%), #fff, 25%);
     stroke-width: 2px;
     stroke-opacity: 0;
   }
@@ -570,7 +571,7 @@
   }
 
   .bar.highlight .bar-magnitude {
-    fill: lighten($colorHighlightRed, 20%);
+    fill: lighten($color-highlight-red, 20%);
     fill-opacity: 1 !important;
   }
 
