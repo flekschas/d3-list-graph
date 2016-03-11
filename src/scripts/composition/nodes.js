@@ -766,7 +766,7 @@ class Nodes {
     this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
     if (!data.data.state.query || data.data.state.query === 'not') {
-      this.toggleQueryMode(d3El);
+      this.toggleQueryByNode(d3El);
       data.data.queryBeforeRooting = false;
     } else {
       data.data.queryBeforeRooting = true;
