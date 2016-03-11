@@ -352,7 +352,11 @@
   .node.hovering-directly .border,
   .node.hovering-indirectly .border,
   .column.active .node.hovering-directly .border,
-  .column.active .node.hovering-indirectly .border {
+  .column.active .node.hovering-indirectly .border,
+  .node.rooted.hovering-directly .border,
+  .node.rooted.hovering-indirectly .border,
+  .column.active .node.rooted.hovering-directly .border,
+  .column.active .node.rooted.hovering-indirectly .border {
     stroke: #000;
   }
 
@@ -363,6 +367,16 @@
 
   .node.highlight-bar .border {
     stroke-opacity: 0;
+  }
+
+  .node.rooted {
+    .border {
+      stroke: $darkGrey;
+    }
+    .label {
+      color: $highlightTextColor;
+      font-weight: bold;
+    }
   }
 
   .link {
@@ -583,6 +597,17 @@
   }
 
   .context-menu {
+    display: none;
+    opacity: 0;
+
+    &.transitionable {
+      display: block;
+      transition: all $transitionLightningFast $easeInOutCubic;
+    }
+    &.open {
+      opacity: 1;
+    }
+
     >.bg {
       fill: #fff;
     }
@@ -594,11 +619,30 @@
 
     .button .bg {
       fill: $lightGrey;
+      transition: all $transitionLightningFast $easeInOutCubic;
     }
 
     .button .label {
       color: $normalTextColor;
       font-size: 0.75rem;
+    }
+
+    .button:hover {
+      cursor: pointer;
+
+      .bg {
+        fill: $mediumGrey;
+      }
+
+      .label {
+        color: $semiHighlightTextColor;
+      }
+    }
+
+    .checkbox {
+      &.checked .invisible-default {
+        opacity: 1;
+      }
     }
   }
 
@@ -628,7 +672,7 @@
 
   .hovering-directly .link-indicator,
   .hovering-indirectly .link-indicator {
-    transform: scale(1.5);
+    transform: scale(1.25, 2);
   }
 
   .link-location-indicator {
