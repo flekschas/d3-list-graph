@@ -199,17 +199,17 @@ class NodeContextMenu {
     this.buttonLock.classed('fill-effect', true);
     this.vis.nodes.toggleLock(this.node);
     const checked = this.checkLock();
-    if (!this.vis.disableDebouncedContextMenu) {
-      if (checked) {
-        setTimeout(() => {
-          this.triggerButtonBamEffect(this.buttonLockBamEffect);
-          this.buttonLock.classed('fill-effect', false);
-        }, BUTTON_DEFAULT_DEBOUNCE);
-        this.buttonLock.classed('active', true);
-      } else {
-        this.buttonLock.classed('active', false);
-      }
+    if (checked) {
+      this.buttonLock.classed('active', true);
+    } else {
+      this.buttonLock.classed('active', false);
     }
+    setTimeout(() => {
+      if (checked) {
+        this.triggerButtonBamEffect(this.buttonLockBamEffect);
+      }
+      this.buttonLock.classed('fill-effect', false);
+    }, BUTTON_DEFAULT_DEBOUNCE);
   }
 
   triggerButtonBamEffect (button) {
@@ -347,6 +347,7 @@ class NodeContextMenu {
   open (node) {
     return new Promise(resolve => {
       this.node = node;
+      this.closing = undefined;
 
       this.updateStates();
       this.translate = {
@@ -366,23 +367,25 @@ class NodeContextMenu {
   }
 
   close () {
-    return new Promise(resolve => {
-      this.opened = false;
-      this.wrapper.call(this.updateAppearance.bind(this));
-
-      setTimeout(() => {
-        this.visible = false;
+    if (!this.closing) {
+      this.closing = new Promise(resolve => {
+        this.opened = false;
         this.wrapper.call(this.updateAppearance.bind(this));
-        resolve(this.node.datum().id);
-        this.node = undefined;
-      }, TRANSITION_SPEED);
-    });
+
+        setTimeout(() => {
+          this.visible = false;
+          this.wrapper.call(this.updateAppearance.bind(this));
+          resolve(this.node.datum().id);
+          this.node = undefined;
+        }, TRANSITION_SPEED);
+      });
+    }
+    return this.closing;
   }
 
   toggle (node) {
     return new Promise(resolve => {
       const nodeId = node.datum().id;
-
       let closed = Promise.resolve();
 
       if (this.visible) {
