@@ -15,6 +15,7 @@ import NodeContextMenu from './nodeContextMenu';
 import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 import { allTransitionsEnded } from '../commons/d3-utils';
 import { dropShadow } from '../commons/filters';
+import { requestNextAnimationFrame } from '../commons/shims';
 
 function setOption (value, defaultValue, noFalsyValue) {
   if (noFalsyValue) {
@@ -37,6 +38,8 @@ class ListGraph {
     this.baseElJq = $(this.baseEl);
     this.svgD3 = this.baseElD3.select('svg.base');
     this.svgEl = this.svgD3.node();
+    this.outsideClickHandler = {};
+    this.outsideClickClassHandler = {};
 
     if (this.svgD3.empty()) {
       this.svgD3 = this.baseElD3.append('svg').attr('class', 'base');
@@ -216,14 +219,36 @@ class ListGraph {
       }
     });
 
+    this.svgJq.on('click', event => {
+      that.checkGlobalClick.call(that, event.target);
+    });
+
     // Add jQuery delegated event listeners instead of direct listeners of D3.
     if (this.querying) {
       this.svgJq.on(
         'click',
-        `.${this.nodes.classLabelWrapper}`,
+        `.${this.nodes.classNodeVisible}`,
         function () {
-          that.nodes.toggleQueryMode.call(
-            that.nodes, this.parentNode, d3.select(this).datum()
+          // Add a new global outside click listener using this node and the
+          // node context menu as the related elements.
+          requestNextAnimationFrame(() => {
+            that.registerOutSideClickHandler(
+              'nodeContextMenu',
+              [that.nodeContextMenu.wrapper.node()],
+              ['node'],
+              () => {
+                // The context of this method is the context of the outer click
+                // handler.
+                that.nodeContextMenu.close();
+                that.unregisterOutSideClickHandler.call(
+                  that, 'nodeContextMenu'
+                );
+              }
+            );
+          });
+
+          that.nodeContextMenu.toggle.call(
+            that.nodeContextMenu, d3.select(this.parentNode)
           );
         }
       );
@@ -233,7 +258,7 @@ class ListGraph {
       'click',
       `.${this.nodes.classFocusControls}.${this.nodes.classRoot}`,
       function () {
-        that.nodes.rootHandler.call(that.nodes, this, d3.select(this).datum());
+        that.nodes.rootHandler.call(that.nodes, d3.select(this));
       }
     );
 
@@ -338,6 +363,72 @@ class ListGraph {
         }
       }
     );
+  }
+
+  registerOutSideClickHandler (id, els, elClassNames, callback) {
+    // We need to register a unique property to be able to indentify that
+    // element later efficiently.
+    for (let i = els.length; i--;) {
+      if (els[i].__id__) {
+        els[i].__id__.push(id);
+      } else {
+        els[i].__id__ = [id];
+      }
+    }
+    const newLength = this.outsideClickHandler[id] = {
+      id, els, elClassNames, callback
+    };
+    for (let i = elClassNames.length; i--;) {
+      this.outsideClickClassHandler[elClassNames[i]] =
+        this.outsideClickHandler[id];
+    }
+    return newLength;
+  }
+
+  unregisterOutSideClickHandler (id) {
+    const handler = this.outsideClickHandler[id];
+
+    // Remove element `__id__` property.
+    for (let i = handler.els.length; i--;) {
+      handler.els[i].__id__ = undefined;
+      delete handler.els[i].__id__;
+    }
+
+    // Remove handler.
+    this.outsideClickHandler[id] = undefined;
+    delete this.outsideClickHandler[id];
+  }
+
+  checkGlobalClick (el) {
+    const found = {};
+    const checkClass = Object.keys(this.outsideClickClassHandler).length;
+
+    let target = el;
+    try {
+      while (target.tagName.toLowerCase() !== 'body') {
+        if (target.__id__) {
+          for (let i = target.__id__.length; i--;) {
+            found[target.__id__[i]] = true;
+          }
+        }
+        if (checkClass) {
+          const classNames = Object.keys(this.outsideClickClassHandler);
+          for (let i = classNames.length; i--;) {
+            if (target.getAttribute('class').indexOf(classNames[i]) >= 0) {
+              found[this.outsideClickClassHandler[classNames[i]].id] = true;
+            }
+          }
+        }
+        target = target.parentNode;
+      }
+    } catch (e) { return; }
+
+    const handlerIds = Object.keys(this.outsideClickHandler);
+    for (let i = handlerIds.length; i--;) {
+      if (!found[handlerIds[i]]) {
+        this.outsideClickHandler[handlerIds[i]].callback.call(this);
+      }
+    }
   }
 
   get area () {
@@ -495,6 +586,10 @@ class ListGraph {
           data.level - 1, data.level + 1
         );
       }
+
+      if (this.nodeContextMenu.opened) {
+        this.nodeContextMenu.scrollY(contentScrollTop);
+      }
     }
   }
 
@@ -577,6 +672,10 @@ class ListGraph {
       this.nodes.updateLinkLocationIndicators(
         columnData.level - 1, columnData.level + 1
       );
+    }
+
+    if (this.nodeContextMenu.opened) {
+      this.nodeContextMenu.scrollY(columnData.scrollTop);
     }
   }
 
