@@ -815,7 +815,9 @@ class Nodes {
           x: x - 2,
           y: y - 2,
           width: this.iconDimension + 4,
-          height: this.iconDimension + 4
+          height: this.iconDimension + 4,
+          rx: this.iconDimension / 2,
+          ry: this.iconDimension / 2
         });
     } else {
       selection

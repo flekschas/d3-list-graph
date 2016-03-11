@@ -442,7 +442,13 @@
   }
 
   .node .focus-controls .hover-helper {
+    fill: $white;
     fill-opacity: 0;
+    transition: all $transition-fast $ease-in-out-cubic;
+  }
+
+  .node.rooted .focus-controls:hover .hover-helper {
+    fill-opacity: 0.5;
   }
 
   .node.rooted .focus-controls:hover .icon {
