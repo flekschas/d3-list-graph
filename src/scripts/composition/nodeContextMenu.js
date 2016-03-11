@@ -493,7 +493,9 @@ class NodeContextMenu {
   }
 
   showFillButton (selection) {
-    selection.transition().duration(0).attr('height', data => data.height);
+    selection.transition().duration(0)
+      .attr('y', data => data.y)
+      .attr('height', data => data.height);
   }
 
   /* ---------------------------------- T ----------------------------------- */
