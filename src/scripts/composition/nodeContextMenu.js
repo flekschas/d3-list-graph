@@ -48,7 +48,7 @@ class NodeContextMenu {
       }))
       .style('filter', 'url(#drop-shadow-context-menu)');
 
-    this.bg = this.wrapper.append('path')
+    this.dropShadow = this.wrapper.append('path')
       .attr('class', 'bg')
       .attr('d', dropMenu({
         x: 0,
