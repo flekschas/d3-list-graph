@@ -18,7 +18,6 @@ const CLASS_FOCUS_CONTROLS = 'focus-controls';
 const CLASS_ROOT = 'root';
 const CLASS_QUERY = 'query';
 const CLASS_LOCK = 'lock';
-// const CLASS_ACTIVE = 'active';
 const CLASS_INACTIVE = 'inactive';
 const CLASS_INDICATOR_BAR = 'link-indicator';
 const CLASS_INDICATOR_LOCATION = 'link-location-indicator';
@@ -185,7 +184,7 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        1.5,
+        0.5,
         'hover-helper',
         'hover-helper'
       );
@@ -194,7 +193,7 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        1.5,
+        0.5,
         'icon',
         'ease-all state-inactive invisible-default icon'
       )
@@ -205,12 +204,51 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        1.5,
+        0.5,
         'icon',
         'ease-all state-active invisible-default icon'
       )
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#locked');
+
+    // Querying icons
+    if (this.vis.querying) {
+      const nodeQuery = this.nodes.append('g')
+        .attr(
+          'class', `${CLASS_FOCUS_CONTROLS} ${CLASS_QUERY} ${CLASS_INACTIVE}`
+        );
+
+      nodeQuery.append('rect')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'right',
+          0.5,
+          'hover-helper',
+          'hover-helper'
+        );
+
+      nodeQuery.append('svg')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'right',
+          0.5,
+          'icon',
+          'ease-all state-and-or invisible-default icon'
+        )
+        .append('use')
+          .attr('xlink:href', this.vis.iconPath + '#union');
+
+      nodeQuery.append('svg')
+        .call(
+          this.setUpFocusControls.bind(this),
+          'right',
+          0.5,
+          'icon',
+          'ease-all state-not invisible-default icon'
+        )
+        .append('use')
+          .attr('xlink:href', this.vis.iconPath + '#not');
+    }
 
     this.bars = new Bars(this.vis, this.visNodes, this.vis.barMode, this.visData);
 
@@ -791,9 +829,12 @@ class Nodes {
 
     const paddedDim = this.iconDimension + 4;
 
-    const x = location === 'left' ?
-      -(paddedDim) * (position || 1) :
-        this.visData.global.column.contentWidth + 2;
+    let x = 0 - (paddedDim * (position + 1));
+
+    if (location === 'right') {
+      x = this.visData.global.column.contentWidth + 2 + paddedDim * position;
+    }
+
     const y = this.visData.global.row.padding +
       (
         this.visData.global.row.contentHeight -
