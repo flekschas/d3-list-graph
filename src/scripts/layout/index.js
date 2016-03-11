@@ -429,19 +429,19 @@ class ListGraphLayout {
    * @date    2016-01-17
    */
   updateNodesVisibility () {
-    const skipped = {};
+    let skipped;
 
     for (let i = Object.keys(this.columnCache).length; i--;) {
-      skipped[i] = 0;
+      skipped = 0;
       // Update `y` according to the number of previously skipped nodes.
       for (let j = 0, len = this.columnNodeOrder[i].length; j < len; j++) {
         if (
           this.columnNodeOrder[i][j].hidden &&
           !this.columnNodeOrder[i][j].data.queryMode
         ) {
-          skipped[i]++;
+          skipped++;
         }
-        this.columnNodeOrder[i][j].y = this.scale.y(j - skipped[i]);
+        this.columnNodeOrder[i][j].y = this.scale.y(j - skipped);
       }
     }
 
