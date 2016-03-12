@@ -20,6 +20,11 @@
       fill-opacity: 0.1;
     }
 
+    >.bg,
+    >.bgBorder {
+      transform-origin: 50% 50%;
+    }
+
     .button .bg {
       fill: $grey-lightest;
       transition: all $transition-lightning-fast $ease-in-out-cubic;

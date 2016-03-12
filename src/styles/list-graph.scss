@@ -655,4 +655,8 @@
   &.less-animations * {
     transition: none !important;
   }
+
+  .is-mirrored-horizontally {
+    transform: scale(1, -1);
+  }
 }
