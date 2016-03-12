@@ -61,9 +61,7 @@ class ListGraph {
     // the element with his/her mouse cursor. This will avoid relying on complex
     // browser resize events and other layout manipulations as they most likely
     // won't happen when the user tries to interact with the visualization.
-    this.svgD3.on('mouseenter', function () {
-      that.getBoundingRect.call(that, this);
-    });
+    this.svgD3.on('mouseenter', this.getBoundingRect.bind(this));
 
     // With of the column's scrollbars
     this.scrollbarWidth = setOption(
@@ -254,7 +252,8 @@ class ListGraph {
           });
 
           that.nodeContextMenu.toggle.call(
-            that.nodeContextMenu, d3.select(this.parentNode)
+            that.nodeContextMenu,
+            d3.select(this.parentNode)
           );
         }
       );
@@ -464,11 +463,10 @@ class ListGraph {
    * @method  getBoundingRect
    * @author  Fritz Lekschas
    * @date    2016-02-24
-   * @param   {Object}  el  Element on which `getBoundingClientRect` is called.
    */
-  getBoundingRect (el) {
-    this.top = el.getBoundingClientRect().top;
-    this.left = el.getBoundingClientRect().left;
+  getBoundingRect () {
+    this.left = this.svgEl.getBoundingClientRect().left;
+    this.top = this.svgEl.getBoundingClientRect().top;
   }
 
   interactionWrapper (callback, params) {
