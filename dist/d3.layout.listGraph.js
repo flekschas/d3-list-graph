@@ -1250,6 +1250,10 @@
         _node.parents = {};
       }
 
+      if (!_node.data.state) {
+        _node.data.state = {};
+      }
+
       if (!_node.childRefs) {
         _node.childRefs = [];
       }
@@ -1792,16 +1796,16 @@
     }, {
       key: 'updateNodesVisibility',
       value: function updateNodesVisibility() {
-        var skipped = {};
+        var skipped = undefined;
 
         for (var i = Object.keys(this.columnCache).length; i--;) {
-          skipped[i] = 0;
+          skipped = 0;
           // Update `y` according to the number of previously skipped nodes.
           for (var j = 0, len = this.columnNodeOrder[i].length; j < len; j++) {
             if (this.columnNodeOrder[i][j].hidden && !this.columnNodeOrder[i][j].data.queryMode) {
-              skipped[i]++;
+              skipped++;
             }
-            this.columnNodeOrder[i][j].y = this.scale.y(j - skipped[i]);
+            this.columnNodeOrder[i][j].y = this.scale.y(j - skipped);
           }
         }
 
