@@ -9,6 +9,7 @@ import { allTransitionsEnded } from '../commons/d3-utils';
 
 const CLASS_NAME = 'context-menu';
 const CLASS_CHECKBOX = 'checkbox';
+const ARROW_SIZE = 6;
 const TRANSITION_SPEED = 125;
 const BUTTON_QUERY_DEBOUNCE = 666;
 const BUTTON_ROOT_DEBOUNCE = 500;
@@ -29,12 +30,13 @@ class NodeContextMenu {
     this.baseEl = baseEl;
     this.events = events;
 
+    this.numButtonRows = querying ? 2 : 3;
+    this.height = this.visData.global.row.height * this.numButtonRows;
+    this.toBottom = false;
+
     this.wrapper = this.baseEl.append('g')
       .attr('class', CLASS_NAME)
       .call(this.updateAppearance.bind(this));
-
-    this.numButtonRows = querying ? 2 : 3;
-    this.height = this.visData.global.row.height * this.numButtonRows;
 
     this.bg = this.wrapper.append('path')
       .attr('class', 'bgBorder')
@@ -43,8 +45,8 @@ class NodeContextMenu {
         y: -1,
         width: this.visData.global.column.width + 2,
         height: this.height + 2,
-        radius: 5,
-        arrowSize: 6
+        radius: ARROW_SIZE - 2,
+        arrowSize: ARROW_SIZE
       }))
       .style('filter', 'url(#drop-shadow-context-menu)');
 
@@ -55,8 +57,8 @@ class NodeContextMenu {
         y: 0,
         width: this.visData.global.column.width,
         height: this.height,
-        radius: 4,
-        arrowSize: 6
+        radius: ARROW_SIZE - 1,
+        arrowSize: ARROW_SIZE
       }))
       .style('filter', 'url(#drop-shadow-context-menu)');
 
@@ -105,6 +107,15 @@ class NodeContextMenu {
     this.buttonLockFill = this.buttonLock.select('.bg-fill-effect');
     this.buttonLockBamEffect = this.buttonLock.select('.bg-bam-effect');
     this.checkboxLock = this.createCheckbox(this.buttonLock);
+
+    this.buttons = this.wrapper.selectAll('.button');
+
+    this.debouncedQueryHandler = debounce(
+      this.queryHandler, BUTTON_QUERY_DEBOUNCE
+    );
+    this.debouncedRootHandler = debounce(
+      this.rootHandler, BUTTON_ROOT_DEBOUNCE
+    );
   }
 
   /* ---------------------------------------------------------------------------
@@ -116,7 +127,11 @@ class NodeContextMenu {
   }
 
   get translate () {
-    return 'translate(' + this._x + 'px,' + (this._y + this._yOffset) + 'px)';
+    const y = this.toBottom ?
+      this._y + this.height + this.visData.global.row.height - ARROW_SIZE :
+      this._y;
+
+    return 'translate(' + this._x + 'px,' + (y + this._yOffset) + 'px)';
   }
 
   set translate (position) {
@@ -168,6 +183,17 @@ class NodeContextMenu {
       this.emptyButton(this.buttonLockFill);
     }
     return checked;
+  }
+
+  checkOrientation () {
+    if (this._y + this._yOffset >= 0) {
+      this.toBottom = false;
+    } else {
+      this.toBottom = true;
+    }
+    this.buttons.call(this.positionButton.bind(this));
+    this.bg.classed('is-mirrored-horizontally', this.toBottom);
+    this.dropShadow.classed('is-mirrored-horizontally', this.toBottom);
   }
 
   checkRoot (debounced, time) {
@@ -267,6 +293,7 @@ class NodeContextMenu {
     }
     return this.closing;
   }
+
   createButton (selection, properties) {
     let classNames = 'button';
     if (properties.classNames && properties.classNames.length) {
@@ -292,13 +319,6 @@ class NodeContextMenu {
         properties.distanceFromCenter,
         properties.alignRight
       );
-
-    this.debouncedQueryHandler = debounce(
-      this.queryHandler, BUTTON_QUERY_DEBOUNCE
-    );
-    this.debouncedRootHandler = debounce(
-      this.rootHandler, BUTTON_ROOT_DEBOUNCE
-    );
   }
 
   createButtonBg (selection, params) {
@@ -417,11 +437,14 @@ class NodeContextMenu {
       this.closing = undefined;
 
       this.updateStates();
+
+      this._yOffset = this.visData.nodes[this.node.datum().depth].scrollTop;
       this.translate = {
         x: this.node.datum().x,
         y: this.node.datum().y - this.height
       };
-      this._yOffset = this.visData.nodes[this.node.datum().depth].scrollTop;
+      this.checkOrientation();
+
       this.wrapper.call(this.updateAppearance.bind(this));
       this.opened = true;
       this.visible = true;
@@ -436,13 +459,29 @@ class NodeContextMenu {
   /* ---------------------------------- P ----------------------------------- */
 
   positionButton (selection, distanceFromCenter, alignRight) {
-    const x = alignRight ? this.visData.global.column.width / 2 : 0;
-    // When the buttons are created I assume that the menu is positioned
-    // above the node; i.e. `distanceFromCenter` needs to be inverted.
-    const y = this.visData.global.row.height *
-      (this.numButtonRows - distanceFromCenter - 1);
+    selection.datum(data => {
+      // Lets cache some values to make our lifes easier when checking the
+      // position again in `checkOrientation`.
+      if (distanceFromCenter) {
+        data.distanceFromCenter = distanceFromCenter;
+      }
+      if (alignRight) {
+        data.alignRight = alignRight;
+      }
+      return data;
+    }).attr('transform', data => {
+      const x = data.alignRight ? this.visData.global.column.width / 2 : 0;
+      // When the buttons are created I assume that the menu is positioned
+      // above the node; i.e. `distanceFromCenter` needs to be inverted.
+      const y = (this.visData.global.row.height * (
+        this.toBottom ?
+        data.distanceFromCenter : (
+          this.numButtonRows - data.distanceFromCenter - 1
+        )
+      )) + (this.toBottom ? ARROW_SIZE : 0);
 
-    selection.attr('transform', `translate(${x}, ${y})`);
+      return `translate(${x}, ${y})`;
+    });
   }
 
   /* ---------------------------------- Q ----------------------------------- */
