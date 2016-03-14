@@ -5046,6 +5046,8 @@ var ListGraph = (function ($,d3) {
       var that = this;
 
       this.baseEl = init.element;
+      this.baseEl.__d3ListGraphBase__ = true;
+
       this.baseElD3 = d3.select(this.baseEl);
       this.baseElJq = $(this.baseEl);
       this.svgD3 = this.baseElD3.select('svg.base');
@@ -5320,27 +5322,28 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'checkGlobalClick',
-      value: function checkGlobalClick(el) {
+      value: function checkGlobalClick(startEl) {
         var found = {};
         var checkClass = Object.keys(this.outsideClickClassHandler).length;
 
-        var target = el;
+        var el = startEl;
         try {
-          while (target.tagName.toLowerCase() !== 'body') {
-            if (target.__id__) {
-              for (var i = target.__id__.length; i--;) {
-                found[target.__id__[i]] = true;
+          while (!el.__d3ListGraphBase__) {
+            if (el.__id__) {
+              for (var i = el.__id__.length; i--;) {
+                found[el.__id__[i]] = true;
               }
             }
             if (checkClass) {
               var classNames = Object.keys(this.outsideClickClassHandler);
               for (var i = classNames.length; i--;) {
-                if (target.getAttribute('class').indexOf(classNames[i]) >= 0) {
+                var className = el.getAttribute('class');
+                if (className && className.indexOf(classNames[i]) >= 0) {
                   found[this.outsideClickClassHandler[classNames[i]].id] = true;
                 }
               }
             }
-            target = target.parentNode;
+            el = el.parentNode;
           }
         } catch (e) {
           return;
