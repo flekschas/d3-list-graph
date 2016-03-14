@@ -1880,6 +1880,24 @@ var ListGraph = (function ($,d3) {
               break;
           }
         }
+      }
+    }, {
+      key: 'queryHandler',
+      value: function queryHandler(d3El, action, mode) {
+        var data = d3El.datum();
+        var previousMode = data.data.state.query;
+
+        switch (action) {
+          case 'query':
+            this.queryByNode(d3El, mode);
+            break;
+          case 'unquery':
+            this.unqueryByNode(d3El);
+            break;
+          default:
+            this.toggleQueryByNode(d3El);
+            break;
+        }
 
         if (data.data.state.query) {
           if (data.data.state.query !== previousMode) {
@@ -1948,7 +1966,7 @@ var ListGraph = (function ($,d3) {
         this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
         if (!data.data.state.query || data.data.state.query === 'not') {
-          this.toggleQueryByNode(d3El);
+          this.queryHandler(d3El);
           data.data.queryBeforeRooting = false;
         } else {
           data.data.queryBeforeRooting = true;
@@ -4735,16 +4753,16 @@ var ListGraph = (function ($,d3) {
         if (debounced) {
           if (this.tempQueryMode !== this.currentQueryMode) {
             if (this.tempQueryMode) {
-              this.vis.nodes.queryByNode(this.node, this.tempQueryMode);
+              this.vis.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
               this.triggerButtonBamEffect(this.buttonQueryBamEffect);
               this.buttonQuery.classed('active', true);
             } else {
-              this.vis.nodes.unqueryByNode(this.node, this.tempQueryMode);
+              this.vis.nodes.queryHandler(this.node, 'unquery');
               this.buttonQuery.classed('active', false);
             }
           }
         } else {
-          this.vis.nodes.toggleQueryByNode(this.node);
+          this.vis.nodes.queryHandler(this.node);
         }
 
         // Reset temporary query modes.
@@ -4829,7 +4847,8 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'updateAppearance',
       value: function updateAppearance(selection) {
-        selection.classed('transitionable', this.visible).classed('open', this.opened).style('transform', this.translate + ' ' + this.scale).style('transform-origin', this.visData.global.column.width / 2 + 'px ' + (this.height + this.visData.global.row.height) + 'px');
+        var centerY = this.toBottom ? 0 : this.height + this.visData.global.row.height;
+        selection.classed('transitionable', this.visible).classed('open', this.opened).style('transform', this.translate + ' ' + this.scale).style('transform-origin', this.visData.global.column.width / 2 + 'px ' + centerY + 'px');
       }
     }, {
       key: 'updateQuery',
