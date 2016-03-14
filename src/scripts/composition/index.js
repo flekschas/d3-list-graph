@@ -786,6 +786,7 @@ class ListGraph {
       let height = 0;
       let bBox;
       let cRect = undefined;
+      const contBBox = this.container.node().getBBox();
 
       const globalCRect = this.svgD3.node().getBoundingClientRect();
 
@@ -799,13 +800,12 @@ class ListGraph {
         width = this.width > width ? this.width : width;
         height = this.height > height ? this.height : height;
       } else {
-        bBox = this.container.node().getBBox();
-        width = this.width > bBox.width ? this.width : bBox.width;
-        height = this.height > bBox.height ? this.height : bBox.height;
+        width = this.width > contBBox.width ? this.width : contBBox.width;
+        height = this.height > contBBox.height ? this.height : contBBox.height;
       }
 
-      x = bBox.x;
-      y = bBox.y;
+      x = contBBox.x;
+      y = contBBox.y;
 
       this.svgD3
         .classed('zoomedOut', true)
