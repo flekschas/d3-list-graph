@@ -34,6 +34,8 @@ class ListGraph {
     const that = this;
 
     this.baseEl = init.element;
+    this.baseEl.__d3ListGraphBase__ = true;
+
     this.baseElD3 = d3.select(this.baseEl);
     this.baseElJq = $(this.baseEl);
     this.svgD3 = this.baseElD3.select('svg.base');
@@ -409,7 +411,7 @@ class ListGraph {
 
     let target = el;
     try {
-      while (target.tagName.toLowerCase() !== 'body') {
+      while (!target.__d3ListGraphBase__) {
         if (target.__id__) {
           for (let i = target.__id__.length; i--;) {
             found[target.__id__[i]] = true;
