@@ -537,7 +537,7 @@ class Nodes {
     this.eventHelper(
       event.nodeIds,
       this.highlightNodes,
-      ['focus', 'directParentsOnly', !!event.excludeClones]
+      ['focus', 'directParentsOnly', !!event.excludeClones, event.zoomOut]
     );
 
     if (event.zoomOut) {
@@ -928,7 +928,9 @@ class Nodes {
     this.updateVisibility();
   }
 
-  highlightNodes (d3El, className, restriction, excludeClones) {
+  highlightNodes (
+    d3El, className, restriction, excludeClones, noVisibilityCheck
+  ) {
     const that = this;
     const data = d3El.datum();
     const nodeId = data.id;
@@ -1007,7 +1009,7 @@ class Nodes {
      * @return  {Boolean}        If `true` element is hidden.
      */
     function checkNodeVisibility (_el, _data) {
-      return (
+      return noVisibilityCheck || (
         !_data.hidden &&
         !that.vis.isHidden.call(that.vis, _el)
       );
