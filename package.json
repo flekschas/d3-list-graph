@@ -5,8 +5,9 @@
   "author": "Fritz Lekschas",
   "license": "MIT",
   "devDependencies": {
-    "babel-eslint": "^5.0.0",
+    "babel-eslint": "6.0.0-beta.6",
     "babel-preset-es2015-rollup": "^1.1.1",
+    "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.1.0",
     "eslint-plugin-react": "^4.2.1",
     "gulp": "^3.9.1",
@@ -45,9 +46,9 @@
     "es6-promise": "^3.1.2",
     "lodash-es": "^4.6.1"
   },
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/flekschas/d3-list-graph.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flekschas/d3-list-graph.git"
   },
   "scripts": {
     "build": "node scripts/build.js"
