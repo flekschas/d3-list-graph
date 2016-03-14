@@ -446,8 +446,8 @@ class Nodes {
     this.events.broadcast('d3ListGraphNodeLeave', eventData);
   }
 
-  lockHandler (el) {
-    const events = this.toggleLock(el);
+  lockHandler (d3El) {
+    const events = this.toggleLock(d3El);
 
     if (events.locked && events.unlocked) {
       if (events.locked) {
