@@ -765,6 +765,23 @@ class Nodes {
           break;
       }
     }
+  }
+
+  queryHandler (d3El, action, mode) {
+    const data = d3El.datum();
+    const previousMode = data.data.state.query;
+
+    switch (action) {
+      case 'query':
+        this.queryByNode(d3El, mode);
+        break;
+      case 'unquery':
+        this.unqueryByNode(d3El);
+        break;
+      default:
+        this.toggleQueryByNode(d3El);
+        break;
+    }
 
     if (data.data.state.query) {
       if (data.data.state.query !== previousMode) {
@@ -835,7 +852,7 @@ class Nodes {
     this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
     if (!data.data.state.query || data.data.state.query === 'not') {
-      this.toggleQueryByNode(d3El);
+      this.queryHandler(d3El);
       data.data.queryBeforeRooting = false;
     } else {
       data.data.queryBeforeRooting = true;

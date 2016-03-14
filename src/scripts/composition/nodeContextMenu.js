@@ -490,16 +490,16 @@ class NodeContextMenu {
     if (debounced) {
       if (this.tempQueryMode !== this.currentQueryMode) {
         if (this.tempQueryMode) {
-          this.vis.nodes.queryByNode(this.node, this.tempQueryMode);
+          this.vis.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
           this.triggerButtonBamEffect(this.buttonQueryBamEffect);
           this.buttonQuery.classed('active', true);
         } else {
-          this.vis.nodes.unqueryByNode(this.node, this.tempQueryMode);
+          this.vis.nodes.queryHandler(this.node, 'unquery');
           this.buttonQuery.classed('active', false);
         }
       }
     } else {
-      this.vis.nodes.toggleQueryByNode(this.node);
+      this.vis.nodes.queryHandler(this.node);
     }
 
     // Reset temporary query modes.
