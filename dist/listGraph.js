@@ -1676,7 +1676,7 @@ var ListGraph = (function ($,d3) {
         }
 
         if (event.hideUnrelatedNodes) {
-          if (!same) {
+          if (!same || !this.tempHidingUnrelatedNodes) {
             this.hideUnrelatedNodes(event.nodeIds);
           }
         } else if (this.tempHidingUnrelatedNodes) {

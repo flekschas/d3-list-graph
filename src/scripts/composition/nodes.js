@@ -562,7 +562,7 @@ class Nodes {
     }
 
     if (event.hideUnrelatedNodes) {
-      if (!same) {
+      if (!same || !this.tempHidingUnrelatedNodes) {
         this.hideUnrelatedNodes(event.nodeIds);
       }
     } else if (this.tempHidingUnrelatedNodes) {
