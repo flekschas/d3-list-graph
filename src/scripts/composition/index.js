@@ -405,28 +405,28 @@ class ListGraph {
     delete this.outsideClickHandler[id];
   }
 
-  checkGlobalClick (el) {
+  checkGlobalClick (target) {
     const found = {};
     const checkClass = Object.keys(this.outsideClickClassHandler).length;
 
-    let target = el;
+    let el = target;
     try {
-      while (!target.__d3ListGraphBase__) {
-        if (target.__id__) {
-          for (let i = target.__id__.length; i--;) {
-            found[target.__id__[i]] = true;
+      while (!el.__d3ListGraphBase__) {
+        if (el.__id__) {
+          for (let i = el.__id__.length; i--;) {
+            found[el.__id__[i]] = true;
           }
         }
         if (checkClass) {
           const classNames = Object.keys(this.outsideClickClassHandler);
           for (let i = classNames.length; i--;) {
-            const className = target.getAttribute('class');
+            const className = el.getAttribute('class');
             if (className && className.indexOf(classNames[i]) >= 0) {
               found[this.outsideClickClassHandler[classNames[i]].id] = true;
             }
           }
         }
-        target = target.parentNode;
+        el = el.parentNode;
       }
     } catch (e) { return; }
 
