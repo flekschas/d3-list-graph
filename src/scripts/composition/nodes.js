@@ -536,12 +536,10 @@ class Nodes {
   focusNodes (event) {
     const same = this.checkNodeFocusEventSame(event.nodeIds);
     if (this.nodeFocusId && !same) {
-      if (event.hideUnrelatedNodes) {
-        // Show unrelated nodes first before we hide them again.
-        this.blurNodes({
-          nodeIds: this.nodeFocusId
-        });
-      }
+      // Show unrelated nodes first before we hide them again.
+      this.blurNodes({
+        nodeIds: this.nodeFocusId
+      });
     }
 
     this.nodeFocusId = event.nodeIds;
