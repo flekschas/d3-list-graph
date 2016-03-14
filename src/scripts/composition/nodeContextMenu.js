@@ -568,14 +568,15 @@ class NodeContextMenu {
   /* ---------------------------------- U ----------------------------------- */
 
   updateAppearance (selection) {
+    const centerY = this.toBottom ?
+      0 : this.height + this.visData.global.row.height;
     selection
       .classed('transitionable', this.visible)
       .classed('open', this.opened)
       .style('transform', this.translate + ' ' + this.scale)
       .style(
         'transform-origin',
-        (this.visData.global.column.width / 2) + 'px ' +
-        (this.height + this.visData.global.row.height) + 'px'
+        (this.visData.global.column.width / 2) + 'px ' + centerY + 'px'
       );
   }
 
