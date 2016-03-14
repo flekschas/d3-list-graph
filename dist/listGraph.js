@@ -1655,13 +1655,12 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'focusNodes',
       value: function focusNodes(event) {
-        if (this.nodeFocusId && !this.checkNodeFocusEventSame(event.nodeIds)) {
-          if (event.hideUnrelatedNodes) {
-            // Show unrelated nodes first before we hide them again.
-            this.blurNodes({
-              nodeIds: this.nodeFocusId
-            });
-          }
+        var same = this.checkNodeFocusEventSame(event.nodeIds);
+        if (this.nodeFocusId && !same) {
+          // Show unrelated nodes first before we hide them again.
+          this.blurNodes({
+            nodeIds: this.nodeFocusId
+          });
         }
 
         this.nodeFocusId = event.nodeIds;
@@ -1677,7 +1676,9 @@ var ListGraph = (function ($,d3) {
         }
 
         if (event.hideUnrelatedNodes) {
-          this.hideUnrelatedNodes(event.nodeIds);
+          if (!same) {
+            this.hideUnrelatedNodes(event.nodeIds);
+          }
         } else if (this.tempHidingUnrelatedNodes) {
           this.showUnrelatedNodes();
         }
@@ -5640,14 +5641,13 @@ var ListGraph = (function ($,d3) {
             var y = 0;
             var width = 0;
             var height = 0;
-            var bBox = undefined;
             var cRect = undefined;
+            var contBBox = _this4.container.node().getBBox();
 
             var globalCRect = _this4.svgD3.node().getBoundingClientRect();
 
             if (selectionInterst && !selectionInterst.empty()) {
               selectionInterst.each(function () {
-                bBox = this.getBBox();
                 cRect = this.getBoundingClientRect();
                 width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
                 height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
@@ -5655,13 +5655,12 @@ var ListGraph = (function ($,d3) {
               width = _this4.width > width ? _this4.width : width;
               height = _this4.height > height ? _this4.height : height;
             } else {
-              bBox = _this4.container.node().getBBox();
-              width = _this4.width > bBox.width ? _this4.width : bBox.width;
-              height = _this4.height > bBox.height ? _this4.height : bBox.height;
+              width = _this4.width > contBBox.width ? _this4.width : contBBox.width;
+              height = _this4.height > contBBox.height ? _this4.height : contBBox.height;
             }
 
-            x = bBox.x;
-            y = bBox.y;
+            x = contBBox.x;
+            y = contBBox.y;
 
             _this4.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
           })();
