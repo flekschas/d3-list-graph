@@ -418,7 +418,8 @@ class ListGraph {
         if (checkClass) {
           const classNames = Object.keys(this.outsideClickClassHandler);
           for (let i = classNames.length; i--;) {
-            if (target.getAttribute('class').indexOf(classNames[i]) >= 0) {
+            const className = target.getAttribute('class');
+            if (className && className.indexOf(classNames[i]) >= 0) {
               found[this.outsideClickClassHandler[classNames[i]].id] = true;
             }
           }
