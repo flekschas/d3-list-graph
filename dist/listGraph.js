@@ -1655,7 +1655,18 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'focusNodes',
       value: function focusNodes(event) {
-        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones, event.zoomOut]);
+        if (this.nodeFocusId && !this.checkNodeFocusEventSame(event.nodeIds)) {
+          if (event.hideUnrelatedNodes) {
+            // Show unrelated nodes first before we hide them again.
+            this.blurNodes({
+              nodeIds: this.nodeFocusId
+            });
+          }
+        }
+
+        this.nodeFocusId = event.nodeIds;
+
+        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones, event.zoomOut || event.hideUnrelatedNodes]);
 
         if (event.zoomOut) {
           this.vis.globalView(this.nodes.filter(function (data) {
@@ -1666,30 +1677,9 @@ var ListGraph = (function ($,d3) {
         }
 
         if (event.hideUnrelatedNodes) {
-          this.tempHidingUnrelatedNodes = true;
-
-          this.nodes.filter(function (data) {
-            return !data.hovering;
-          }).classed('hidden', true).each(function (data) {
-            // Store old value for `hidden` temporarily
-            data._hidden = data.hidden;
-            data.hidden = true;
-          });
-
-          this.updateVisibility();
+          this.hideUnrelatedNodes(event.nodeIds);
         } else if (this.tempHidingUnrelatedNodes) {
-          this.tempHidingUnrelatedNodes = false;
-
-          this.nodes.filter(function (data) {
-            return !data.hovering;
-          }).classed('hidden', function (data) {
-            return data._hidden;
-          }).each(function (data) {
-            data.hidden = data._hidden;
-            data._hidden = undefined;
-          });
-
-          this.updateVisibility();
+          this.showUnrelatedNodes();
         }
       }
     }, {
@@ -1702,19 +1692,55 @@ var ListGraph = (function ($,d3) {
         }
 
         if (this.tempHidingUnrelatedNodes) {
-          this.tempHidingUnrelatedNodes = false;
-
-          this.nodes.filter(function (data) {
-            return !data.hovering;
-          }).classed('hidden', function (data) {
-            return data._hidden;
-          }).each(function (data) {
-            data.hidden = data._hidden;
-            data._hidden = undefined;
-          });
-
-          this.updateVisibility();
+          this.showUnrelatedNodes();
         }
+      }
+    }, {
+      key: 'checkNodeFocusEventSame',
+      value: function checkNodeFocusEventSame(nodeIds) {
+        if (!this.nodeFocusId) {
+          return false;
+        }
+        if (nodeIds.length !== this.nodeFocusId.length) {
+          return false;
+        }
+        for (var i = nodeIds.length; i--;) {
+          if (nodeIds[i] !== this.nodeFocusId[i]) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }, {
+      key: 'hideUnrelatedNodes',
+      value: function hideUnrelatedNodes(nodeIds) {
+        this.tempHidingUnrelatedNodes = nodeIds;
+
+        this.nodes.filter(function (data) {
+          return !data.hovering;
+        }).classed('hidden', true).each(function (data) {
+          // Store old value for `hidden` temporarily
+          data._hidden = data.hidden;
+          data.hidden = true;
+        });
+
+        this.updateVisibility();
+      }
+    }, {
+      key: 'showUnrelatedNodes',
+      value: function showUnrelatedNodes() {
+        this.tempHidingUnrelatedNodes = undefined;
+
+        this.nodes.filter(function (data) {
+          return !data.hovering;
+        }).classed('hidden', function (data) {
+          return data._hidden;
+        }).each(function (data) {
+          data.hidden = data._hidden;
+          data._hidden = undefined;
+        });
+
+        this.updateVisibility();
       }
     }, {
       key: 'eventHelper',
