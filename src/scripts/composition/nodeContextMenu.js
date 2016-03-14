@@ -98,7 +98,7 @@ class NodeContextMenu {
         classNames: [],
         distanceFromCenter: 0,
         fullWidth: false,
-        label: 'Focus',
+        label: 'Lock',
         bamEffect: true
       })
       .on('click', function () {
@@ -242,7 +242,7 @@ class NodeContextMenu {
 
   clickLockHandler () {
     this.buttonLock.classed('fill-effect', true);
-    this.vis.nodes.toggleLock(this.node);
+    this.vis.nodes.lockHandler(this.node);
     const checked = this.checkLock();
     if (checked) {
       this.buttonLock.classed('active', true);
@@ -513,7 +513,7 @@ class NodeContextMenu {
   rootHandler (debounced) {
     if (!debounced || this.tempRoot !== this.currentRootState) {
       this.close();
-      this.vis.nodes.toggleRoot(this.node);
+      this.vis.nodes.rootHandler(this.node);
     }
 
     // Reset temporary root values.
