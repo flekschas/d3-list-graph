@@ -1574,8 +1574,8 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'lockHandler',
-      value: function lockHandler(el) {
-        var events = this.toggleLock(el);
+      value: function lockHandler(d3El) {
+        var events = this.toggleLock(d3El);
 
         if (events.locked && events.unlocked) {
           if (events.locked) {
@@ -4370,7 +4370,7 @@ var ListGraph = (function ($,d3) {
         classNames: [],
         distanceFromCenter: 0,
         fullWidth: false,
-        label: 'Focus',
+        label: 'Lock',
         bamEffect: true
       }).on('click', function () {
         that.clickLockHandler.call(that, this);
@@ -4484,7 +4484,7 @@ var ListGraph = (function ($,d3) {
         var _this = this;
 
         this.buttonLock.classed('fill-effect', true);
-        this.vis.nodes.toggleLock(this.node);
+        this.vis.nodes.lockHandler(this.node);
         var checked = this.checkLock();
         if (checked) {
           this.buttonLock.classed('active', true);
@@ -4760,7 +4760,7 @@ var ListGraph = (function ($,d3) {
       value: function rootHandler(debounced) {
         if (!debounced || this.tempRoot !== this.currentRootState) {
           this.close();
-          this.vis.nodes.toggleRoot(this.node);
+          this.vis.nodes.rootHandler(this.node);
         }
 
         // Reset temporary root values.
