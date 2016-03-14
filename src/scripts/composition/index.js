@@ -784,7 +784,6 @@ class ListGraph {
       let y = 0;
       let width = 0;
       let height = 0;
-      let bBox;
       let cRect = undefined;
       const contBBox = this.container.node().getBBox();
 
@@ -792,7 +791,6 @@ class ListGraph {
 
       if (selectionInterst && !selectionInterst.empty()) {
         selectionInterst.each(function () {
-          bBox = this.getBBox();
           cRect = this.getBoundingClientRect();
           width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
           height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
