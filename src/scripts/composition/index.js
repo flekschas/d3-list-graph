@@ -369,6 +369,9 @@ class ListGraph {
         }
       }
     );
+
+    // Initialize `this.left` and `this.top`
+    this.getBoundingRect();
   }
 
   registerOutSideClickHandler (id, els, elClassNames, callback) {
