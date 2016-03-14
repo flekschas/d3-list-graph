@@ -1655,7 +1655,7 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'focusNodes',
       value: function focusNodes(event) {
-        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones]);
+        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones, event.zoomOut]);
 
         if (event.zoomOut) {
           this.vis.globalView(this.nodes.filter(function (data) {
@@ -2055,7 +2055,7 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'highlightNodes',
-      value: function highlightNodes(d3El, className, restriction, excludeClones) {
+      value: function highlightNodes(d3El, className, restriction, excludeClones, noVisibilityCheck) {
         var _this2 = this;
 
         var that = this;
@@ -2128,7 +2128,7 @@ var ListGraph = (function ($,d3) {
          * @return  {Boolean}        If `true` element is hidden.
          */
         function checkNodeVisibility(_el, _data) {
-          return !_data.hidden && !that.vis.isHidden.call(that.vis, _el);
+          return noVisibilityCheck || !_data.hidden && !that.vis.isHidden.call(that.vis, _el);
         }
 
         /**
@@ -5283,6 +5283,9 @@ var ListGraph = (function ($,d3) {
           _this.levels.focus(_this.activeLevel - _this.noRootActiveLevelDiff);
         }
       });
+
+      // Initialize `this.left` and `this.top`
+      this.getBoundingRect();
     }
 
     babelHelpers.createClass(ListGraph, [{
@@ -5322,11 +5325,11 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'checkGlobalClick',
-      value: function checkGlobalClick(startEl) {
+      value: function checkGlobalClick(target) {
         var found = {};
         var checkClass = Object.keys(this.outsideClickClassHandler).length;
 
-        var el = startEl;
+        var el = target;
         try {
           while (!el.__d3ListGraphBase__) {
             if (el.__id__) {
