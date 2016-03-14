@@ -534,10 +534,26 @@ class Nodes {
   }
 
   focusNodes (event) {
+    if (this.nodeFocusId && !this.checkNodeFocusEventSame(event.nodeIds)) {
+      if (event.hideUnrelatedNodes) {
+        // Show unrelated nodes first before we hide them again.
+        this.blurNodes({
+          nodeIds: this.nodeFocusId
+        });
+      }
+    }
+
+    this.nodeFocusId = event.nodeIds;
+
     this.eventHelper(
       event.nodeIds,
       this.highlightNodes,
-      ['focus', 'directParentsOnly', !!event.excludeClones, event.zoomOut]
+      [
+        'focus',
+        'directParentsOnly',
+        !!event.excludeClones,
+        event.zoomOut || event.hideUnrelatedNodes
+      ]
     );
 
     if (event.zoomOut) {
@@ -547,32 +563,9 @@ class Nodes {
     }
 
     if (event.hideUnrelatedNodes) {
-      this.tempHidingUnrelatedNodes = true;
-
-      this.nodes.filter(data => !data.hovering)
-        .classed(
-          'hidden', true
-        )
-        .each(data => {
-          // Store old value for `hidden` temporarily
-          data._hidden = data.hidden;
-          data.hidden = true;
-        });
-
-      this.updateVisibility();
+      this.hideUnrelatedNodes(event.nodeIds);
     } else if (this.tempHidingUnrelatedNodes) {
-      this.tempHidingUnrelatedNodes = false;
-
-      this.nodes.filter(data => !data.hovering)
-        .classed(
-          'hidden', data => data._hidden
-        )
-        .each(data => {
-          data.hidden = data._hidden;
-          data._hidden = undefined;
-        });
-
-      this.updateVisibility();
+      this.showUnrelatedNodes();
     }
   }
 
@@ -588,19 +581,56 @@ class Nodes {
     }
 
     if (this.tempHidingUnrelatedNodes) {
-      this.tempHidingUnrelatedNodes = false;
-
-      this.nodes.filter(data => !data.hovering)
-        .classed(
-          'hidden', data => data._hidden
-        )
-        .each(data => {
-          data.hidden = data._hidden;
-          data._hidden = undefined;
-        });
-
-      this.updateVisibility();
+      this.showUnrelatedNodes();
     }
+  }
+
+  checkNodeFocusEventSame (nodeIds) {
+    if (!this.nodeFocusId) {
+      return false;
+    }
+    if (nodeIds.length !== this.nodeFocusId.length) {
+      return false;
+    }
+    for (let i = nodeIds.length; i--;) {
+      if (nodeIds[i] !== this.nodeFocusId[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  hideUnrelatedNodes (nodeIds) {
+    this.tempHidingUnrelatedNodes = nodeIds;
+
+    this.nodes
+      .filter(data => !data.hovering)
+      .classed(
+        'hidden', true
+      )
+      .each(data => {
+        // Store old value for `hidden` temporarily
+        data._hidden = data.hidden;
+        data.hidden = true;
+      });
+
+    this.updateVisibility();
+  }
+
+  showUnrelatedNodes () {
+    this.tempHidingUnrelatedNodes = undefined;
+
+    this.nodes
+      .filter(data => !data.hovering)
+      .classed(
+        'hidden', data => data._hidden
+      )
+      .each(data => {
+        data.hidden = data._hidden;
+        data._hidden = undefined;
+      });
+
+    this.updateVisibility();
   }
 
   eventHelper (nodeIds, callback, optionalParams, subSelectionClass) {
