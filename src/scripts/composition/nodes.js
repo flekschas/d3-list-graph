@@ -309,14 +309,14 @@ class Nodes {
       this.events.on(
         'd3ListGraphNodeRoot',
         data => this.eventHelper(
-          data.nodeIds, this.toggleRoot, [], '.root'
+          data.nodeIds, this.toggleRoot, [false, true], '.root'
         )
       );
 
       this.events.on(
         'd3ListGraphNodeUnroot',
         data => this.eventHelper(
-          data.nodeIds, this.toggleRoot, [true], '.root'
+          data.nodeIds, this.toggleRoot, [true, true], '.root'
         )
       );
     }
@@ -765,14 +765,17 @@ class Nodes {
     }
   }
 
-  batchQueryHandler (els) {
+  batchQueryHandler (els, noNotification) {
     const actions = [];
     for (let i = els.length; i--;) {
       actions.push(this.queryHandler(
         els[i].d3El, els[i].action, els[i].mode, true)
       );
     }
-    this.events.broadcast('d3ListGraphBatchQuery', actions);
+
+    if (!noNotification) {
+      this.events.broadcast('d3ListGraphBatchQuery', actions);
+    }
   }
 
   queryHandler (d3El, action, mode, returnNoNotification) {
@@ -820,7 +823,7 @@ class Nodes {
     return event.name ? event : undefined;
   }
 
-  toggleRoot (d3El, setFalse) {
+  toggleRoot (d3El, setFalse, noNotification) {
     const data = d3El.datum();
     const events = { rooted: false, unrooted: false };
     const queries = [];
@@ -874,7 +877,7 @@ class Nodes {
     }
 
     if (queries.length) {
-      this.batchQueryHandler(queries);
+      this.batchQueryHandler(queries, noNotification);
     }
 
     return events;

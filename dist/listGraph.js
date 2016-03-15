@@ -1456,11 +1456,11 @@ var ListGraph = (function ($,d3) {
         });
 
         this.events.on('d3ListGraphNodeRoot', function (data) {
-          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [], '.root');
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [false, true], '.root');
         });
 
         this.events.on('d3ListGraphNodeUnroot', function (data) {
-          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true], '.root');
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true, true], '.root');
         });
       }
     }
@@ -1881,12 +1881,15 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'batchQueryHandler',
-      value: function batchQueryHandler(els) {
+      value: function batchQueryHandler(els, noNotification) {
         var actions = [];
         for (var i = els.length; i--;) {
           actions.push(this.queryHandler(els[i].d3El, els[i].action, els[i].mode, true));
         }
-        this.events.broadcast('d3ListGraphBatchQuery', actions);
+
+        if (!noNotification) {
+          this.events.broadcast('d3ListGraphBatchQuery', actions);
+        }
       }
     }, {
       key: 'queryHandler',
@@ -1934,7 +1937,7 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'toggleRoot',
-      value: function toggleRoot(d3El, setFalse) {
+      value: function toggleRoot(d3El, setFalse, noNotification) {
         var data = d3El.datum();
         var events = { rooted: false, unrooted: false };
         var queries = [];
@@ -1986,7 +1989,7 @@ var ListGraph = (function ($,d3) {
         }
 
         if (queries.length) {
-          this.batchQueryHandler(queries);
+          this.batchQueryHandler(queries, noNotification);
         }
 
         return events;
