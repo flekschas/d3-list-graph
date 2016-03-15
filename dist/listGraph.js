@@ -1448,19 +1448,19 @@ var ListGraph = (function ($,d3) {
         });
 
         this.events.on('d3ListGraphNodeLock', function (nodeIds) {
-          return _this.eventHelper(nodeIds, _this.toggleLock, [], '.lock');
+          return _this.eventHelper(nodeIds, _this.toggleLock, []);
         });
 
         this.events.on('d3ListGraphNodeUnlock', function (nodeIds) {
-          return _this.eventHelper(nodeIds, _this.toggleLock, [true], '.lock');
+          return _this.eventHelper(nodeIds, _this.toggleLock, [true]);
         });
 
         this.events.on('d3ListGraphNodeRoot', function (data) {
-          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [false, true], '.root');
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [false, true]);
         });
 
         this.events.on('d3ListGraphNodeUnroot', function (data) {
-          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true, true], '.root');
+          return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true, true]);
         });
       }
     }
