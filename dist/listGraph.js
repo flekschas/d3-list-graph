@@ -1578,20 +1578,18 @@ var ListGraph = (function ($,d3) {
         var events = this.toggleLock(d3El);
 
         if (events.locked && events.unlocked) {
-          if (events.locked) {
-            this.events.broadcast('d3ListGraphNodeLockChange', {
-              lock: {
-                id: events.locked.id,
-                clone: events.locked.clone,
-                clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
-              },
-              unlock: {
-                id: events.unlocked.id,
-                clone: events.unlocked.clone,
-                clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
-              }
-            });
-          }
+          this.events.broadcast('d3ListGraphNodeLockChange', {
+            lock: {
+              id: events.locked.id,
+              clone: events.locked.clone,
+              clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+            },
+            unlock: {
+              id: events.unlocked.id,
+              clone: events.unlocked.clone,
+              clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+            }
+          });
         } else {
           if (events.locked) {
             this.events.broadcast('d3ListGraphNodeLock', {
@@ -1882,10 +1880,20 @@ var ListGraph = (function ($,d3) {
         }
       }
     }, {
+      key: 'batchQueryHandler',
+      value: function batchQueryHandler(els) {
+        var actions = [];
+        for (var i = els.length; i--;) {
+          actions.push(this.queryHandler(els[i].d3El, els[i].action, els[i].mode, true));
+        }
+        this.events.broadcast('d3ListGraphBatchQuery', actions);
+      }
+    }, {
       key: 'queryHandler',
-      value: function queryHandler(d3El, action, mode) {
+      value: function queryHandler(d3El, action, mode, returnNoNotification) {
         var data = d3El.datum();
         var previousMode = data.data.state.query;
+        var event = {};
 
         switch (action) {
           case 'query':
@@ -1901,26 +1909,35 @@ var ListGraph = (function ($,d3) {
 
         if (data.data.state.query) {
           if (data.data.state.query !== previousMode) {
-            this.events.broadcast('d3ListGraphNodeQuery', {
+            event.name = 'd3ListGraphNodeQuery';
+            event.data = {
               id: data.id,
               clone: data.clone,
               clonedFromId: data.clone ? data.originalNode.id : undefined,
               mode: data.data.state.query
-            });
+            };
           }
         } else {
-          this.events.broadcast('d3ListGraphNodeUnquery', {
+          event.name = 'd3ListGraphNodeUnquery';
+          event.data = {
             id: data.id,
             clone: data.clone,
             clonedFromId: data.clone ? data.originalNode.id : undefined
-          });
+          };
         }
+
+        if (event.name && !returnNoNotification) {
+          this.events.broadcast(event.name, event.data);
+        }
+
+        return event.name ? event : undefined;
       }
     }, {
       key: 'toggleRoot',
       value: function toggleRoot(d3El, setFalse) {
         var data = d3El.datum();
         var events = { rooted: false, unrooted: false };
+        var queries = [];
 
         // Blur current levels
         this.vis.levels.blur();
@@ -1928,15 +1945,26 @@ var ListGraph = (function ($,d3) {
         if (this.rootedNode) {
           // Reset current root node
           this.rootedNode.classed({ active: false, inactive: true });
-          this.unrootNode(this.rootedNode);
           events.unrooted = this.rootedNode.datum();
+          if (this.unrootNode(this.rootedNode).unquery) {
+            queries.push({
+              d3El: this.rootedNode,
+              action: 'unquery'
+            });
+          }
 
           // Activate new root
           if (this.rootedNode.datum().id !== data.id && !setFalse) {
             d3El.classed({ active: true, inactive: false });
-            this.rootNode(d3El);
             this.rootedNode = d3El;
-            events.rooted = data;
+            events.rooted = d3El.datum();
+            if (this.rootNode(d3El).query) {
+              queries.push({
+                d3El: d3El,
+                action: 'query',
+                mode: 'or'
+              });
+            }
           } else {
             this.rootedNode = undefined;
             // Highlight first level
@@ -1945,10 +1973,20 @@ var ListGraph = (function ($,d3) {
         } else {
           if (!setFalse) {
             d3El.classed({ active: true, inactive: false });
-            this.rootNode(d3El);
-            events.rooted = data;
             this.rootedNode = d3El;
+            events.rooted = d3El.datum();
+            if (this.rootNode(d3El).query) {
+              queries.push({
+                d3El: d3El,
+                action: 'query',
+                mode: 'or'
+              });
+            }
           }
+        }
+
+        if (queries.length) {
+          this.batchQueryHandler(queries);
         }
 
         return events;
@@ -1966,11 +2004,18 @@ var ListGraph = (function ($,d3) {
         this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
         if (!data.data.state.query || data.data.state.query === 'not') {
-          this.queryHandler(d3El);
           data.data.queryBeforeRooting = false;
-        } else {
-          data.data.queryBeforeRooting = true;
+          // this.queryHandler(d3El, 'query', 'or');
+          return {
+            query: true
+          };
         }
+
+        data.data.queryBeforeRooting = true;
+
+        return {
+          query: false
+        };
       }
     }, {
       key: 'unrootNode',
@@ -1982,15 +2027,19 @@ var ListGraph = (function ($,d3) {
         this.showNodes();
 
         if (!data.data.queryBeforeRooting) {
-          this.unqueryByNode(d3El, data);
+          // this.queryHandler(d3El, 'unquery');
+          return {
+            unquery: true
+          };
         }
+
+        return {
+          unquery: false
+        };
       }
     }, {
       key: 'setUpFocusControls',
       value: function setUpFocusControls(selection, location, position, mode, className) {
-        // const height = (this.visData.global.row.contentHeight / 2 -
-        //   this.visData.global.cell.padding * 2);
-
         var paddedDim = this.iconDimension + 4;
 
         var x = 0 - paddedDim * (position + 1);
