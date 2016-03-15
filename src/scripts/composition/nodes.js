@@ -450,22 +450,20 @@ class Nodes {
     const events = this.toggleLock(d3El);
 
     if (events.locked && events.unlocked) {
-      if (events.locked) {
-        this.events.broadcast('d3ListGraphNodeLockChange', {
-          lock: {
-            id: events.locked.id,
-            clone: events.locked.clone,
-            clonedFromId: events.locked.clone ?
-              events.locked.originalNode.id : undefined
-          },
-          unlock: {
-            id: events.unlocked.id,
-            clone: events.unlocked.clone,
-            clonedFromId: events.unlocked.clone ?
-              events.unlocked.originalNode.id : undefined
-          }
-        });
-      }
+      this.events.broadcast('d3ListGraphNodeLockChange', {
+        lock: {
+          id: events.locked.id,
+          clone: events.locked.clone,
+          clonedFromId: events.locked.clone ?
+            events.locked.originalNode.id : undefined
+        },
+        unlock: {
+          id: events.unlocked.id,
+          clone: events.unlocked.clone,
+          clonedFromId: events.unlocked.clone ?
+            events.unlocked.originalNode.id : undefined
+        }
+      });
     } else {
       if (events.locked) {
         this.events.broadcast('d3ListGraphNodeLock', {
