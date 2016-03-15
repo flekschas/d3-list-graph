@@ -295,28 +295,28 @@ class Nodes {
       this.events.on(
         'd3ListGraphNodeLock',
         nodeIds => this.eventHelper(
-          nodeIds, this.toggleLock, [], '.lock'
+          nodeIds, this.toggleLock, []
         )
       );
 
       this.events.on(
         'd3ListGraphNodeUnlock',
         nodeIds => this.eventHelper(
-          nodeIds, this.toggleLock, [true], '.lock'
+          nodeIds, this.toggleLock, [true]
         )
       );
 
       this.events.on(
         'd3ListGraphNodeRoot',
         data => this.eventHelper(
-          data.nodeIds, this.toggleRoot, [false, true], '.root'
+          data.nodeIds, this.toggleRoot, [false, true]
         )
       );
 
       this.events.on(
         'd3ListGraphNodeUnroot',
         data => this.eventHelper(
-          data.nodeIds, this.toggleRoot, [true, true], '.root'
+          data.nodeIds, this.toggleRoot, [true, true]
         )
       );
     }
