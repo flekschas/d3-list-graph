@@ -8,7 +8,8 @@ const LINKS_CLASS = 'links';
 const LINK_CLASS = 'link';
 
 class Links {
-  constructor (levels, visData, layout) {
+  constructor (vis, levels, visData, layout) {
+    this.vis = vis;
     this.visData = visData;
     this.layout = layout;
 
@@ -20,11 +21,15 @@ class Links {
         });
       });
 
-    this.links = this.groups.selectAll(LINK_CLASS + '-bg')
+    this.links = this.groups.selectAll(LINK_CLASS)
       .data((data, index) => this.layout.links(index))
       .enter()
       .append('g')
-        .attr('class', LINK_CLASS);
+        .attr('class', LINK_CLASS)
+        .classed(
+          'visible',
+          !this.vis.hideOutwardsLinks || this.linkVisibility.bind(this)
+        );
 
     this.links.append('path')
       .attr({
@@ -40,21 +45,46 @@ class Links {
   }
 
   get diagonal () {
-    return d3.svg.diagonal()
-      .source(data => ({
-        x: data.source.node.y + data.source.offsetY +
-          this.visData.global.row.height / 2,
-        y: data.source.node.x + data.source.offsetX +
-          this.visData.global.column.contentWidth +
-          this.visData.global.column.padding
-      }))
-      .target(data => ({
-        x: data.target.node.y + data.target.offsetY +
-          this.visData.global.row.height / 2,
-        y: data.target.node.x + data.target.offsetX +
-          this.visData.global.column.padding
-      }))
-      .projection(data => [data.y, data.x]);
+    const extraOffsetX = this.vis.showLinkLocation ? 6 : 0;
+
+    function getSourceX (source) {
+      return source.node.x + source.offsetX +
+        this.visData.global.column.contentWidth +
+        this.visData.global.column.padding;
+    }
+
+    function getTargetX (source) {
+      return source.node.x + source.offsetX +
+        this.visData.global.column.padding;
+    }
+
+    function getY (source) {
+      return source.node.y + source.offsetY +
+        this.visData.global.row.height / 2;
+    }
+
+    return data => {
+      const sourceY = getY.call(this, data.source);
+      const sourceX = getSourceX.call(this, data.source);
+      const targetY = getY.call(this, data.target);
+      const targetX = getTargetX.call(this, data.target);
+      const middleX = (sourceX + targetX) / 2;
+
+      return (
+        'M' + sourceX + ',' + sourceY +
+        'h' + extraOffsetX +
+        'C' + (middleX + extraOffsetX) + ',' + sourceY +
+        ' ' + (middleX - extraOffsetX) + ',' + targetY +
+        ' ' + (targetX - extraOffsetX) + ',' + targetY +
+        'h' + extraOffsetX
+      );
+    };
+  }
+
+  linkVisibility (data) {
+    // Cache visibility.
+    data.hidden = this.vis.pointsOutside.call(this.vis, data);
+    return data.hidden === 0;
   }
 
   highlight (nodeIds, highlight, className) {
@@ -67,8 +97,14 @@ class Links {
     // Update data of `g`.
     selection.data(data);
 
-    // Next update all paths according to the new data.
-    selection.selectAll('path').attr('d', this.diagonal);
+    if (this.vis.hideOutwardsLinks) {
+      // Check if links point outwards.
+      selection.classed('visible', this.linkVisibility.bind(this));
+    }
+
+    // Next, update all paths according to the new data.
+    selection.selectAll('path')
+      .attr('d', this.diagonal);
   }
 
   sort (update) {

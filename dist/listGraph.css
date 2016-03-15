@@ -6,7 +6,7 @@
   .list-graph .top-bar {
     position: relative;
     height: 1.5rem;
-    border-bottom: 1px solid #efefef;
+    border-bottom: 1px solid #e5e5e5;
     overflow: hidden; }
   .list-graph .top-bar .control-switch {
     position: absolute;
@@ -14,7 +14,7 @@
     top: 0;
     right: 0;
     height: 100%;
-    background: #efefef; }
+    background: #e5e5e5; }
     .list-graph .top-bar .control-switch:hover {
       color: #0088ff;
       cursor: pointer; }
@@ -53,7 +53,7 @@
   .list-graph .top-bar .controls {
     display: inline-block;
     white-space: normal;
-    box-shadow: -1px 0 0 0 #efefef; }
+    box-shadow: -1px 0 0 0 #e5e5e5; }
   .list-graph .top-bar .control-btn {
     top: 0;
     display: block;
@@ -76,7 +76,7 @@
     .list-graph .top-bar .control-btn:hover, .list-graph .top-bar .control-btn.active {
       color: #000; }
     .list-graph .top-bar .control-btn:hover {
-      background: #efefef; }
+      background: #e5e5e5; }
     .list-graph .top-bar .control-btn.active {
       font-weight: bold;
       text-decoration: underline; }
@@ -95,7 +95,7 @@
     position: relative;
     float: left;
     width: 16.666666667%;
-    box-shadow: 1px 0 0 0 #efefef; }
+    box-shadow: 1px 0 0 0 #e5e5e5; }
   .list-graph .top-bar .controls .control-btn {
     position: absolute; }
   .list-graph .top-bar .controls .expandable-label {
@@ -190,21 +190,6 @@
   .list-graph .node .bg {
     fill: #fff;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph .node .bg-extension {
-    fill: #fff;
-    stroke: #808080;
-    stroke-width: 2px;
-    opacity: 0;
-    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph .node.hovering-directly .bg-extension,
-  .list-graph .node.active .bg-extension,
-  .list-graph .node.rooted .bg-extension,
-  .list-graph .node.animating .bg-extension {
-    opacity: 1; }
-  .list-graph .node.active .bg-extension,
-  .list-graph .node.rooted .bg-extension,
-  .list-graph .node.animating .bg-extension {
-    fill: #808080; }
   .list-graph .node .bg-border {
     fill: #f23e00;
     stroke: #f23e00;
@@ -236,35 +221,52 @@
   .list-graph .node.hovering-directly .border,
   .list-graph .node.hovering-indirectly .border,
   .list-graph .column.active .node.hovering-directly .border,
-  .list-graph .column.active .node.hovering-indirectly .border {
+  .list-graph .column.active .node.hovering-indirectly .border,
+  .list-graph .node.rooted.hovering-directly .border,
+  .list-graph .node.rooted.hovering-indirectly .border,
+  .list-graph .column.active .node.rooted.hovering-directly .border,
+  .list-graph .column.active .node.rooted.hovering-indirectly .border {
     stroke: #000; }
   .list-graph .node.focus-directly .border,
   .list-graph .column.active .node.focus-directly .border {
     stroke: #f23e00; }
   .list-graph .node.highlight-bar .border {
     stroke-opacity: 0; }
+  .list-graph .node.rooted .border,
+  .list-graph .node.query-and .border,
+  .list-graph .node.query-or .border,
+  .list-graph .node.query-not .border {
+    stroke: #666; }
+  .list-graph .node.rooted .label,
+  .list-graph .node.query-and .label,
+  .list-graph .node.query-or .label,
+  .list-graph .node.query-not .label {
+    color: #000;
+    font-weight: bold; }
   .list-graph .link {
     fill: none;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
     .list-graph .link .link-direct {
       stroke: #000;
-      stroke-opacity: 0.2;
       stroke-width: 2;
+      stroke-opacity: 0;
       transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-    .list-graph .link.hovering .link-direct {
+    .list-graph .link.visible .link-direct {
+      stroke-opacity: 0.2; }
+    .list-graph .link.visible.hovering .link-direct {
       stroke-opacity: 0.75;
       stroke-width: 4; }
-    .list-graph .link.lock .link-direct {
+    .list-graph .link.visible.lock .link-direct {
       stroke-opacity: 0.75; }
-    .list-graph .link.focus .link-direct {
+    .list-graph .link.visible.focus .link-direct {
       stroke-opacity: 0.5; }
     .list-graph .link .link-bg {
       stroke: #f23e00;
       stroke-opacity: 0;
       stroke-width: 6; }
-    .list-graph .link.lock .link-bg {
+    .list-graph .link.visible.lock .link-bg {
       stroke-opacity: 0.75; }
-    .list-graph .link.focus .link-bg {
+    .list-graph .link.visible.focus .link-bg {
       stroke-opacity: 0.5; }
     .list-graph .link.lock.hovering .link-bg {
       stroke-width: 8; }
@@ -288,50 +290,42 @@
   .list-graph .column.active .node.hovering-directly .label,
   .list-graph .column.active .node.focus-directly .label {
     color: #fff; }
-  .list-graph .node.hovering-indirectly .label {
-    color: #000; }
+  .list-graph .node.hovering-indirectly .label,
   .list-graph .node.highlight-bar .label {
     color: #000; }
   .list-graph .node.highlight-label .label,
   .list-graph .column.active .node.highlight-label .label {
     color: #f23e00;
     text-shadow: 0 0 3px rgba(242, 62, 0, 0.25); }
-  .list-graph .node .focus-controls .bg {
+  .list-graph .node .focus-controls .hover-helper {
     fill: #fff;
     fill-opacity: 0;
-    stroke: #fff;
-    stroke-width: 1;
-    stroke-opacity: 0; }
-  .list-graph .node .focus-controls .hover-helper {
-    fill-opacity: 0; }
-  .list-graph .node:hover .focus-controls .bg {
-    fill-opacity: 0.66;
-    stroke-opacity: 0.66; }
-  .list-graph .node .focus-controls:hover .bg {
-    fill-opacity: 0.85;
-    stroke-opacity: 1; }
-  .list-graph .node .focus-controls.active .bg,
-  .list-graph .node.animating .focus-controls .bg {
-    fill-opacity: 0 !important;
-    stroke-opacity: 0 !important; }
-  .list-graph .node .focus-controls:hover .icon {
-    color: #f23e00; }
-  .list-graph .node.active .root .icon,
-  .list-graph .node.active .query .icon,
-  .list-graph .node .focus-controls.active .icon,
-  .list-graph .node .focus-controls.active:hover .icon,
-  .list-graph .node.active .focus-controls:hover .icon {
-    color: #fff; }
+    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .node.rooted .focus-controls:hover,
+  .list-graph .node.query-and .focus-controls:hover,
+  .list-graph .node.query-or .focus-controls:hover,
+  .list-graph .node.query-not .focus-controls:hover {
+    cursor: pointer; }
+  .list-graph .node.rooted .focus-controls:hover .hover-helper,
+  .list-graph .node.query-and .focus-controls:hover .hover-helper,
+  .list-graph .node.query-or .focus-controls:hover .hover-helper,
+  .list-graph .node.query-not .focus-controls:hover .hover-helper {
+    fill-opacity: 0.5; }
+  .list-graph .node.rooted .focus-controls:hover .icon,
+  .list-graph .node.query-and .focus-controls:hover .state-and-or,
+  .list-graph .node.query-or .focus-controls:hover .state-and-or,
+  .list-graph .node.query-not .focus-controls:hover .state-not {
+    color: #f23e00;
+    opacity: 1; }
   .list-graph .node.query-and .query .state-inactive,
   .list-graph .node.query-or .query .state-inactive,
   .list-graph .node.query-not .query .state-inactive {
     opacity: 0 !important; }
-  .list-graph .node:hover .focus-controls.inactive .state-inactive,
-  .list-graph .node .focus-controls.active .state-active,
+  .list-graph .node.rooted .focus-controls.root .state-active,
   .list-graph .node.query-and .focus-controls .state-and-or,
   .list-graph .node.query-or .focus-controls .state-and-or,
   .list-graph .node.query-not .focus-controls .state-not {
-    opacity: 1; }
+    opacity: 0.33; }
   .list-graph .node .focus-controls .state-and-or use {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1);
     transform-origin: 50% 50%; }
@@ -378,6 +372,31 @@
   .list-graph .bar.highlight .bar-magnitude {
     fill: #ff8459;
     fill-opacity: 1 !important; }
+  .list-graph .link-indicator {
+    opacity: 0;
+    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+    .list-graph .link-indicator.visible {
+      opacity: 1; }
+    .list-graph .link-indicator.incoming {
+      transform-origin: right center; }
+    .list-graph .link-indicator.outgoing {
+      transform-origin: left center; }
+  .list-graph .lock-directly .link-indicator,
+  .list-graph .lock-indirectly .link-indicator,
+  .list-graph .hovering-directly .link-indicator,
+  .list-graph .hovering-indirectly .link-indicator {
+    fill: #000; }
+  .list-graph .hovering-directly .link-indicator,
+  .list-graph .hovering-indirectly .link-indicator {
+    transform: scale(1.25, 2); }
+  .list-graph .link-location-indicator {
+    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .hovering-directly .link-location-indicator.above,
+  .list-graph .hovering-indirectly .link-location-indicator.above {
+    transform: translateY(-1px); }
+  .list-graph .hovering-directly .link-location-indicator.below,
+  .list-graph .hovering-indirectly .link-location-indicator.below {
+    transform: translateY(1px); }
   .list-graph .sorting {
     opacity: 0.33; }
   .list-graph .hidden {
@@ -393,6 +412,8 @@
       opacity: 1; }
   .list-graph .ease-all {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph.unselectable * {
+    cursor: default; }
   .list-graph.unselectable .label {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -402,3 +423,92 @@
     user-select: none; }
   .list-graph.less-animations * {
     transition: none !important; }
+  .list-graph .is-mirrored-horizontally {
+    transform: scale(1, -1); }
+
+.list-graph .context-menu {
+  display: none;
+  opacity: 0; }
+  .list-graph .context-menu.transitionable {
+    display: block;
+    transition: all 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .context-menu.open {
+    opacity: 1; }
+  .list-graph .context-menu > .bg {
+    fill: #fff; }
+  .list-graph .context-menu > .bgBorder {
+    fill: #000;
+    fill-opacity: 0.1; }
+  .list-graph .context-menu > .bg,
+  .list-graph .context-menu > .bgBorder {
+    transform-origin: 50% 50%; }
+  .list-graph .context-menu .button .bg {
+    fill: #f2f2f2;
+    transition: all 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .context-menu .button .bg-fill-effect {
+    fill: rgba(0, 136, 255, 0.5);
+    opacity: 0;
+    transition: opacity 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .context-menu .button.fill-effect .bg-fill-effect {
+    opacity: 1; }
+  .list-graph .context-menu .button .bg-bam-effect {
+    fill: #0088ff;
+    opacity: 0;
+    transform-origin: 50% 50%;
+    animation-iteration-count: 1;
+    animation-iteration-count: infinite; }
+    .list-graph .context-menu .button .bg-bam-effect.active {
+      animation: bam-effect 0.66s cubic-bezier(0.2, 0.1, 0.2, 1); }
+
+@keyframes bam-effect {
+  0% {
+    opacity: 0;
+    transform: scale(0.5); }
+  30% {
+    opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: scale(1.33); } }
+  .list-graph .context-menu .button .label,
+  .list-graph .context-menu .button .label-two {
+    display: block;
+    float: left;
+    height: 100%;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.75rem;
+    line-height: inherit; }
+    .list-graph .context-menu .button .label.inactive,
+    .list-graph .context-menu .button .label-two.inactive {
+      color: rgba(0, 0, 0, 0.2); }
+  .list-graph .context-menu .label-two {
+    margin-left: 0.25rem; }
+  .list-graph .context-menu .button:hover {
+    cursor: pointer; }
+    .list-graph .context-menu .button:hover .bg {
+      fill: #ccc; }
+    .list-graph .context-menu .button:hover .label,
+    .list-graph .context-menu .button:hover .label-two {
+      color: rgba(0, 0, 0, 0.8); }
+  .list-graph .context-menu .button.semi-active:hover .bg {
+    fill: #f2f2f2; }
+  .list-graph .context-menu .checkbox .icon-unchecked {
+    opacity: 0.66; }
+  .list-graph .context-menu .checkbox.checked .icon-unchecked {
+    opacity: 0; }
+  .list-graph .context-menu .checkbox .icon-checked {
+    opacity: 0; }
+  .list-graph .context-menu .checkbox.checked .icon-checked {
+    opacity: 1; }
+  .list-graph .context-menu .checkbox .checkbox-bg {
+    fill: #fff; }
+  .list-graph .context-menu .checkbox .checkbox-knob {
+    fill: #ccc;
+    transition: all 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .context-menu .button.semi-active .label,
+  .list-graph .context-menu .button.semi-active .label-two {
+    color: #000;
+    font-weight: bold; }
+  .list-graph .context-menu .button.semi-active .checkbox-knob {
+    fill: #0088ff; }
+  .list-graph .context-menu .button.semi-active.active .bg {
+    fill: rgba(0, 136, 255, 0.5); }

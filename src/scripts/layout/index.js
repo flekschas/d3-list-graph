@@ -3,70 +3,34 @@ import * as d3 from 'd3';
 import isArray from '../../../node_modules/lodash-es/isArray';
 import isFinite from '../../../node_modules/lodash-es/isFinite';
 import isObject from '../../../node_modules/lodash-es/isObject';
+import assign from '../../../node_modules/lodash-es/assign';
 
 // Internal
+import * as defaults from './defaults';
 import { NoRootNodes } from './errors';
 import traverseGraph from './process-nodes';
 
-/**
- * Default size
- *
- * @constant
- * @default
- * @type  {Object}
- */
-const SIZE = {
-  width: 300,
-  height: 300
+// Private variables
+const _cellRelInnerPadding = defaults.CELL_REL_INNER_PADDING;
+const _grid = {
+  columns: defaults.GRID.columns,
+  rows: defaults.GRID.rows
 };
-
-/**
- * Default grid
- *
- * @constant
- * @default
- * @type  {Object}
- */
-const GRID = {
-  columns: 3,
-  rows: 3
+const _size = {
+  width: defaults.SIZE.width,
+  height: defaults.SIZE.height
 };
+const _links = {};
 
-/**
- * Default relative padding of columns.
- *
- * @description
- * Padding between columns refers to the left and right inner padding used
- * for links between items in the column. Padding is relative to the overall
- * width of the column.
- *
- * @constant
- * @default
- * @type  {Number}
- */
-const COL_REL_PADDING = 0.2;
-
-/**
- * Default relative padding of rows.
- *
- * @description
- * Padding between rows refers to the top and bottom inner padding used to
- * separate items vertically in the column. Padding is relative to the overall
- * height of the row.
- *
- * @constant
- * @default
- * @type  {Number}
- */
-const ROW_REL_PADDING = 0.05;
-
-/**
- * Default inner padding of a cell relative to the shorter dimension, e.g.
- * width or height.
- *
- * @type  {Number}
- */
-const CELL_REL_INNER_PADDING = 0.05;
+let _colRelPadding = defaults.COL_REL_PADDING;
+let _rowRelPadding = defaults.ROW_REL_PADDING;
+let _columnWidth;
+let _rowHeight;
+let _colAbsPadding;
+let _colAbsContentWidth;
+let _rowAbsPadding;
+let _rowAbsContentHeight;
+let _cellAbsInnerPadding;
 
 class ListGraphLayout {
   /**
@@ -84,21 +48,8 @@ class ListGraphLayout {
   constructor (size, grid) {
     this.scale = {
       x: d3.scale.linear(),
-      y: d3.scale.linear()
-    };
-
-    this._colRelPadding = COL_REL_PADDING;
-    this._rowRelPadding = ROW_REL_PADDING;
-    this._cellRelInnerPadding = CELL_REL_INNER_PADDING;
-
-    this._grid = {
-      columns: GRID.columns,
-      rows: GRID.rows
-    };
-
-    this._size = {
-      width: SIZE.width,
-      height: SIZE.height
+      y: d3.scale.linear(),
+      linkPosition: {}
     };
 
     this.grid(grid);
@@ -135,7 +86,6 @@ class ListGraphLayout {
   nodesToMatrix (level) {
     const arr = [];
 
-    let keys;
     let start = 0;
     let end = Object.keys(this.columnCache).length;
 
@@ -153,7 +103,7 @@ class ListGraphLayout {
         sortBy: this.columnSorting[i].by,
         sortOrder: this.columnSorting[i].order
       });
-      keys = Object.keys(this.columnCache[i]);
+      const keys = Object.keys(this.columnCache[i]);
       for (let j = keys.length; j--;) {
         arr[i - start].rows.push(this.data[keys[j]]);
       }
@@ -189,21 +139,22 @@ class ListGraphLayout {
       }
     }
 
+    const _options = assign({}, options);
+
     traverseGraph(
       this.data,
       this.rootIds,
       this.columnCache,
       this.columnNodeOrder,
-      this.links,
-      this.scale.x,
-      this.scale.y
+      this.scale,
+      _links
     );
 
     for (let i = Object.keys(this.columnCache).length; i--;) {
       this.columnSorting[i] = {};
     }
 
-    if (options && options.sortBy) {
+    if (_options.sortBy) {
       this.sort(undefined, options.sortBy, options.sortOrder || 'desc');
     }
 
@@ -303,18 +254,18 @@ class ListGraphLayout {
   compileGlobalProps () {
     return {
       column: {
-        width: this._columnWidth,
-        height: this._size.height,
-        padding: this._colAbsPadding,
-        contentWidth: this._colAbsContentWidth
+        width: _columnWidth,
+        height: _size.height,
+        padding: _colAbsPadding,
+        contentWidth: _colAbsContentWidth
       },
       row: {
-        height: this._rowHeight,
-        padding: this._rowAbsPadding,
-        contentHeight: this._rowAbsContentHeight
+        height: _rowHeight,
+        padding: _rowAbsPadding,
+        contentHeight: _rowAbsContentHeight
       },
       cell: {
-        padding: this._cellAbsInnerPadding
+        padding: _cellAbsInnerPadding
       }
     };
   }
@@ -359,18 +310,15 @@ class ListGraphLayout {
    *   links.
    */
   links (startLevel, endLevel) {
-    const allLinks = [];
+    let allLinks = [];
 
     let keys = [];
-    let nodeLinks;
-    let normStartLevel;
-    let normEndLevel;
 
     if (!isFinite(startLevel)) {
       keys = Object.keys(this.data);
     } else {
-      normStartLevel = Math.max(startLevel, 0);
-      normEndLevel = isFinite(endLevel) ?
+      const normStartLevel = Math.max(startLevel, 0);
+      const normEndLevel = isFinite(endLevel) ?
         Math.min(endLevel, Object.keys(this.columnCache).length) :
         normStartLevel + 1;
 
@@ -380,10 +328,7 @@ class ListGraphLayout {
     }
 
     for (let i = keys.length; i--;) {
-      nodeLinks = this.data[keys[i]].links;
-      for (let j = nodeLinks.length; j--;) {
-        allLinks.push(nodeLinks[j]);
-      }
+      allLinks = allLinks.concat(this.data[keys[i]].links.outgoing.refs);
     }
 
     return allLinks;
@@ -441,18 +386,18 @@ class ListGraphLayout {
    */
   grid (newGrid) {
     if (!newGrid) {
-      return this._grid;
+      return _grid;
     }
 
     if (isArray(newGrid)) {
-      this._grid.columns = parseInt(newGrid[0], 10) || this._grid.columns;
-      this._grid.rows = parseInt(newGrid[1], 10) || this._grid.rows;
+      _grid.columns = parseInt(newGrid[0], 10) || _grid.columns;
+      _grid.rows = parseInt(newGrid[1], 10) || _grid.rows;
       this.updateScaling();
     }
 
     if (isObject(newGrid)) {
-      this._grid.columns = parseInt(newGrid.columns, 10) || this._grid.columns;
-      this._grid.rows = parseInt(newGrid.rows, 10) || this._grid.rows;
+      _grid.columns = parseInt(newGrid.columns, 10) || _grid.columns;
+      _grid.rows = parseInt(newGrid.rows, 10) || _grid.rows;
       this.updateScaling();
     }
 
@@ -484,19 +429,19 @@ class ListGraphLayout {
    * @date    2016-01-17
    */
   updateNodesVisibility () {
-    const skipped = {};
+    let skipped;
 
     for (let i = Object.keys(this.columnCache).length; i--;) {
-      skipped[i] = 0;
+      skipped = 0;
       // Update `y` according to the number of previously skipped nodes.
       for (let j = 0, len = this.columnNodeOrder[i].length; j < len; j++) {
         if (
           this.columnNodeOrder[i][j].hidden &&
           !this.columnNodeOrder[i][j].data.queryMode
         ) {
-          skipped[i]++;
+          skipped++;
         }
-        this.columnNodeOrder[i][j].y = this.scale.y(j - skipped[i]);
+        this.columnNodeOrder[i][j].y = this.scale.y(j - skipped);
       }
     }
 
@@ -516,23 +461,23 @@ class ListGraphLayout {
    * @return  {Object}  Self.
    */
   updateScaling () {
-    this.scale.x.domain([0, this._grid.columns]).range([0, this._size.width]);
-    this.scale.y.domain([0, this._grid.rows]).range([0, this._size.height]);
+    this.scale.x.domain([0, _grid.columns]).range([0, _size.width]);
+    this.scale.y.domain([0, _grid.rows]).range([0, _size.height]);
 
-    this._columnWidth = this._size.width / this._grid.columns;
-    this._rowHeight = this._size.height / this._grid.rows;
+    _columnWidth = _size.width / _grid.columns;
+    _rowHeight = _size.height / _grid.rows;
 
-    this._colAbsPadding = this._columnWidth * this._colRelPadding;
-    this._colAbsContentWidth = this._columnWidth * (
-      1 - 2 * this._colRelPadding
+    _colAbsPadding = _columnWidth * _colRelPadding;
+    _colAbsContentWidth = _columnWidth * (
+      1 - 2 * _colRelPadding
     );
 
-    this._rowAbsPadding = Math.max(this._rowHeight * this._rowRelPadding, 2);
-    this._rowAbsContentHeight = this._rowHeight - 2 * this._rowAbsPadding;
+    _rowAbsPadding = Math.max(_rowHeight * _rowRelPadding, 2);
+    _rowAbsContentHeight = _rowHeight - 2 * _rowAbsPadding;
 
-    this._cellAbsInnerPadding = this._cellRelInnerPadding * Math.min(
-      this._colAbsContentWidth,
-      this._rowAbsContentHeight,
+    _cellAbsInnerPadding = _cellRelInnerPadding * Math.min(
+      _colAbsContentWidth,
+      _rowAbsContentHeight,
       1
     );
 
@@ -555,18 +500,18 @@ class ListGraphLayout {
    */
   size (newSize) {
     if (!newSize) {
-      return this._size;
+      return _size;
     }
 
     if (isArray(newSize)) {
-      this._size.width = parseInt(newSize[0], 10) || this._size.width;
-      this._size.height = parseInt(newSize[1], 10) || this._size.height;
+      _size.width = parseInt(newSize[0], 10) || _size.width;
+      _size.height = parseInt(newSize[1], 10) || _size.height;
       this.updateScaling();
     }
 
     if (isObject(newSize)) {
-      this._size.width = parseInt(newSize.width, 10) || this._size.width;
-      this._size.height = parseInt(newSize.height, 10) || this._size.height;
+      _size.width = parseInt(newSize.width, 10) || _size.width;
+      _size.height = parseInt(newSize.height, 10) || _size.height;
       this.updateScaling();
     }
 
@@ -591,15 +536,15 @@ class ListGraphLayout {
    */
   columnPadding (padding, absolute) {
     if (!padding) {
-      return this._colRelPadding;
+      return _colRelPadding;
     }
 
     if (isFinite(padding)) {
       let relPadding = padding;
-      if (absolute && isFinite(this._columnWidth)) {
-        relPadding = padding / this._columnWidth;
+      if (absolute && isFinite(_columnWidth)) {
+        relPadding = padding / _columnWidth;
       }
-      this._colRelPadding = Math.max(Math.min(relPadding, 0.66), 0.1);
+      _colRelPadding = Math.max(Math.min(relPadding, 0.66), 0.1);
       this.updateScaling();
     }
 
@@ -624,15 +569,15 @@ class ListGraphLayout {
    */
   rowPadding (padding, absolute) {
     if (!padding) {
-      return this._rowRelPadding;
+      return _rowRelPadding;
     }
 
     if (isFinite(padding)) {
       let relPadding = padding;
-      if (absolute && isFinite(this._rowHeight)) {
-        relPadding = padding / this._rowHeight;
+      if (absolute && isFinite(_rowHeight)) {
+        relPadding = padding / _rowHeight;
       }
-      this._rowRelPadding = Math.max(Math.min(relPadding, 0.5), 0);
+      _rowRelPadding = Math.max(Math.min(relPadding, 0.5), 0);
       this.updateScaling();
     }
 

@@ -58,7 +58,7 @@ This example assumes that you're using Bower to fetch all code.
 
 ### Parameters
 
-Required parameters:
+#### Required parameters:
 
 **element**: _Object_.
 DOM element that should act as the base element.
@@ -74,7 +74,7 @@ Path to the SVG icon file. Default is an empty string, which is equivalent to in
 
 ---
 
-Optional parameters:
+#### Optional parameters:
 
 **width**: _Number_ [100% of the SVG container].
 Number of columns to be shown.
@@ -119,6 +119,9 @@ Can be used to listen to internal events.
 - 0 [Default]: Show all transitions
 - 1: Show only CSS transitions
 - 2: Show no transitions
+
+**hideOutwardsLinks**: _Boolean_ [`false`].
+If `true` links that point to invisible nodes will not be shown.
 
 ## Develop
 

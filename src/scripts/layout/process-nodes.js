@@ -14,21 +14,13 @@ import isObject from '../../../node_modules/lodash-es/isObject.js';
  * @param  {Object}  graph  Graph to be traversed
  * @param  {Array}  starts  Array of node IDs for start the traversal.
  * @param  {Object}  columnCache  Cache storing node IDs per column.
- * @param  {Object|Function}  scaleX  D3 linear scale function for the
- *    x-axis, e.g. columns.
- * @param  {Object|Function}  scaleY  D3 linear scale function for the
- *    y-axis, e.g. rows.
+ * @param  {Object}  scale  D3 linear scale functions for the
+ *    x-axis (columns), y-axis (rows) and other stuff.
+ * œparam  {Object}  links  Object storing links data.
  */
-function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
-  scaleY) {
+function traverseGraph (graph, starts, columnCache, nodeOrder, scale, links) {
   const visited = {};
   const queue = [];
-
-  let child;
-  let childId;
-  let clone;
-  let node;
-  let cloneId;
 
   /**
    * Ensure that the bar values are in [0,1] and that the structure of `bars`
@@ -78,7 +70,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    * @memberOf  traverseGraph
    * @param  {Object}  node  Node to be processed.
    */
-  function processBars (node) {  // eslint-disable-line no-shadow
+  function processBars (node) {
     if (node.data.bars) {
       if (isArray(node.data.bars)) {
         node.data.barRefs = {};
@@ -125,8 +117,10 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    * @param  {Object}  target  Target node.
    */
   function processLink (source, target) {
-    source.links.push({
-      id: '(' + source.id + ')->(' + target.id + ')',
+    const id = '(' + source.id + ')->(' + target.id + ')';
+
+    links[id] = {
+      id,
       source: {
         node: source,
         offsetX: 0,
@@ -137,7 +131,13 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
         offsetX: 0,
         offsetY: 0
       }
-    });
+    };
+
+    source.links.outgoing.refs.push(links[id]);
+    target.links.incoming.refs.push(links[id]);
+
+    source.links.outgoing.total++;
+    target.links.incoming.total++;
   }
 
   /**
@@ -158,7 +158,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
    * @param  {Boolean}  duplication  If `true` node needs to be duplicated or
    *   cloned.
    */
-  function processNode (id, node, parent, duplication) {  // eslint-disable-line no-shadow
+  function processNode (id, node, parent, duplication) {
     let _id = id.toString();
     let _node = node;
     let skip = false;
@@ -179,7 +179,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
       // Clone node only when the parent is **not** just one level before the
       // clone because then the parent can simple link to the _original node_.
       if (parent.depth + 1 !== node.depth && !skip) {
-        cloneId = id + '.' + (node.clones.length + 1);
+        const cloneId = id + '.' + (node.clones.length + 1);
         graph[cloneId] = {
           children: [],
           clone: true,
@@ -214,6 +214,10 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
       _node.parents = {};
     }
 
+    if (!_node.data.state) {
+      _node.data.state = {};
+    }
+
     if (!_node.childRefs) {
       _node.childRefs = [];
     }
@@ -226,7 +230,20 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     }
 
     if (!_node.links) {
-      _node.links = [];
+      _node.links = {
+        incoming: {
+          refs: [],
+          above: 0,
+          below: 0,
+          total: 0
+        },
+        outgoing: {
+          refs: [],
+          above: 0,
+          below: 0,
+          total: 0
+        }
+      };
     }
 
     if (!columnCache[_node.depth]) {
@@ -237,8 +254,8 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     if (!columnCache[_node.depth][_id]) {
       columnCache[_node.depth][_id] = true;
       nodeOrder[_node.depth].push(_node);
-      _node.x = scaleX(_node.depth);
-      _node.y = scaleY(Object.keys(columnCache[_node.depth]).length - 1);
+      _node.x = scale.x(_node.depth);
+      _node.y = scale.y(Object.keys(columnCache[_node.depth]).length - 1);
     }
 
     processBars(_node);
@@ -273,19 +290,19 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, links, scaleX,
     visited[starts[i]] = true;
 
     while (queue.length > 0) {
-      node = graph[queue.shift()];
+      const node = graph[queue.shift()];
 
       for (let j = node.children.length; j--;) {
-        childId = node.children[j];
-        child = graph[childId];
+        const childId = node.children[j];
+        const child = graph[childId];
 
         if (!!child) {
+          let clone = true;
+
           if (!visited[childId]) {
             queue.push(childId);
             visited[childId] = true;
             clone = false;
-          } else {
-            clone = true;
           }
 
           processNode(
