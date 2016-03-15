@@ -222,10 +222,10 @@
   }
 
   /** Used for built-in method references. */
-  var objectProto = Object.prototype;
+  var objectProto$1 = Object.prototype;
 
   /** Used to check objects for own properties. */
-  var hasOwnProperty = objectProto.hasOwnProperty;
+  var hasOwnProperty$1 = objectProto$1.hasOwnProperty;
 
   /**
    * Assigns `value` to `key` of `object` if the existing value is not equivalent
@@ -239,7 +239,7 @@
    */
   function assignValue(object, key, value) {
     var objValue = object[key];
-    if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) ||
+    if (!(hasOwnProperty$1.call(object, key) && eq(objValue, value)) ||
         (value === undefined && !(key in object))) {
       object[key] = value;
     }
@@ -315,13 +315,13 @@
   var funcTag = '[object Function]';
   var genTag = '[object GeneratorFunction]';
   /** Used for built-in method references. */
-  var objectProto$1 = Object.prototype;
+  var objectProto$2 = Object.prototype;
 
   /**
    * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
    * of values.
    */
-  var objectToString = objectProto$1.toString;
+  var objectToString = objectProto$2.toString;
 
   /**
    * Checks if `value` is classified as a `Function` object.
@@ -341,8 +341,8 @@
    */
   function isFunction(value) {
     // The use of `Object#toString` avoids issues with the `typeof` operator
-    // in Safari 8 which returns 'object' for typed array constructors, and
-    // PhantomJS 1.9 which returns 'function' for `NodeList` instances.
+    // in Safari 8 which returns 'object' for typed array and weak map constructors,
+    // and PhantomJS 1.9 which returns 'function' for `NodeList` instances.
     var tag = isObject(value) ? objectToString.call(value) : '';
     return tag == funcTag || tag == genTag;
   }
@@ -404,8 +404,7 @@
    * // => false
    */
   function isArrayLike(value) {
-    return value != null &&
-      !(typeof value == 'function' && isFunction(value)) && isLength(getLength(value));
+    return value != null && isLength(getLength(value)) && !isFunction(value);
   }
 
   /** Used as references for various `Number` constants. */
@@ -656,10 +655,27 @@
   }
 
   /** Used for built-in method references. */
-  var objectProto$2 = Object.prototype;
+  var objectProto$3 = Object.prototype;
+
+  /**
+   * Checks if `value` is likely a prototype object.
+   *
+   * @private
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
+   */
+  function isPrototype(value) {
+    var Ctor = value && value.constructor,
+        proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto$3;
+
+    return value === proto;
+  }
+
+  /** Used for built-in method references. */
+  var objectProto$4 = Object.prototype;
 
   /** Used to check objects for own properties. */
-  var hasOwnProperty$1 = objectProto$2.hasOwnProperty;
+  var hasOwnProperty$2 = objectProto$4.hasOwnProperty;
 
   /** Built-in value references. */
   var getPrototypeOf = Object.getPrototypeOf;
@@ -676,7 +692,7 @@
     // Avoid a bug in IE 10-11 where objects with a [[Prototype]] of `null`,
     // that are composed entirely of index properties, return `false` for
     // `hasOwnProperty` checks of them.
-    return hasOwnProperty$1.call(object, key) ||
+    return hasOwnProperty$2.call(object, key) ||
       (typeof object == 'object' && key in object && getPrototypeOf(object) === null);
   }
 
@@ -772,19 +788,19 @@
   var argsTag = '[object Arguments]';
 
   /** Used for built-in method references. */
-  var objectProto$3 = Object.prototype;
+  var objectProto$5 = Object.prototype;
 
   /** Used to check objects for own properties. */
-  var hasOwnProperty$2 = objectProto$3.hasOwnProperty;
+  var hasOwnProperty$3 = objectProto$5.hasOwnProperty;
 
   /**
    * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
    * of values.
    */
-  var objectToString$1 = objectProto$3.toString;
+  var objectToString$1 = objectProto$5.toString;
 
   /** Built-in value references. */
-  var propertyIsEnumerable = objectProto$3.propertyIsEnumerable;
+  var propertyIsEnumerable$1 = objectProto$5.propertyIsEnumerable;
 
   /**
    * Checks if `value` is likely an `arguments` object.
@@ -804,21 +820,21 @@
    */
   function isArguments(value) {
     // Safari 8.1 incorrectly makes `arguments.callee` enumerable in strict mode.
-    return isArrayLikeObject(value) && hasOwnProperty$2.call(value, 'callee') &&
-      (!propertyIsEnumerable.call(value, 'callee') || objectToString$1.call(value) == argsTag);
+    return isArrayLikeObject(value) && hasOwnProperty$3.call(value, 'callee') &&
+      (!propertyIsEnumerable$1.call(value, 'callee') || objectToString$1.call(value) == argsTag);
   }
 
   /** `Object#toString` result references. */
   var stringTag = '[object String]';
 
   /** Used for built-in method references. */
-  var objectProto$4 = Object.prototype;
+  var objectProto$6 = Object.prototype;
 
   /**
    * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
    * of values.
    */
-  var objectToString$2 = objectProto$4.toString;
+  var objectToString$2 = objectProto$6.toString;
 
   /**
    * Checks if `value` is classified as a `String` primitive or object.
@@ -856,23 +872,6 @@
       return baseTimes(length, String);
     }
     return null;
-  }
-
-  /** Used for built-in method references. */
-  var objectProto$5 = Object.prototype;
-
-  /**
-   * Checks if `value` is likely a prototype object.
-   *
-   * @private
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
-   */
-  function isPrototype(value) {
-    var Ctor = value && value.constructor,
-        proto = (isFunction(Ctor) && Ctor.prototype) || objectProto$5;
-
-    return value === proto;
   }
 
   /**
@@ -922,6 +921,18 @@
     return result;
   }
 
+  /** Used for built-in method references. */
+  var objectProto = Object.prototype;
+
+  /** Used to check objects for own properties. */
+  var hasOwnProperty = objectProto.hasOwnProperty;
+
+  /** Built-in value references. */
+  var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+
+  /** Detect if properties shadowing those on `Object.prototype` are non-enumerable. */
+  var nonEnumShadows = !propertyIsEnumerable.call({ 'valueOf': 1 }, 'valueOf');
+
   /**
    * Assigns own enumerable properties of source objects to the destination
    * object. Source objects are applied from left to right. Subsequent sources
@@ -953,7 +964,15 @@
    * // => { 'a': 1, 'c': 3, 'e': 5 }
    */
   var assign = createAssigner(function(object, source) {
-    copyObject(source, keys(source), object);
+    if (nonEnumShadows || isPrototype(source) || isArrayLike(source)) {
+      copyObject(source, keys(source), object);
+      return;
+    }
+    for (var key in source) {
+      if (hasOwnProperty.call(source, key)) {
+        assignValue(object, key, source[key]);
+      }
+    }
   });
 
   /**
@@ -1248,6 +1267,10 @@
         _node.parents[parent.id] = parent;
       } else {
         _node.parents = {};
+      }
+
+      if (!_node.data.state) {
+        _node.data.state = {};
       }
 
       if (!_node.childRefs) {
@@ -1792,16 +1815,16 @@
     }, {
       key: 'updateNodesVisibility',
       value: function updateNodesVisibility() {
-        var skipped = {};
+        var skipped = undefined;
 
         for (var i = Object.keys(this.columnCache).length; i--;) {
-          skipped[i] = 0;
+          skipped = 0;
           // Update `y` according to the number of previously skipped nodes.
           for (var j = 0, len = this.columnNodeOrder[i].length; j < len; j++) {
             if (this.columnNodeOrder[i][j].hidden && !this.columnNodeOrder[i][j].data.queryMode) {
-              skipped[i]++;
+              skipped++;
             }
-            this.columnNodeOrder[i][j].y = this.scale.y(j - skipped[i]);
+            this.columnNodeOrder[i][j].y = this.scale.y(j - skipped);
           }
         }
 

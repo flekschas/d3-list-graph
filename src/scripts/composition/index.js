@@ -11,8 +11,11 @@ import Links from './links';
 import Nodes from './nodes';
 import Scrollbars from './scrollbars';
 import Events from './events';
+import NodeContextMenu from './nodeContextMenu';
 import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 import { allTransitionsEnded } from '../commons/d3-utils';
+import { dropShadow } from '../commons/filters';
+import { requestNextAnimationFrame } from '../commons/shims';
 
 function setOption (value, defaultValue, noFalsyValue) {
   if (noFalsyValue) {
@@ -31,10 +34,14 @@ class ListGraph {
     const that = this;
 
     this.baseEl = init.element;
+    this.baseEl.__d3ListGraphBase__ = true;
+
     this.baseElD3 = d3.select(this.baseEl);
     this.baseElJq = $(this.baseEl);
     this.svgD3 = this.baseElD3.select('svg.base');
     this.svgEl = this.svgD3.node();
+    this.outsideClickHandler = {};
+    this.outsideClickClassHandler = {};
 
     if (this.svgD3.empty()) {
       this.svgD3 = this.baseElD3.append('svg').attr('class', 'base');
@@ -56,9 +63,7 @@ class ListGraph {
     // the element with his/her mouse cursor. This will avoid relying on complex
     // browser resize events and other layout manipulations as they most likely
     // won't happen when the user tries to interact with the visualization.
-    this.svgD3.on('mouseenter', function () {
-      that.getBoundingRect.call(that, this);
-    });
+    this.svgD3.on('mouseenter', this.getBoundingRect.bind(this));
 
     // With of the column's scrollbars
     this.scrollbarWidth = setOption(
@@ -117,6 +122,12 @@ class ListGraph {
     // - 2: Show no transitions
     this.lessTransitionsJs = init.lessTransitions > 0;
     this.lessTransitionsCss = init.lessTransitions > 1;
+
+    // Enable or disable
+    this.disableDebouncedContextMenu = setOption(
+      init.disableDebouncedContextMenu,
+      config.DISABLE_DEBOUNCED_CONTEXT_MENU
+    );
 
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
@@ -196,6 +207,16 @@ class ListGraph {
       this.scrollbarWidth
     );
 
+    this.nodeContextMenu = new NodeContextMenu(
+      this,
+      this.visData,
+      this.container,
+      this.events,
+      this.querying
+    );
+
+    dropShadow(this.svgD3, 'context-menu', 1, 1, 2, 0.2);
+
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
     // We are using delegated event listeners to provide better scaling
     this.svgJq.on('mousewheel', '.' + this.levels.className, function (event) {
@@ -204,14 +225,37 @@ class ListGraph {
       }
     });
 
+    this.svgJq.on('click', event => {
+      that.checkGlobalClick.call(that, event.target);
+    });
+
     // Add jQuery delegated event listeners instead of direct listeners of D3.
     if (this.querying) {
       this.svgJq.on(
         'click',
-        `.${this.nodes.classLabelWrapper}`,
+        `.${this.nodes.classNodeVisible}`,
         function () {
-          that.nodes.toggleQueryMode.call(
-            that.nodes, this.parentNode, d3.select(this).datum()
+          // Add a new global outside click listener using this node and the
+          // node context menu as the related elements.
+          requestNextAnimationFrame(() => {
+            that.registerOutSideClickHandler(
+              'nodeContextMenu',
+              [that.nodeContextMenu.wrapper.node()],
+              ['node'],
+              () => {
+                // The context of this method is the context of the outer click
+                // handler.
+                that.nodeContextMenu.close();
+                that.unregisterOutSideClickHandler.call(
+                  that, 'nodeContextMenu'
+                );
+              }
+            );
+          });
+
+          that.nodeContextMenu.toggle.call(
+            that.nodeContextMenu,
+            d3.select(this.parentNode)
           );
         }
       );
@@ -221,7 +265,7 @@ class ListGraph {
       'click',
       `.${this.nodes.classFocusControls}.${this.nodes.classRoot}`,
       function () {
-        that.nodes.rootHandler.call(that.nodes, this, d3.select(this).datum());
+        that.nodes.rootHandler.call(that.nodes, d3.select(this));
       }
     );
 
@@ -230,9 +274,8 @@ class ListGraph {
         'click',
         `.${this.nodes.classFocusControls}.${this.nodes.classQuery}`,
         function () {
-          that.nodes.toggleQueryMode.call(
-            that.nodes, this.parentNode, d3.select(this).datum()
-          );
+          that.nodes.unqueryByNode.call(that.nodes, d3.select(this.parentNode));
+          that.nodeContextMenu.updateStates();
         }
       );
     }
@@ -326,6 +369,76 @@ class ListGraph {
         }
       }
     );
+
+    // Initialize `this.left` and `this.top`
+    this.getBoundingRect();
+  }
+
+  registerOutSideClickHandler (id, els, elClassNames, callback) {
+    // We need to register a unique property to be able to indentify that
+    // element later efficiently.
+    for (let i = els.length; i--;) {
+      if (els[i].__id__) {
+        els[i].__id__.push(id);
+      } else {
+        els[i].__id__ = [id];
+      }
+    }
+    const newLength = this.outsideClickHandler[id] = {
+      id, els, elClassNames, callback
+    };
+    for (let i = elClassNames.length; i--;) {
+      this.outsideClickClassHandler[elClassNames[i]] =
+        this.outsideClickHandler[id];
+    }
+    return newLength;
+  }
+
+  unregisterOutSideClickHandler (id) {
+    const handler = this.outsideClickHandler[id];
+
+    // Remove element `__id__` property.
+    for (let i = handler.els.length; i--;) {
+      handler.els[i].__id__ = undefined;
+      delete handler.els[i].__id__;
+    }
+
+    // Remove handler.
+    this.outsideClickHandler[id] = undefined;
+    delete this.outsideClickHandler[id];
+  }
+
+  checkGlobalClick (target) {
+    const found = {};
+    const checkClass = Object.keys(this.outsideClickClassHandler).length;
+
+    let el = target;
+    try {
+      while (!el.__d3ListGraphBase__) {
+        if (el.__id__) {
+          for (let i = el.__id__.length; i--;) {
+            found[el.__id__[i]] = true;
+          }
+        }
+        if (checkClass) {
+          const classNames = Object.keys(this.outsideClickClassHandler);
+          for (let i = classNames.length; i--;) {
+            const className = el.getAttribute('class');
+            if (className && className.indexOf(classNames[i]) >= 0) {
+              found[this.outsideClickClassHandler[classNames[i]].id] = true;
+            }
+          }
+        }
+        el = el.parentNode;
+      }
+    } catch (e) { return; }
+
+    const handlerIds = Object.keys(this.outsideClickHandler);
+    for (let i = handlerIds.length; i--;) {
+      if (!found[handlerIds[i]]) {
+        this.outsideClickHandler[handlerIds[i]].callback.call(this);
+      }
+    }
   }
 
   get area () {
@@ -356,11 +469,10 @@ class ListGraph {
    * @method  getBoundingRect
    * @author  Fritz Lekschas
    * @date    2016-02-24
-   * @param   {Object}  el  Element on which `getBoundingClientRect` is called.
    */
-  getBoundingRect (el) {
-    this.top = el.getBoundingClientRect().top;
-    this.left = el.getBoundingClientRect().left;
+  getBoundingRect () {
+    this.left = this.svgEl.getBoundingClientRect().left;
+    this.top = this.svgEl.getBoundingClientRect().top;
   }
 
   interactionWrapper (callback, params) {
@@ -483,6 +595,10 @@ class ListGraph {
           data.level - 1, data.level + 1
         );
       }
+
+      if (this.nodeContextMenu.opened) {
+        this.nodeContextMenu.scrollY(contentScrollTop);
+      }
     }
   }
 
@@ -565,6 +681,10 @@ class ListGraph {
       this.nodes.updateLinkLocationIndicators(
         columnData.level - 1, columnData.level + 1
       );
+    }
+
+    if (this.nodeContextMenu.opened) {
+      this.nodeContextMenu.scrollY(columnData.scrollTop);
     }
   }
 
@@ -664,14 +784,13 @@ class ListGraph {
       let y = 0;
       let width = 0;
       let height = 0;
-      let bBox;
       let cRect = undefined;
+      const contBBox = this.container.node().getBBox();
 
       const globalCRect = this.svgD3.node().getBoundingClientRect();
 
       if (selectionInterst && !selectionInterst.empty()) {
         selectionInterst.each(function () {
-          bBox = this.getBBox();
           cRect = this.getBoundingClientRect();
           width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
           height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
@@ -679,13 +798,12 @@ class ListGraph {
         width = this.width > width ? this.width : width;
         height = this.height > height ? this.height : height;
       } else {
-        bBox = this.container.node().getBBox();
-        width = this.width > bBox.width ? this.width : bBox.width;
-        height = this.height > bBox.height ? this.height : bBox.height;
+        width = this.width > contBBox.width ? this.width : contBBox.width;
+        height = this.height > contBBox.height ? this.height : contBBox.height;
       }
 
-      x = bBox.x;
-      y = bBox.y;
+      x = contBBox.x;
+      y = contBBox.y;
 
       this.svgD3
         .classed('zoomedOut', true)

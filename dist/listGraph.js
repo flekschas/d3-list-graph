@@ -113,6 +113,7 @@ var ListGraph = (function ($,d3) {
   var QUERYING = false;
   var HIDE_OUTWARDS_LINKS = false;
   var SHOW_LINK_LOCATION = false;
+  var DISABLE_DEBOUNCED_CONTEXT_MENU = false;
 
   var TRANSITION_LIGHTNING_FAST = 150;
   var TRANSITION_SEMI_FAST = 250;
@@ -801,8 +802,8 @@ var ListGraph = (function ($,d3) {
    */
   function isFunction(value) {
     // The use of `Object#toString` avoids issues with the `typeof` operator
-    // in Safari 8 which returns 'object' for typed array constructors, and
-    // PhantomJS 1.9 which returns 'function' for `NodeList` instances.
+    // in Safari 8 which returns 'object' for typed array and weak map constructors,
+    // and PhantomJS 1.9 which returns 'function' for `NodeList` instances.
     var tag = isObject(value) ? objectToString.call(value) : '';
     return tag == funcTag || tag == genTag;
   }
@@ -977,6 +978,33 @@ var ListGraph = (function ($,d3) {
     var bottomRight = radius.bottomRight || 0;
 
     return 'M' + (x + topLeft) + ',' + y + 'h' + (width - topLeft - topRight) + 'a' + topRight + ',' + topRight + ' 0 0 1 ' + topRight + ',' + topRight + 'v' + (height - (topRight + bottomRight)) + 'a' + bottomRight + ',' + bottomRight + ' 0 0 1 ' + -bottomRight + ',' + bottomRight + 'h' + (bottomLeft - (width - bottomRight)) + 'a' + bottomLeft + ',' + bottomLeft + ' 0 0 1 ' + -bottomLeft + ',' + -bottomLeft + 'v' + (topLeft - (height - bottomLeft)) + 'a' + topLeft + ',' + topLeft + ' 0 0 1 ' + topLeft + ',' + -topLeft + 'z';
+  }
+
+  /**
+   * Creates a path that looks like a drop menu
+   *
+   * @example
+   * The following is an example how to create a drop menu path:
+   * ```javascript
+   * import { dropMenu } from './charts';
+   * const dropMenuPath = dropMenu({
+   *   x: 0,
+   *   y: 0,
+   *   width: 50,
+   *   height: 100,
+   *   radius: 5,
+   *   arrowSize: 5
+   * });
+   * ```
+   *
+   * @method  dropMenu
+   * @author  Fritz Lekschas
+   * @date    2016-03-03
+   * @param   {Object}  c  Config object that needs to contain the following
+   *   properties: x, y, width, height, radius and arrowSize.
+   */
+  function dropMenu(c) {
+    return 'M' + (c.x + c.radius) + ',' + c.y + 'h' + (c.width - c.radius * 2) + 'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + c.radius + ',' + c.radius + 'v' + (c.height - c.radius * 2) + 'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + -c.radius + ',' + c.radius + 'h' + -(c.width - c.radius * 2 - c.arrowSize * 2) / 2 + 'l' + -c.arrowSize + ',' + c.arrowSize + 'l' + -c.arrowSize + ',' + -c.arrowSize + 'h' + -(c.width - c.radius * 2 - c.arrowSize * 2) / 2 + 'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + -c.radius + ',' + -c.radius + 'v' + (c.radius - (c.height - c.radius)) + 'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + c.radius + ',' + -c.radius + 'z';
   }
 
   var BAR_CLASS = 'bar';
@@ -1257,13 +1285,13 @@ var ListGraph = (function ($,d3) {
 
   var CLASS_NODES = 'nodes';
   var CLASS_NODE = 'node';
+  var CLASS_NODE_VISIBLE = 'visible-node';
   var CLASS_CLONE = 'clone';
   var CLASS_LABEL_WRAPPER = 'label-wrapper';
   var CLASS_FOCUS_CONTROLS = 'focus-controls';
   var CLASS_ROOT = 'root';
   var CLASS_QUERY = 'query';
   var CLASS_LOCK = 'lock';
-  var CLASS_ACTIVE = 'active';
   var CLASS_INACTIVE = 'inactive';
   var CLASS_INDICATOR_BAR = 'link-indicator';
   var CLASS_INDICATOR_LOCATION = 'link-location-indicator';
@@ -1336,41 +1364,25 @@ var ListGraph = (function ($,d3) {
         return data.clone;
       }).attr('transform', function (data) {
         return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
-      }).on('mouseenter', function (data) {
-        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
-          var el = d3.select(domEl);
+      });
 
+      this.visNodes = this.nodes.append('g').attr('class', CLASS_NODE_VISIBLE).on('mouseenter', function (data) {
+        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
           if (!!!this.vis.activeScrollbar) {
             this.enterHandler.call(this, domEl, _data);
-          }
-
-          if (!el.classed('rooted')) {
-            el.selectAll('.bg-extension').style('transform', 'translateX(' + (this.vis.querying ? -this.iconDimension * 2 - 10 : -this.iconDimension - 6) + 'px)');
           }
         }.bind(that), [this, data]);
       }).on('mouseleave', function (data) {
         that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
-          var el = d3.select(domEl);
-
           if (!!!this.vis.activeScrollbar) {
             this.leaveHandler.call(this, domEl, _data);
-          }
-
-          if (!el.classed('rooted')) {
-            if (_data.data.queryMode) {
-              el.selectAll('.bg-extension').style('transform', 'translateX(' + (-this.iconDimension - 6) + 'px)');
-            } else {
-              el.selectAll('.bg-extension').style('transform', 'translateX(0px)');
-            }
           }
         }.bind(that), [this, data]);
       });
 
-      this.nodes.append('rect').call(drawFullSizeRect, 'bg-extension').attr('width', Math.max(this.visData.global.column.padding + this.visData.global.column.contentWidth / 2, this.visData.global.column.contentWidth));
+      this.visNodes.append('rect').call(drawFullSizeRect, 'bg-border');
 
-      this.nodes.append('rect').call(drawFullSizeRect, 'bg-border');
-
-      this.nodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
+      this.visNodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
 
       if (this.vis.showLinkLocation) {
         this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'incoming', 'above');
@@ -1390,49 +1402,35 @@ var ListGraph = (function ($,d3) {
       // Rooting icons
       var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT + ' ' + CLASS_INACTIVE);
 
-      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'hover-helper', 'hover-helper');
+      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 0.5, 'hover-helper', 'hover-helper');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.5, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', this.vis.querying ? 2 : 1, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.5, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
       // Querying icons
       if (this.vis.querying) {
         var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY + ' ' + CLASS_INACTIVE);
 
-        nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'left', 1, 'hover-helper', 'hover-helper');
+        nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'right', 0.5, 'hover-helper', 'hover-helper');
 
-        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#set-inactive');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.5, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
 
-        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
-
-        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'left', 1, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.5, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
       }
 
-      var nodeLocks = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_LOCK + ' ' + CLASS_INACTIVE);
+      this.bars = new Bars(this.vis, this.visNodes, this.vis.barMode, this.visData);
 
-      nodeLocks.append('circle').call(this.setUpFocusControls.bind(this), 'right', 0, 'bg', 'bg');
-
-      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
-
-      nodeLocks.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
-
-      this.bars = new Bars(this.vis, this.nodes, this.vis.barMode, this.visData);
-
-      this.nodes.append('rect').call(drawFullSizeRect, 'border');
+      this.visNodes.append('rect').call(drawFullSizeRect, 'border');
 
       // Add node label
-      this.nodes.append('foreignObject').attr('x', this.visData.global.cell.padding).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2).attr('class', CLASS_LABEL_WRAPPER).append('xhtml:div').attr('class', 'label').attr('title', function (data) {
+      this.visNodes.append('foreignObject').attr('x', this.visData.global.cell.padding).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2).attr('class', CLASS_LABEL_WRAPPER).append('xhtml:div').attr('class', 'label').attr('title', function (data) {
         return data.data.name;
       }).style('line-height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').text(function (data) {
         return data.data.name;
       });
 
       if (isFunction(this.events.on)) {
-        // this.events.on('d3ListGraphNodeClick', dataSetIds => {
-        //   console.log('d3ListGraphNodeClick', dataSetIds);
-        // });
-
         this.events.on('d3ListGraphFocusNodes', function (event) {
           return _this.focusNodes(event);
         });
@@ -1539,15 +1537,9 @@ var ListGraph = (function ($,d3) {
         });
       }
     }, {
-      key: 'clickHandler',
-      value: function clickHandler(el, data) {
-        this.toggleQueryMode(el.parentNode, data);
-        // this.events.broadcast('d3ListGraphNodeClick', { id: data.id });
-      }
-    }, {
       key: 'enterHandler',
       value: function enterHandler(el, data) {
-        this.highlightNodes(el, data);
+        this.highlightNodes(d3.select(el));
 
         var eventData = {
           id: data.id,
@@ -1565,7 +1557,7 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'leaveHandler',
       value: function leaveHandler(el, data) {
-        this.unhighlightNodes(el, data);
+        this.unhighlightNodes(d3.select(el));
 
         var eventData = {
           id: data.id,
@@ -1582,8 +1574,8 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'lockHandler',
-      value: function lockHandler(el) {
-        var events = this.toggleLock(el);
+      value: function lockHandler(d3El) {
+        var events = this.toggleLock(d3El);
 
         if (events.locked && events.unlocked) {
           if (events.locked) {
@@ -1620,8 +1612,8 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'rootHandler',
-      value: function rootHandler(el) {
-        var events = this.toggleRoot(el);
+      value: function rootHandler(d3El) {
+        var events = this.toggleRoot(d3El);
 
         if (events.rooted && events.unrooted) {
           this.events.broadcast('d3ListGraphNodeReroot', {
@@ -1663,7 +1655,18 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'focusNodes',
       value: function focusNodes(event) {
-        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones]);
+        var same = this.checkNodeFocusEventSame(event.nodeIds);
+        if (this.nodeFocusId && !same) {
+          // Show unrelated nodes first before we hide them again.
+          this.blurNodes({
+            nodeIds: this.nodeFocusId
+          });
+        }
+
+        this.nodeFocusId = event.nodeIds;
+
+        this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones, event.zoomOut || event.hideUnrelatedNodes]);
+
         if (event.zoomOut) {
           this.vis.globalView(this.nodes.filter(function (data) {
             return data.hovering > 0;
@@ -1671,14 +1674,74 @@ var ListGraph = (function ($,d3) {
         } else {
           this.vis.zoomedView();
         }
+
+        if (event.hideUnrelatedNodes) {
+          if (!same || !this.tempHidingUnrelatedNodes) {
+            this.hideUnrelatedNodes(event.nodeIds);
+          }
+        } else if (this.tempHidingUnrelatedNodes) {
+          this.showUnrelatedNodes();
+        }
       }
     }, {
       key: 'blurNodes',
       value: function blurNodes(event) {
         this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones]);
+
         if (event.zoomIn) {
           this.vis.zoomedView();
         }
+
+        if (this.tempHidingUnrelatedNodes) {
+          this.showUnrelatedNodes();
+        }
+      }
+    }, {
+      key: 'checkNodeFocusEventSame',
+      value: function checkNodeFocusEventSame(nodeIds) {
+        if (!this.nodeFocusId) {
+          return false;
+        }
+        if (nodeIds.length !== this.nodeFocusId.length) {
+          return false;
+        }
+        for (var i = nodeIds.length; i--;) {
+          if (nodeIds[i] !== this.nodeFocusId[i]) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }, {
+      key: 'hideUnrelatedNodes',
+      value: function hideUnrelatedNodes(nodeIds) {
+        this.tempHidingUnrelatedNodes = nodeIds;
+
+        this.nodes.filter(function (data) {
+          return !data.hovering;
+        }).classed('hidden', true).each(function (data) {
+          // Store old value for `hidden` temporarily
+          data._hidden = data.hidden;
+          data.hidden = true;
+        });
+
+        this.updateVisibility();
+      }
+    }, {
+      key: 'showUnrelatedNodes',
+      value: function showUnrelatedNodes() {
+        this.tempHidingUnrelatedNodes = undefined;
+
+        this.nodes.filter(function (data) {
+          return !data.hovering;
+        }).classed('hidden', function (data) {
+          return data._hidden;
+        }).each(function (data) {
+          data.hidden = data._hidden;
+          data._hidden = undefined;
+        });
+
+        this.updateVisibility();
       }
     }, {
       key: 'eventHelper',
@@ -1689,25 +1752,23 @@ var ListGraph = (function ($,d3) {
         // Filter by node ID
         .filter(function (data) {
           return !! ~nodeIds.indexOf(data.id);
-        }).each(function triggerCallback(data) {
-          var el = this;
+        }).each(function triggerCallback() {
+          var d3El = d3.select(this);
 
           if (subSelectionClass) {
-            el = d3.select(this).select(subSelectionClass).node();
+            d3El = d3El.select(subSelectionClass);
           }
 
-          callback.apply(that, [el, data].concat(optionalParams || []));
+          callback.apply(that, [d3El].concat(optionalParams || []));
         });
       }
     }, {
       key: 'toggleLock',
-      value: function toggleLock(el, nodeData, setFalse) {
-        var d3El = d3.select(el);
+      value: function toggleLock(d3El, setFalse) {
         var data = d3El.datum();
         var events = { locked: false, unlocked: false };
 
         if (this.lockedNode) {
-          this.lockedNode.classed(CLASS_ACTIVE, false).classed(CLASS_INACTIVE, true);
           if (this.lockedNode.datum().id === data.id) {
             this.unlockNode(this.lockedNode.datum().id);
             events.unlocked = this.lockedNode.datum();
@@ -1718,7 +1779,6 @@ var ListGraph = (function ($,d3) {
             events.unlocked = this.lockedNode.datum();
 
             if (!setFalse) {
-              d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
               this.lockNode(data.id);
               events.locked = data;
               this.lockedNode = d3El;
@@ -1726,7 +1786,6 @@ var ListGraph = (function ($,d3) {
           }
         } else {
           if (!setFalse) {
-            d3El.classed(CLASS_ACTIVE, true).classed(CLASS_INACTIVE, false);
             this.lockNode(data.id);
             events.locked = data;
             this.lockedNode = d3El;
@@ -1743,12 +1802,9 @@ var ListGraph = (function ($,d3) {
           return data.id === id;
         });
 
-        els.each(function triggerHighlighter(data) {
-          that.highlightNodes(this, data, 'lock', undefined);
-        });
-
-        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', function width() {
-          return parseInt(d3.select(this).attr('width'), 10) + that.visData.global.row.height / 2;
+        els.each(function (data) {
+          that.highlightNodes(d3.select(this), 'lock', undefined);
+          data.data.state.lock = true;
         });
       }
     }, {
@@ -1758,24 +1814,17 @@ var ListGraph = (function ($,d3) {
         var els = this.nodes.filter(function (data) {
           return data.id === id;
         });
-        var start = function animationStart() {
-          d3.select(this.parentNode).classed('animating', true);
-        };
-        var end = function animationEnd() {
-          d3.select(this.parentNode).classed('animating', false);
-        };
-
-        els.selectAll('.bg-border').transition().duration(TRANSITION_SEMI_FAST).attr('width', this.visData.global.column.contentWidth).each('start', start).each('end', end);
 
         els.each(function (data) {
-          that.unhighlightNodes(this, data, 'lock', undefined);
+          that.unhighlightNodes(d3.select(this), 'lock', undefined);
+          data.data.state.lock = undefined;
         });
       }
     }, {
-      key: 'queryNode',
-      value: function queryNode(el, data, mode) {
-        data.data.queryMode = mode;
-        d3.select(el).classed({
+      key: 'queryByNode',
+      value: function queryByNode(d3El, mode) {
+        d3El.datum().data.state.query = mode;
+        d3El.classed({
           active: true,
           inactive: false,
           'query-and': mode === 'and',
@@ -1784,56 +1833,79 @@ var ListGraph = (function ($,d3) {
         });
       }
     }, {
-      key: 'unqueryNode',
-      value: function unqueryNode(el, data) {
-        data.data.queryMode = undefined;
+      key: 'unqueryByNode',
+      value: function unqueryByNode(d3El) {
+        var data = d3El.datum();
+
+        data.data.state.query = undefined;
         data.data.queryBeforeRooting = undefined;
-        d3.select(el).classed({
+
+        d3El.classed({
           active: false,
           inactive: true,
           'query-and': false,
           'query-or': false,
           'query-not': false
         });
+
         if (this.rootedNode) {
           this.updateVisibility();
         }
       }
     }, {
-      key: 'toggleQueryMode',
-      value: function toggleQueryMode(el, data) {
-        var previousMode = data.data.queryMode;
+      key: 'toggleQueryByNode',
+      value: function toggleQueryByNode(d3El) {
+        var data = d3El.datum();
+        var previousMode = data.data.state.query;
 
-        if (data.rooted) {
+        if (data.data.state.root) {
           if (previousMode !== 'or') {
-            this.queryNode(el, data, 'or');
+            this.queryByNode(d3El, 'or');
           } else {
-            this.queryNode(el, data, 'and');
+            this.queryByNode(d3El, 'and');
           }
         } else {
           switch (previousMode) {
             case 'or':
-              this.queryNode(el, data, 'and');
+              this.queryByNode(d3El, 'and');
               break;
             case 'and':
-              this.queryNode(el, data, 'not');
+              this.queryByNode(d3El, 'not');
               break;
             case 'not':
-              this.unqueryNode(el, data);
+              this.unqueryByNode(d3El);
               break;
             default:
-              this.queryNode(el, data, 'or');
+              this.queryByNode(d3El, 'or');
               break;
           }
         }
+      }
+    }, {
+      key: 'queryHandler',
+      value: function queryHandler(d3El, action, mode) {
+        var data = d3El.datum();
+        var previousMode = data.data.state.query;
 
-        if (data.data.queryMode) {
-          if (data.data.queryMode !== previousMode) {
+        switch (action) {
+          case 'query':
+            this.queryByNode(d3El, mode);
+            break;
+          case 'unquery':
+            this.unqueryByNode(d3El);
+            break;
+          default:
+            this.toggleQueryByNode(d3El);
+            break;
+        }
+
+        if (data.data.state.query) {
+          if (data.data.state.query !== previousMode) {
             this.events.broadcast('d3ListGraphNodeQuery', {
               id: data.id,
               clone: data.clone,
               clonedFromId: data.clone ? data.originalNode.id : undefined,
-              mode: data.data.queryMode
+              mode: data.data.state.query
             });
           }
         } else {
@@ -1845,14 +1917,8 @@ var ListGraph = (function ($,d3) {
         }
       }
     }, {
-      key: 'progToggleQueryMode',
-      value: function progToggleQueryMode(el, data) {
-        this.toggleQueryMode(d3.select(el).selectAll('.focus-controls.query')[0].node(), data);
-      }
-    }, {
       key: 'toggleRoot',
-      value: function toggleRoot(el, setFalse) {
-        var d3El = d3.select(el);
+      value: function toggleRoot(d3El, setFalse) {
         var data = d3El.datum();
         var events = { rooted: false, unrooted: false };
 
@@ -1862,13 +1928,13 @@ var ListGraph = (function ($,d3) {
         if (this.rootedNode) {
           // Reset current root node
           this.rootedNode.classed({ active: false, inactive: true });
-          this.unrootNode(this.rootedNode.node(), this.rootedNode.datum());
+          this.unrootNode(this.rootedNode);
           events.unrooted = this.rootedNode.datum();
 
           // Activate new root
           if (this.rootedNode.datum().id !== data.id && !setFalse) {
             d3El.classed({ active: true, inactive: false });
-            this.rootNode(el, data);
+            this.rootNode(d3El);
             this.rootedNode = d3El;
             events.rooted = data;
           } else {
@@ -1879,7 +1945,7 @@ var ListGraph = (function ($,d3) {
         } else {
           if (!setFalse) {
             d3El.classed({ active: true, inactive: false });
-            this.rootNode(el, data);
+            this.rootNode(d3El);
             events.rooted = data;
             this.rootedNode = d3El;
           }
@@ -1889,20 +1955,18 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'rootNode',
-      value: function rootNode(el, data) {
-        var d3El = d3.select(el.parentNode);
+      value: function rootNode(d3El) {
+        var data = d3El.datum();
 
-        data.rooted = true;
+        data.data.state.root = true;
         d3El.classed('rooted', true);
-        this.hideNodes(d3El.node(), data, 'downStream');
-
-        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + (this.vis.querying ? -this.iconDimension * 2 - 10 : -this.iconDimension - 6) + 'px)');
+        this.hideNodes(data);
 
         // Highlight level
         this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
-        if (!data.data.queryMode || data.data.queryMode === 'not') {
-          this.toggleQueryMode(d3El.node(), data);
+        if (!data.data.state.query || data.data.state.query === 'not') {
+          this.queryHandler(d3El);
           data.data.queryBeforeRooting = false;
         } else {
           data.data.queryBeforeRooting = true;
@@ -1910,23 +1974,15 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'unrootNode',
-      value: function unrootNode(el, data) {
-        var d3El = d3.select(el.parentNode);
+      value: function unrootNode(d3El) {
+        var data = d3El.datum();
 
-        var x = 0;
-
-        if (data.data.queryMode) {
-          x = -this.iconDimension - 6;
-        }
-
-        d3El.selectAll('.bg-extension').style('transform', 'translateX(' + x + 'px)');
-
-        data.rooted = false;
+        data.data.state.root = false;
         d3El.classed('rooted', false);
-        this.showNodes(d3El.node(), data, 'downStream');
+        this.showNodes();
 
         if (!data.data.queryBeforeRooting) {
-          this.unqueryNode(d3El.node(), data);
+          this.unqueryByNode(d3El, data);
         }
       }
     }, {
@@ -1937,7 +1993,12 @@ var ListGraph = (function ($,d3) {
 
         var paddedDim = this.iconDimension + 4;
 
-        var x = location === 'left' ? -paddedDim * (position || 1) : this.visData.global.column.contentWidth + 2;
+        var x = 0 - paddedDim * (position + 1);
+
+        if (location === 'right') {
+          x = this.visData.global.column.contentWidth + 2 + paddedDim * position;
+        }
+
         var y = this.visData.global.row.padding + (this.visData.global.row.contentHeight - 2 * this.visData.global.cell.padding) / 4;
 
         if (mode === 'bg') {
@@ -1953,7 +2014,9 @@ var ListGraph = (function ($,d3) {
             x: x - 2,
             y: y - 2,
             width: this.iconDimension + 4,
-            height: this.iconDimension + 4
+            height: this.iconDimension + 4,
+            rx: this.iconDimension / 2,
+            ry: this.iconDimension / 2
           });
         } else {
           selection.attr({
@@ -1972,16 +2035,13 @@ var ListGraph = (function ($,d3) {
        * @method  hideNodes
        * @author  Fritz Lekschas
        * @date    2016-02-21
-       * @param   {Object}  el         DOM element.
-       * @param   {Object}  data       D3 data object of `el`.
-       * @param   {String}  direction  Defines whether upstream or downstream nodes
-       *   should be hidden.
+       * @param   {Object}   data        Node data object.
        */
 
     }, {
       key: 'hideNodes',
-      value: function hideNodes(el, data, direction) {
-        this.nodesVisibility(el, data, direction);
+      value: function hideNodes(data) {
+        this.nodesVisibility(data);
       }
 
       /**
@@ -1990,16 +2050,13 @@ var ListGraph = (function ($,d3) {
        * @method  showNodes
        * @author  Fritz Lekschas
        * @date    2016-02-21
-       * @param   {Object}  el         DOM element.
-       * @param   {Object}  data       D3 data object of `el`.
-       * @param   {String}  direction  Defines whether upstream or downstream nodes
-       *   should be shown.
+       * @param   {Object}  data       Node data object.
        */
 
     }, {
       key: 'showNodes',
-      value: function showNodes(el, data, direction) {
-        this.nodesVisibility(el, data, direction, true);
+      value: function showNodes() {
+        this.nodesVisibility(undefined, true);
       }
 
       /**
@@ -2008,15 +2065,13 @@ var ListGraph = (function ($,d3) {
        * @method  nodesVisibility
        * @author  Fritz Lekschas
        * @date    2016-02-21
-       * @param   {Object}   el         DOM element.
-       * @param   {Object}   data       D3 data object of `el`.
-       * @param   {String}   direction  Defines whether upstream or downstream nodes
-       * @param   {Boolean}  show       If `true` nodes will be shown.
+       * @param   {Object}   data        Node data object.
+       * @param   {Boolean}  show        If `true` nodes will be shown.
        */
 
     }, {
       key: 'nodesVisibility',
-      value: function nodesVisibility(el, data, direction, show) {
+      value: function nodesVisibility(data, show) {
         if (show) {
           this.nodes.classed('hidden', false).each(function (nodeData) {
             nodeData.hidden = false;
@@ -2038,17 +2093,18 @@ var ListGraph = (function ($,d3) {
           });
 
           this.nodes.classed('hidden', function (nodeData) {
-            return nodeData.hidden && !nodeData.data.queryMode;
+            return nodeData.hidden && !nodeData.data.state.query;
           });
         }
         this.updateVisibility();
       }
     }, {
       key: 'highlightNodes',
-      value: function highlightNodes(el, data, className, restriction, excludeClones) {
+      value: function highlightNodes(d3El, className, restriction, excludeClones, noVisibilityCheck) {
         var _this2 = this;
 
         var that = this;
+        var data = d3El.datum();
         var nodeId = data.id;
         var currentNodeData = data.clone ? data.originalNode : data;
         var includeParents = true;
@@ -2062,7 +2118,7 @@ var ListGraph = (function ($,d3) {
         }
         this.currentLinks[appliedClassName][nodeId] = {};
 
-        var currentlyActiveBar = d3.select(el).selectAll('.bar.active .bar-magnitude');
+        var currentlyActiveBar = d3El.selectAll('.bar.active .bar-magnitude');
         if (!currentlyActiveBar.empty()) {
           currentlyActiveBar = currentlyActiveBar.datum();
         } else {
@@ -2117,7 +2173,7 @@ var ListGraph = (function ($,d3) {
          * @return  {Boolean}        If `true` element is hidden.
          */
         function checkNodeVisibility(_el, _data) {
-          return !_data.hidden && !that.vis.isHidden.call(that.vis, _el);
+          return noVisibilityCheck || !_data.hidden && !that.vis.isHidden.call(that.vis, _el);
         }
 
         /**
@@ -2184,7 +2240,8 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'unhighlightNodes',
-      value: function unhighlightNodes(el, data, className, restriction, excludeClones) {
+      value: function unhighlightNodes(d3El, className, restriction, excludeClones) {
+        var data = d3El.datum();
         var traverseCallback = function traverseCallback(nodeData) {
           nodeData.hovering = 0;
         };
@@ -2281,6 +2338,11 @@ var ListGraph = (function ($,d3) {
       key: 'classNode',
       get: function get() {
         return CLASS_NODE;
+      }
+    }, {
+      key: 'classNodeVisible',
+      get: function get() {
+        return CLASS_NODE_VISIBLE;
       }
     }, {
       key: 'classClone',
@@ -2508,6 +2570,2363 @@ var ListGraph = (function ($,d3) {
     return Events;
   }();
 
+  function objectOrFunction(x) {
+    return typeof x === 'function' || (typeof x === 'object' && x !== null);
+  }
+
+  function isFunction$1(x) {
+    return typeof x === 'function';
+  }
+
+  var _isArray;
+  if (!Array.isArray) {
+    _isArray = function (x) {
+      return Object.prototype.toString.call(x) === '[object Array]';
+    };
+  } else {
+    _isArray = Array.isArray;
+  }
+
+  var isArray$1 = _isArray;
+
+  var len = 0;
+  var vertxNext;
+  var customSchedulerFn;
+
+  var asap = function asap(callback, arg) {
+    queue[len] = callback;
+    queue[len + 1] = arg;
+    len += 2;
+    if (len === 2) {
+      // If len is 2, that means that we need to schedule an async flush.
+      // If additional callbacks are queued before the queue is flushed, they
+      // will be processed by this flush that we are scheduling.
+      if (customSchedulerFn) {
+        customSchedulerFn(flush);
+      } else {
+        scheduleFlush();
+      }
+    }
+  }
+
+  function setScheduler(scheduleFn) {
+    customSchedulerFn = scheduleFn;
+  }
+
+  function setAsap(asapFn) {
+    asap = asapFn;
+  }
+
+  var browserWindow = (typeof window !== 'undefined') ? window : undefined;
+  var browserGlobal = browserWindow || {};
+  var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
+  var isNode = typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
+
+  // test for web worker but not in IE10
+  var isWorker = typeof Uint8ClampedArray !== 'undefined' &&
+    typeof importScripts !== 'undefined' &&
+    typeof MessageChannel !== 'undefined';
+
+  // node
+  function useNextTick() {
+    // node version 0.10.x displays a deprecation warning when nextTick is used recursively
+    // see https://github.com/cujojs/when/issues/410 for details
+    return function() {
+      process.nextTick(flush);
+    };
+  }
+
+  // vertx
+  function useVertxTimer() {
+    return function() {
+      vertxNext(flush);
+    };
+  }
+
+  function useMutationObserver() {
+    var iterations = 0;
+    var observer = new BrowserMutationObserver(flush);
+    var node = document.createTextNode('');
+    observer.observe(node, { characterData: true });
+
+    return function() {
+      node.data = (iterations = ++iterations % 2);
+    };
+  }
+
+  // web worker
+  function useMessageChannel() {
+    var channel = new MessageChannel();
+    channel.port1.onmessage = flush;
+    return function () {
+      channel.port2.postMessage(0);
+    };
+  }
+
+  function useSetTimeout() {
+    return function() {
+      setTimeout(flush, 1);
+    };
+  }
+
+  var queue = new Array(1000);
+  function flush() {
+    for (var i = 0; i < len; i+=2) {
+      var callback = queue[i];
+      var arg = queue[i+1];
+
+      callback(arg);
+
+      queue[i] = undefined;
+      queue[i+1] = undefined;
+    }
+
+    len = 0;
+  }
+
+  function attemptVertx() {
+    try {
+      var r = require;
+      var vertx = r('vertx');
+      vertxNext = vertx.runOnLoop || vertx.runOnContext;
+      return useVertxTimer();
+    } catch(e) {
+      return useSetTimeout();
+    }
+  }
+
+  var scheduleFlush;
+  // Decide what async method to use to triggering processing of queued callbacks:
+  if (isNode) {
+    scheduleFlush = useNextTick();
+  } else if (BrowserMutationObserver) {
+    scheduleFlush = useMutationObserver();
+  } else if (isWorker) {
+    scheduleFlush = useMessageChannel();
+  } else if (browserWindow === undefined && typeof require === 'function') {
+    scheduleFlush = attemptVertx();
+  } else {
+    scheduleFlush = useSetTimeout();
+  }
+
+  function then(onFulfillment, onRejection) {
+    var parent = this;
+    var state = parent._state;
+
+    if (state === FULFILLED && !onFulfillment || state === REJECTED && !onRejection) {
+      return this;
+    }
+
+    var child = new this.constructor(noop);
+    var result = parent._result;
+
+    if (state) {
+      var callback = arguments[state - 1];
+      asap(function(){
+        invokeCallback(state, child, callback, result);
+      });
+    } else {
+      subscribe(parent, child, onFulfillment, onRejection);
+    }
+
+    return child;
+  }
+
+  /**
+    `Promise.resolve` returns a promise that will become resolved with the
+    passed `value`. It is shorthand for the following:
+
+    ```javascript
+    var promise = new Promise(function(resolve, reject){
+      resolve(1);
+    });
+
+    promise.then(function(value){
+      // value === 1
+    });
+    ```
+
+    Instead of writing the above, your code now simply becomes the following:
+
+    ```javascript
+    var promise = Promise.resolve(1);
+
+    promise.then(function(value){
+      // value === 1
+    });
+    ```
+
+    @method resolve
+    @static
+    @param {Any} value value that the returned promise will be resolved with
+    Useful for tooling.
+    @return {Promise} a promise that will become fulfilled with the given
+    `value`
+  */
+  function resolve$1(object) {
+    /*jshint validthis:true */
+    var Constructor = this;
+
+    if (object && typeof object === 'object' && object.constructor === Constructor) {
+      return object;
+    }
+
+    var promise = new Constructor(noop);
+    resolve(promise, object);
+    return promise;
+  }
+
+  function noop() {}
+
+  var PENDING   = void 0;
+  var FULFILLED = 1;
+  var REJECTED  = 2;
+
+  var GET_THEN_ERROR = new ErrorObject();
+
+  function selfFulfillment() {
+    return new TypeError("You cannot resolve a promise with itself");
+  }
+
+  function cannotReturnOwn() {
+    return new TypeError('A promises callback cannot return that same promise.');
+  }
+
+  function getThen(promise) {
+    try {
+      return promise.then;
+    } catch(error) {
+      GET_THEN_ERROR.error = error;
+      return GET_THEN_ERROR;
+    }
+  }
+
+  function tryThen(then, value, fulfillmentHandler, rejectionHandler) {
+    try {
+      then.call(value, fulfillmentHandler, rejectionHandler);
+    } catch(e) {
+      return e;
+    }
+  }
+
+  function handleForeignThenable(promise, thenable, then) {
+     asap(function(promise) {
+      var sealed = false;
+      var error = tryThen(then, thenable, function(value) {
+        if (sealed) { return; }
+        sealed = true;
+        if (thenable !== value) {
+          resolve(promise, value);
+        } else {
+          fulfill(promise, value);
+        }
+      }, function(reason) {
+        if (sealed) { return; }
+        sealed = true;
+
+        _reject(promise, reason);
+      }, 'Settle: ' + (promise._label || ' unknown promise'));
+
+      if (!sealed && error) {
+        sealed = true;
+        _reject(promise, error);
+      }
+    }, promise);
+  }
+
+  function handleOwnThenable(promise, thenable) {
+    if (thenable._state === FULFILLED) {
+      fulfill(promise, thenable._result);
+    } else if (thenable._state === REJECTED) {
+      _reject(promise, thenable._result);
+    } else {
+      subscribe(thenable, undefined, function(value) {
+        resolve(promise, value);
+      }, function(reason) {
+        _reject(promise, reason);
+      });
+    }
+  }
+
+  function handleMaybeThenable(promise, maybeThenable, then$$) {
+    if (maybeThenable.constructor === promise.constructor &&
+        then$$ === then &&
+        constructor.resolve === resolve$1) {
+      handleOwnThenable(promise, maybeThenable);
+    } else {
+      if (then$$ === GET_THEN_ERROR) {
+        _reject(promise, GET_THEN_ERROR.error);
+      } else if (then$$ === undefined) {
+        fulfill(promise, maybeThenable);
+      } else if (isFunction$1(then$$)) {
+        handleForeignThenable(promise, maybeThenable, then$$);
+      } else {
+        fulfill(promise, maybeThenable);
+      }
+    }
+  }
+
+  function resolve(promise, value) {
+    if (promise === value) {
+      _reject(promise, selfFulfillment());
+    } else if (objectOrFunction(value)) {
+      handleMaybeThenable(promise, value, getThen(value));
+    } else {
+      fulfill(promise, value);
+    }
+  }
+
+  function publishRejection(promise) {
+    if (promise._onerror) {
+      promise._onerror(promise._result);
+    }
+
+    publish(promise);
+  }
+
+  function fulfill(promise, value) {
+    if (promise._state !== PENDING) { return; }
+
+    promise._result = value;
+    promise._state = FULFILLED;
+
+    if (promise._subscribers.length !== 0) {
+      asap(publish, promise);
+    }
+  }
+
+  function _reject(promise, reason) {
+    if (promise._state !== PENDING) { return; }
+    promise._state = REJECTED;
+    promise._result = reason;
+
+    asap(publishRejection, promise);
+  }
+
+  function subscribe(parent, child, onFulfillment, onRejection) {
+    var subscribers = parent._subscribers;
+    var length = subscribers.length;
+
+    parent._onerror = null;
+
+    subscribers[length] = child;
+    subscribers[length + FULFILLED] = onFulfillment;
+    subscribers[length + REJECTED]  = onRejection;
+
+    if (length === 0 && parent._state) {
+      asap(publish, parent);
+    }
+  }
+
+  function publish(promise) {
+    var subscribers = promise._subscribers;
+    var settled = promise._state;
+
+    if (subscribers.length === 0) { return; }
+
+    var child, callback, detail = promise._result;
+
+    for (var i = 0; i < subscribers.length; i += 3) {
+      child = subscribers[i];
+      callback = subscribers[i + settled];
+
+      if (child) {
+        invokeCallback(settled, child, callback, detail);
+      } else {
+        callback(detail);
+      }
+    }
+
+    promise._subscribers.length = 0;
+  }
+
+  function ErrorObject() {
+    this.error = null;
+  }
+
+  var TRY_CATCH_ERROR = new ErrorObject();
+
+  function tryCatch(callback, detail) {
+    try {
+      return callback(detail);
+    } catch(e) {
+      TRY_CATCH_ERROR.error = e;
+      return TRY_CATCH_ERROR;
+    }
+  }
+
+  function invokeCallback(settled, promise, callback, detail) {
+    var hasCallback = isFunction$1(callback),
+        value, error, succeeded, failed;
+
+    if (hasCallback) {
+      value = tryCatch(callback, detail);
+
+      if (value === TRY_CATCH_ERROR) {
+        failed = true;
+        error = value.error;
+        value = null;
+      } else {
+        succeeded = true;
+      }
+
+      if (promise === value) {
+        _reject(promise, cannotReturnOwn());
+        return;
+      }
+
+    } else {
+      value = detail;
+      succeeded = true;
+    }
+
+    if (promise._state !== PENDING) {
+      // noop
+    } else if (hasCallback && succeeded) {
+      resolve(promise, value);
+    } else if (failed) {
+      _reject(promise, error);
+    } else if (settled === FULFILLED) {
+      fulfill(promise, value);
+    } else if (settled === REJECTED) {
+      _reject(promise, value);
+    }
+  }
+
+  function initializePromise(promise, resolver) {
+    try {
+      resolver(function resolvePromise(value){
+        resolve(promise, value);
+      }, function rejectPromise(reason) {
+        _reject(promise, reason);
+      });
+    } catch(e) {
+      _reject(promise, e);
+    }
+  }
+
+  /**
+    `Promise.race` returns a new promise which is settled in the same way as the
+    first passed promise to settle.
+
+    Example:
+
+    ```javascript
+    var promise1 = new Promise(function(resolve, reject){
+      setTimeout(function(){
+        resolve('promise 1');
+      }, 200);
+    });
+
+    var promise2 = new Promise(function(resolve, reject){
+      setTimeout(function(){
+        resolve('promise 2');
+      }, 100);
+    });
+
+    Promise.race([promise1, promise2]).then(function(result){
+      // result === 'promise 2' because it was resolved before promise1
+      // was resolved.
+    });
+    ```
+
+    `Promise.race` is deterministic in that only the state of the first
+    settled promise matters. For example, even if other promises given to the
+    `promises` array argument are resolved, but the first settled promise has
+    become rejected before the other promises became fulfilled, the returned
+    promise will become rejected:
+
+    ```javascript
+    var promise1 = new Promise(function(resolve, reject){
+      setTimeout(function(){
+        resolve('promise 1');
+      }, 200);
+    });
+
+    var promise2 = new Promise(function(resolve, reject){
+      setTimeout(function(){
+        reject(new Error('promise 2'));
+      }, 100);
+    });
+
+    Promise.race([promise1, promise2]).then(function(result){
+      // Code here never runs
+    }, function(reason){
+      // reason.message === 'promise 2' because promise 2 became rejected before
+      // promise 1 became fulfilled
+    });
+    ```
+
+    An example real-world use case is implementing timeouts:
+
+    ```javascript
+    Promise.race([ajax('foo.json'), timeout(5000)])
+    ```
+
+    @method race
+    @static
+    @param {Array} promises array of promises to observe
+    Useful for tooling.
+    @return {Promise} a promise which settles in the same way as the first passed
+    promise to settle.
+  */
+  function race(entries) {
+    /*jshint validthis:true */
+    var Constructor = this;
+
+    var promise = new Constructor(noop);
+
+    if (!isArray$1(entries)) {
+      _reject(promise, new TypeError('You must pass an array to race.'));
+      return promise;
+    }
+
+    var length = entries.length;
+
+    function onFulfillment(value) {
+      resolve(promise, value);
+    }
+
+    function onRejection(reason) {
+      _reject(promise, reason);
+    }
+
+    for (var i = 0; promise._state === PENDING && i < length; i++) {
+      subscribe(Constructor.resolve(entries[i]), undefined, onFulfillment, onRejection);
+    }
+
+    return promise;
+  }
+
+  /**
+    `Promise.reject` returns a promise rejected with the passed `reason`.
+    It is shorthand for the following:
+
+    ```javascript
+    var promise = new Promise(function(resolve, reject){
+      reject(new Error('WHOOPS'));
+    });
+
+    promise.then(function(value){
+      // Code here doesn't run because the promise is rejected!
+    }, function(reason){
+      // reason.message === 'WHOOPS'
+    });
+    ```
+
+    Instead of writing the above, your code now simply becomes the following:
+
+    ```javascript
+    var promise = Promise.reject(new Error('WHOOPS'));
+
+    promise.then(function(value){
+      // Code here doesn't run because the promise is rejected!
+    }, function(reason){
+      // reason.message === 'WHOOPS'
+    });
+    ```
+
+    @method reject
+    @static
+    @param {Any} reason value that the returned promise will be rejected with.
+    Useful for tooling.
+    @return {Promise} a promise rejected with the given `reason`.
+  */
+  function reject(reason) {
+    /*jshint validthis:true */
+    var Constructor = this;
+    var promise = new Constructor(noop);
+    _reject(promise, reason);
+    return promise;
+  }
+
+  var counter$1 = 0;
+
+  function needsResolver$1() {
+    throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
+  }
+
+  function needsNew$1() {
+    throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
+  }
+
+  /**
+    Promise objects represent the eventual result of an asynchronous operation. The
+    primary way of interacting with a promise is through its `then` method, which
+    registers callbacks to receive either a promise's eventual value or the reason
+    why the promise cannot be fulfilled.
+
+    Terminology
+    -----------
+
+    - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
+    - `thenable` is an object or function that defines a `then` method.
+    - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
+    - `exception` is a value that is thrown using the throw statement.
+    - `reason` is a value that indicates why a promise was rejected.
+    - `settled` the final resting state of a promise, fulfilled or rejected.
+
+    A promise can be in one of three states: pending, fulfilled, or rejected.
+
+    Promises that are fulfilled have a fulfillment value and are in the fulfilled
+    state.  Promises that are rejected have a rejection reason and are in the
+    rejected state.  A fulfillment value is never a thenable.
+
+    Promises can also be said to *resolve* a value.  If this value is also a
+    promise, then the original promise's settled state will match the value's
+    settled state.  So a promise that *resolves* a promise that rejects will
+    itself reject, and a promise that *resolves* a promise that fulfills will
+    itself fulfill.
+
+
+    Basic Usage:
+    ------------
+
+    ```js
+    var promise = new Promise(function(resolve, reject) {
+      // on success
+      resolve(value);
+
+      // on failure
+      reject(reason);
+    });
+
+    promise.then(function(value) {
+      // on fulfillment
+    }, function(reason) {
+      // on rejection
+    });
+    ```
+
+    Advanced Usage:
+    ---------------
+
+    Promises shine when abstracting away asynchronous interactions such as
+    `XMLHttpRequest`s.
+
+    ```js
+    function getJSON(url) {
+      return new Promise(function(resolve, reject){
+        var xhr = new XMLHttpRequest();
+
+        xhr.open('GET', url);
+        xhr.onreadystatechange = handler;
+        xhr.responseType = 'json';
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.send();
+
+        function handler() {
+          if (this.readyState === this.DONE) {
+            if (this.status === 200) {
+              resolve(this.response);
+            } else {
+              reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
+            }
+          }
+        };
+      });
+    }
+
+    getJSON('/posts.json').then(function(json) {
+      // on fulfillment
+    }, function(reason) {
+      // on rejection
+    });
+    ```
+
+    Unlike callbacks, promises are great composable primitives.
+
+    ```js
+    Promise.all([
+      getJSON('/posts'),
+      getJSON('/comments')
+    ]).then(function(values){
+      values[0] // => postsJSON
+      values[1] // => commentsJSON
+
+      return values;
+    });
+    ```
+
+    @class Promise
+    @param {function} resolver
+    Useful for tooling.
+    @constructor
+  */
+  function Promise$1(resolver) {
+    this._id = counter$1++;
+    this._state = undefined;
+    this._result = undefined;
+    this._subscribers = [];
+
+    if (noop !== resolver) {
+      typeof resolver !== 'function' && needsResolver$1();
+      this instanceof Promise$1 ? initializePromise(this, resolver) : needsNew$1();
+    }
+  }
+
+  Promise$1.all = all;
+  Promise$1.race = race;
+  Promise$1.resolve = resolve$1;
+  Promise$1.reject = reject;
+  Promise$1._setScheduler = setScheduler;
+  Promise$1._setAsap = setAsap;
+  Promise$1._asap = asap;
+
+  Promise$1.prototype = {
+    constructor: Promise$1,
+
+  /**
+    The primary way of interacting with a promise is through its `then` method,
+    which registers callbacks to receive either a promise's eventual value or the
+    reason why the promise cannot be fulfilled.
+
+    ```js
+    findUser().then(function(user){
+      // user is available
+    }, function(reason){
+      // user is unavailable, and you are given the reason why
+    });
+    ```
+
+    Chaining
+    --------
+
+    The return value of `then` is itself a promise.  This second, 'downstream'
+    promise is resolved with the return value of the first promise's fulfillment
+    or rejection handler, or rejected if the handler throws an exception.
+
+    ```js
+    findUser().then(function (user) {
+      return user.name;
+    }, function (reason) {
+      return 'default name';
+    }).then(function (userName) {
+      // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
+      // will be `'default name'`
+    });
+
+    findUser().then(function (user) {
+      throw new Error('Found user, but still unhappy');
+    }, function (reason) {
+      throw new Error('`findUser` rejected and we're unhappy');
+    }).then(function (value) {
+      // never reached
+    }, function (reason) {
+      // if `findUser` fulfilled, `reason` will be 'Found user, but still unhappy'.
+      // If `findUser` rejected, `reason` will be '`findUser` rejected and we're unhappy'.
+    });
+    ```
+    If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
+
+    ```js
+    findUser().then(function (user) {
+      throw new PedagogicalException('Upstream error');
+    }).then(function (value) {
+      // never reached
+    }).then(function (value) {
+      // never reached
+    }, function (reason) {
+      // The `PedgagocialException` is propagated all the way down to here
+    });
+    ```
+
+    Assimilation
+    ------------
+
+    Sometimes the value you want to propagate to a downstream promise can only be
+    retrieved asynchronously. This can be achieved by returning a promise in the
+    fulfillment or rejection handler. The downstream promise will then be pending
+    until the returned promise is settled. This is called *assimilation*.
+
+    ```js
+    findUser().then(function (user) {
+      return findCommentsByAuthor(user);
+    }).then(function (comments) {
+      // The user's comments are now available
+    });
+    ```
+
+    If the assimliated promise rejects, then the downstream promise will also reject.
+
+    ```js
+    findUser().then(function (user) {
+      return findCommentsByAuthor(user);
+    }).then(function (comments) {
+      // If `findCommentsByAuthor` fulfills, we'll have the value here
+    }, function (reason) {
+      // If `findCommentsByAuthor` rejects, we'll have the reason here
+    });
+    ```
+
+    Simple Example
+    --------------
+
+    Synchronous Example
+
+    ```javascript
+    var result;
+
+    try {
+      result = findResult();
+      // success
+    } catch(reason) {
+      // failure
+    }
+    ```
+
+    Errback Example
+
+    ```js
+    findResult(function(result, err){
+      if (err) {
+        // failure
+      } else {
+        // success
+      }
+    });
+    ```
+
+    Promise Example;
+
+    ```javascript
+    findResult().then(function(result){
+      // success
+    }, function(reason){
+      // failure
+    });
+    ```
+
+    Advanced Example
+    --------------
+
+    Synchronous Example
+
+    ```javascript
+    var author, books;
+
+    try {
+      author = findAuthor();
+      books  = findBooksByAuthor(author);
+      // success
+    } catch(reason) {
+      // failure
+    }
+    ```
+
+    Errback Example
+
+    ```js
+
+    function foundBooks(books) {
+
+    }
+
+    function failure(reason) {
+
+    }
+
+    findAuthor(function(author, err){
+      if (err) {
+        failure(err);
+        // failure
+      } else {
+        try {
+          findBoooksByAuthor(author, function(books, err) {
+            if (err) {
+              failure(err);
+            } else {
+              try {
+                foundBooks(books);
+              } catch(reason) {
+                failure(reason);
+              }
+            }
+          });
+        } catch(error) {
+          failure(err);
+        }
+        // success
+      }
+    });
+    ```
+
+    Promise Example;
+
+    ```javascript
+    findAuthor().
+      then(findBooksByAuthor).
+      then(function(books){
+        // found books
+    }).catch(function(reason){
+      // something went wrong
+    });
+    ```
+
+    @method then
+    @param {Function} onFulfilled
+    @param {Function} onRejected
+    Useful for tooling.
+    @return {Promise}
+  */
+    then: then,
+
+  /**
+    `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
+    as the catch block of a try/catch statement.
+
+    ```js
+    function findAuthor(){
+      throw new Error('couldn't find that author');
+    }
+
+    // synchronous
+    try {
+      findAuthor();
+    } catch(reason) {
+      // something went wrong
+    }
+
+    // async with promises
+    findAuthor().catch(function(reason){
+      // something went wrong
+    });
+    ```
+
+    @method catch
+    @param {Function} onRejection
+    Useful for tooling.
+    @return {Promise}
+  */
+    'catch': function(onRejection) {
+      return this.then(null, onRejection);
+    }
+  };
+
+  function Enumerator(Constructor, input) {
+    this._instanceConstructor = Constructor;
+    this.promise = new Constructor(noop);
+
+    if (Array.isArray(input)) {
+      this._input     = input;
+      this.length     = input.length;
+      this._remaining = input.length;
+
+      this._result = new Array(this.length);
+
+      if (this.length === 0) {
+        fulfill(this.promise, this._result);
+      } else {
+        this.length = this.length || 0;
+        this._enumerate();
+        if (this._remaining === 0) {
+          fulfill(this.promise, this._result);
+        }
+      }
+    } else {
+      _reject(this.promise, this._validationError());
+    }
+  }
+
+  Enumerator.prototype._validationError = function() {
+    return new Error('Array Methods must be provided an Array');
+  };
+
+  Enumerator.prototype._enumerate = function() {
+    var length  = this.length;
+    var input   = this._input;
+
+    for (var i = 0; this._state === PENDING && i < length; i++) {
+      this._eachEntry(input[i], i);
+    }
+  };
+
+  Enumerator.prototype._eachEntry = function(entry, i) {
+    var c = this._instanceConstructor;
+    var resolve = c.resolve;
+
+    if (resolve === resolve$1) {
+      var then$$ = getThen(entry);
+
+      if (then$$ === then &&
+          entry._state !== PENDING) {
+        this._settledAt(entry._state, i, entry._result);
+      } else if (typeof then$$ !== 'function') {
+        this._remaining--;
+        this._result[i] = entry;
+      } else if (c === Promise$1) {
+        var promise = new c(noop);
+        handleMaybeThenable(promise, entry, then$$);
+        this._willSettleAt(promise, i);
+      } else {
+        this._willSettleAt(new c(function(resolve) { resolve(entry); }), i);
+      }
+    } else {
+      this._willSettleAt(resolve(entry), i);
+    }
+  };
+
+  Enumerator.prototype._settledAt = function(state, i, value) {
+    var promise = this.promise;
+
+    if (promise._state === PENDING) {
+      this._remaining--;
+
+      if (state === REJECTED) {
+        _reject(promise, value);
+      } else {
+        this._result[i] = value;
+      }
+    }
+
+    if (this._remaining === 0) {
+      fulfill(promise, this._result);
+    }
+  };
+
+  Enumerator.prototype._willSettleAt = function(promise, i) {
+    var enumerator = this;
+
+    subscribe(promise, undefined, function(value) {
+      enumerator._settledAt(FULFILLED, i, value);
+    }, function(reason) {
+      enumerator._settledAt(REJECTED, i, reason);
+    });
+  };
+
+  /**
+    `Promise.all` accepts an array of promises, and returns a new promise which
+    is fulfilled with an array of fulfillment values for the passed promises, or
+    rejected with the reason of the first passed promise to be rejected. It casts all
+    elements of the passed iterable to promises as it runs this algorithm.
+
+    Example:
+
+    ```javascript
+    var promise1 = resolve(1);
+    var promise2 = resolve(2);
+    var promise3 = resolve(3);
+    var promises = [ promise1, promise2, promise3 ];
+
+    Promise.all(promises).then(function(array){
+      // The array here would be [ 1, 2, 3 ];
+    });
+    ```
+
+    If any of the `promises` given to `all` are rejected, the first promise
+    that is rejected will be given as an argument to the returned promises's
+    rejection handler. For example:
+
+    Example:
+
+    ```javascript
+    var promise1 = resolve(1);
+    var promise2 = reject(new Error("2"));
+    var promise3 = reject(new Error("3"));
+    var promises = [ promise1, promise2, promise3 ];
+
+    Promise.all(promises).then(function(array){
+      // Code here never runs because there are rejected promises!
+    }, function(error) {
+      // error.message === "2"
+    });
+    ```
+
+    @method all
+    @static
+    @param {Array} entries array of promises
+    @param {String} label optional string for labeling the promise.
+    Useful for tooling.
+    @return {Promise} promise that is fulfilled when all `promises` have been
+    fulfilled, or rejected if any of them become rejected.
+    @static
+  */
+  function all(entries) {
+    return new Enumerator(this, entries).promise;
+  }
+
+  var counter = 0;
+
+  function needsResolver() {
+    throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
+  }
+
+  function needsNew() {
+    throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
+  }
+
+  /**
+    Promise objects represent the eventual result of an asynchronous operation. The
+    primary way of interacting with a promise is through its `then` method, which
+    registers callbacks to receive either a promise's eventual value or the reason
+    why the promise cannot be fulfilled.
+
+    Terminology
+    -----------
+
+    - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
+    - `thenable` is an object or function that defines a `then` method.
+    - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
+    - `exception` is a value that is thrown using the throw statement.
+    - `reason` is a value that indicates why a promise was rejected.
+    - `settled` the final resting state of a promise, fulfilled or rejected.
+
+    A promise can be in one of three states: pending, fulfilled, or rejected.
+
+    Promises that are fulfilled have a fulfillment value and are in the fulfilled
+    state.  Promises that are rejected have a rejection reason and are in the
+    rejected state.  A fulfillment value is never a thenable.
+
+    Promises can also be said to *resolve* a value.  If this value is also a
+    promise, then the original promise's settled state will match the value's
+    settled state.  So a promise that *resolves* a promise that rejects will
+    itself reject, and a promise that *resolves* a promise that fulfills will
+    itself fulfill.
+
+
+    Basic Usage:
+    ------------
+
+    ```js
+    var promise = new Promise(function(resolve, reject) {
+      // on success
+      resolve(value);
+
+      // on failure
+      reject(reason);
+    });
+
+    promise.then(function(value) {
+      // on fulfillment
+    }, function(reason) {
+      // on rejection
+    });
+    ```
+
+    Advanced Usage:
+    ---------------
+
+    Promises shine when abstracting away asynchronous interactions such as
+    `XMLHttpRequest`s.
+
+    ```js
+    function getJSON(url) {
+      return new Promise(function(resolve, reject){
+        var xhr = new XMLHttpRequest();
+
+        xhr.open('GET', url);
+        xhr.onreadystatechange = handler;
+        xhr.responseType = 'json';
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.send();
+
+        function handler() {
+          if (this.readyState === this.DONE) {
+            if (this.status === 200) {
+              resolve(this.response);
+            } else {
+              reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
+            }
+          }
+        };
+      });
+    }
+
+    getJSON('/posts.json').then(function(json) {
+      // on fulfillment
+    }, function(reason) {
+      // on rejection
+    });
+    ```
+
+    Unlike callbacks, promises are great composable primitives.
+
+    ```js
+    Promise.all([
+      getJSON('/posts'),
+      getJSON('/comments')
+    ]).then(function(values){
+      values[0] // => postsJSON
+      values[1] // => commentsJSON
+
+      return values;
+    });
+    ```
+
+    @class Promise
+    @param {function} resolver
+    Useful for tooling.
+    @constructor
+  */
+  function Promise(resolver) {
+    this._id = counter++;
+    this._state = undefined;
+    this._result = undefined;
+    this._subscribers = [];
+
+    if (noop !== resolver) {
+      typeof resolver !== 'function' && needsResolver();
+      this instanceof Promise ? initializePromise(this, resolver) : needsNew();
+    }
+  }
+
+  Promise.all = all;
+  Promise.race = race;
+  Promise.resolve = resolve$1;
+  Promise.reject = reject;
+  Promise._setScheduler = setScheduler;
+  Promise._setAsap = setAsap;
+  Promise._asap = asap;
+
+  Promise.prototype = {
+    constructor: Promise,
+
+  /**
+    The primary way of interacting with a promise is through its `then` method,
+    which registers callbacks to receive either a promise's eventual value or the
+    reason why the promise cannot be fulfilled.
+
+    ```js
+    findUser().then(function(user){
+      // user is available
+    }, function(reason){
+      // user is unavailable, and you are given the reason why
+    });
+    ```
+
+    Chaining
+    --------
+
+    The return value of `then` is itself a promise.  This second, 'downstream'
+    promise is resolved with the return value of the first promise's fulfillment
+    or rejection handler, or rejected if the handler throws an exception.
+
+    ```js
+    findUser().then(function (user) {
+      return user.name;
+    }, function (reason) {
+      return 'default name';
+    }).then(function (userName) {
+      // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
+      // will be `'default name'`
+    });
+
+    findUser().then(function (user) {
+      throw new Error('Found user, but still unhappy');
+    }, function (reason) {
+      throw new Error('`findUser` rejected and we're unhappy');
+    }).then(function (value) {
+      // never reached
+    }, function (reason) {
+      // if `findUser` fulfilled, `reason` will be 'Found user, but still unhappy'.
+      // If `findUser` rejected, `reason` will be '`findUser` rejected and we're unhappy'.
+    });
+    ```
+    If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
+
+    ```js
+    findUser().then(function (user) {
+      throw new PedagogicalException('Upstream error');
+    }).then(function (value) {
+      // never reached
+    }).then(function (value) {
+      // never reached
+    }, function (reason) {
+      // The `PedgagocialException` is propagated all the way down to here
+    });
+    ```
+
+    Assimilation
+    ------------
+
+    Sometimes the value you want to propagate to a downstream promise can only be
+    retrieved asynchronously. This can be achieved by returning a promise in the
+    fulfillment or rejection handler. The downstream promise will then be pending
+    until the returned promise is settled. This is called *assimilation*.
+
+    ```js
+    findUser().then(function (user) {
+      return findCommentsByAuthor(user);
+    }).then(function (comments) {
+      // The user's comments are now available
+    });
+    ```
+
+    If the assimliated promise rejects, then the downstream promise will also reject.
+
+    ```js
+    findUser().then(function (user) {
+      return findCommentsByAuthor(user);
+    }).then(function (comments) {
+      // If `findCommentsByAuthor` fulfills, we'll have the value here
+    }, function (reason) {
+      // If `findCommentsByAuthor` rejects, we'll have the reason here
+    });
+    ```
+
+    Simple Example
+    --------------
+
+    Synchronous Example
+
+    ```javascript
+    var result;
+
+    try {
+      result = findResult();
+      // success
+    } catch(reason) {
+      // failure
+    }
+    ```
+
+    Errback Example
+
+    ```js
+    findResult(function(result, err){
+      if (err) {
+        // failure
+      } else {
+        // success
+      }
+    });
+    ```
+
+    Promise Example;
+
+    ```javascript
+    findResult().then(function(result){
+      // success
+    }, function(reason){
+      // failure
+    });
+    ```
+
+    Advanced Example
+    --------------
+
+    Synchronous Example
+
+    ```javascript
+    var author, books;
+
+    try {
+      author = findAuthor();
+      books  = findBooksByAuthor(author);
+      // success
+    } catch(reason) {
+      // failure
+    }
+    ```
+
+    Errback Example
+
+    ```js
+
+    function foundBooks(books) {
+
+    }
+
+    function failure(reason) {
+
+    }
+
+    findAuthor(function(author, err){
+      if (err) {
+        failure(err);
+        // failure
+      } else {
+        try {
+          findBoooksByAuthor(author, function(books, err) {
+            if (err) {
+              failure(err);
+            } else {
+              try {
+                foundBooks(books);
+              } catch(reason) {
+                failure(reason);
+              }
+            }
+          });
+        } catch(error) {
+          failure(err);
+        }
+        // success
+      }
+    });
+    ```
+
+    Promise Example;
+
+    ```javascript
+    findAuthor().
+      then(findBooksByAuthor).
+      then(function(books){
+        // found books
+    }).catch(function(reason){
+      // something went wrong
+    });
+    ```
+
+    @method then
+    @param {Function} onFulfilled
+    @param {Function} onRejected
+    Useful for tooling.
+    @return {Promise}
+  */
+    then: then,
+
+  /**
+    `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
+    as the catch block of a try/catch statement.
+
+    ```js
+    function findAuthor(){
+      throw new Error('couldn't find that author');
+    }
+
+    // synchronous
+    try {
+      findAuthor();
+    } catch(reason) {
+      // something went wrong
+    }
+
+    // async with promises
+    findAuthor().catch(function(reason){
+      // something went wrong
+    });
+    ```
+
+    @method catch
+    @param {Function} onRejection
+    Useful for tooling.
+    @return {Promise}
+  */
+    'catch': function(onRejection) {
+      return this.then(null, onRejection);
+    }
+  };
+
+  /**
+   * Gets the timestamp of the number of milliseconds that have elapsed since
+   * the Unix epoch (1 January 1970 00:00:00 UTC).
+   *
+   * @static
+   * @memberOf _
+   * @type {Function}
+   * @category Date
+   * @returns {number} Returns the timestamp.
+   * @example
+   *
+   * _.defer(function(stamp) {
+   *   console.log(_.now() - stamp);
+   * }, _.now());
+   * // => logs the number of milliseconds it took for the deferred function to be invoked
+   */
+  var now = Date.now;
+
+  /** Used as references for various `Number` constants. */
+  var NAN = 0 / 0;
+
+  /** Used to match leading and trailing whitespace. */
+  var reTrim = /^\s+|\s+$/g;
+
+  /** Used to detect bad signed hexadecimal string values. */
+  var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+
+  /** Used to detect binary string values. */
+  var reIsBinary = /^0b[01]+$/i;
+
+  /** Used to detect octal string values. */
+  var reIsOctal = /^0o[0-7]+$/i;
+
+  /** Built-in method references without a dependency on `root`. */
+  var freeParseInt = parseInt;
+
+  /**
+   * Converts `value` to a number.
+   *
+   * @static
+   * @memberOf _
+   * @category Lang
+   * @param {*} value The value to process.
+   * @returns {number} Returns the number.
+   * @example
+   *
+   * _.toNumber(3);
+   * // => 3
+   *
+   * _.toNumber(Number.MIN_VALUE);
+   * // => 5e-324
+   *
+   * _.toNumber(Infinity);
+   * // => Infinity
+   *
+   * _.toNumber('3');
+   * // => 3
+   */
+  function toNumber(value) {
+    if (isObject(value)) {
+      var other = isFunction(value.valueOf) ? value.valueOf() : value;
+      value = isObject(other) ? (other + '') : other;
+    }
+    if (typeof value != 'string') {
+      return value === 0 ? value : +value;
+    }
+    value = value.replace(reTrim, '');
+    var isBinary = reIsBinary.test(value);
+    return (isBinary || reIsOctal.test(value))
+      ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
+      : (reIsBadHex.test(value) ? NAN : +value);
+  }
+
+  /** Used as the `TypeError` message for "Functions" methods. */
+  var FUNC_ERROR_TEXT = 'Expected a function';
+
+  /* Built-in method references for those with the same name as other `lodash` methods. */
+  var nativeMax = Math.max;
+
+  /**
+   * Creates a debounced function that delays invoking `func` until after `wait`
+   * milliseconds have elapsed since the last time the debounced function was
+   * invoked. The debounced function comes with a `cancel` method to cancel
+   * delayed `func` invocations and a `flush` method to immediately invoke them.
+   * Provide an options object to indicate whether `func` should be invoked on
+   * the leading and/or trailing edge of the `wait` timeout. The `func` is invoked
+   * with the last arguments provided to the debounced function. Subsequent calls
+   * to the debounced function return the result of the last `func` invocation.
+   *
+   * **Note:** If `leading` and `trailing` options are `true`, `func` is invoked
+   * on the trailing edge of the timeout only if the debounced function is
+   * invoked more than once during the `wait` timeout.
+   *
+   * See [David Corbacho's article](http://drupalmotion.com/article/debounce-and-throttle-visual-explanation)
+   * for details over the differences between `_.debounce` and `_.throttle`.
+   *
+   * @static
+   * @memberOf _
+   * @category Function
+   * @param {Function} func The function to debounce.
+   * @param {number} [wait=0] The number of milliseconds to delay.
+   * @param {Object} [options] The options object.
+   * @param {boolean} [options.leading=false] Specify invoking on the leading
+   *  edge of the timeout.
+   * @param {number} [options.maxWait] The maximum time `func` is allowed to be
+   *  delayed before it's invoked.
+   * @param {boolean} [options.trailing=true] Specify invoking on the trailing
+   *  edge of the timeout.
+   * @returns {Function} Returns the new debounced function.
+   * @example
+   *
+   * // Avoid costly calculations while the window size is in flux.
+   * jQuery(window).on('resize', _.debounce(calculateLayout, 150));
+   *
+   * // Invoke `sendMail` when clicked, debouncing subsequent calls.
+   * jQuery(element).on('click', _.debounce(sendMail, 300, {
+   *   'leading': true,
+   *   'trailing': false
+   * }));
+   *
+   * // Ensure `batchLog` is invoked once after 1 second of debounced calls.
+   * var debounced = _.debounce(batchLog, 250, { 'maxWait': 1000 });
+   * var source = new EventSource('/stream');
+   * jQuery(source).on('message', debounced);
+   *
+   * // Cancel the trailing debounced invocation.
+   * jQuery(window).on('popstate', debounced.cancel);
+   */
+  function debounce(func, wait, options) {
+    var args,
+        maxTimeoutId,
+        result,
+        stamp,
+        thisArg,
+        timeoutId,
+        trailingCall,
+        lastCalled = 0,
+        leading = false,
+        maxWait = false,
+        trailing = true;
+
+    if (typeof func != 'function') {
+      throw new TypeError(FUNC_ERROR_TEXT);
+    }
+    wait = toNumber(wait) || 0;
+    if (isObject(options)) {
+      leading = !!options.leading;
+      maxWait = 'maxWait' in options && nativeMax(toNumber(options.maxWait) || 0, wait);
+      trailing = 'trailing' in options ? !!options.trailing : trailing;
+    }
+
+    function cancel() {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (maxTimeoutId) {
+        clearTimeout(maxTimeoutId);
+      }
+      lastCalled = 0;
+      args = maxTimeoutId = thisArg = timeoutId = trailingCall = undefined;
+    }
+
+    function complete(isCalled, id) {
+      if (id) {
+        clearTimeout(id);
+      }
+      maxTimeoutId = timeoutId = trailingCall = undefined;
+      if (isCalled) {
+        lastCalled = now();
+        result = func.apply(thisArg, args);
+        if (!timeoutId && !maxTimeoutId) {
+          args = thisArg = undefined;
+        }
+      }
+    }
+
+    function delayed() {
+      var remaining = wait - (now() - stamp);
+      if (remaining <= 0 || remaining > wait) {
+        complete(trailingCall, maxTimeoutId);
+      } else {
+        timeoutId = setTimeout(delayed, remaining);
+      }
+    }
+
+    function flush() {
+      if ((timeoutId && trailingCall) || (maxTimeoutId && trailing)) {
+        result = func.apply(thisArg, args);
+      }
+      cancel();
+      return result;
+    }
+
+    function maxDelayed() {
+      complete(trailing, timeoutId);
+    }
+
+    function debounced() {
+      args = arguments;
+      stamp = now();
+      thisArg = this;
+      trailingCall = trailing && (timeoutId || !leading);
+
+      if (maxWait === false) {
+        var leadingCall = leading && !timeoutId;
+      } else {
+        if (!lastCalled && !maxTimeoutId && !leading) {
+          lastCalled = stamp;
+        }
+        var remaining = maxWait - (stamp - lastCalled);
+
+        var isCalled = (remaining <= 0 || remaining > maxWait) &&
+          (leading || maxTimeoutId);
+
+        if (isCalled) {
+          if (maxTimeoutId) {
+            maxTimeoutId = clearTimeout(maxTimeoutId);
+          }
+          lastCalled = stamp;
+          result = func.apply(thisArg, args);
+        }
+        else if (!maxTimeoutId) {
+          maxTimeoutId = setTimeout(maxDelayed, remaining);
+        }
+      }
+      if (isCalled && timeoutId) {
+        timeoutId = clearTimeout(timeoutId);
+      }
+      else if (!timeoutId && wait !== maxWait) {
+        timeoutId = setTimeout(delayed, wait);
+      }
+      if (leadingCall) {
+        isCalled = true;
+        result = func.apply(thisArg, args);
+      }
+      if (isCalled && !timeoutId && !maxTimeoutId) {
+        args = thisArg = undefined;
+      }
+      return result;
+    }
+    debounced.cancel = cancel;
+    debounced.flush = flush;
+    return debounced;
+  }
+
+  var requestAnimationFrame = function () {
+    var lastTime = 0;
+
+    return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function (callback) {
+      var currTime = new Date().getTime();
+      var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+      var id = window.setTimeout(function () {
+        callback(currTime + timeToCall);
+      }, timeToCall);
+      lastTime = currTime + timeToCall;
+      return id;
+    };
+  }();
+
+  var cancelAnimationFrame = function () {
+    return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function (id) {
+      window.clearTimeout(id);
+    };
+  }();
+
+  var nextAnimationFrame = function () {
+    var ids = {};
+
+    function requestId() {
+      var id = undefined;
+      do {
+        id = Math.floor(Math.random() * 1E9);
+      } while (id in ids);
+      return id;
+    }
+
+    return {
+      request: window.requestNextAnimationFrame || function (callback, element) {
+        var id = requestId();
+
+        ids[id] = requestAnimationFrame(function () {
+          ids[id] = requestAnimationFrame(function (ts) {
+            delete ids[id];
+            callback(ts);
+          }, element);
+        }, element);
+
+        return id;
+      },
+      cancel: window.cancelNextAnimationFrame || function (id) {
+        if (ids[id]) {
+          cancelAnimationFrame(ids[id]);
+          delete ids[id];
+        }
+      }
+    };
+  }();
+
+  var requestNextAnimationFrame = nextAnimationFrame.request;
+
+  var CLASS_NAME = 'context-menu';
+  var CLASS_CHECKBOX = 'checkbox';
+  var ARROW_SIZE = 6;
+  var TRANSITION_SPEED = 125;
+  var BUTTON_QUERY_DEBOUNCE = 666;
+  var BUTTON_ROOT_DEBOUNCE = 500;
+  var BUTTON_DEFAULT_DEBOUNCE = 150;
+  var BUTTON_BAM_EFFECT_ANIMATION_TIME = 700;
+
+  var NodeContextMenu = function () {
+    function NodeContextMenu(vis, visData, baseEl, events, querying) {
+      babelHelpers.classCallCheck(this, NodeContextMenu);
+
+      var that = this;
+
+      this._x = 0;
+      this._y = 0;
+      this._yOffset = 0;
+      this._scale = 0;
+
+      this.vis = vis;
+      this.visData = visData;
+      this.baseEl = baseEl;
+      this.events = events;
+
+      this.numButtonRows = querying ? 2 : 3;
+      this.height = this.visData.global.row.height * this.numButtonRows;
+      this.toBottom = false;
+
+      this.wrapper = this.baseEl.append('g').attr('class', CLASS_NAME).call(this.updateAppearance.bind(this));
+
+      this.bg = this.wrapper.append('path').attr('class', 'bgBorder').attr('d', dropMenu({
+        x: -1,
+        y: -1,
+        width: this.visData.global.column.width + 2,
+        height: this.height + 2,
+        radius: ARROW_SIZE - 2,
+        arrowSize: ARROW_SIZE
+      })).style('filter', 'url(#drop-shadow-context-menu)');
+
+      this.dropShadow = this.wrapper.append('path').attr('class', 'bg').attr('d', dropMenu({
+        x: 0,
+        y: 0,
+        width: this.visData.global.column.width,
+        height: this.height,
+        radius: ARROW_SIZE - 1,
+        arrowSize: ARROW_SIZE
+      })).style('filter', 'url(#drop-shadow-context-menu)');
+
+      this.buttonQuery = this.wrapper.append('g').call(this.createButton.bind(this), {
+        alignRight: false,
+        classNames: [],
+        distanceFromCenter: 1,
+        fullWidth: true,
+        label: 'Query:',
+        labelTwo: 'query-mode',
+        bamEffect: true
+      }).on('click', function () {
+        that.clickQueryHandler.call(that, this);
+      });
+      this.buttonQueryFill = this.buttonQuery.select('.bg-fill-effect');
+      this.buttonQueryBamEffect = this.buttonQuery.select('.bg-bam-effect');
+
+      this.buttonRoot = this.wrapper.append('g').call(this.createButton.bind(this), {
+        alignRight: false,
+        classNames: [],
+        distanceFromCenter: 0,
+        fullWidth: false,
+        label: 'Root'
+      }).on('click', function () {
+        that.clickRootHandler.call(that, this);
+      });
+      this.buttonRootFill = this.buttonRoot.select('.bg-fill-effect');
+      this.checkboxRoot = this.createCheckbox(this.buttonRoot);
+
+      this.buttonLock = this.wrapper.append('g').call(this.createButton.bind(this), {
+        alignRight: true,
+        classNames: [],
+        distanceFromCenter: 0,
+        fullWidth: false,
+        label: 'Lock',
+        bamEffect: true
+      }).on('click', function () {
+        that.clickLockHandler.call(that, this);
+      });
+      this.buttonLockFill = this.buttonLock.select('.bg-fill-effect');
+      this.buttonLockBamEffect = this.buttonLock.select('.bg-bam-effect');
+      this.checkboxLock = this.createCheckbox(this.buttonLock);
+
+      this.buttons = this.wrapper.selectAll('.button');
+
+      this.debouncedQueryHandler = debounce(this.queryHandler, BUTTON_QUERY_DEBOUNCE);
+      this.debouncedRootHandler = debounce(this.rootHandler, BUTTON_ROOT_DEBOUNCE);
+    }
+
+    /* ---------------------------------------------------------------------------
+     * Getter / Setter
+     * ------------------------------------------------------------------------ */
+
+    babelHelpers.createClass(NodeContextMenu, [{
+      key: 'addLabel',
+
+
+      /* ---------------------------------------------------------------------------
+       * Methods
+       * ------------------------------------------------------------------------ */
+
+      /* ---------------------------------- A ----------------------------------- */
+
+      value: function addLabel(selection, label, labelTwo) {
+        var div = selection.append('foreignObject').attr('x', this.visData.global.row.padding * 2).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2).attr('class', 'label-wrapper').append('xhtml:div').style('line-height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2 + 'px');
+
+        div.append('xhtml:span').attr('class', 'label').attr('title', label).text(label);
+
+        if (labelTwo) {
+          div.append('xhtml:span').attr('class', 'label-two ' + labelTwo);
+        }
+      }
+
+      /* ---------------------------------- C ----------------------------------- */
+
+    }, {
+      key: 'checkLock',
+      value: function checkLock() {
+        var checked = this.node.datum().data.state.lock;
+        this.buttonLock.classed('semi-active', checked);
+        this.checkboxLock.style('transform', 'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)');
+        if (checked) {
+          this.fillButton(this.buttonLockFill);
+        } else {
+          this.emptyButton(this.buttonLockFill);
+        }
+        return checked;
+      }
+    }, {
+      key: 'checkOrientation',
+      value: function checkOrientation() {
+        if (this._y + this._yOffset >= 0) {
+          this.toBottom = false;
+        } else {
+          this.toBottom = true;
+        }
+        this.buttons.call(this.positionButton.bind(this));
+        this.bg.classed('is-mirrored-horizontally', this.toBottom);
+        this.dropShadow.classed('is-mirrored-horizontally', this.toBottom);
+      }
+    }, {
+      key: 'checkRoot',
+      value: function checkRoot(debounced, time) {
+        var state = this.node.datum().data.state.root;
+        var checked = state;
+
+        if (debounced) {
+          if (typeof this.currentRootState === 'undefined') {
+            this.currentRootState = !!state;
+          }
+          if (typeof this.tempRoot === 'undefined') {
+            this.tempRoot = this.currentRootState;
+          }
+          this.tempRoot = !this.tempRoot;
+          checked = this.tempRoot;
+        }
+
+        if (!state) {
+          if (debounced) {
+            if (checked) {
+              this.fillButton(this.buttonRootFill, time);
+            } else {
+              this.hideFillButton(this.buttonRootFill);
+            }
+          } else {
+            this.emptyButton(this.buttonRootFill, time);
+          }
+        } else {
+          if (debounced) {
+            if (!checked) {
+              this.emptyButton(this.buttonRootFill, time);
+            } else {
+              this.showFillButton(this.buttonRootFill);
+            }
+          } else {
+            this.fillButton(this.buttonRootFill, time);
+          }
+        }
+
+        this.buttonRoot.classed('semi-active', checked);
+        this.checkboxRoot.style('transform', 'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)');
+      }
+    }, {
+      key: 'clickLockHandler',
+      value: function clickLockHandler() {
+        var _this = this;
+
+        this.buttonLock.classed('fill-effect', true);
+        this.vis.nodes.lockHandler(this.node);
+        var checked = this.checkLock();
+        if (checked) {
+          this.buttonLock.classed('active', true);
+        } else {
+          this.buttonLock.classed('active', false);
+        }
+        setTimeout(function () {
+          if (checked) {
+            _this.triggerButtonBamEffect(_this.buttonLockBamEffect);
+          }
+          _this.buttonLock.classed('fill-effect', false);
+        }, BUTTON_DEFAULT_DEBOUNCE);
+      }
+    }, {
+      key: 'clickQueryHandler',
+      value: function clickQueryHandler() {
+        this.buttonQuery.classed('fill-effect', true);
+        this.updateQuery(true, BUTTON_QUERY_DEBOUNCE);
+        if (!this.vis.disableDebouncedContextMenu) {
+          this.debouncedQueryHandler(true);
+        } else {
+          this.queryHandler();
+        }
+      }
+    }, {
+      key: 'clickRootHandler',
+      value: function clickRootHandler() {
+        this.buttonRoot.classed('fill-effect', true);
+        this.checkRoot(true, BUTTON_ROOT_DEBOUNCE);
+        if (!this.vis.disableDebouncedContextMenu) {
+          this.debouncedRootHandler(true);
+        } else {
+          this.rootHandler();
+        }
+      }
+    }, {
+      key: 'close',
+      value: function close() {
+        var _this2 = this;
+
+        if (!this.closing) {
+          this.closing = new Promise(function (resolve) {
+            _this2.opened = false;
+            _this2.wrapper.call(_this2.updateAppearance.bind(_this2));
+
+            setTimeout(function () {
+              _this2.visible = false;
+              _this2.wrapper.call(_this2.updateAppearance.bind(_this2));
+              resolve(_this2.node.datum().id);
+              _this2.node = undefined;
+            }, TRANSITION_SPEED);
+          });
+        }
+        return this.closing;
+      }
+    }, {
+      key: 'createButton',
+      value: function createButton(selection, properties) {
+        var classNames = 'button';
+        if (properties.classNames && properties.classNames.length) {
+          classNames += ' ' + properties.classNames.join(' ');
+        }
+        selection.attr('class', classNames);
+
+        selection.datum(properties).call(this.createButtonBg.bind(this), {
+          bamEffect: properties.bamEffect,
+          fullWidth: properties.fullWidth
+        }).call(this.addLabel.bind(this), properties.label, properties.labelTwo).call(this.positionButton.bind(this), properties.distanceFromCenter, properties.alignRight);
+      }
+    }, {
+      key: 'createButtonBg',
+      value: function createButtonBg(selection, params) {
+        var _this3 = this;
+
+        selection.datum(function (data) {
+          data.x = _this3.visData.global.row.padding;
+          data.y = _this3.visData.global.row.padding;
+          data.width = _this3.visData.global.column.width * (params.fullWidth ? 1 : 0.5) - _this3.visData.global.row.padding * 2;
+          data.height = _this3.visData.global.row.contentHeight;
+          data.rx = 2;
+          data.ry = 2;
+
+          return data;
+        }).append('rect').attr('class', 'bg').attr('x', function (data) {
+          return data.x;
+        }).attr('y', function (data) {
+          return data.y;
+        }).attr('width', function (data) {
+          return data.width;
+        }).attr('height', function (data) {
+          return data.height;
+        }).attr('rx', function (data) {
+          return data.rx;
+        }).attr('ry', function (data) {
+          return data.ry;
+        });
+
+        selection.append('rect').attr('class', 'bg-fill-effect').attr('x', function (data) {
+          return data.x;
+        }).attr('y', function (data) {
+          return data.y;
+        }).attr('width', function (data) {
+          return data.width;
+        }).attr('height', 0).attr('rx', function (data) {
+          return data.rx;
+        }).attr('ry', function (data) {
+          return data.ry;
+        });
+
+        if (params.bamEffect) {
+          selection.append('rect').attr('class', 'bg-bam-effect').attr('x', function (data) {
+            return data.x;
+          }).attr('y', function (data) {
+            return data.y;
+          }).attr('width', function (data) {
+            return data.width;
+          }).attr('height', function (data) {
+            return data.height;
+          }).attr('rx', function (data) {
+            return data.rx;
+          }).attr('ry', function (data) {
+            return data.ry;
+          });
+        }
+      }
+    }, {
+      key: 'createCheckbox',
+      value: function createCheckbox(selection) {
+        var height = Math.round(selection.datum().height / 2);
+        var x = -1.75 * height + this.visData.global.row.padding;
+
+        var container = selection.append('g').attr('class', CLASS_CHECKBOX);
+
+        container.append('rect').attr('class', 'checkbox-bg').attr('x', function (data) {
+          return data.width + x;
+        }).attr('y', height / 2 + this.visData.global.row.padding).attr('width', height * 1.5).attr('height', height).attr('rx', height / 2).attr('ry', height / 2);
+
+        this.checkBoxMovement = (height - 2) / 2;
+
+        return container.append('rect').attr('class', 'checkbox-knob').attr('x', function (data) {
+          return data.width + x + 1;
+        }).attr('y', height / 2 + this.visData.global.row.padding + 1).attr('width', height - 2).attr('height', height - 2).attr('rx', height - 2);
+      }
+
+      /* ---------------------------------- E ----------------------------------- */
+
+    }, {
+      key: 'emptyButton',
+      value: function emptyButton(selection, time) {
+        selection.transition().duration(0).attr('y', function (data) {
+          return data.y;
+        }).attr('height', function (data) {
+          return data.height;
+        }).call(allTransitionsEnded, function () {
+          selection.transition().duration(time || BUTTON_DEFAULT_DEBOUNCE).ease('linear').attr('y', function (data) {
+            return data.height;
+          }).attr('height', 0);
+        });
+      }
+
+      /* ---------------------------------- F ----------------------------------- */
+
+    }, {
+      key: 'fillButton',
+      value: function fillButton(selection, time) {
+        selection.transition().duration(0).attr('y', function (data) {
+          return data.y;
+        }).attr('height', 0).call(allTransitionsEnded, function () {
+          selection.transition().duration(time || BUTTON_DEFAULT_DEBOUNCE).ease('linear').attr('height', function (data) {
+            return data.height;
+          });
+        });
+      }
+
+      /* ---------------------------------- H ----------------------------------- */
+
+    }, {
+      key: 'hideFillButton',
+      value: function hideFillButton(selection) {
+        selection.transition().duration(0).attr('height', 0);
+      }
+
+      /* ---------------------------------- O ----------------------------------- */
+
+    }, {
+      key: 'open',
+      value: function open(node) {
+        var _this4 = this;
+
+        return new Promise(function (resolve) {
+          _this4.node = node;
+          _this4.closing = undefined;
+
+          _this4.updateStates();
+
+          _this4._yOffset = _this4.visData.nodes[_this4.node.datum().depth].scrollTop;
+          _this4.translate = {
+            x: _this4.node.datum().x,
+            y: _this4.node.datum().y - _this4.height
+          };
+          _this4.checkOrientation();
+
+          _this4.wrapper.call(_this4.updateAppearance.bind(_this4));
+          _this4.opened = true;
+          _this4.visible = true;
+
+          requestNextAnimationFrame(function () {
+            _this4.wrapper.call(_this4.updateAppearance.bind(_this4));
+            setTimeout(function () {
+              resolve(true);
+            }, TRANSITION_SPEED);
+          });
+        });
+      }
+
+      /* ---------------------------------- P ----------------------------------- */
+
+    }, {
+      key: 'positionButton',
+      value: function positionButton(selection, distanceFromCenter, alignRight) {
+        var _this5 = this;
+
+        selection.datum(function (data) {
+          // Lets cache some values to make our lifes easier when checking the
+          // position again in `checkOrientation`.
+          if (distanceFromCenter) {
+            data.distanceFromCenter = distanceFromCenter;
+          }
+          if (alignRight) {
+            data.alignRight = alignRight;
+          }
+          return data;
+        }).attr('transform', function (data) {
+          var x = data.alignRight ? _this5.visData.global.column.width / 2 : 0;
+          // When the buttons are created I assume that the menu is positioned
+          // above the node; i.e. `distanceFromCenter` needs to be inverted.
+          var y = _this5.visData.global.row.height * (_this5.toBottom ? data.distanceFromCenter : _this5.numButtonRows - data.distanceFromCenter - 1) + (_this5.toBottom ? ARROW_SIZE : 0);
+
+          return 'translate(' + x + ', ' + y + ')';
+        });
+      }
+
+      /* ---------------------------------- Q ----------------------------------- */
+
+    }, {
+      key: 'queryHandler',
+      value: function queryHandler(debounced) {
+        if (debounced) {
+          if (this.tempQueryMode !== this.currentQueryMode) {
+            if (this.tempQueryMode) {
+              this.vis.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
+              this.triggerButtonBamEffect(this.buttonQueryBamEffect);
+              this.buttonQuery.classed('active', true);
+            } else {
+              this.vis.nodes.queryHandler(this.node, 'unquery');
+              this.buttonQuery.classed('active', false);
+            }
+          }
+        } else {
+          this.vis.nodes.queryHandler(this.node);
+        }
+
+        // Reset temporary query modes.
+        this.tempQueryMode = undefined;
+        this.currentQueryMode = undefined;
+        this.buttonQuery.classed('fill-effect', false);
+      }
+
+      /* ---------------------------------- R ----------------------------------- */
+
+    }, {
+      key: 'rootHandler',
+      value: function rootHandler(debounced) {
+        if (!debounced || this.tempRoot !== this.currentRootState) {
+          this.close();
+          this.vis.nodes.rootHandler(this.node);
+        }
+
+        // Reset temporary root values.
+        this.tempRoot = undefined;
+        this.currentRootState = undefined;
+        this.buttonRoot.classed('fill-effect', false);
+
+        this.buttonRoot.classed('active', this.node.datum().data.state.root);
+      }
+
+      /* ---------------------------------- S ----------------------------------- */
+
+    }, {
+      key: 'scrollY',
+      value: function scrollY(offset) {
+        this._yOffset = offset;
+        this.wrapper.call(this.updateAppearance.bind(this));
+      }
+    }, {
+      key: 'showFillButton',
+      value: function showFillButton(selection) {
+        selection.transition().duration(0).attr('y', function (data) {
+          return data.y;
+        }).attr('height', function (data) {
+          return data.height;
+        });
+      }
+
+      /* ---------------------------------- T ----------------------------------- */
+
+    }, {
+      key: 'toggle',
+      value: function toggle(node) {
+        var _this6 = this;
+
+        return new Promise(function (resolve) {
+          var nodeId = node.datum().id;
+          var closed = Promise.resolve();
+
+          if (_this6.visible) {
+            closed = _this6.close();
+          }
+
+          closed.then(function (previousNodeId) {
+            if (nodeId !== previousNodeId) {
+              _this6.open(node).then(function () {
+                resolve(nodeId);
+              });
+            } else {
+              resolve(nodeId);
+            }
+          });
+        });
+      }
+    }, {
+      key: 'triggerButtonBamEffect',
+      value: function triggerButtonBamEffect(button) {
+        button.classed('active', true);
+        setTimeout(function () {
+          button.classed('active', false);
+        }, BUTTON_BAM_EFFECT_ANIMATION_TIME);
+      }
+
+      /* ---------------------------------- U ----------------------------------- */
+
+    }, {
+      key: 'updateAppearance',
+      value: function updateAppearance(selection) {
+        var centerY = this.toBottom ? 0 : this.height + this.visData.global.row.height;
+        selection.classed('transitionable', this.visible).classed('open', this.opened).style('transform', this.translate + ' ' + this.scale).style('transform-origin', this.visData.global.column.width / 2 + 'px ' + centerY + 'px');
+      }
+    }, {
+      key: 'updateQuery',
+      value: function updateQuery(debounced, time) {
+        var state = this.node.datum().data.state.query;
+        var queryMode = state;
+
+        function nextQueryMode(mode) {
+          switch (mode) {
+            case 'or':
+              return 'and';
+            case 'and':
+              return 'not';
+            case 'not':
+              return null;
+            default:
+              return 'or';
+          }
+        }
+
+        if (debounced) {
+          if (typeof this.currentQueryMode === 'undefined') {
+            this.currentQueryMode = state;
+          }
+          if (typeof this.tempQueryMode === 'undefined') {
+            this.tempQueryMode = this.currentQueryMode;
+          }
+          this.tempQueryMode = nextQueryMode(this.tempQueryMode);
+          queryMode = this.tempQueryMode;
+        }
+
+        if (debounced) {
+          if (queryMode) {
+            if (queryMode === state) {
+              this.showFillButton(this.buttonQueryFill);
+            } else {
+              this.fillButton(this.buttonQueryFill, time);
+            }
+          } else {
+            if (state) {
+              this.emptyButton(this.buttonQueryFill, time);
+            } else {
+              this.hideFillButton(this.buttonQueryFill);
+            }
+          }
+        } else {
+          this.emptyButton(this.buttonQueryFill, time);
+        }
+
+        this.buttonQuery.classed('semi-active', !!queryMode).classed('active', !!state).select('.query-mode').text(queryMode || 'not queried').classed('inactive', !queryMode);
+      }
+    }, {
+      key: 'updateStates',
+      value: function updateStates() {
+        this.checkLock();
+        this.checkRoot();
+        this.updateQuery();
+      }
+    }, {
+      key: 'scale',
+      get: function get() {
+        return 'scale(' + (this.opened ? 1 : 0.5) + ')';
+      }
+    }, {
+      key: 'translate',
+      get: function get() {
+        var y = this.toBottom ? this._y + this.height + this.visData.global.row.height - ARROW_SIZE : this._y;
+
+        return 'translate(' + this._x + 'px,' + (y + this._yOffset) + 'px)';
+      },
+      set: function set(position) {
+        this._x = position.x;
+        this._y = position.y;
+      }
+    }]);
+    return NodeContextMenu;
+  }();
+
   var LimitsUnsupportedFormat = function (_ExtendableError) {
     babelHelpers.inherits(LimitsUnsupportedFormat, _ExtendableError);
 
@@ -2621,6 +5040,37 @@ var ListGraph = (function ($,d3) {
     }
   }
 
+  // Adapted from: http://bl.ocks.org/cpbotha/5200394
+  function dropShadow(el, name, dx, dy, blur, opacity) {
+    var defs = el.select('defs');
+
+    if (defs.empty()) {
+      defs = el.append('defs');
+    }
+
+    // create filter with id #drop-shadow
+    // height = 130% so that the shadow is not clipped
+    var filter = defs.append('filter').attr('id', 'drop-shadow' + (name ? '-' + name : '')).attr('height', '130%');
+
+    // SourceAlpha refers to opacity of graphic that this filter will be applied to
+    // convolve that with a Gaussian with standard deviation 3 and store result
+    // in blur
+    filter.append('feGaussianBlur').attr('in', 'SourceAlpha').attr('stdDeviation', blur);
+
+    // translate output of Gaussian blur to the right and downwards with 2px
+    // store result in offsetBlur
+    filter.append('feOffset').attr('dx', dx).attr('dy', dy).attr('result', 'offsetBlur');
+
+    filter.append('feComponentTransfer').append('feFuncA').attr('type', 'linear').attr('slope', opacity || 1);
+
+    // overlay original SourceGraphic over translated blurred opacity by using
+    // feMerge filter. Order of specifying inputs is important!
+    var feMerge = filter.append('feMerge');
+
+    feMerge.append('feMergeNode');
+    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+  }
+
   function setOption(value, defaultValue, noFalsyValue) {
     if (noFalsyValue) {
       return value || defaultValue;
@@ -2642,10 +5092,14 @@ var ListGraph = (function ($,d3) {
       var that = this;
 
       this.baseEl = init.element;
+      this.baseEl.__d3ListGraphBase__ = true;
+
       this.baseElD3 = d3.select(this.baseEl);
       this.baseElJq = $(this.baseEl);
       this.svgD3 = this.baseElD3.select('svg.base');
       this.svgEl = this.svgD3.node();
+      this.outsideClickHandler = {};
+      this.outsideClickClassHandler = {};
 
       if (this.svgD3.empty()) {
         this.svgD3 = this.baseElD3.append('svg').attr('class', 'base');
@@ -2667,9 +5121,7 @@ var ListGraph = (function ($,d3) {
       // the element with his/her mouse cursor. This will avoid relying on complex
       // browser resize events and other layout manipulations as they most likely
       // won't happen when the user tries to interact with the visualization.
-      this.svgD3.on('mouseenter', function () {
-        that.getBoundingRect.call(that, this);
-      });
+      this.svgD3.on('mouseenter', this.getBoundingRect.bind(this));
 
       // With of the column's scrollbars
       this.scrollbarWidth = setOption(init.scrollbarWidth, SCROLLBAR_WIDTH, true);
@@ -2718,6 +5170,9 @@ var ListGraph = (function ($,d3) {
       // - 2: Show no transitions
       this.lessTransitionsJs = init.lessTransitions > 0;
       this.lessTransitionsCss = init.lessTransitions > 1;
+
+      // Enable or disable
+      this.disableDebouncedContextMenu = setOption(init.disableDebouncedContextMenu, DISABLE_DEBOUNCED_CONTEXT_MENU);
 
       this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
@@ -2775,6 +5230,10 @@ var ListGraph = (function ($,d3) {
       this.levels.scrollPreparation(this, this.scrollbarWidth);
       this.scrollbars = new Scrollbars(this.levels.groups, this.visData, this.scrollbarWidth);
 
+      this.nodeContextMenu = new NodeContextMenu(this, this.visData, this.container, this.events, this.querying);
+
+      dropShadow(this.svgD3, 'context-menu', 1, 1, 2, 0.2);
+
       // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
       // We are using delegated event listeners to provide better scaling
       this.svgJq.on('mousewheel', '.' + this.levels.className, function (event) {
@@ -2783,20 +5242,36 @@ var ListGraph = (function ($,d3) {
         }
       });
 
+      this.svgJq.on('click', function (event) {
+        that.checkGlobalClick.call(that, event.target);
+      });
+
       // Add jQuery delegated event listeners instead of direct listeners of D3.
       if (this.querying) {
-        this.svgJq.on('click', '.' + this.nodes.classLabelWrapper, function () {
-          that.nodes.toggleQueryMode.call(that.nodes, this.parentNode, d3.select(this).datum());
+        this.svgJq.on('click', '.' + this.nodes.classNodeVisible, function () {
+          // Add a new global outside click listener using this node and the
+          // node context menu as the related elements.
+          requestNextAnimationFrame(function () {
+            that.registerOutSideClickHandler('nodeContextMenu', [that.nodeContextMenu.wrapper.node()], ['node'], function () {
+              // The context of this method is the context of the outer click
+              // handler.
+              that.nodeContextMenu.close();
+              that.unregisterOutSideClickHandler.call(that, 'nodeContextMenu');
+            });
+          });
+
+          that.nodeContextMenu.toggle.call(that.nodeContextMenu, d3.select(this.parentNode));
         });
       }
 
       this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classRoot, function () {
-        that.nodes.rootHandler.call(that.nodes, this, d3.select(this).datum());
+        that.nodes.rootHandler.call(that.nodes, d3.select(this));
       });
 
       if (this.querying) {
         this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classQuery, function () {
-          that.nodes.toggleQueryMode.call(that.nodes, this.parentNode, d3.select(this).datum());
+          that.nodes.unqueryByNode.call(that.nodes, d3.select(this.parentNode));
+          that.nodeContextMenu.updateStates();
         });
       }
 
@@ -2854,9 +5329,83 @@ var ListGraph = (function ($,d3) {
           _this.levels.focus(_this.activeLevel - _this.noRootActiveLevelDiff);
         }
       });
+
+      // Initialize `this.left` and `this.top`
+      this.getBoundingRect();
     }
 
     babelHelpers.createClass(ListGraph, [{
+      key: 'registerOutSideClickHandler',
+      value: function registerOutSideClickHandler(id, els, elClassNames, callback) {
+        // We need to register a unique property to be able to indentify that
+        // element later efficiently.
+        for (var i = els.length; i--;) {
+          if (els[i].__id__) {
+            els[i].__id__.push(id);
+          } else {
+            els[i].__id__ = [id];
+          }
+        }
+        var newLength = this.outsideClickHandler[id] = {
+          id: id, els: els, elClassNames: elClassNames, callback: callback
+        };
+        for (var i = elClassNames.length; i--;) {
+          this.outsideClickClassHandler[elClassNames[i]] = this.outsideClickHandler[id];
+        }
+        return newLength;
+      }
+    }, {
+      key: 'unregisterOutSideClickHandler',
+      value: function unregisterOutSideClickHandler(id) {
+        var handler = this.outsideClickHandler[id];
+
+        // Remove element `__id__` property.
+        for (var i = handler.els.length; i--;) {
+          handler.els[i].__id__ = undefined;
+          delete handler.els[i].__id__;
+        }
+
+        // Remove handler.
+        this.outsideClickHandler[id] = undefined;
+        delete this.outsideClickHandler[id];
+      }
+    }, {
+      key: 'checkGlobalClick',
+      value: function checkGlobalClick(target) {
+        var found = {};
+        var checkClass = Object.keys(this.outsideClickClassHandler).length;
+
+        var el = target;
+        try {
+          while (!el.__d3ListGraphBase__) {
+            if (el.__id__) {
+              for (var i = el.__id__.length; i--;) {
+                found[el.__id__[i]] = true;
+              }
+            }
+            if (checkClass) {
+              var classNames = Object.keys(this.outsideClickClassHandler);
+              for (var i = classNames.length; i--;) {
+                var className = el.getAttribute('class');
+                if (className && className.indexOf(classNames[i]) >= 0) {
+                  found[this.outsideClickClassHandler[classNames[i]].id] = true;
+                }
+              }
+            }
+            el = el.parentNode;
+          }
+        } catch (e) {
+          return;
+        }
+
+        var handlerIds = Object.keys(this.outsideClickHandler);
+        for (var i = handlerIds.length; i--;) {
+          if (!found[handlerIds[i]]) {
+            this.outsideClickHandler[handlerIds[i]].callback.call(this);
+          }
+        }
+      }
+    }, {
       key: 'getDragLimits',
       value: function getDragLimits() {
         return {
@@ -2878,14 +5427,13 @@ var ListGraph = (function ($,d3) {
        * @method  getBoundingRect
        * @author  Fritz Lekschas
        * @date    2016-02-24
-       * @param   {Object}  el  Element on which `getBoundingClientRect` is called.
        */
 
     }, {
       key: 'getBoundingRect',
-      value: function getBoundingRect(el) {
-        this.top = el.getBoundingClientRect().top;
-        this.left = el.getBoundingClientRect().left;
+      value: function getBoundingRect() {
+        this.left = this.svgEl.getBoundingClientRect().left;
+        this.top = this.svgEl.getBoundingClientRect().top;
       }
     }, {
       key: 'interactionWrapper',
@@ -2959,6 +5507,10 @@ var ListGraph = (function ($,d3) {
           if (this.showLinkLocation) {
             this.nodes.updateLinkLocationIndicators(data.level - 1, data.level + 1);
           }
+
+          if (this.nodeContextMenu.opened) {
+            this.nodeContextMenu.scrollY(contentScrollTop);
+          }
         }
       }
     }, {
@@ -3006,6 +5558,10 @@ var ListGraph = (function ($,d3) {
 
         if (this.showLinkLocation) {
           this.nodes.updateLinkLocationIndicators(columnData.level - 1, columnData.level + 1);
+        }
+
+        if (this.nodeContextMenu.opened) {
+          this.nodeContextMenu.scrollY(columnData.scrollTop);
         }
       }
     }, {
@@ -3104,14 +5660,13 @@ var ListGraph = (function ($,d3) {
             var y = 0;
             var width = 0;
             var height = 0;
-            var bBox = undefined;
             var cRect = undefined;
+            var contBBox = _this4.container.node().getBBox();
 
             var globalCRect = _this4.svgD3.node().getBoundingClientRect();
 
             if (selectionInterst && !selectionInterst.empty()) {
               selectionInterst.each(function () {
-                bBox = this.getBBox();
                 cRect = this.getBoundingClientRect();
                 width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
                 height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
@@ -3119,13 +5674,12 @@ var ListGraph = (function ($,d3) {
               width = _this4.width > width ? _this4.width : width;
               height = _this4.height > height ? _this4.height : height;
             } else {
-              bBox = _this4.container.node().getBBox();
-              width = _this4.width > bBox.width ? _this4.width : bBox.width;
-              height = _this4.height > bBox.height ? _this4.height : bBox.height;
+              width = _this4.width > contBBox.width ? _this4.width : contBBox.width;
+              height = _this4.height > contBBox.height ? _this4.height : contBBox.height;
             }
 
-            x = bBox.x;
-            y = bBox.y;
+            x = contBBox.x;
+            y = contBBox.y;
 
             _this4.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
           })();

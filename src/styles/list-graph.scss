@@ -3,13 +3,13 @@
   display: block;
 
   .base {
-    transition: opacity $transitionFast $easeInOutCubic;
+    transition: opacity $transition-fast $ease-in-out-cubic;
   }
 
   .top-bar {
     position: relative;
     height: 1.5rem;
-    border-bottom: 1px solid #efefef;
+    border-bottom: 1px solid $grey-lighter;
     overflow: hidden;
   }
 
@@ -19,10 +19,10 @@
     top: 0;
     right: 0;
     height: 100%;
-    background: #efefef;
+    background: $grey-lighter;
 
     &:hover {
-      color: $colorHighlightBlue;
+      color: $color-highlight-blue;
       cursor: pointer;
     }
   }
@@ -36,7 +36,7 @@
     margin-left: -4px;
     top: 50%;
     left: 50%;
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   .top-bar .control-switch .switch-arrow {
@@ -64,7 +64,7 @@
   .top-bar .local-controls {
     width: 100%;
     white-space: nowrap;
-    transition: margin $transitionFast $easeInOutCubic;
+    transition: margin $transition-fast $ease-in-out-cubic;
   }
 
   .top-bar.details .global-controls {
@@ -74,7 +74,7 @@
   .top-bar .controls {
     display: inline-block;
     white-space: normal;
-    box-shadow: -1px 0 0 0 #efefef;
+    box-shadow: -1px 0 0 0 $grey-lighter;
   }
 
   .top-bar .control-btn {
@@ -95,7 +95,7 @@
     -ms-user-select: none;
     user-select: none;
     cursor: pointer;
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
 
     &:hover,
     &.active {
@@ -103,7 +103,7 @@
     }
 
     &:hover {
-      background: #efefef;
+      background: $grey-lighter;
     }
 
     &.active {
@@ -135,7 +135,7 @@
     position: relative;
     float: left;
     width: 16.666666667%;
-    box-shadow: 1px 0 0 0 #efefef;
+    box-shadow: 1px 0 0 0 $grey-lighter;
   }
 
   .top-bar .controls .control-btn {
@@ -150,7 +150,7 @@
     display: inline-block;
     float: left;
     max-width: 0;
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
     overflow: hidden;
     text-transform: uppercase;
     opacity: 0.8;
@@ -176,7 +176,7 @@
     right: 0.25rem;
     width: 1rem;
     height: 1rem;
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   .top-bar .control-btn .icon-zoom-out {
@@ -206,8 +206,8 @@
   .top-bar .sort-name:hover {
     z-index: 2;
     color: #fff;
-    background: $colorHighlightRed;
-    transition: all $transitionFast $easeInOutCubic, color $transitionLightningFast $easeInOutCubic;
+    background: $color-highlight-red;
+    transition: all $transition-fast $ease-in-out-cubic, color $transition-lightning-fast $ease-in-out-cubic;
 
     [class^='icon-'],
     [class*=' icon-'] {
@@ -229,7 +229,7 @@
      * element is actually needed below.
      */
     fill-opacity: 0;
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   .column.active .scroll-container {
@@ -249,7 +249,7 @@
   }
 
   .scrollbar.ready {
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   &:hover .scrollbar {
@@ -272,38 +272,17 @@
   }
 
   .node {
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   .node .bg {
     fill: #fff;
-    transition: all $transitionFast $easeInOutCubic;
-  }
-
-  .node .bg-extension {
-    fill: #fff;
-    stroke: #808080;
-    stroke-width: 2px;
-    opacity: 0;
-    transition: all $transitionFast $easeInOutCubic;
-  }
-
-  .node.hovering-directly .bg-extension,
-  .node.active .bg-extension,
-  .node.rooted .bg-extension,
-  .node.animating .bg-extension {
-    opacity: 1;
-  }
-
-  .node.active .bg-extension,
-  .node.rooted .bg-extension,
-  .node.animating .bg-extension {
-    fill: #808080;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   .node .bg-border {
-    fill: $colorHighlightRed;
-    stroke: $colorHighlightRed;
+    fill: $color-highlight-red;
+    stroke: $color-highlight-red;
     stroke-width: 6px;
     opacity: 0;
   }
@@ -325,7 +304,7 @@
     fill: none;
     stroke: #e5e5e5;
     stroke-width: 2px;
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   .column.active .node .border {
@@ -346,34 +325,51 @@
   }
 
   .node.focus-directly .bg {
-    fill: $colorHighlightRed;
+    fill: $color-highlight-red;
   }
 
   .node.hovering-directly .border,
   .node.hovering-indirectly .border,
   .column.active .node.hovering-directly .border,
-  .column.active .node.hovering-indirectly .border {
+  .column.active .node.hovering-indirectly .border,
+  .node.rooted.hovering-directly .border,
+  .node.rooted.hovering-indirectly .border,
+  .column.active .node.rooted.hovering-directly .border,
+  .column.active .node.rooted.hovering-indirectly .border {
     stroke: #000;
   }
 
   .node.focus-directly .border,
   .column.active .node.focus-directly .border {
-    stroke: $colorHighlightRed;
+    stroke: $color-highlight-red;
   }
 
   .node.highlight-bar .border {
     stroke-opacity: 0;
   }
 
+  .node.rooted,
+  .node.query-and,
+  .node.query-or,
+  .node.query-not {
+    .border {
+      stroke: $grey-semi-dark;
+    }
+    .label {
+      color: $text-color-highlight;
+      font-weight: bold;
+    }
+  }
+
   .link {
     fill: none;
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
 
     .link-direct {
       stroke: #000;
       stroke-width: 2;
       stroke-opacity: 0;
-      transition: all $transitionFast $easeInOutCubic;
+      transition: all $transition-fast $ease-in-out-cubic;
     }
     &.visible .link-direct {
       stroke-opacity: 0.2;
@@ -393,7 +389,7 @@
     }
 
     .link-bg {
-      stroke: $colorHighlightRed;
+      stroke: $color-highlight-red;
       stroke-opacity: 0;
       stroke-width: 6;
     }
@@ -420,14 +416,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: #666;
+    color: $text-color-normal;
     font-size: 0.75rem;
     line-height: 0.75rem;
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   .column.active .node .label {
-    color: #333;
+    color: $text-color-semi-highlight;
   }
 
   .node.hovering-directly .label,
@@ -437,58 +433,43 @@
     color: #fff;
   }
 
-  .node.hovering-indirectly .label {
-    color: #000;
-  }
-
+  .node.hovering-indirectly .label,
   .node.highlight-bar .label {
-    color: #000;
+    color: $text-color-highlight;
   }
 
   .node.highlight-label .label,
   .column.active .node.highlight-label .label {
-    color: $colorHighlightRed;
-    text-shadow: 0 0 3px transparentize($colorHighlightRed, 0.75);
-  }
-
-  .node .focus-controls .bg {
-    fill: #fff;
-    fill-opacity: 0;
-    stroke: #fff;
-    stroke-width: 1;
-    stroke-opacity: 0;
+    color: $color-highlight-red;
+    text-shadow: 0 0 3px transparentize($color-highlight-red, 0.75);
   }
 
   .node .focus-controls .hover-helper {
+    fill: $white;
     fill-opacity: 0;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
-  .node:hover .focus-controls .bg {
-    fill-opacity: 0.66;
-    stroke-opacity: 0.66;
+  .node.rooted .focus-controls:hover,
+  .node.query-and .focus-controls:hover,
+  .node.query-or .focus-controls:hover,
+  .node.query-not .focus-controls:hover {
+    cursor: pointer;
   }
 
-  .node .focus-controls:hover .bg {
-    fill-opacity: 0.85;
-    stroke-opacity: 1;
+  .node.rooted .focus-controls:hover .hover-helper,
+  .node.query-and .focus-controls:hover .hover-helper,
+  .node.query-or .focus-controls:hover .hover-helper,
+  .node.query-not .focus-controls:hover .hover-helper {
+    fill-opacity: 0.5;
   }
 
-  .node .focus-controls.active .bg,
-  .node.animating .focus-controls .bg {
-    fill-opacity: 0 !important;
-    stroke-opacity: 0 !important;
-  }
-
-  .node .focus-controls:hover .icon {
-    color: $colorHighlightRed;
-  }
-
-  .node.active .root .icon,
-  .node.active .query .icon,
-  .node .focus-controls.active .icon,
-  .node .focus-controls.active:hover .icon,
-  .node.active .focus-controls:hover .icon {
-    color: #fff;
+  .node.rooted .focus-controls:hover .icon,
+  .node.query-and .focus-controls:hover .state-and-or,
+  .node.query-or .focus-controls:hover .state-and-or,
+  .node.query-not .focus-controls:hover .state-not {
+    color: $color-highlight-red;
+    opacity: 1;
   }
 
   .node.query-and .query .state-inactive,
@@ -497,16 +478,15 @@
     opacity: 0 !important;
   }
 
-  .node:hover .focus-controls.inactive .state-inactive,
-  .node .focus-controls.active .state-active,
+  .node.rooted .focus-controls.root .state-active,
   .node.query-and .focus-controls .state-and-or,
   .node.query-or .focus-controls .state-and-or,
   .node.query-not .focus-controls .state-not {
-    opacity: 1;
+    opacity: 0.33;
   }
 
   .node .focus-controls .state-and-or use {
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
     transform-origin: 50% 50%;
   }
 
@@ -516,7 +496,7 @@
 
   .bar-border,
   .bar-magnitude {
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   .bar-magnitude {
@@ -534,9 +514,9 @@
   }
 
   .bar-indicator {
-    fill: $colorHighlightRed;
+    fill: $color-highlight-red;
     opacity: 0;
-    transition: opacity $transitionFast $easeInOutCubic;
+    transition: opacity $transition-fast $ease-in-out-cubic;
   }
 
   .bar.active .bar-magnitude {
@@ -557,7 +537,7 @@
 
   .bar-border {
     fill: none;
-    stroke: mix(lighten($colorHighlightRed, 20%), #fff, 25%);
+    stroke: mix(lighten($color-highlight-red, 20%), #fff, 25%);
     stroke-width: 2px;
     stroke-opacity: 0;
   }
@@ -581,13 +561,13 @@
   }
 
   .bar.highlight .bar-magnitude {
-    fill: lighten($colorHighlightRed, 20%);
+    fill: lighten($color-highlight-red, 20%);
     fill-opacity: 1 !important;
   }
 
   .link-indicator {
     opacity: 0;
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
 
     &.visible {
       opacity: 1;
@@ -611,11 +591,11 @@
 
   .hovering-directly .link-indicator,
   .hovering-indirectly .link-indicator {
-    transform: scale(1.5);
+    transform: scale(1.25, 2);
   }
 
   .link-location-indicator {
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   .hovering-directly .link-location-indicator.above,
@@ -654,7 +634,7 @@
   }
 
   .ease-all {
-    transition: all $transitionFast $easeInOutCubic;
+    transition: all $transition-fast $ease-in-out-cubic;
   }
 
   &.unselectable {
@@ -674,5 +654,9 @@
 
   &.less-animations * {
     transition: none !important;
+  }
+
+  .is-mirrored-horizontally {
+    transform: scale(1, -1);
   }
 }

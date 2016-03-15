@@ -1,17 +1,45 @@
 // Bezier curves
-$easeInOutCubic: cubic-bezier(0.3, 0.1, 0.6, 1);
-$easeInOutQuadric: cubic-bezier(0.2, 0.1, 0.2, 1);
+$ease-in-out-cubic: cubic-bezier(0.3, 0.1, 0.6, 1);
+$ease-in-out-quadric: cubic-bezier(0.2, 0.1, 0.2, 1);
 
 // Transition speeds
-$transitionLightningFast: 0.15s;
-$transitionFast: 0.2s;
-$transitionSemiFast: 0.25s;
-$transitionNormal: 0.33s;
-$transitionSlow: 0.66s;
-$transitionSlowest: 1s;
+$transition-lightning-fast: 0.15s;
+$transition-fast: 0.2s;
+$transition-semi-fast: 0.25s;
+$transition-normal: 0.33s;
+$transition-slow: 0.66s;
+$transition-slowest: 1s;
 
 // Colors
-$colorHighlightBlue: #0088ff;
-$colorHighlightRed: #f23e00;
-$colorNegativeRed: #e0001c;
-$colorPositiveGreen: #60bf00;
+// General
+$color-highlight-blue: #0088ff;
+$color-highlight-red: #f23e00;
+
+$black: #000;
+$grey-dark: #333;
+$grey-semi-dark: #666;
+$grey-medium: #808080;
+$grey-light: #ccc;
+$grey-lighter: #e5e5e5;
+$grey-lightest: #f2f2f2;
+$white: #fff;
+
+$black-rgba: rgba(0, 0, 0, 1);
+$grey-dark-rgba: rgba(0, 0, 0, 0.8);
+$grey-semi-dark-rgba: rgba(0, 0, 0, 0.6);
+$grey-medium-rgba: rgba(0, 0, 0, 0.5);
+$grey-light-rgba: rgba(0, 0, 0, 0.2);
+$grey-lighter-rgba: rgba(0, 0, 0, 0.1);
+$grey-lightest-rgba: rgba(0, 0, 0, 0.05);
+$white-rgba: rgba(255, 255, 255, 1);
+
+// Text
+$text-color-inactive: $grey-light;
+$text-color-normal: $grey-semi-dark;
+$text-color-semi-highlight: $grey-dark;
+$text-color-highlight: $black;
+
+$text-color-inactive-rgba: $grey-light-rgba;
+$text-color-normal-rgba: $grey-semi-dark-rgba;
+$text-color-semi-highlight-rgba: $grey-dark-rgba;
+$text-color-highlight-rgba: $black-rgba;

@@ -214,6 +214,10 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, scale, links) {
       _node.parents = {};
     }
 
+    if (!_node.data.state) {
+      _node.data.state = {};
+    }
+
     if (!_node.childRefs) {
       _node.childRefs = [];
     }
