@@ -765,9 +765,20 @@ class Nodes {
     }
   }
 
-  queryHandler (d3El, action, mode) {
+  batchQueryHandler (els) {
+    const actions = [];
+    for (let i = els.length; i--;) {
+      actions.push(this.queryHandler(
+        els[i].d3El, els[i].action, els[i].mode, true)
+      );
+    }
+    this.events.broadcast('d3ListGraphBatchQuery', actions);
+  }
+
+  queryHandler (d3El, action, mode, returnNoNotification) {
     const data = d3El.datum();
     const previousMode = data.data.state.query;
+    const event = {};
 
     switch (action) {
       case 'query':
@@ -783,27 +794,36 @@ class Nodes {
 
     if (data.data.state.query) {
       if (data.data.state.query !== previousMode) {
-        this.events.broadcast('d3ListGraphNodeQuery', {
+        event.name = 'd3ListGraphNodeQuery';
+        event.data = {
           id: data.id,
           clone: data.clone,
           clonedFromId: data.clone ?
             data.originalNode.id : undefined,
           mode: data.data.state.query
-        });
+        };
       }
     } else {
-      this.events.broadcast('d3ListGraphNodeUnquery', {
+      event.name = 'd3ListGraphNodeUnquery';
+      event.data = {
         id: data.id,
         clone: data.clone,
         clonedFromId: data.clone ?
           data.originalNode.id : undefined
-      });
+      };
     }
+
+    if (event.name && !returnNoNotification) {
+      this.events.broadcast(event.name, event.data);
+    }
+
+    return event.name ? event : undefined;
   }
 
   toggleRoot (d3El, setFalse) {
     const data = d3El.datum();
     const events = { rooted: false, unrooted: false };
+    const queries = [];
 
     // Blur current levels
     this.vis.levels.blur();
@@ -811,15 +831,26 @@ class Nodes {
     if (this.rootedNode) {
       // Reset current root node
       this.rootedNode.classed({ active: false, inactive: true });
-      this.unrootNode(this.rootedNode);
       events.unrooted = this.rootedNode.datum();
+      if (this.unrootNode(this.rootedNode).unquery) {
+        queries.push({
+          d3El: this.rootedNode,
+          action: 'unquery'
+        });
+      }
 
       // Activate new root
       if (this.rootedNode.datum().id !== data.id && !setFalse) {
         d3El.classed({ active: true, inactive: false });
-        this.rootNode(d3El);
         this.rootedNode = d3El;
-        events.rooted = data;
+        events.rooted = d3El.datum();
+        if (this.rootNode(d3El).query) {
+          queries.push({
+            d3El,
+            action: 'query',
+            mode: 'or'
+          });
+        }
       } else {
         this.rootedNode = undefined;
         // Highlight first level
@@ -830,10 +861,20 @@ class Nodes {
     } else {
       if (!setFalse) {
         d3El.classed({ active: true, inactive: false });
-        this.rootNode(d3El);
-        events.rooted = data;
         this.rootedNode = d3El;
+        events.rooted = d3El.datum();
+        if (this.rootNode(d3El).query) {
+          queries.push({
+            d3El,
+            action: 'query',
+            mode: 'or'
+          });
+        }
       }
+    }
+
+    if (queries.length) {
+      this.batchQueryHandler(queries);
     }
 
     return events;
@@ -850,11 +891,18 @@ class Nodes {
     this.vis.levels.focus(data.depth + this.vis.activeLevel);
 
     if (!data.data.state.query || data.data.state.query === 'not') {
-      this.queryHandler(d3El);
       data.data.queryBeforeRooting = false;
-    } else {
-      data.data.queryBeforeRooting = true;
+      // this.queryHandler(d3El, 'query', 'or');
+      return {
+        query: true
+      };
     }
+
+    data.data.queryBeforeRooting = true;
+
+    return {
+      query: false
+    };
   }
 
   unrootNode (d3El) {
@@ -865,14 +913,18 @@ class Nodes {
     this.showNodes();
 
     if (!data.data.queryBeforeRooting) {
-      this.unqueryByNode(d3El, data);
+      // this.queryHandler(d3El, 'unquery');
+      return {
+        unquery: true
+      };
     }
+
+    return {
+      unquery: false
+    };
   }
 
   setUpFocusControls (selection, location, position, mode, className) {
-    // const height = (this.visData.global.row.contentHeight / 2 -
-    //   this.visData.global.cell.padding * 2);
-
     const paddedDim = this.iconDimension + 4;
 
     let x = 0 - (paddedDim * (position + 1));
