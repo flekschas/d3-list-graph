@@ -333,6 +333,7 @@ class ListGraph {
           this.layout.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
+        this.nodeContextMenu.updatePosition();
       }
     );
 
@@ -343,6 +344,7 @@ class ListGraph {
           this.layout.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
+        this.nodeContextMenu.updatePosition();
       }
     );
 
@@ -353,6 +355,7 @@ class ListGraph {
           this.layout.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
+        this.nodeContextMenu.updatePosition();
       }
     );
 

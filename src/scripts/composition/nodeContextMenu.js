@@ -35,8 +35,9 @@ class NodeContextMenu {
     this.toBottom = false;
 
     this.wrapper = this.baseEl.append('g')
-      .attr('class', CLASS_NAME)
-      .call(this.updateAppearance.bind(this));
+      .attr('class', CLASS_NAME);
+
+    this.updateAppearance();
 
     this.bg = this.wrapper.append('path')
       .attr('class', 'bgBorder')
@@ -281,11 +282,11 @@ class NodeContextMenu {
     if (!this.closing) {
       this.closing = new Promise(resolve => {
         this.opened = false;
-        this.wrapper.call(this.updateAppearance.bind(this));
+        this.updateAppearance();
 
         setTimeout(() => {
           this.visible = false;
-          this.wrapper.call(this.updateAppearance.bind(this));
+          this.updateAppearance();
           resolve(this.node.datum().id);
           this.node = undefined;
         }, TRANSITION_SPEED);
@@ -445,12 +446,12 @@ class NodeContextMenu {
       };
       this.checkOrientation();
 
-      this.wrapper.call(this.updateAppearance.bind(this));
+      this.updateAppearance();
       this.opened = true;
       this.visible = true;
 
       requestNextAnimationFrame(() => {
-        this.wrapper.call(this.updateAppearance.bind(this));
+        this.updateAppearance();
         setTimeout(() => { resolve(true); }, TRANSITION_SPEED);
       });
     });
@@ -528,7 +529,7 @@ class NodeContextMenu {
 
   scrollY (offset) {
     this._yOffset = offset;
-    this.wrapper.call(this.updateAppearance.bind(this));
+    this.updateAppearance();
   }
 
   showFillButton (selection) {
@@ -567,10 +568,11 @@ class NodeContextMenu {
 
   /* ---------------------------------- U ----------------------------------- */
 
-  updateAppearance (selection) {
+  updateAppearance () {
     const centerY = this.toBottom ?
       0 : this.height + this.visData.global.row.height;
-    selection
+
+    this.wrapper
       .classed('transitionable', this.visible)
       .classed('open', this.opened)
       .style('transform', this.translate + ' ' + this.scale)
@@ -578,6 +580,12 @@ class NodeContextMenu {
         'transform-origin',
         (this.visData.global.column.width / 2) + 'px ' + centerY + 'px'
       );
+  }
+
+  updatePosition () {
+    if (this.node && this.opened) {
+      this.updateAppearance();
+    }
   }
 
   updateQuery (debounced, time) {

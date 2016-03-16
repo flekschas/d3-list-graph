@@ -4389,7 +4389,9 @@ var ListGraph = (function ($,d3) {
       this.height = this.visData.global.row.height * this.numButtonRows;
       this.toBottom = false;
 
-      this.wrapper = this.baseEl.append('g').attr('class', CLASS_NAME).call(this.updateAppearance.bind(this));
+      this.wrapper = this.baseEl.append('g').attr('class', CLASS_NAME);
+
+      this.updateAppearance();
 
       this.bg = this.wrapper.append('path').attr('class', 'bgBorder').attr('d', dropMenu({
         x: -1,
@@ -4598,11 +4600,11 @@ var ListGraph = (function ($,d3) {
         if (!this.closing) {
           this.closing = new Promise(function (resolve) {
             _this2.opened = false;
-            _this2.wrapper.call(_this2.updateAppearance.bind(_this2));
+            _this2.updateAppearance();
 
             setTimeout(function () {
               _this2.visible = false;
-              _this2.wrapper.call(_this2.updateAppearance.bind(_this2));
+              _this2.updateAppearance();
               resolve(_this2.node.datum().id);
               _this2.node = undefined;
             }, TRANSITION_SPEED);
@@ -4757,12 +4759,12 @@ var ListGraph = (function ($,d3) {
           };
           _this4.checkOrientation();
 
-          _this4.wrapper.call(_this4.updateAppearance.bind(_this4));
+          _this4.updateAppearance();
           _this4.opened = true;
           _this4.visible = true;
 
           requestNextAnimationFrame(function () {
-            _this4.wrapper.call(_this4.updateAppearance.bind(_this4));
+            _this4.updateAppearance();
             setTimeout(function () {
               resolve(true);
             }, TRANSITION_SPEED);
@@ -4847,7 +4849,7 @@ var ListGraph = (function ($,d3) {
       key: 'scrollY',
       value: function scrollY(offset) {
         this._yOffset = offset;
-        this.wrapper.call(this.updateAppearance.bind(this));
+        this.updateAppearance();
       }
     }, {
       key: 'showFillButton',
@@ -4898,9 +4900,17 @@ var ListGraph = (function ($,d3) {
 
     }, {
       key: 'updateAppearance',
-      value: function updateAppearance(selection) {
+      value: function updateAppearance() {
         var centerY = this.toBottom ? 0 : this.height + this.visData.global.row.height;
-        selection.classed('transitionable', this.visible).classed('open', this.opened).style('transform', this.translate + ' ' + this.scale).style('transform-origin', this.visData.global.column.width / 2 + 'px ' + centerY + 'px');
+
+        this.wrapper.classed('transitionable', this.visible).classed('open', this.opened).style('transform', this.translate + ' ' + this.scale).style('transform-origin', this.visData.global.column.width / 2 + 'px ' + centerY + 'px');
+      }
+    }, {
+      key: 'updatePosition',
+      value: function updatePosition() {
+        if (this.node && this.opened) {
+          this.updateAppearance();
+        }
       }
     }, {
       key: 'updateQuery',
@@ -5359,16 +5369,19 @@ var ListGraph = (function ($,d3) {
       this.events.on('d3ListGraphNodeRoot', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
         _this.updateSorting();
+        _this.nodeContextMenu.updatePosition();
       });
 
       this.events.on('d3ListGraphNodeUnroot', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
         _this.updateSorting();
+        _this.nodeContextMenu.updatePosition();
       });
 
       this.events.on('d3ListGraphUpdateBars', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
         _this.updateSorting();
+        _this.nodeContextMenu.updatePosition();
       });
 
       this.events.on('d3ListGraphActiveLevel', function (nextLevel) {
