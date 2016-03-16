@@ -447,6 +447,9 @@
   .node .focus-controls .hover-helper {
     fill: $white;
     fill-opacity: 0;
+    stroke: $white;
+    stroke-width: 1;
+    stroke-opacity: 0;
     transition: all $transition-fast $ease-in-out-cubic;
   }
 
@@ -457,14 +460,34 @@
     cursor: pointer;
   }
 
+  .node.rooted .focus-controls .hover-helper,
+  .node.query-and .focus-controls .hover-helper,
+  .node.query-or .focus-controls .hover-helper,
+  .node.query-not .focus-controls .hover-helper {
+    fill-opacity: 0.66;
+  }
+
+  .node.hovering-directly.rooted .focus-controls.root .hover-helper,
+  .node.hovering-indirectly.rooted .focus-controls.root .hover-helper,
+  .node.hovering-directly.query-and .focus-controls .hover-helper,
+  .node.hovering-indirectly.query-and .focus-controls .hover-helper,
+  .node.hovering-directly.query-or .focus-controls .hover-helper,
+  .node.hovering-indirectly.query-or .focus-controls .hover-helper,
+  .node.hovering-directly.query-not .focus-controls .hover-helper,
+  .node.hovering-indirectly.query-not .focus-controls .hover-helper {
+    stroke-opacity: 1;
+  }
+
   .node.rooted .focus-controls:hover .hover-helper,
   .node.query-and .focus-controls:hover .hover-helper,
   .node.query-or .focus-controls:hover .hover-helper,
   .node.query-not .focus-controls:hover .hover-helper {
-    fill-opacity: 0.5;
+    stroke: $color-highlight-red;
+    fill-opacity: 1;
+    stroke-opacity: 1;
   }
 
-  .node.rooted .focus-controls:hover .icon,
+  .node.rooted .focus-controls.root:hover .icon,
   .node.query-and .focus-controls:hover .state-and-or,
   .node.query-or .focus-controls:hover .state-and-or,
   .node.query-not .focus-controls:hover .state-not {
@@ -483,6 +506,17 @@
   .node.query-or .focus-controls .state-and-or,
   .node.query-not .focus-controls .state-not {
     opacity: 0.33;
+  }
+
+  .node.hovering-directly.rooted .focus-controls.root .state-active,
+  .node.hovering-indirectly.rooted .focus-controls.root .state-active,
+  .node.hovering-directly.query-and .focus-controls .state-and-or,
+  .node.hovering-indirectly.query-and .focus-controls .state-and-or,
+  .node.hovering-directly.query-or .focus-controls .state-and-or,
+  .node.hovering-indirectly.query-or .focus-controls .state-and-or,
+  .node.hovering-directly.query-not .focus-controls .state-not,
+  .node.hovering-indirectly.query-not .focus-controls .state-not {
+    opacity: 1;
   }
 
   .node .focus-controls .state-and-or use {
