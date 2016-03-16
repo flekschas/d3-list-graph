@@ -265,7 +265,7 @@ class ListGraph {
       'click',
       `.${this.nodes.classFocusControls}.${this.nodes.classRoot}`,
       function () {
-        that.nodes.rootHandler.call(that.nodes, d3.select(this));
+        that.nodes.rootHandler.call(that.nodes, d3.select(this), true);
       }
     );
 

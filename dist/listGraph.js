@@ -1610,8 +1610,12 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'rootHandler',
-      value: function rootHandler(d3El) {
-        var events = this.toggleRoot(d3El);
+      value: function rootHandler(d3El, unroot) {
+        if (!d3El.datum().data.state.root && unroot) {
+          // The node is not rooted so there's no point in unrooting.
+          return;
+        }
+        var events = this.toggleRoot(d3El, unroot);
 
         if (events.rooted && events.unrooted) {
           this.events.broadcast('d3ListGraphNodeReroot', {
@@ -1897,6 +1901,11 @@ var ListGraph = (function ($,d3) {
         var data = d3El.datum();
         var previousMode = data.data.state.query;
         var event = {};
+
+        if (!previousMode && action === 'unquery') {
+          // We haven't queried anything so there's nothing to unquery.
+          return undefined;
+        }
 
         switch (action) {
           case 'query':
@@ -5329,7 +5338,7 @@ var ListGraph = (function ($,d3) {
       }
 
       this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classRoot, function () {
-        that.nodes.rootHandler.call(that.nodes, d3.select(this));
+        that.nodes.rootHandler.call(that.nodes, d3.select(this), true);
       });
 
       if (this.querying) {

@@ -485,8 +485,12 @@ class Nodes {
     }
   }
 
-  rootHandler (d3El) {
-    const events = this.toggleRoot(d3El);
+  rootHandler (d3El, unroot) {
+    if (!d3El.datum().data.state.root && unroot) {
+      // The node is not rooted so there's no point in unrooting.
+      return;
+    }
+    const events = this.toggleRoot(d3El, unroot);
 
     if (events.rooted && events.unrooted) {
       this.events.broadcast('d3ListGraphNodeReroot', {
@@ -782,6 +786,11 @@ class Nodes {
     const data = d3El.datum();
     const previousMode = data.data.state.query;
     const event = {};
+
+    if (!previousMode && action === 'unquery') {
+      // We haven't queried anything so there's nothing to unquery.
+      return undefined;
+    }
 
     switch (action) {
       case 'query':
