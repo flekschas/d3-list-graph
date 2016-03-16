@@ -635,9 +635,11 @@ class NodeContextMenu {
   }
 
   updateStates () {
-    this.checkLock();
-    this.checkRoot();
-    this.updateQuery();
+    if (this.node) {
+      this.checkLock();
+      this.checkRoot();
+      this.updateQuery();
+    }
   }
 }
 
