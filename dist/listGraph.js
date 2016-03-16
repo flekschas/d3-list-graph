@@ -1402,21 +1402,21 @@ var ListGraph = (function ($,d3) {
       // Rooting icons
       var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT + ' ' + CLASS_INACTIVE);
 
-      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 0.5, 'hover-helper', 'hover-helper');
+      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'hover-helper', 'hover-helper');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.5, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.5, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
       // Querying icons
       if (this.vis.querying) {
         var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY + ' ' + CLASS_INACTIVE);
 
-        nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'right', 0.5, 'hover-helper', 'hover-helper');
+        nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'hover-helper', 'hover-helper');
 
-        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.5, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
 
-        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.5, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
       }
 
       this.bars = new Bars(this.vis, this.visNodes, this.vis.barMode, this.visData);
@@ -2063,12 +2063,12 @@ var ListGraph = (function ($,d3) {
         } else if (mode === 'hover-helper') {
           selection.attr({
             class: className,
-            x: x - 2,
-            y: y - 2,
-            width: this.iconDimension + 4,
-            height: this.iconDimension + 4,
-            rx: this.iconDimension / 2,
-            ry: this.iconDimension / 2
+            x: x - 4,
+            y: y - 4,
+            width: this.iconDimension + 8,
+            height: this.iconDimension + 8,
+            rx: this.iconDimension,
+            ry: this.iconDimension
           });
         } else {
           selection.attr({
@@ -4955,9 +4955,11 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'updateStates',
       value: function updateStates() {
-        this.checkLock();
-        this.checkRoot();
-        this.updateQuery();
+        if (this.node) {
+          this.checkLock();
+          this.checkRoot();
+          this.updateQuery();
+        }
       }
     }, {
       key: 'scale',
@@ -5322,7 +5324,7 @@ var ListGraph = (function ($,d3) {
 
       if (this.querying) {
         this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classQuery, function () {
-          that.nodes.unqueryByNode.call(that.nodes, d3.select(this.parentNode));
+          that.nodes.queryHandler.call(that.nodes, d3.select(this.parentNode), 'unquery');
           that.nodeContextMenu.updateStates();
         });
       }
