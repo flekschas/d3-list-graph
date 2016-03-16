@@ -274,7 +274,11 @@ class ListGraph {
         'click',
         `.${this.nodes.classFocusControls}.${this.nodes.classQuery}`,
         function () {
-          that.nodes.unqueryByNode.call(that.nodes, d3.select(this.parentNode));
+          that.nodes.queryHandler.call(
+            that.nodes,
+            d3.select(this.parentNode),
+            'unquery'
+          );
           that.nodeContextMenu.updateStates();
         }
       );
