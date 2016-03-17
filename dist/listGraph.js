@@ -4918,7 +4918,7 @@ var ListGraph = (function ($,d3) {
       key: 'updatePosition',
       value: function updatePosition() {
         if (this.node && this.opened) {
-          this.updateAppearance();
+          this.open(this.node);
         }
       }
     }, {
@@ -5378,19 +5378,16 @@ var ListGraph = (function ($,d3) {
       this.events.on('d3ListGraphNodeRoot', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
         _this.updateSorting();
-        _this.nodeContextMenu.updatePosition();
       });
 
       this.events.on('d3ListGraphNodeUnroot', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
         _this.updateSorting();
-        _this.nodeContextMenu.updatePosition();
       });
 
       this.events.on('d3ListGraphUpdateBars', function () {
         _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
         _this.updateSorting();
-        _this.nodeContextMenu.updatePosition();
       });
 
       this.events.on('d3ListGraphActiveLevel', function (nextLevel) {
@@ -5676,6 +5673,7 @@ var ListGraph = (function ($,d3) {
       value: function sortColumn(level, property, sortOrder, newSortType) {
         this.nodes.sort(this.layout.sort(level, property, sortOrder).updateNodesVisibility().nodes(level), newSortType);
         this.links.sort(this.layout.links(level - 1, level + 1));
+        this.nodeContextMenu.updatePosition();
       }
     }, {
       key: 'sortAllColumns',
@@ -5685,6 +5683,7 @@ var ListGraph = (function ($,d3) {
         this.nodes.sort(this.layout.sort(undefined, property, this.currentSorting.global.order).updateNodesVisibility().nodes(), newSortType);
 
         this.links.sort(this.layout.links());
+        this.nodeContextMenu.updatePosition();
       }
     }, {
       key: 'switchBarMode',
