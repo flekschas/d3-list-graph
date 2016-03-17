@@ -333,7 +333,6 @@ class ListGraph {
           this.layout.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
-        this.nodeContextMenu.updatePosition();
       }
     );
 
@@ -344,7 +343,6 @@ class ListGraph {
           this.layout.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
-        this.nodeContextMenu.updatePosition();
       }
     );
 
@@ -355,7 +353,6 @@ class ListGraph {
           this.layout.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
-        this.nodeContextMenu.updatePosition();
       }
     );
 
@@ -737,6 +734,7 @@ class ListGraph {
       newSortType
     );
     this.links.sort(this.layout.links(level - 1, level + 1));
+    this.nodeContextMenu.updatePosition();
   }
 
   sortAllColumns (property, newSortType) {
@@ -752,6 +750,7 @@ class ListGraph {
     );
 
     this.links.sort(this.layout.links());
+    this.nodeContextMenu.updatePosition();
   }
 
   switchBarMode (mode) {
