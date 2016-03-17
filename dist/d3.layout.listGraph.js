@@ -1707,7 +1707,9 @@
         }
 
         for (var i = keys.length; i--;) {
-          allLinks = allLinks.concat(this.data[keys[i]].links.outgoing.refs);
+          if (this.data[keys[i]].links) {
+            allLinks = allLinks.concat(this.data[keys[i]].links.outgoing.refs);
+          }
         }
 
         return allLinks;

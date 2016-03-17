@@ -184,7 +184,7 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        0.5,
+        0.6,
         'hover-helper',
         'hover-helper'
       );
@@ -193,7 +193,7 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        0.5,
+        0.6,
         'icon',
         'ease-all state-inactive invisible-default icon'
       )
@@ -204,7 +204,7 @@ class Nodes {
       .call(
         this.setUpFocusControls.bind(this),
         'left',
-        0.5,
+        0.6,
         'icon',
         'ease-all state-active invisible-default icon'
       )
@@ -222,7 +222,7 @@ class Nodes {
         .call(
           this.setUpFocusControls.bind(this),
           'right',
-          0.5,
+          0.6,
           'hover-helper',
           'hover-helper'
         );
@@ -231,7 +231,7 @@ class Nodes {
         .call(
           this.setUpFocusControls.bind(this),
           'right',
-          0.5,
+          0.6,
           'icon',
           'ease-all state-and-or invisible-default icon'
         )
@@ -242,7 +242,7 @@ class Nodes {
         .call(
           this.setUpFocusControls.bind(this),
           'right',
-          0.5,
+          0.6,
           'icon',
           'ease-all state-not invisible-default icon'
         )
@@ -485,8 +485,12 @@ class Nodes {
     }
   }
 
-  rootHandler (d3El) {
-    const events = this.toggleRoot(d3El);
+  rootHandler (d3El, unroot) {
+    if (!d3El.datum().data.state.root && unroot) {
+      // The node is not rooted so there's no point in unrooting.
+      return;
+    }
+    const events = this.toggleRoot(d3El, unroot);
 
     if (events.rooted && events.unrooted) {
       this.events.broadcast('d3ListGraphNodeReroot', {
@@ -783,6 +787,11 @@ class Nodes {
     const previousMode = data.data.state.query;
     const event = {};
 
+    if (!previousMode && action === 'unquery') {
+      // We haven't queried anything so there's nothing to unquery.
+      return undefined;
+    }
+
     switch (action) {
       case 'query':
         this.queryByNode(d3El, mode);
@@ -954,12 +963,12 @@ class Nodes {
       selection
         .attr({
           class: className,
-          x: x - 2,
-          y: y - 2,
-          width: this.iconDimension + 4,
-          height: this.iconDimension + 4,
-          rx: this.iconDimension / 2,
-          ry: this.iconDimension / 2
+          x: x - 4,
+          y: y - 4,
+          width: this.iconDimension + 8,
+          height: this.iconDimension + 8,
+          rx: this.iconDimension,
+          ry: this.iconDimension
         });
     } else {
       selection

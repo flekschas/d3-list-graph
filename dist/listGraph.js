@@ -1402,21 +1402,21 @@ var ListGraph = (function ($,d3) {
       // Rooting icons
       var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT + ' ' + CLASS_INACTIVE);
 
-      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 0.5, 'hover-helper', 'hover-helper');
+      nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'hover-helper', 'hover-helper');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.5, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
 
-      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.5, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+      nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
       // Querying icons
       if (this.vis.querying) {
         var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY + ' ' + CLASS_INACTIVE);
 
-        nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'right', 0.5, 'hover-helper', 'hover-helper');
+        nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'hover-helper', 'hover-helper');
 
-        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.5, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
 
-        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.5, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
+        nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
       }
 
       this.bars = new Bars(this.vis, this.visNodes, this.vis.barMode, this.visData);
@@ -1610,8 +1610,12 @@ var ListGraph = (function ($,d3) {
       }
     }, {
       key: 'rootHandler',
-      value: function rootHandler(d3El) {
-        var events = this.toggleRoot(d3El);
+      value: function rootHandler(d3El, unroot) {
+        if (!d3El.datum().data.state.root && unroot) {
+          // The node is not rooted so there's no point in unrooting.
+          return;
+        }
+        var events = this.toggleRoot(d3El, unroot);
 
         if (events.rooted && events.unrooted) {
           this.events.broadcast('d3ListGraphNodeReroot', {
@@ -1898,6 +1902,11 @@ var ListGraph = (function ($,d3) {
         var previousMode = data.data.state.query;
         var event = {};
 
+        if (!previousMode && action === 'unquery') {
+          // We haven't queried anything so there's nothing to unquery.
+          return undefined;
+        }
+
         switch (action) {
           case 'query':
             this.queryByNode(d3El, mode);
@@ -2063,12 +2072,12 @@ var ListGraph = (function ($,d3) {
         } else if (mode === 'hover-helper') {
           selection.attr({
             class: className,
-            x: x - 2,
-            y: y - 2,
-            width: this.iconDimension + 4,
-            height: this.iconDimension + 4,
-            rx: this.iconDimension / 2,
-            ry: this.iconDimension / 2
+            x: x - 4,
+            y: y - 4,
+            width: this.iconDimension + 8,
+            height: this.iconDimension + 8,
+            rx: this.iconDimension,
+            ry: this.iconDimension
           });
         } else {
           selection.attr({
@@ -4389,7 +4398,9 @@ var ListGraph = (function ($,d3) {
       this.height = this.visData.global.row.height * this.numButtonRows;
       this.toBottom = false;
 
-      this.wrapper = this.baseEl.append('g').attr('class', CLASS_NAME).call(this.updateAppearance.bind(this));
+      this.wrapper = this.baseEl.append('g').attr('class', CLASS_NAME);
+
+      this.updateAppearance();
 
       this.bg = this.wrapper.append('path').attr('class', 'bgBorder').attr('d', dropMenu({
         x: -1,
@@ -4598,11 +4609,11 @@ var ListGraph = (function ($,d3) {
         if (!this.closing) {
           this.closing = new Promise(function (resolve) {
             _this2.opened = false;
-            _this2.wrapper.call(_this2.updateAppearance.bind(_this2));
+            _this2.updateAppearance();
 
             setTimeout(function () {
               _this2.visible = false;
-              _this2.wrapper.call(_this2.updateAppearance.bind(_this2));
+              _this2.updateAppearance();
               resolve(_this2.node.datum().id);
               _this2.node = undefined;
             }, TRANSITION_SPEED);
@@ -4757,12 +4768,12 @@ var ListGraph = (function ($,d3) {
           };
           _this4.checkOrientation();
 
-          _this4.wrapper.call(_this4.updateAppearance.bind(_this4));
+          _this4.updateAppearance();
           _this4.opened = true;
           _this4.visible = true;
 
           requestNextAnimationFrame(function () {
-            _this4.wrapper.call(_this4.updateAppearance.bind(_this4));
+            _this4.updateAppearance();
             setTimeout(function () {
               resolve(true);
             }, TRANSITION_SPEED);
@@ -4847,7 +4858,7 @@ var ListGraph = (function ($,d3) {
       key: 'scrollY',
       value: function scrollY(offset) {
         this._yOffset = offset;
-        this.wrapper.call(this.updateAppearance.bind(this));
+        this.updateAppearance();
       }
     }, {
       key: 'showFillButton',
@@ -4898,9 +4909,17 @@ var ListGraph = (function ($,d3) {
 
     }, {
       key: 'updateAppearance',
-      value: function updateAppearance(selection) {
+      value: function updateAppearance() {
         var centerY = this.toBottom ? 0 : this.height + this.visData.global.row.height;
-        selection.classed('transitionable', this.visible).classed('open', this.opened).style('transform', this.translate + ' ' + this.scale).style('transform-origin', this.visData.global.column.width / 2 + 'px ' + centerY + 'px');
+
+        this.wrapper.classed('transitionable', this.visible).classed('open', this.opened).style('transform', this.translate + ' ' + this.scale).style('transform-origin', this.visData.global.column.width / 2 + 'px ' + centerY + 'px');
+      }
+    }, {
+      key: 'updatePosition',
+      value: function updatePosition() {
+        if (this.node && this.opened) {
+          this.open(this.node);
+        }
       }
     }, {
       key: 'updateQuery',
@@ -4955,9 +4974,11 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'updateStates',
       value: function updateStates() {
-        this.checkLock();
-        this.checkRoot();
-        this.updateQuery();
+        if (this.node) {
+          this.checkLock();
+          this.checkRoot();
+          this.updateQuery();
+        }
       }
     }, {
       key: 'scale',
@@ -5317,12 +5338,12 @@ var ListGraph = (function ($,d3) {
       }
 
       this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classRoot, function () {
-        that.nodes.rootHandler.call(that.nodes, d3.select(this));
+        that.nodes.rootHandler.call(that.nodes, d3.select(this), true);
       });
 
       if (this.querying) {
         this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classQuery, function () {
-          that.nodes.unqueryByNode.call(that.nodes, d3.select(this.parentNode));
+          that.nodes.queryHandler.call(that.nodes, d3.select(this.parentNode), 'unquery');
           that.nodeContextMenu.updateStates();
         });
       }
@@ -5652,6 +5673,7 @@ var ListGraph = (function ($,d3) {
       value: function sortColumn(level, property, sortOrder, newSortType) {
         this.nodes.sort(this.layout.sort(level, property, sortOrder).updateNodesVisibility().nodes(level), newSortType);
         this.links.sort(this.layout.links(level - 1, level + 1));
+        this.nodeContextMenu.updatePosition();
       }
     }, {
       key: 'sortAllColumns',
@@ -5661,6 +5683,7 @@ var ListGraph = (function ($,d3) {
         this.nodes.sort(this.layout.sort(undefined, property, this.currentSorting.global.order).updateNodesVisibility().nodes(), newSortType);
 
         this.links.sort(this.layout.links());
+        this.nodeContextMenu.updatePosition();
       }
     }, {
       key: 'switchBarMode',

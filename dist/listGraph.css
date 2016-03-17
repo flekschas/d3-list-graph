@@ -300,21 +300,40 @@
   .list-graph .node .focus-controls .hover-helper {
     fill: #fff;
     fill-opacity: 0;
+    stroke: #fff;
+    stroke-width: 1;
+    stroke-opacity: 0;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph .node.rooted .focus-controls:hover,
-  .list-graph .node.query-and .focus-controls:hover,
-  .list-graph .node.query-or .focus-controls:hover,
-  .list-graph .node.query-not .focus-controls:hover {
+  .list-graph .node.rooted .focus-controls.root:hover,
+  .list-graph .node.query-and .focus-controls.query:hover,
+  .list-graph .node.query-or .focus-controls.query:hover,
+  .list-graph .node.query-not .focus-controls.query:hover {
     cursor: pointer; }
-  .list-graph .node.rooted .focus-controls:hover .hover-helper,
-  .list-graph .node.query-and .focus-controls:hover .hover-helper,
-  .list-graph .node.query-or .focus-controls:hover .hover-helper,
-  .list-graph .node.query-not .focus-controls:hover .hover-helper {
-    fill-opacity: 0.5; }
-  .list-graph .node.rooted .focus-controls:hover .icon,
-  .list-graph .node.query-and .focus-controls:hover .state-and-or,
-  .list-graph .node.query-or .focus-controls:hover .state-and-or,
-  .list-graph .node.query-not .focus-controls:hover .state-not {
+  .list-graph .node.rooted .focus-controls.root .hover-helper,
+  .list-graph .node.query-and .focus-controls.query .hover-helper,
+  .list-graph .node.query-or .focus-controls.query .hover-helper,
+  .list-graph .node.query-not .focus-controls.query .hover-helper {
+    fill-opacity: 0.66; }
+  .list-graph .node.hovering-directly.rooted .focus-controls.root .hover-helper,
+  .list-graph .node.hovering-indirectly.rooted .focus-controls.root .hover-helper,
+  .list-graph .node.hovering-directly.query-and .focus-controls.query .hover-helper,
+  .list-graph .node.hovering-indirectly.query-and .focus-controls.query .hover-helper,
+  .list-graph .node.hovering-directly.query-or .focus-controls.query .hover-helper,
+  .list-graph .node.hovering-indirectly.query-or .focus-controls.query .hover-helper,
+  .list-graph .node.hovering-directly.query-not .focus-controls.query .hover-helper,
+  .list-graph .node.hovering-indirectly.query-not .focus-controls.query .hover-helper {
+    stroke-opacity: 1; }
+  .list-graph .node.rooted .focus-controls.root:hover .hover-helper,
+  .list-graph .node.query-and .focus-controls.query:hover .hover-helper,
+  .list-graph .node.query-or .focus-controls.query:hover .hover-helper,
+  .list-graph .node.query-not .focus-controls.query:hover .hover-helper {
+    stroke: #f23e00;
+    fill-opacity: 1;
+    stroke-opacity: 1; }
+  .list-graph .node.rooted .focus-controls.root:hover .icon,
+  .list-graph .node.query-and .focus-controls.query:hover .state-and-or,
+  .list-graph .node.query-or .focus-controls.query:hover .state-and-or,
+  .list-graph .node.query-not .focus-controls.query:hover .state-not {
     color: #f23e00;
     opacity: 1; }
   .list-graph .node.query-and .query .state-inactive,
@@ -322,10 +341,19 @@
   .list-graph .node.query-not .query .state-inactive {
     opacity: 0 !important; }
   .list-graph .node.rooted .focus-controls.root .state-active,
-  .list-graph .node.query-and .focus-controls .state-and-or,
-  .list-graph .node.query-or .focus-controls .state-and-or,
-  .list-graph .node.query-not .focus-controls .state-not {
+  .list-graph .node.query-and .focus-controls.query .state-and-or,
+  .list-graph .node.query-or .focus-controls.query .state-and-or,
+  .list-graph .node.query-not .focus-controls.query .state-not {
     opacity: 0.33; }
+  .list-graph .node.hovering-directly.rooted .focus-controls.root .state-active,
+  .list-graph .node.hovering-indirectly.rooted .focus-controls.root .state-active,
+  .list-graph .node.hovering-directly.query-and .focus-controls.query .state-and-or,
+  .list-graph .node.hovering-indirectly.query-and .focus-controls.query .state-and-or,
+  .list-graph .node.hovering-directly.query-or .focus-controls.query .state-and-or,
+  .list-graph .node.hovering-indirectly.query-or .focus-controls.query .state-and-or,
+  .list-graph .node.hovering-directly.query-not .focus-controls.query .state-not,
+  .list-graph .node.hovering-indirectly.query-not .focus-controls.query .state-not {
+    opacity: 1; }
   .list-graph .node .focus-controls .state-and-or use {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1);
     transform-origin: 50% 50%; }
@@ -441,7 +469,11 @@
     fill-opacity: 0.1; }
   .list-graph .context-menu > .bg,
   .list-graph .context-menu > .bgBorder {
+    transform: scale(1, 1);
     transform-origin: 50% 50%; }
+    .list-graph .context-menu > .bg.is-mirrored-horizontally,
+    .list-graph .context-menu > .bgBorder.is-mirrored-horizontally {
+      transform: scale(1, -1); }
   .list-graph .context-menu .button .bg {
     fill: #f2f2f2;
     transition: all 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }

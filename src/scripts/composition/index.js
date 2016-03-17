@@ -265,7 +265,7 @@ class ListGraph {
       'click',
       `.${this.nodes.classFocusControls}.${this.nodes.classRoot}`,
       function () {
-        that.nodes.rootHandler.call(that.nodes, d3.select(this));
+        that.nodes.rootHandler.call(that.nodes, d3.select(this), true);
       }
     );
 
@@ -274,7 +274,11 @@ class ListGraph {
         'click',
         `.${this.nodes.classFocusControls}.${this.nodes.classQuery}`,
         function () {
-          that.nodes.unqueryByNode.call(that.nodes, d3.select(this.parentNode));
+          that.nodes.queryHandler.call(
+            that.nodes,
+            d3.select(this.parentNode),
+            'unquery'
+          );
           that.nodeContextMenu.updateStates();
         }
       );
@@ -730,6 +734,7 @@ class ListGraph {
       newSortType
     );
     this.links.sort(this.layout.links(level - 1, level + 1));
+    this.nodeContextMenu.updatePosition();
   }
 
   sortAllColumns (property, newSortType) {
@@ -745,6 +750,7 @@ class ListGraph {
     );
 
     this.links.sort(this.layout.links());
+    this.nodeContextMenu.updatePosition();
   }
 
   switchBarMode (mode) {
