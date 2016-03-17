@@ -584,7 +584,7 @@ class NodeContextMenu {
 
   updatePosition () {
     if (this.node && this.opened) {
-      this.updateAppearance();
+      this.open(this.node);
     }
   }
 
