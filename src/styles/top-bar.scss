@@ -1,8 +1,9 @@
 .list-graph .top-bar {
   position: relative;
   height: 1.5rem;
-  border-bottom: 1px solid $grey-lighter;
+  padding-bottom: 1px;
   overflow: hidden;
+  box-shadow: inset 0 -1px 0 0 $grey-lighter;
 
   .control-switch {
     position: absolute;
@@ -21,9 +22,9 @@
   .control-switch svg {
     position: relative;
     display: block;
-    width: 8px;
-    height: 8px;
-    margin-top: -4px;
+    width: 10px;
+    height: 10px;
+    margin-top: -6px;
     margin-left: -4px;
     top: 50%;
     left: 50%;
@@ -32,11 +33,9 @@
 
   .control-switch .switch-arrow {
     fill: none;
-    stroke: #000;
-    stroke-width: 1;
   }
 
-  .top-bar.details .control-switch svg {
+  &.details .control-switch svg {
     transform: scale(1, -1);
   }
 
@@ -58,7 +57,11 @@
     transition: margin $transition-fast $ease-in-out-cubic;
   }
 
-  .top-bar.details .global-controls {
+  .global-controls {
+    z-index: 1;
+  }
+
+  &.details .global-controls {
     margin-top: -1.5rem;
   }
 
@@ -78,7 +81,6 @@
     font-size: 0.75rem;
     line-height: 1.5rem;
     text-transform: uppercase;
-    overflow: hidden;
     cursor: pointer;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -97,9 +99,28 @@
       background: $grey-lighter;
     }
 
+    &.toggle:hover,
+    &.options:hover {
+      cursor: default;
+      background: none;
+    }
+
     &.active {
       font-weight: bold;
       text-decoration: underline;
+
+      &:before {
+        position: absolute;
+        display: block;
+        content: '';
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: transparentize($color-highlight-blue, 0.5);
+        box-shadow: 0 0 8px 0 $color-highlight-blue;
+        transition: all $transition-fast $ease-in-out-cubic;
+      }
     }
 
     .label {
@@ -120,13 +141,17 @@
   .global-controls .control-btn {
     position: relative;
     float: left;
-    width: 16.666666667%;
+    max-width: 16.6667%;
     box-shadow: 1px 0 0 0 $grey-lighter;
+  }
+
+  &.details .global-controls .control-btn.active:before {
+    opacity: 0;
   }
 
   .global-controls .control-btn .wrapper {
     position: relative;
-    margin: 0 1rem;
+    padding: 0 2.25rem 0 0.75rem;
   }
 
   .controls .control-btn {
@@ -164,7 +189,7 @@
   .control-btn [class*=' icon-'] {
     position: absolute;
     top: 0.25rem;
-    right: 0.25rem;
+    right: 0.75rem;
     width: 1rem;
     height: 1rem;
     transition: all $transition-fast $ease-in-out-cubic;
@@ -196,13 +221,10 @@
   .sort-recall:hover,
   .sort-name:hover {
     z-index: 2;
-    color: #fff;
-    background: $color-highlight-red;
-    transition: all $transition-fast $ease-in-out-cubic, color $transition-lightning-fast $ease-in-out-cubic;
+    background: transparentize($color-highlight-blue, 0.8);
 
-    [class^='icon-'],
-    [class*=' icon-'] {
-      color: #fff;
+    &:before {
+      background: $color-highlight-blue;
     }
   }
 

@@ -223,8 +223,8 @@
 
   .node.highlight-label .label,
   .column.active .node.highlight-label .label {
-    color: $color-highlight-red;
-    text-shadow: 0 0 3px transparentize($color-highlight-red, 0.75);
+    color: darken($color-highlight-blue, 10%);
+    text-shadow: 0 0 3px transparentize($color-highlight-blue, 0.75);
   }
 
   .node .focus-controls .hover-helper {
@@ -354,7 +354,7 @@
 
   .bar-border {
     fill: none;
-    stroke: mix(lighten($color-highlight-red, 20%), #fff, 25%);
+    stroke: mix($color-highlight-blue, #fff, 25%);
     stroke-width: 2px;
     stroke-opacity: 0;
   }
@@ -378,7 +378,7 @@
   }
 
   .bar.highlight .bar-magnitude {
-    fill: lighten($color-highlight-red, 20%);
+    fill: lighten($color-highlight-blue, 20%);
     fill-opacity: 1 !important;
   }
 
