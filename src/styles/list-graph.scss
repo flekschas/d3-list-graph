@@ -195,7 +195,7 @@
   .node .focus-controls .hover-helper {
     fill: $white;
     fill-opacity: 0;
-    stroke: $white;
+    stroke: $color-highlight-red;
     stroke-width: 1;
     stroke-opacity: 0;
     transition: all $transition-fast $ease-in-out-cubic;
@@ -213,6 +213,8 @@
   .node.query-or .focus-controls.query .hover-helper,
   .node.query-not .focus-controls.query .hover-helper {
     fill-opacity: 0.66;
+    fill-opacity: 1;
+    stroke-opacity: 1;
   }
 
   .node.hovering-directly.rooted .focus-controls.root .hover-helper,
@@ -230,17 +232,18 @@
   .node.query-and .focus-controls.query:hover .hover-helper,
   .node.query-or .focus-controls.query:hover .hover-helper,
   .node.query-not .focus-controls.query:hover .hover-helper {
-    stroke: $color-highlight-red;
-    fill-opacity: 1;
-    stroke-opacity: 1;
+    fill: $color-highlight-red;
+  }
+
+  .node .focus-controls .icon {
+    color: $color-highlight-red;
   }
 
   .node.rooted .focus-controls.root:hover .icon,
   .node.query-and .focus-controls.query:hover .state-and-or,
   .node.query-or .focus-controls.query:hover .state-and-or,
   .node.query-not .focus-controls.query:hover .state-not {
-    color: $color-highlight-red;
-    opacity: 1;
+    color: $white;
   }
 
   .node.query-and .query .state-inactive,
@@ -253,7 +256,7 @@
   .node.query-and .focus-controls.query .state-and-or,
   .node.query-or .focus-controls.query .state-and-or,
   .node.query-not .focus-controls.query .state-not {
-    opacity: 0.33;
+    opacity: 1;
   }
 
   .node.hovering-directly.rooted .focus-controls.root .state-active,
