@@ -109,52 +109,6 @@
     }
   }
 
-  .link {
-    fill: none;
-    transition: all $transition-fast $ease-in-out-cubic;
-
-    .link-direct {
-      stroke: #000;
-      stroke-width: 2;
-      stroke-opacity: 0;
-      transition: all $transition-fast $ease-in-out-cubic;
-    }
-    &.visible .link-direct {
-      stroke-opacity: 0.2;
-    }
-
-    &.visible.hovering .link-direct {
-      stroke-opacity: 0.75;
-      stroke-width: 4;
-    }
-
-    &.visible.lock .link-direct {
-      stroke-opacity: 0.75;
-    }
-
-    &.visible.focus .link-direct {
-      stroke-opacity: 0.5;
-    }
-
-    .link-bg {
-      stroke: $color-highlight-red;
-      stroke-opacity: 0;
-      stroke-width: 6;
-    }
-
-    &.visible.lock .link-bg {
-      stroke-opacity: 0.75;
-    }
-
-    &.visible.focus .link-bg {
-      stroke-opacity: 0.5;
-    }
-
-    &.lock.hovering .link-bg {
-      stroke-width: 8;
-    }
-  }
-
   .node .label {
     display: block;
     box-sizing: border-box;
