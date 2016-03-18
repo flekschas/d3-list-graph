@@ -1,5 +1,4 @@
 // Internal
-import * as config from './config';
 import { roundRect } from '../commons/charts';
 
 const BAR_CLASS = 'bar';
@@ -62,7 +61,7 @@ class Bar {
           x: 0,
           y: this.visData.global.row.padding,
           width: 2,
-          height: 4
+          height: this.visData.global.row.contentHeight
         });
     }
 
@@ -80,34 +79,14 @@ class Bar {
   }
 
   static updateIndicator (
-    selection, contentWidth, contentHeight, referenceValue, lessTransitions,
-    reference
+    selection, contentWidth, contentHeight, referenceValue
   ) {
-    const y = Math.min(
-      contentWidth * Math.min(referenceValue, 1) - 1,
-      contentWidth - 2
-    );
-
-    // Stop previous transitions.
     selection
-      .attr({
-        height: contentHeight,
-        x: reference ? y : 0
-      })
-      .classed('positive', data => data.value >= referenceValue)
-      .transition()
-      .duration(0)
-      .attr(
-        'width',
-        reference ? 2 : lessTransitions ? y : 0  // eslint-disable-line no-nested-ternary
-      );
-
-    if (!lessTransitions && !reference) {
-      selection
-        .transition()
-        .duration(config.TRANSITION_SEMI_FAST)
-        .attr('width', y);
-    }
+      .attr('x', Math.min(
+        contentWidth * Math.min(referenceValue, 1) - 1,
+        contentWidth - 2
+      ))
+      .attr('width', 2);
   }
 
   static generatePath (

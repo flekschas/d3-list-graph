@@ -64,9 +64,7 @@ class Bars {
       bars,
       this.visData.global.column.contentWidth,
       direct ? this.visData.global.row.contentHeight : 4,
-      referenceValue,
-      this.vis.lessTransitionsJs,
-      direct
+      referenceValue
     );
   }
 

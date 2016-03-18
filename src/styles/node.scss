@@ -266,12 +266,13 @@
   }
 
   .node.hovering-directly .bar-magnitude {
-    fill: #606060;
-    fill-opacity: 1 !important;
+    fill: $white;
+    fill-opacity: 0.25;
   }
 
   .node.hovering-directly .active .bar-magnitude {
-    fill: #404040;
+    fill: $color-highlight-red;
+    fill-opacity: 0.5;
   }
 
   .node.hovering-directly .bar.active .bar-indicator,
