@@ -69,8 +69,8 @@
   }
 
   .control-btn {
-    top: 0;
     display: block;
+    top: 0;
     margin: 0;
     padding: 0;
     height: 100%;
@@ -79,13 +79,13 @@
     line-height: 1.5rem;
     text-transform: uppercase;
     overflow: hidden;
+    cursor: pointer;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    cursor: pointer;
     transition: all $transition-fast $ease-in-out-cubic;
 
     &:hover,
@@ -117,16 +117,16 @@
     }
   }
 
-  .global-controls .control-btn .wrapper {
-    position: relative;
-    margin: 0 1rem;
-  }
-
   .global-controls .control-btn {
     position: relative;
     float: left;
     width: 16.666666667%;
     box-shadow: 1px 0 0 0 $grey-lighter;
+  }
+
+  .global-controls .control-btn .wrapper {
+    position: relative;
+    margin: 0 1rem;
   }
 
   .controls .control-btn {
