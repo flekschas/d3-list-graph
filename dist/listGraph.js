@@ -271,7 +271,7 @@ var ListGraph = (function ($,d3) {
         d3.select(this).classed('active', that.vis.zoomedOut);
       });
 
-      this.globalZoomOutWrapper = this.globalZoomOut.append('div').attr('class', 'wrapper').text('Zoom Out').style('margin-right', this.visData.global.column.padding + 'px');
+      this.globalZoomOutWrapper = this.globalZoomOut.append('div').attr('class', 'wrapper').text('Zoom Out');
 
       this.globalZoomOutWrapper.append('svg').attr('class', 'icon-zoom-out').append('use').attr('xlink:href', this.vis.iconPath + '#zoom-out');
 
@@ -1059,7 +1059,7 @@ var ListGraph = (function ($,d3) {
           x: 0,
           y: this.visData.global.row.padding,
           width: 2,
-          height: 4
+          height: this.visData.global.row.contentHeight
         });
       }
 
@@ -1072,21 +1072,8 @@ var ListGraph = (function ($,d3) {
 
     babelHelpers.createClass(Bar, null, [{
       key: 'updateIndicator',
-      value: function updateIndicator(selection, contentWidth, contentHeight, referenceValue, lessTransitions, reference) {
-        var y = Math.min(contentWidth * Math.min(referenceValue, 1) - 1, contentWidth - 2);
-
-        // Stop previous transitions.
-        selection.attr({
-          height: contentHeight,
-          x: reference ? y : 0
-        }).classed('positive', function (data) {
-          return data.value >= referenceValue;
-        }).transition().duration(0).attr('width', reference ? 2 : lessTransitions ? y : 0 // eslint-disable-line no-nested-ternary
-        );
-
-        if (!lessTransitions && !reference) {
-          selection.transition().duration(TRANSITION_SEMI_FAST).attr('width', y);
-        }
+      value: function updateIndicator(selection, contentWidth, contentHeight, referenceValue) {
+        selection.attr('x', Math.min(contentWidth * Math.min(referenceValue, 1) - 1, contentWidth - 2)).attr('width', 2);
       }
     }, {
       key: 'generatePath',
@@ -1212,7 +1199,7 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'updateIndicator',
       value: function updateIndicator(bars, referenceValue, direct) {
-        Bar.updateIndicator(bars, this.visData.global.column.contentWidth, direct ? this.visData.global.row.contentHeight : 4, referenceValue, this.vis.lessTransitionsJs, direct);
+        Bar.updateIndicator(bars, this.visData.global.column.contentWidth, direct ? this.visData.global.row.contentHeight : 4, referenceValue);
       }
     }, {
       key: 'switchMode',
