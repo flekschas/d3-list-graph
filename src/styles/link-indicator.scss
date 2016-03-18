@@ -1,0 +1,44 @@
+.list-graph {
+  .link-indicator {
+    opacity: 0;
+    transition: all $transition-fast $ease-in-out-cubic;
+
+    &.visible {
+      opacity: 1;
+    }
+
+    &.incoming {
+      transform-origin: right center;
+    }
+
+    &.outgoing {
+      transform-origin: left center;
+    }
+  }
+
+  .lock-directly .link-indicator,
+  .lock-indirectly .link-indicator,
+  .hovering-directly .link-indicator,
+  .hovering-indirectly .link-indicator {
+    fill: #000;
+  }
+
+  .hovering-directly .link-indicator,
+  .hovering-indirectly .link-indicator {
+    transform: scale(1.25, 2);
+  }
+
+  .link-location-indicator {
+    transition: all $transition-fast $ease-in-out-cubic;
+  }
+
+  .hovering-directly .link-location-indicator.above,
+  .hovering-indirectly .link-location-indicator.above {
+    transform: translateY(-1px);
+  }
+
+  .hovering-directly .link-location-indicator.below,
+  .hovering-indirectly .link-location-indicator.below {
+    transform: translateY(1px);
+  }
+}

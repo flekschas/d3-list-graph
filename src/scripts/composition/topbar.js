@@ -265,8 +265,7 @@ class Topbar {
 
     this.globalZoomOutWrapper = this.globalZoomOut.append('div')
       .attr('class', 'wrapper')
-      .text('Zoom Out')
-      .style('margin-right', this.visData.global.column.padding + 'px');
+      .text('Zoom Out');
 
     this.globalZoomOutWrapper.append('svg')
       .attr('class', 'icon-zoom-out')
