@@ -221,7 +221,7 @@
   .sort-recall:hover,
   .sort-name:hover {
     z-index: 2;
-    background: transparentize($color-highlight-blue, 0.8);
+    background: mix($color-highlight-blue, $white, 20%);
 
     &:before {
       background: $color-highlight-blue;

@@ -195,7 +195,7 @@
   .list-graph .top-bar .sort-recall:hover,
   .list-graph .top-bar .sort-name:hover {
     z-index: 2;
-    background: rgba(0, 136, 255, 0.2); }
+    background: #cce7ff; }
     .list-graph .top-bar .sort-precision:hover:before,
     .list-graph .top-bar .sort-recall:hover:before,
     .list-graph .top-bar .sort-name:hover:before {
