@@ -5,22 +5,22 @@ import isFinite from '../../../node_modules/lodash-es/isFinite';
 import { collectInclClones } from './utils';
 
 export function up (node, callback, depth, includeClones, child) {
-  const nodesInclClones = includeClones ? collectInclClones(node) : [node];
+  const nodes = includeClones ? collectInclClones(node) : [node];
 
-  for (let i = nodesInclClones.length; i--;) {
+  for (let i = nodes.length; i--;) {
     if (child) {
-      callback(nodesInclClones[i], child);
+      callback(nodes[i], child);
     }
 
     if (!isFinite(depth) || depth > 0) {
-      const parentsId = Object.keys(nodesInclClones[i].parents);
+      const parentsId = Object.keys(nodes[i].parents);
       for (let j = parentsId.length; j--;) {
         up(
-          nodesInclClones[i].parents[parentsId[j]],
+          nodes[i].parents[parentsId[j]],
           callback,
           depth - 1,
           includeClones,
-          nodesInclClones[i]
+          nodes[i]
         );
       }
     }
@@ -28,15 +28,15 @@ export function up (node, callback, depth, includeClones, child) {
 }
 
 export function down (node, callback, depth, includeClones) {
-  const nodesInclClones = includeClones ? collectInclClones(node) : [node];
+  const nodes = includeClones ? collectInclClones(node) : [node];
 
-  for (let i = nodesInclClones.length; i--;) {
-    callback(nodesInclClones[i]);
+  for (let i = nodes.length; i--;) {
+    callback(nodes[i]);
 
     if (!isFinite(depth) || depth > 0) {
-      for (let j = nodesInclClones[i].childRefs.length; j--;) {
+      for (let j = nodes[i].childRefs.length; j--;) {
         down(
-          nodesInclClones[i].childRefs[j], callback, depth - 1, includeClones
+          nodes[i].childRefs[j], callback, depth - 1, includeClones
         );
       }
     }
