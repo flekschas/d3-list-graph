@@ -4,7 +4,11 @@ import isFinite from '../../../node_modules/lodash-es/isFinite';
 // Internal
 import { collectInclClones } from './utils';
 
-export function up (node, callback, depth, includeClones, child) {
+function _up (node, callback, depth, includeClones, child, visitedNodes) {
+  if (visitedNodes[node.id]) {
+    return;
+  }
+
   const nodes = includeClones ? collectInclClones(node) : [node];
 
   for (let i = nodes.length; i--;) {
@@ -12,15 +16,52 @@ export function up (node, callback, depth, includeClones, child) {
       callback(nodes[i], child);
     }
 
+    visitedNodes[nodes[i].id] = true;
+
     if (!isFinite(depth) || depth > 0) {
       const parentsId = Object.keys(nodes[i].parents);
       for (let j = parentsId.length; j--;) {
-        up(
+        _up(
           nodes[i].parents[parentsId[j]],
           callback,
           depth - 1,
           includeClones,
-          nodes[i]
+          nodes[i],
+          visitedNodes
+        );
+      }
+    }
+  }
+}
+
+export function up (node, callback, depth, includeClones, child) {
+  const visitedNodes = {};
+  _up(node, callback, depth, includeClones, child, visitedNodes);
+}
+
+function _down (node, callback, depth, includeClones, visitedNodes) {
+  if (visitedNodes[node.id]) {
+    return;
+  }
+
+  const nodes = includeClones ? collectInclClones(node, true) : [node];
+
+  for (let i = nodes.length; i--;) {
+    callback(nodes[i]);
+
+    visitedNodes[nodes[i].id] = true;
+
+    // We only need to recursivly traverse the graph for the original node as
+    // the clones do not have any children (i.e. the have the same children as
+    // the original node)
+    if (i === 0 && (!isFinite(depth) || depth > 0)) {
+      for (let j = nodes[i].childRefs.length; j--;) {
+        _down(
+          nodes[i].childRefs[j],
+          callback,
+          depth - 1,
+          includeClones,
+          visitedNodes
         );
       }
     }
@@ -28,19 +69,8 @@ export function up (node, callback, depth, includeClones, child) {
 }
 
 export function down (node, callback, depth, includeClones) {
-  const nodes = includeClones ? collectInclClones(node) : [node];
-
-  for (let i = nodes.length; i--;) {
-    callback(nodes[i]);
-
-    if (!isFinite(depth) || depth > 0) {
-      for (let j = nodes[i].childRefs.length; j--;) {
-        down(
-          nodes[i].childRefs[j], callback, depth - 1, includeClones
-        );
-      }
-    }
-  }
+  const visitedNodes = {};
+  _down(node, callback, depth, includeClones, visitedNodes);
 }
 
 export function upAndDown (
@@ -50,8 +80,9 @@ export function upAndDown (
     up(node, callbackUp, depth, includeClones);
     down(node, callbackDown, depth, includeClones);
   } else {
-    up(node, callbackUp, depth, includeClones);
-    down(node, callbackUp, depth, includeClones);
+    const visitedNodes = {};
+    up(node, callbackUp, depth, includeClones, visitedNodes);
+    down(node, callbackUp, depth, includeClones, visitedNodes);
   }
 }
 
