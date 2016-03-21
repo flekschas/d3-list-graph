@@ -251,7 +251,7 @@
       "name": "two-two-three",
       "bars": {
         "precision": 0.77,
-        "recall": 0.44
+        "recall": 1
       }
     }
   },
@@ -291,7 +291,7 @@
       "name": "two-one-one-one",
       "bars": {
         "precision": 0.09,
-        "recall": 0.03
+        "recall": 0.00
       }
     }
   },
