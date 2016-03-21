@@ -292,6 +292,30 @@ class ListGraph {
       }
     );
 
+    this.svgJq.on(
+      'mouseenter',
+      `.${this.nodes.classNodeVisible}`,
+      function () {
+        that.interactionWrapper.call(that, function (domEl, data) {
+          if (!!!this.vis.activeScrollbar) {
+            this.enterHandler.call(this, domEl, data);
+          }
+        }.bind(that.nodes), [this, d3.select(this).datum()]);
+      }
+    );
+
+    this.svgJq.on(
+      'mouseleave',
+      `.${this.nodes.classNodeVisible}`,
+      function () {
+        that.interactionWrapper.call(that, function (domEl, data) {
+          if (!!!this.vis.activeScrollbar) {
+            this.leaveHandler.call(this, domEl, data);
+          }
+        }.bind(that.nodes), [this, d3.select(this).datum()]);
+      }
+    );
+
     // Normally we would reference a named methods but since we need to access
     // the class' `this` property instead of the DOM element we need to use an
     // arrow function.

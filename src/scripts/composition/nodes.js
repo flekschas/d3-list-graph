@@ -136,22 +136,7 @@ class Nodes {
         .attr('transform', data => 'translate(' +
           (data.x + this.visData.global.column.padding) + ', ' + data.y + ')');
 
-    this.visNodes = this.nodes.append('g')
-      .attr('class', CLASS_NODE_VISIBLE)
-      .on('mouseenter', function (data) {
-        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
-          if (!!!this.vis.activeScrollbar) {
-            this.enterHandler.call(this, domEl, _data);
-          }
-        }.bind(that), [this, data]);
-      })
-      .on('mouseleave', function (data) {
-        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
-          if (!!!this.vis.activeScrollbar) {
-            this.leaveHandler.call(this, domEl, _data);
-          }
-        }.bind(that), [this, data]);
-      });
+    this.visNodes = this.nodes.append('g').attr('class', CLASS_NODE_VISIBLE);
 
     this.visNodes.append('rect').call(drawFullSizeRect, 'bg-border');
 
