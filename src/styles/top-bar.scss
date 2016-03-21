@@ -129,6 +129,7 @@
 
     &.semi-active .label,
     &.semi-active .expandable-label .letter {
+      font-weight: bold;
       text-decoration: underline;
     }
 
