@@ -2,17 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700' rel='stylesheet' type='text/css'>
+  <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" type="text/css" href="../dist/listGraph.css">
   <link rel="stylesheet" type="text/css" href="styles.css">
 
   <title>List Graph Prototype</title>
 </head>
 <body>
-  <div id="example" class="list-graph">
+  <h2>Small: 28 nodes</h2>
+  <div id="example-small" class="list-graph">
     <div class="top-bar"></div>
     <div class="wrapper"><svg class="base"></svg></div>
   </div>
+  <h2>Medium: 100 nodes</h2>
+  <div id="example-medium" class="list-graph">
+    <div class="top-bar"></div>
+    <div class="wrapper"><svg class="base"></svg></div>
+  </div>
+  <h2>Large: 500 nodes</h2>
+  <div id="example-large" class="list-graph">
+    <div class="top-bar"></div>
+    <div class="wrapper"><svg class="base"></svg></div>
+  </div>
+  <h2>Larger: 1,000 nodes</h2>
+  <div id="example-extra-large" class="list-graph">
+    <div class="top-bar"></div>
+    <div class="wrapper"><svg class="base"></svg></div>
+  </div>
+<!--   <h2>Extreme: 10,000 nodes</h2>
+  <div id="example-extreme" class="list-graph">
+    <div class="top-bar"></div>
+    <div class="wrapper"><svg class="base"></svg></div>
+  </div> -->
   <script src="../bower_components/jquery/dist/jquery.js"></script>
   <script src="../bower_components/jquery-mousewheel/jquery.mousewheel.js"></script>
   <script src="../bower_components/d3/d3.js"></script>
@@ -22,63 +43,202 @@
     'use strict';
 
     var customDispatcher = function (event, data) {
-      console.log('Custom dispatcher: has ' + event, data);
+      // console.log('Custom dispatcher: has ' + event, data);
     };
+
+    function createListGraph (querySelector, data, rootNodes) {
+      return new ListGraph({
+        columns: 5,
+        data: data,
+        element: document.querySelector(querySelector),
+        iconPath: '/dist/icons.svg',
+        rootNodes: rootNodes || [-1],
+        activeLevel: 1,
+        noRootActiveLevelDiff: 1,
+        forceWidth: true,
+        rows: 8,
+        sortBy: 'precision',
+        dispatcher: customDispatcher,
+        lessTransitions: 0,
+        querying: true,
+        hideOutwardsLinks: true,
+        showLinkLocation: true,
+        noRootActiveLevelDiff: 1
+      });
+    }
 
     d3.json('data.json', function (error, data) {
       if (error) throw error;
 
-      var graph = new ListGraph(
-          document.querySelector('#example'),
-          data,
-          [1, 2],
-          {
-            forceWidth: true,
-            iconPath: '/dist/icons.svg',
-            rows: 8,
-            sortBy: 'precision',
-            dispatcher: customDispatcher,
-            lessAnimations: false
-          }
-        );
+      var graph = createListGraph('#example-small', data, [1, 2]);
 
-      setTimeout(function () {
-        graph.trigger('d3ListGraphFocusNodes', {
-          nodeIds: ['2-1-1-1', '2-1-4', '1-2'],
-          zoomOut: true
-        });
-      }, 1000);
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphFocusNodes', {
+      //     nodeIds: ['2-2-1'],
+      //     zoomOut: true
+      //   });
+      // }, 1000);
 
-      setTimeout(function () {
-        graph.trigger('d3ListGraphFocusNodes', {
-          nodeIds: ['2-1-1-1', '2-1-4', '2-3-1'],
-          zoomOut: true
-        });
-      }, 2000);
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphFocusNodes', {
+      //     nodeIds: ['2-1-1-1-1'],
+      //     zoomOut: true
+      //   });
+      // }, 3000);
 
-      setTimeout(function () {
-        graph.trigger('d3ListGraphBlurNodes', {
-          nodeIds: ['2-1-1-1', '2-1-4', '1-2', '2-3-1'],
-          zoomIn: true
-        });
-      }, 4000);
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphFocusNodes', {
+      //     nodeIds: ['2-3'],
+      //     hideUnrelatedNodes: true,
+      //     zoomOut: true
+      //   });
+      // }, 2000);
 
-      setTimeout(function () {
-        graph.trigger('d3ListGraphNodeLock', ['2-1']);
-      }, 5000);
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphFocusNodes', {
+      //     nodeIds: ['2-3'],
+      //     hideUnrelatedNodes: true
+      //   });
+      // }, 3000);
 
-      setTimeout(function () {
-        graph.trigger('d3ListGraphNodeUnlock', ['2-1']);
-      }, 6000);
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphFocusNodes', {
+      //     nodeIds: ['2-1-1-1'],
+      //     hideUnrelatedNodes: true
+      //   });
+      // }, 4000);
 
-      setTimeout(function () {
-        graph.trigger('d3ListGraphNodeRoot', ['1-2']);
-      }, 7000);
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphFocusNodes', {
+      //     nodeIds: ['2-3']
+      //   });
+      // }, 3000);
 
-      setTimeout(function () {
-        graph.trigger('d3ListGraphNodeUnroot', ['1-2']);
-      }, 8000);
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphBlurNodes', {
+      //     nodeIds: ['2-3']
+      //   });
+      // }, 4000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphFocusNodes', {
+      //     nodeIds: ['2-3'],
+      //     zoomOut: true,
+      //     excludeClones: true
+      //   });
+      // }, 4000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphBlurNodes', {
+      //     nodeIds: ['2-3'],
+      //     zoomIn: true,
+      //     excludeClones: true
+      //   });
+      // }, 5000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphBlurNodes', {
+      //     nodeIds: ['2-1-1-1', '2-1-4', '1-2', '2-3-1'],
+      //     zoomIn: true
+      //   });
+      // }, 4000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphNodeLock', ['2-1']);
+      // }, 5000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphNodeUnlock', ['2-1']);
+      // }, 6000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphNodeRoot', ['1-2']);
+      // }, 7000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphNodeUnroot', ['1-2']);
+      // }, 8000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphNodeRoot', {
+      //     nodeIds: ['1-2']
+      //   });
+      // }, 1000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphActiveLevel', 1);
+      // }, 2000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphActiveLevel', 3);
+      // }, 3000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphNodeUnroot', {
+      //     nodeIds: ['1-2']
+      //   });
+      // }, 4000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphNodeRoot', {
+      //     nodeIds: ['1-2']
+      //   });
+      // }, 5000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphNodeUnroot', {
+      //     nodeIds: ['1-2']
+      //   });
+      // }, 6000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphActiveLevel', 2);
+      // }, 1000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphActiveLevel', 3);
+      // }, 2000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphActiveLevel', 4);
+      // }, 3000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphActiveLevel', 3);
+      // }, 4000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphActiveLevel', 2);
+      // }, 5000);
+
+      // setTimeout(function () {
+      //   graphSmall.trigger('d3ListGraphActiveLevel', 1);
+      // }, 6000);
     });
+
+    d3.json('data-100.json', function (error, data) {
+      if (error) throw error;
+
+      var graph = createListGraph('#example-medium', data);
+    });
+
+    d3.json('data-500.json', function (error, data) {
+      if (error) throw error;
+
+      var graph = createListGraph('#example-large', data);
+    });
+
+    d3.json('data-1000.json', function (error, data) {
+      if (error) throw error;
+
+      var graph = createListGraph('#example-extra-large', data);
+    });
+
+    // d3.json('data-10000.json', function (error, data) {
+    //   if (error) throw error;
+
+    //   var graph = createListGraph('#example-extreme', data);
+    // });
 
     $('#example').on('d3ListGraphNodeClick', function (e) {
       console.log('I clicked on ' + e.originalEvent.detail.id);

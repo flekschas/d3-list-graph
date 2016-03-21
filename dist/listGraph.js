@@ -380,6 +380,8 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'sortAllColumns',
       value: function sortAllColumns(el, type) {
+        var newSortType = false;
+
         if (this.semiActiveSortingEls) {
           this.resetSemiActiveSortingEls();
         }
@@ -389,6 +391,7 @@ var ListGraph = (function ($,d3) {
           if (this.vis.currentSorting.global.el) {
             this.resetSortEl(this.vis.currentSorting.global.el, type);
           }
+          newSortType = true;
         }
 
         this.vis.currentSorting.global.el = d3.select(el);
@@ -397,10 +400,12 @@ var ListGraph = (function ($,d3) {
 
         var columnKeys = Object.keys(this.vis.currentSorting.local);
         for (var i = 0, len = columnKeys.length; i < len; i++) {
+          // Update local sorting properties and buttons but do **not** sort
+          // locally!
           this.sortColumn(el, columnKeys[i], type, true);
         }
 
-        this.vis.sortAllColumns(type, true);
+        this.vis.sortAllColumns(type, newSortType);
       }
     }, {
       key: 'sortColumn',
@@ -893,15 +898,20 @@ var ListGraph = (function ($,d3) {
    *
    * @method  collectInclClones
    * @author  Fritz Lekschas
-   * @date    2015-12-30
-   * @param   {Object}  node  Start node
-   * @return  {Array}         Array of original and cloned nodes.
+   * @date    2016-03-20
+   * @param   {Object}   node                 Start node
+   * @param   {Boolean}  onlyForOriginalNode  If `true` only collect clones when
+   *   `node` is not a clone itself.
+   * @return  {Array}                         Array of original and cloned nodes.
    */
-  function collectInclClones(node) {
+  function collectInclClones(node, onlyForOriginalNode) {
     var originalNode = node;
 
     if (node.clone) {
       originalNode = node.originalNode;
+      if (onlyForOriginalNode) {
+        return [];
+      }
     }
 
     var clones = [originalNode];
@@ -913,35 +923,60 @@ var ListGraph = (function ($,d3) {
     return clones;
   }
 
-  function up(node, callback, depth, includeClones, child) {
-    var nodesInclClones = includeClones ? collectInclClones(node) : [node];
+  function _up(node, callback, depth, includeClones, child, visitedNodes) {
+    if (visitedNodes[node.id]) {
+      return;
+    }
 
-    for (var i = nodesInclClones.length; i--;) {
+    var nodes = includeClones ? collectInclClones(node) : [node];
+
+    for (var i = nodes.length; i--;) {
       if (child) {
-        callback(nodesInclClones[i], child);
+        callback(nodes[i], child);
       }
 
+      visitedNodes[nodes[i].id] = true;
+
       if (!isFinite(depth) || depth > 0) {
-        var parentsId = Object.keys(nodesInclClones[i].parents);
+        var parentsId = Object.keys(nodes[i].parents);
         for (var j = parentsId.length; j--;) {
-          up(nodesInclClones[i].parents[parentsId[j]], callback, depth - 1, includeClones, nodesInclClones[i]);
+          _up(nodes[i].parents[parentsId[j]], callback, depth - 1, includeClones, nodes[i], visitedNodes);
+        }
+      }
+    }
+  }
+
+  function up(node, callback, depth, includeClones, child) {
+    var visitedNodes = {};
+    _up(node, callback, depth, includeClones, child, visitedNodes);
+  }
+
+  function _down(node, callback, depth, includeClones, visitedNodes) {
+    if (visitedNodes[node.id]) {
+      return;
+    }
+
+    var nodes = includeClones ? collectInclClones(node, true) : [node];
+
+    for (var i = nodes.length; i--;) {
+      callback(nodes[i]);
+
+      visitedNodes[nodes[i].id] = true;
+
+      // We only need to recursivly traverse the graph for the original node as
+      // the clones do not have any children (i.e. the have the same children as
+      // the original node)
+      if (i === 0 && (!isFinite(depth) || depth > 0)) {
+        for (var j = nodes[i].childRefs.length; j--;) {
+          _down(nodes[i].childRefs[j], callback, depth - 1, includeClones, visitedNodes);
         }
       }
     }
   }
 
   function down(node, callback, depth, includeClones) {
-    var nodesInclClones = includeClones ? collectInclClones(node) : [node];
-
-    for (var i = nodesInclClones.length; i--;) {
-      callback(nodesInclClones[i]);
-
-      if (!isFinite(depth) || depth > 0) {
-        for (var j = nodesInclClones[i].childRefs.length; j--;) {
-          down(nodesInclClones[i].childRefs[j], callback, depth - 1, includeClones);
-        }
-      }
-    }
+    var visitedNodes = {};
+    _down(node, callback, depth, includeClones, visitedNodes);
   }
 
   function upAndDown(node, callbackUp, callbackDown, depth, includeClones) {
@@ -949,8 +984,9 @@ var ListGraph = (function ($,d3) {
       up(node, callbackUp, depth, includeClones);
       down(node, callbackDown, depth, includeClones);
     } else {
-      up(node, callbackUp, depth, includeClones);
-      down(node, callbackUp, depth, includeClones);
+      var visitedNodes = {};
+      up(node, callbackUp, depth, includeClones, visitedNodes);
+      down(node, callbackUp, depth, includeClones, visitedNodes);
     }
   }
 
@@ -969,6 +1005,68 @@ var ListGraph = (function ($,d3) {
       }
     }
   }
+
+  var BAR_CLASS = 'bar';
+
+  var Bar = function Bar(barGroup, barData, nodeData, visData, bars) {
+    var _this = this;
+
+    babelHelpers.classCallCheck(this, Bar);
+
+    this.data = barData;
+    this.nodeData = nodeData;
+    this.visData = visData;
+    this.bars = bars;
+
+    this.data.x = nodeData.x;
+    this.data.level = nodeData.depth;
+
+    this.height = this.visData.global.row.contentHeight / (this.data.length * 2) - this.visData.global.cell.padding * 2;
+
+    this.activeHeight = this.visData.global.row.contentHeight - 2;
+
+    this.inactiveheight = this.visData.global.cell.padding * 2 - 1;
+
+    this.selection = barGroup.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
+      return BAR_CLASS + ' ' + data.id;
+    }).classed('active', function (data) {
+      return data.id === _this.visData.nodes[_this.nodeData.depth].sortBy;
+    });
+
+    // Local helper method to avoid code duplication.
+    // Calling a class method from within the consructor is possible but `this`
+    // is not available. Thus, we need to create local function and pass in
+    // `this` as `that`, which feels very hacky but it works.
+    function setupMagnitude(selection) {
+      var _this2 = this;
+
+      var currentSorting = this.visData.nodes[this.nodeData.depth].sortBy;
+
+      selection.attr('d', function (data) {
+        return _this2.bars.generatePath(data, currentSorting);
+      }).classed('bar-magnitude', true);
+    }
+
+    function setupBorder(selection) {
+      selection.attr('x', 0).attr('y', this.visData.global.row.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
+    }
+
+    function setupIndicator(selection) {
+      selection.attr({
+        class: 'bar-indicator',
+        x: 0,
+        y: this.visData.global.row.padding,
+        width: 2,
+        height: this.visData.global.row.contentHeight
+      });
+    }
+
+    this.selection.append('rect').call(setupBorder.bind(this));
+
+    this.selection.append('path').call(setupMagnitude.bind(this));
+
+    this.selection.append('rect').call(setupIndicator.bind(this));
+  };
 
   // Credits go to Mike Bostock: http://bl.ocks.org/mbostock/3468167
   function roundRect(x, y, width, height, radius) {
@@ -1007,141 +1105,6 @@ var ListGraph = (function ($,d3) {
     return 'M' + (c.x + c.radius) + ',' + c.y + 'h' + (c.width - c.radius * 2) + 'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + c.radius + ',' + c.radius + 'v' + (c.height - c.radius * 2) + 'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + -c.radius + ',' + c.radius + 'h' + -(c.width - c.radius * 2 - c.arrowSize * 2) / 2 + 'l' + -c.arrowSize + ',' + c.arrowSize + 'l' + -c.arrowSize + ',' + -c.arrowSize + 'h' + -(c.width - c.radius * 2 - c.arrowSize * 2) / 2 + 'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + -c.radius + ',' + -c.radius + 'v' + (c.radius - (c.height - c.radius)) + 'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + c.radius + ',' + -c.radius + 'z';
   }
 
-  var BAR_CLASS = 'bar';
-
-  var Bar = function () {
-    function Bar(barGroup, barData, nodeData, visData, bars) {
-      var _this = this;
-
-      babelHelpers.classCallCheck(this, Bar);
-
-      this.data = barData;
-      this.nodeData = nodeData;
-      this.visData = visData;
-      this.bars = bars;
-
-      this.data.x = nodeData.x;
-      this.data.level = nodeData.depth;
-
-      this.height = this.visData.global.row.contentHeight / (this.data.length * 2) - this.visData.global.cell.padding * 2;
-
-      this.activeHeight = this.visData.global.row.contentHeight - 2;
-
-      this.inactiveheight = this.visData.global.cell.padding * 2 - 1;
-
-      this.selection = barGroup.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
-        return BAR_CLASS + ' ' + data.id;
-      }).classed('active', function (data) {
-        return data.id === _this.visData.nodes[_this.nodeData.depth].sortBy;
-      });
-
-      // Local helper method to avoid code duplication.
-      // Calling a class method from within the consructor is possible but `this`
-      // is not available. Thus, we need to create local function and pass in
-      // `this` as `that`, which feels very hacky but it works.
-      function setupMagnitude(selection) {
-        var _this2 = this;
-
-        var currentSorting = this.visData.nodes[this.nodeData.depth].sortBy;
-
-        selection.attr('d', function (data) {
-          return Bar.generatePath(data, _this2.bars.mode, currentSorting, _this2.visData);
-        }).classed('bar-magnitude', true);
-      }
-
-      function setupBorder(selection) {
-        selection.attr('x', 0).attr('y', this.visData.global.row.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
-      }
-
-      function setupIndicator(selection) {
-        selection.attr({
-          class: 'bar-indicator',
-          x: 0,
-          y: this.visData.global.row.padding,
-          width: 2,
-          height: this.visData.global.row.contentHeight
-        });
-      }
-
-      this.selection.append('rect').call(setupBorder.bind(this));
-
-      this.selection.append('path').call(setupMagnitude.bind(this));
-
-      this.selection.append('rect').call(setupIndicator.bind(this));
-    }
-
-    babelHelpers.createClass(Bar, null, [{
-      key: 'updateIndicator',
-      value: function updateIndicator(selection, contentWidth, contentHeight, referenceValue) {
-        selection.attr('x', Math.min(contentWidth * Math.min(referenceValue, 1) - 1, contentWidth - 2)).attr('width', 2);
-      }
-    }, {
-      key: 'generatePath',
-      value: function generatePath(data, mode, currentSorting, visData, indicator, adjustWidth, bottom) {
-        if (mode === 'two') {
-          return Bar.generateTwoBarsPath(data, visData, bottom);
-        }
-        return Bar.generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth);
-      }
-    }, {
-      key: 'generateOneBarPath',
-      value: function generateOneBarPath(data, currentSorting, visData, indicator, adjustWidth) {
-        var height = visData.global.row.contentHeight;
-        var normValue = Math.min(data.value, 1);
-        var normIndicator = Math.min(indicator, 1);
-
-        var x = 0;
-        var width = 2;
-
-        var radius = {
-          topLeft: 2,
-          bottomLeft: 2
-        };
-
-        if (indicator) {
-          radius = {};
-        }
-
-        if (data.id !== currentSorting && typeof indicator === 'undefined') {
-          x = normValue * visData.global.column.contentWidth - 3;
-          radius = {};
-        } else if (indicator) {
-          x = normIndicator * visData.global.column.contentWidth;
-          if (adjustWidth) {
-            if (normValue < normIndicator) {
-              x = normValue * visData.global.column.contentWidth;
-            }
-            width = Math.max(Math.abs(normIndicator - normValue) * visData.global.column.contentWidth, 2);
-          }
-        } else {
-          width = visData.global.column.contentWidth * normValue;
-        }
-
-        x = Math.min(x, visData.global.column.contentWidth - 2);
-
-        return roundRect(x, visData.global.row.padding, width, height, radius);
-      }
-    }, {
-      key: 'generateTwoBarsPath',
-      value: function generateTwoBarsPath(data, visData, bottom) {
-        var normValue = Math.min(data.value, 1);
-        var height = visData.global.row.contentHeight / 2;
-        var width = visData.global.column.contentWidth * normValue;
-
-        var y = visData.global.row.padding;
-        var radius = { topLeft: 2 };
-
-        if (bottom) {
-          radius = { bottomLeft: 2 };
-          y += height;
-        }
-
-        return roundRect(0, y, width, height, radius);
-      }
-    }]);
-    return Bar;
-  }();
-
   var BARS_CLASS = 'bars';
 
   var Bars = function () {
@@ -1153,6 +1116,8 @@ var ListGraph = (function ($,d3) {
       this.vis = vis;
       this.mode = mode;
       this.visData = visData;
+
+      this.indicatorX = d3.scale.linear().domain([0, 1]).range([1, this.visData.global.column.contentWidth - 3]);
 
       this.selection = selection.append('g').attr('class', BARS_CLASS);
 
@@ -1169,7 +1134,7 @@ var ListGraph = (function ($,d3) {
         this.selection.selectAll('.bar-magnitude').data(update, function (data) {
           return data.barId;
         }).transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-          return Bar.generatePath(data, _this.mode, sortBy, _this.visData);
+          return _this.generatePath(data, _this.mode, sortBy, _this.visData);
         });
       }
     }, {
@@ -1193,13 +1158,13 @@ var ListGraph = (function ($,d3) {
         });
 
         selection.selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-          return Bar.generatePath(data, _this2.mode, sortBy, _this2.visData);
+          return _this2.generatePath(data, sortBy);
         });
       }
     }, {
       key: 'updateIndicator',
-      value: function updateIndicator(bars, referenceValue, direct) {
-        Bar.updateIndicator(bars, this.visData.global.column.contentWidth, direct ? this.visData.global.row.contentHeight : 4, referenceValue);
+      value: function updateIndicator(selection, referenceValue) {
+        selection.attr('x', this.indicatorX(referenceValue)).attr('width', 2);
       }
     }, {
       key: 'switchMode',
@@ -1210,7 +1175,7 @@ var ListGraph = (function ($,d3) {
           if (mode === 'one') {
             if (currentSorting.global.type) {
               this.selection.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-                return Bar.generateOneBarPath(data, currentSorting.global.type, _this3.visData);
+                return _this3.generateOneBarPath(data, currentSorting.global.type);
               });
             } else {
               // console.error(
@@ -1222,16 +1187,79 @@ var ListGraph = (function ($,d3) {
 
           if (mode === 'two') {
             this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return Bar.generateTwoBarsPath(data, _this3.visData);
+              return _this3.generateTwoBarsPath(data);
             });
 
             this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return Bar.generateTwoBarsPath(data, _this3.visData, true);
+              return _this3.generateTwoBarsPath(data, true);
             });
           }
 
           this.mode = mode;
         }
+      }
+    }, {
+      key: 'generatePath',
+      value: function generatePath(data, currentSorting, indicator, adjustWidth, bottom) {
+        if (this.mode === 'two') {
+          return this.generateTwoBarsPath(data, bottom);
+        }
+        return this.generateOneBarPath(data, currentSorting, indicator, adjustWidth);
+      }
+    }, {
+      key: 'generateOneBarPath',
+      value: function generateOneBarPath(data, currentSorting, indicator, adjustWidth) {
+        var height = this.visData.global.row.contentHeight;
+        var normValue = Math.min(data.value, 1);
+        var normIndicator = Math.min(indicator, 1);
+
+        var x = 0;
+        var width = 2;
+
+        var radius = {
+          topLeft: 2,
+          bottomLeft: 2
+        };
+
+        if (indicator) {
+          radius = {};
+        }
+
+        if (data.id !== currentSorting && typeof indicator === 'undefined') {
+          x = this.indicatorX(normValue);
+          radius = {};
+        } else if (indicator) {
+          x = normIndicator * this.visData.global.column.contentWidth;
+          if (adjustWidth) {
+            if (normValue < normIndicator) {
+              x = normValue * this.visData.global.column.contentWidth;
+            }
+            width = Math.max(Math.abs(normIndicator - normValue) * this.visData.global.column.contentWidth, 2);
+          }
+        } else {
+          width = this.visData.global.column.contentWidth * normValue;
+        }
+
+        x = Math.min(x, this.visData.global.column.contentWidth - 2);
+
+        return roundRect(x, this.visData.global.row.padding, width, height, radius);
+      }
+    }, {
+      key: 'generateTwoBarsPath',
+      value: function generateTwoBarsPath(data, bottom) {
+        var normValue = Math.min(data.value, 1);
+        var height = this.visData.global.row.contentHeight / 2;
+        var width = this.visData.global.column.contentWidth * normValue;
+
+        var y = this.visData.global.row.padding;
+        var radius = { topLeft: 2 };
+
+        if (bottom) {
+          radius = { bottomLeft: 2 };
+          y += height;
+        }
+
+        return roundRect(0, y, width, height, radius);
       }
     }]);
     return Bars;
@@ -1353,19 +1381,7 @@ var ListGraph = (function ($,d3) {
         return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
       });
 
-      this.visNodes = this.nodes.append('g').attr('class', CLASS_NODE_VISIBLE).on('mouseenter', function (data) {
-        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
-          if (!!!this.vis.activeScrollbar) {
-            this.enterHandler.call(this, domEl, _data);
-          }
-        }.bind(that), [this, data]);
-      }).on('mouseleave', function (data) {
-        that.vis.interactionWrapper.call(that.vis, function (domEl, _data) {
-          if (!!!this.vis.activeScrollbar) {
-            this.leaveHandler.call(this, domEl, _data);
-          }
-        }.bind(that), [this, data]);
-      });
+      this.visNodes = this.nodes.append('g').attr('class', CLASS_NODE_VISIBLE);
 
       this.visNodes.append('rect').call(drawFullSizeRect, 'bg-border');
 
@@ -5339,6 +5355,22 @@ var ListGraph = (function ($,d3) {
         that.nodes.lockHandler.call(that.nodes, this, d3.select(this).datum());
       });
 
+      this.svgJq.on('mouseenter', '.' + this.nodes.classNodeVisible, function () {
+        that.interactionWrapper.call(that, function (domEl, data) {
+          if (!!!this.vis.activeScrollbar) {
+            this.enterHandler.call(this, domEl, data);
+          }
+        }.bind(that.nodes), [this, d3.select(this).datum()]);
+      });
+
+      this.svgJq.on('mouseleave', '.' + this.nodes.classNodeVisible, function () {
+        that.interactionWrapper.call(that, function (domEl, data) {
+          if (!!!this.vis.activeScrollbar) {
+            this.leaveHandler.call(this, domEl, data);
+          }
+        }.bind(that.nodes), [this, d3.select(this).datum()]);
+      });
+
       // Normally we would reference a named methods but since we need to access
       // the class' `this` property instead of the DOM element we need to use an
       // arrow function.
@@ -5665,7 +5697,7 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'sortAllColumns',
       value: function sortAllColumns(property, newSortType) {
-        this.currentSorting.global.order = this.currentSorting.global.order === -1 ? 1 : -1;
+        this.currentSorting.global.order = this.currentSorting.global.order === -1 && !newSortType ? 1 : -1;
 
         this.nodes.sort(this.layout.sort(undefined, property, this.currentSorting.global.order).updateNodesVisibility().nodes(), newSortType);
 

@@ -1,6 +1,6 @@
 # D3 List Graph [![Build Status](https://travis-ci.org/flekschas/d3-list-graph.svg?branch=master)](https://travis-ci.org/flekschas/d3-list-graph)
 
-> A flat horizontal scrollable node-link diagram, implemented in D3.
+> A flat horizontal scrollable node-link diagram, implemented in ES6 and orchestrated by D3.
 
 Demo: https://flekschas.github.io/d3-list-graph/
 

@@ -452,6 +452,8 @@ class Topbar {
   }
 
   sortAllColumns (el, type) {
+    let newSortType = false;
+
     if (this.semiActiveSortingEls) {
       this.resetSemiActiveSortingEls();
     }
@@ -461,6 +463,7 @@ class Topbar {
       if (this.vis.currentSorting.global.el) {
         this.resetSortEl(this.vis.currentSorting.global.el, type);
       }
+      newSortType = true;
     }
 
     this.vis.currentSorting.global.el = d3.select(el);
@@ -469,10 +472,12 @@ class Topbar {
 
     const columnKeys = Object.keys(this.vis.currentSorting.local);
     for (let i = 0, len = columnKeys.length; i < len; i++) {
+      // Update local sorting properties and buttons but do **not** sort
+      // locally!
       this.sortColumn(el, columnKeys[i], type, true);
     }
 
-    this.vis.sortAllColumns(type, true);
+    this.vis.sortAllColumns(type, newSortType);
   }
 
   sortColumn (el, index, type, global) {

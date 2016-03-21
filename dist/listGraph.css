@@ -136,6 +136,7 @@
       position: relative; }
     .list-graph .top-bar .control-btn.semi-active .label,
     .list-graph .top-bar .control-btn.semi-active .expandable-label .letter {
+      font-weight: bold;
       text-decoration: underline; }
     .list-graph .top-bar .control-btn.inactive {
       cursor: default !important;
