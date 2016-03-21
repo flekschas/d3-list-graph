@@ -763,7 +763,7 @@ class ListGraph {
 
   sortAllColumns (property, newSortType) {
     this.currentSorting.global.order =
-      this.currentSorting.global.order === -1 ? 1 : -1;
+      this.currentSorting.global.order === -1 && !newSortType ? 1 : -1;
 
     this.nodes.sort(
       this.layout
