@@ -243,7 +243,7 @@ class ListGraph {
             that.registerOutSideClickHandler(
               'nodeContextMenu',
               [that.nodeContextMenu.wrapper.node()],
-              ['node'],
+              ['visible-node'],
               () => {
                 // The context of this method is the context of the outer click
                 // handler.
@@ -527,13 +527,15 @@ class ListGraph {
   }
 
   dragStartHandler () {
-    this.noInteractions = true;
-    this.baseElD3.classed('dragging', true).classed('unselectable', true);
+    if (!this.dragging) {
+      this.noInteractions = (this.dragging = true);
+    }
   }
 
   dragEndHandler () {
-    this.noInteractions = false;
-    this.baseElD3.classed('dragging', false).classed('unselectable', false);
+    if (this.dragging) {
+      this.noInteractions = (this.dragging = false);
+    }
   }
 
   static scrollElVertically (el, offset) {
@@ -550,7 +552,6 @@ class ListGraph {
   globalMouseUp (event) {
     this.noInteractions = false;
     if (this.activeScrollbar) {
-      this.baseElD3.classed('dragging', false).classed('unselectable', false);
       const data = this.activeScrollbar.datum();
       const deltaY = data.scrollbar.clientY - event.clientY;
 
@@ -582,6 +583,7 @@ class ListGraph {
 
   globalMouseMove (event) {
     if (this.activeScrollbar) {
+      event.preventDefault();
       const data = this.activeScrollbar.datum();
       const deltaY = data.scrollbar.clientY - event.clientY;
 
@@ -666,7 +668,6 @@ class ListGraph {
 
   scrollbarMouseDown (el, event) {
     this.noInteractions = true;
-    this.baseElD3.classed('unselectable', true);
     this.activeScrollbar = d3.select(el).classed('active', true);
     this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
   }

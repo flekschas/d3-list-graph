@@ -3,6 +3,15 @@
     transition: all $transition-fast $ease-in-out-cubic;
   }
 
+  .node .invisible-container {
+    display: block !important;
+    opacity: 0;
+  }
+
+  .node.invisible * {
+    display: none;
+  }
+
   .node .bg {
     fill: #fff;
     transition: all $transition-fast $ease-in-out-cubic;

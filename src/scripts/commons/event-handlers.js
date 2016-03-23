@@ -49,14 +49,21 @@ export function onDragDrop (
       if (typeof limits === 'function') {
         appliedLimits = limits();
       }
-      dragStartHandler();
+      // dragStartHandler();
     });
   }
 
   if (dragMoveHandler) {
     drag.on('drag', function (data) {
+      for (let i = notWhenTrue.length; i--;) {
+        if (notWhenTrue[i]()) {
+          return;
+        }
+      }
+      d3.event.sourceEvent.preventDefault();
+      dragStartHandler();
       dragMoveHandler.call(
-        this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue
+        this, data, elsToBeDragged, orientation, appliedLimits
       );
     });
   }
@@ -80,14 +87,8 @@ export function onDragDrop (
 }
 
 export function dragMoveHandler (
-  data, elsToBeDragged, orientation, limits, notWhenTrue
+  data, elsToBeDragged, orientation, limits
 ) {
-  for (let i = notWhenTrue.length; i--;) {
-    if (notWhenTrue[i]()) {
-      return;
-    }
-  }
-
   let els = d3.select(this);
 
   if (elsToBeDragged && elsToBeDragged.length) {
