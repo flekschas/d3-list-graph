@@ -380,18 +380,16 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'sortAllColumns',
       value: function sortAllColumns(el, type) {
-        var newSortType = false;
+        var newSortType = this.vis.currentSorting.global.type !== type;
 
-        if (this.semiActiveSortingEls) {
-          this.resetSemiActiveSortingEls();
-        }
-
-        if (this.vis.currentSorting.global.type !== type) {
+        if (newSortType) {
+          if (this.semiActiveSortingEls) {
+            this.resetSemiActiveSortingEls();
+          }
           // Unset class of previous global sorting element
           if (this.vis.currentSorting.global.el) {
             this.resetSortEl(this.vis.currentSorting.global.el, type);
           }
-          newSortType = true;
         }
 
         this.vis.currentSorting.global.el = d3.select(el);
@@ -521,6 +519,8 @@ var ListGraph = (function ($,d3) {
           return index === _this.vis.activeLevel;
         }
         return false;
+      }).each(function (data) {
+        data.scrollTop = 0;
       });
 
       // We need to add an empty rectangle that fills up the whole column to ensure
@@ -1367,6 +1367,10 @@ var ListGraph = (function ($,d3) {
         selection.attr('x', shrinkingAmount).attr('y', that.visData.global.row.padding + shrinkingAmount).attr('width', that.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', that.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
       }
 
+      function drawMaxSizedRect(selection) {
+        selection.attr('x', 0).attr('y', 0).attr('width', that.visData.global.column.contentWidth).attr('height', that.visData.global.row.height).attr('class', 'invisible-container');
+      }
+
       this.groups = baseSelection.append('g').attr('class', CLASS_NODES).call(function (selection) {
         selection.each(function storeLinkToGroupNode() {
           d3.select(this.parentNode).datum().nodes = this;
@@ -1380,6 +1384,8 @@ var ListGraph = (function ($,d3) {
       }).attr('transform', function (data) {
         return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
       });
+
+      this.nodes.append('rect').call(drawMaxSizedRect);
 
       this.visNodes = this.nodes.append('g').attr('class', CLASS_NODE_VISIBLE);
 
@@ -1466,6 +1472,8 @@ var ListGraph = (function ($,d3) {
           return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true, true]);
         });
       }
+
+      this.nodes.call(this.isInvisible.bind(this));
     }
 
     babelHelpers.createClass(Nodes, [{
@@ -2163,9 +2171,53 @@ var ListGraph = (function ($,d3) {
         this.updateVisibility();
       }
     }, {
+      key: 'isInvisible',
+      value: function isInvisible(selection, customScrollTop) {
+        var _this2 = this;
+
+        selection.classed('invisible', function (data) {
+          var scrollTop = customScrollTop || _this2.visData.nodes[data.depth].scrollTop;
+
+          // Node is right to the visible container
+          if (data.x + _this2.vis.dragged.x >= _this2.vis.width) {
+            return data.invisible = true;
+          }
+          // Node is below the visible container
+          if (data.y + scrollTop >= _this2.vis.height) {
+            return data.invisible = true;
+          }
+          // Node is above the visible container
+          if (data.y + _this2.visData.global.row.height + scrollTop <= 0) {
+            return data.invisible = true;
+          }
+          // Node is left to the visible container
+          if (data.x + _this2.vis.dragged.x + _this2.visData.global.column.width <= 0) {
+            return data.invisible = true;
+          }
+          return data.invisible = false;
+        });
+      }
+    }, {
+      key: 'makeAllTempVisible',
+      value: function makeAllTempVisible(unset) {
+        if (unset) {
+          this.nodes.classed('invisible', function (data) {
+            var prevInvisible = data._invisible;
+            data._invisible = undefined;
+
+            return prevInvisible;
+          });
+        } else {
+          this.nodes.classed('invisible', function (data) {
+            data._invisible = data.invisible;
+            return false;
+          });
+        }
+      }
+    }, {
       key: 'highlightNodes',
       value: function highlightNodes(d3El, className, restriction, excludeClones, noVisibilityCheck) {
-        var _this2 = this;
+        var _this3 = this;
 
         var that = this;
         var data = d3El.datum();
@@ -2196,7 +2248,7 @@ var ListGraph = (function ($,d3) {
             // Store: (parent)->(child)
             // Ignore: (parent)->(siblings of child)
             if (nodeData.links.outgoing.refs[i].target.node.id === childData.id) {
-              _this2.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
+              _this3.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
             }
           }
         };
@@ -2204,7 +2256,7 @@ var ListGraph = (function ($,d3) {
         var traverseCallbackDown = function traverseCallbackDown(nodeData) {
           nodeData.hovering = 2;
           for (var i = nodeData.links.outgoing.refs.length; i--;) {
-            _this2.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
+            _this3.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
           }
         };
 
@@ -2338,14 +2390,14 @@ var ListGraph = (function ($,d3) {
         this.nodes.classed(appliedClassName + '-directly', false);
         this.nodes.classed(appliedClassName + '-indirectly', false);
 
-        if (this.currentLinks[appliedClassName][data.id]) {
+        if (this.currentLinks[appliedClassName] && this.currentLinks[appliedClassName][data.id]) {
           this.links.highlight(this.currentLinks[appliedClassName][data.id], false, appliedClassName);
         }
       }
     }, {
       key: 'sort',
       value: function sort(update, newSortType) {
-        var _this3 = this;
+        var _this4 = this;
 
         for (var i = update.length; i--;) {
           var selection = this.nodes.data(update[i].rows, function (data) {
@@ -2354,11 +2406,11 @@ var ListGraph = (function ($,d3) {
 
           this.vis.svgD3.classed('sorting', true);
           selection.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-            return 'translate(' + (data.x + _this3.visData.global.column.padding) + ', ' + data.y + ')';
+            return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
           }).call(allTransitionsEnded, function () {
-            _this3.vis.svgD3.classed('sorting', false);
-            _this3.vis.updateLevelsVisibility();
-            _this3.vis.updateScrolling();
+            _this4.vis.svgD3.classed('sorting', false);
+            _this4.vis.updateLevelsVisibility();
+            _this4.vis.updateScrolling();
           });
 
           if (newSortType && this.vis.currentSorting.local[update[i].level].type !== 'name') {
@@ -2378,17 +2430,18 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'updateVisibility',
       value: function updateVisibility() {
-        var _this4 = this;
+        var _this5 = this;
 
         // Calls the D3 list graph layout method to update the nodes position.
         this.vis.layout.updateNodesVisibility();
 
         // Transition to the updated position
         this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-          return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
+          return 'translate(' + (data.x + _this5.visData.global.column.padding) + ', ' + data.y + ')';
         }).call(allTransitionsEnded, function () {
-          _this4.vis.updateLevelsVisibility();
-          _this4.vis.updateScrolling();
+          _this5.vis.updateLevelsVisibility();
+          _this5.vis.updateScrolling();
+          _this5.nodes.call(_this5.isInvisible.bind(_this5));
         });
 
         this.vis.links.updateVisibility();
@@ -5034,7 +5087,7 @@ var ListGraph = (function ($,d3) {
    * @param   {Array}             notWhenTrue     List if function returning a
    *   Boolean value which should prevent the dragMoveHandler from working.
    */
-  function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue) {
+  function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue, dragData) {
     var drag = d3.behavior.drag();
 
     var appliedLimits = limits || {}; // eslint-disable-line no-param-reassign
@@ -5044,13 +5097,20 @@ var ListGraph = (function ($,d3) {
         if (typeof limits === 'function') {
           appliedLimits = limits();
         }
-        dragStartHandler();
+        // dragStartHandler();
       });
     }
 
     if (dragMoveHandler) {
       drag.on('drag', function (data) {
-        dragMoveHandler.call(this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue);
+        for (var i = notWhenTrue.length; i--;) {
+          if (notWhenTrue[i]()) {
+            return;
+          }
+        }
+        d3.event.sourceEvent.preventDefault();
+        dragStartHandler();
+        dragMoveHandler.call(this, data, elsToBeDragged, orientation, appliedLimits);
       });
     }
 
@@ -5063,7 +5123,7 @@ var ListGraph = (function ($,d3) {
 
       // Set default data if not available.
       if (!data) {
-        data = { dragX: 0, dragY: 0 }; // eslint-disable-line no-param-reassign
+        data = { drag: dragData }; // eslint-disable-line no-param-reassign
         el.datum(data);
       }
 
@@ -5072,13 +5132,7 @@ var ListGraph = (function ($,d3) {
     });
   }
 
-  function dragMoveHandler(data, elsToBeDragged, orientation, limits, notWhenTrue) {
-    for (var i = notWhenTrue.length; i--;) {
-      if (notWhenTrue[i]()) {
-        return;
-      }
-    }
-
+  function dragMoveHandler(data, elsToBeDragged, orientation, limits) {
     var els = d3.select(this);
 
     if (elsToBeDragged && elsToBeDragged.length) {
@@ -5100,19 +5154,19 @@ var ListGraph = (function ($,d3) {
 
     if (orientation === 'horizontal' || orientation === 'vertical') {
       if (orientation === 'horizontal') {
-        data.dragX += d3.event.dx;
-        data.dragX = withinLimits(data.dragX + d3.event.dx, limits.x);
-        els.style('transform', 'translateX(' + data.dragX + 'px)');
+        data.drag.x += d3.event.dx;
+        data.drag.x = withinLimits(data.drag.x + d3.event.dx, limits.x);
+        els.style('transform', 'translateX(' + data.drag.x + 'px)');
       }
       if (orientation === 'vertical') {
-        data.dragY += d3.event.dy;
-        data.dragX = withinLimits(data.dragY + d3.event.dy, limits.y);
-        els.style('transform', 'translateY(' + data.dragY + 'px)');
+        data.drag.y += d3.event.dy;
+        data.drag.x = withinLimits(data.drag.y + d3.event.dy, limits.y);
+        els.style('transform', 'translateY(' + data.drag.y + 'px)');
       }
     } else {
-      data.dragX += d3.event.dx;
-      data.dragY += d3.event.dy;
-      els.style('transform', 'translate(' + data.dragX + 'px,' + data.dragY + 'px)');
+      data.drag.x += d3.event.dx;
+      data.drag.y += d3.event.dy;
+      els.style('transform', 'translate(' + data.drag.x + 'px,' + data.drag.y + 'px)');
     }
   }
 
@@ -5262,6 +5316,8 @@ var ListGraph = (function ($,d3) {
 
       this.baseElJq.addClass(CLASSNAME);
 
+      this.dragged = { x: 0, y: 0 };
+
       if (init.forceWidth) {
         this.baseElJq.width(this.width);
       }
@@ -5328,7 +5384,7 @@ var ListGraph = (function ($,d3) {
           // Add a new global outside click listener using this node and the
           // node context menu as the related elements.
           requestNextAnimationFrame(function () {
-            that.registerOutSideClickHandler('nodeContextMenu', [that.nodeContextMenu.wrapper.node()], ['node'], function () {
+            that.registerOutSideClickHandler('nodeContextMenu', [that.nodeContextMenu.wrapper.node()], ['visible-node'], function () {
               // The context of this method is the context of the outer click
               // handler.
               that.nodeContextMenu.close();
@@ -5388,7 +5444,7 @@ var ListGraph = (function ($,d3) {
       });
 
       // Enable dragging of the whole graph.
-      this.svgD3.call(onDragDrop, this.dragStartHandler.bind(this), dragMoveHandler, this.dragEndHandler.bind(this), [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), [this.scrollbarDragging.bind(this)]);
+      this.svgD3.call(onDragDrop, this.dragStartHandler.bind(this), this.dragMoveHandler.bind(this), this.dragEndHandler.bind(this), [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), [this.scrollbarDragging.bind(this)], this.dragged);
 
       this.events.on('d3ListGraphLevelFocus', function (levelId) {
         return _this.levels.focus(levelId);
@@ -5427,6 +5483,21 @@ var ListGraph = (function ($,d3) {
     }
 
     babelHelpers.createClass(ListGraph, [{
+      key: 'dragMoveHandler',
+      value: function dragMoveHandler$$(data, elsToBeDragged, orientation, limits, notWhenTrue) {
+        dragMoveHandler(data, elsToBeDragged, orientation, limits, notWhenTrue);
+        this.checkNodeVisibility();
+      }
+    }, {
+      key: 'checkNodeVisibility',
+      value: function checkNodeVisibility(level, customScrollTop) {
+        var nodes = level ? this.nodes.nodes.filter(function (data) {
+          return data.depth === level;
+        }) : this.nodes.nodes;
+
+        nodes.call(this.nodes.isInvisible.bind(this.nodes), customScrollTop);
+      }
+    }, {
       key: 'registerOutSideClickHandler',
       value: function registerOutSideClickHandler(id, els, elClassNames, callback) {
         // We need to register a unique property to be able to indentify that
@@ -5537,14 +5608,16 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'dragStartHandler',
       value: function dragStartHandler() {
-        this.noInteractions = true;
-        this.baseElD3.classed('unselectable', true);
+        if (!this.dragging) {
+          this.noInteractions = this.dragging = true;
+        }
       }
     }, {
       key: 'dragEndHandler',
       value: function dragEndHandler() {
-        this.noInteractions = false;
-        this.baseElD3.classed('unselectable', false);
+        if (this.dragging) {
+          this.noInteractions = this.dragging = false;
+        }
       }
     }, {
       key: 'scrollbarDragging',
@@ -5556,7 +5629,6 @@ var ListGraph = (function ($,d3) {
       value: function globalMouseUp(event) {
         this.noInteractions = false;
         if (this.activeScrollbar) {
-          this.baseElD3.classed('unselectable', false);
           var data = this.activeScrollbar.datum();
           var deltaY = data.scrollbar.clientY - event.clientY;
 
@@ -5576,6 +5648,7 @@ var ListGraph = (function ($,d3) {
       key: 'globalMouseMove',
       value: function globalMouseMove(event) {
         if (this.activeScrollbar) {
+          event.preventDefault();
           var data = this.activeScrollbar.datum();
           var deltaY = data.scrollbar.clientY - event.clientY;
 
@@ -5584,6 +5657,9 @@ var ListGraph = (function ($,d3) {
 
           // Scroll content
           var contentScrollTop = Math.max(Math.min(data.scrollTop + data.invertedHeightScale(deltaY), 0), -data.scrollHeight);
+
+          // Check if nodes are visible.
+          this.checkNodeVisibility(data.level, contentScrollTop);
 
           ListGraph.scrollElVertically(data.nodes, contentScrollTop);
 
@@ -5609,7 +5685,6 @@ var ListGraph = (function ($,d3) {
       key: 'scrollbarMouseDown',
       value: function scrollbarMouseDown(el, event) {
         this.noInteractions = true;
-        this.baseElD3.classed('unselectable', true);
         this.activeScrollbar = d3.select(el).classed('active', true);
         this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
       }
@@ -5619,6 +5694,8 @@ var ListGraph = (function ($,d3) {
         event.preventDefault();
 
         var data = d3.select(el).datum();
+
+        this.checkNodeVisibility(data.level);
 
         if (data.scrollHeight > 0) {
           // Scroll nodes
@@ -5693,6 +5770,7 @@ var ListGraph = (function ($,d3) {
         this.nodes.sort(this.layout.sort(level, property, sortOrder).updateNodesVisibility().nodes(level), newSortType);
         this.links.sort(this.layout.links(level - 1, level + 1));
         this.nodeContextMenu.updatePosition();
+        this.checkNodeVisibility();
       }
     }, {
       key: 'sortAllColumns',
@@ -5703,6 +5781,7 @@ var ListGraph = (function ($,d3) {
 
         this.links.sort(this.layout.links());
         this.nodeContextMenu.updatePosition();
+        this.checkNodeVisibility();
       }
     }, {
       key: 'switchBarMode',
@@ -5772,8 +5851,10 @@ var ListGraph = (function ($,d3) {
               height = _this4.height > contBBox.height ? _this4.height : contBBox.height;
             }
 
-            x = contBBox.x;
+            x = contBBox.x + _this4.dragged.x;
             y = contBBox.y;
+
+            _this4.nodes.makeAllTempVisible();
 
             _this4.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
           })();
@@ -5783,6 +5864,8 @@ var ListGraph = (function ($,d3) {
       key: 'zoomedView',
       value: function zoomedView() {
         if (!this.zoomedOut) {
+          this.nodes.makeAllTempVisible(true);
+
           this.svgD3.classed('zoomedOut', false).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
         }
       }

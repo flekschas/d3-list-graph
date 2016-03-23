@@ -20,6 +20,8 @@
     display: none; }
     .list-graph .hidden-default.shown {
       display: display; }
+  .list-graph .invisible {
+    opacity: 0; }
   .list-graph .invisible-default {
     opacity: 0; }
     .list-graph .invisible-default.visible,
@@ -27,15 +29,6 @@
       opacity: 1; }
   .list-graph .ease-all {
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
-  .list-graph.unselectable * {
-    cursor: default; }
-  .list-graph.unselectable .label {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none; }
   .list-graph.less-animations * {
     transition: none !important; }
   .list-graph .is-mirrored-horizontally {
@@ -234,6 +227,13 @@
 
 .list-graph .node {
   transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+
+.list-graph .node .invisible-container {
+  display: block !important;
+  opacity: 0; }
+
+.list-graph .node.invisible * {
+  display: none; }
 
 .list-graph .node .bg {
   fill: #fff;

@@ -452,18 +452,16 @@ class Topbar {
   }
 
   sortAllColumns (el, type) {
-    let newSortType = false;
+    const newSortType = this.vis.currentSorting.global.type !== type;
 
-    if (this.semiActiveSortingEls) {
-      this.resetSemiActiveSortingEls();
-    }
-
-    if (this.vis.currentSorting.global.type !== type) {
+    if (newSortType) {
+      if (this.semiActiveSortingEls) {
+        this.resetSemiActiveSortingEls();
+      }
       // Unset class of previous global sorting element
       if (this.vis.currentSorting.global.el) {
         this.resetSortEl(this.vis.currentSorting.global.el, type);
       }
-      newSortType = true;
     }
 
     this.vis.currentSorting.global.el = d3.select(el);

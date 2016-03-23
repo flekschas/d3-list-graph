@@ -36,8 +36,10 @@ class Nodes {
     this.events = events;
     this.currentLinks = {};
     this.iconDimension = Math.min(
-      (this.visData.global.row.contentHeight / 2 -
-      this.visData.global.cell.padding * 2),
+      (
+        this.visData.global.row.contentHeight / 2 -
+        this.visData.global.cell.padding * 2
+      ),
       this.visData.global.column.padding / 2 - 4
     );
 
@@ -118,6 +120,15 @@ class Nodes {
         .classed(className, true);
     }
 
+    function drawMaxSizedRect (selection) {
+      selection
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', that.visData.global.column.contentWidth)
+        .attr('height', that.visData.global.row.height)
+        .attr('class', 'invisible-container');
+    }
+
     this.groups = baseSelection.append('g')
       .attr('class', CLASS_NODES)
       .call(selection => {
@@ -135,6 +146,8 @@ class Nodes {
         .classed(CLASS_CLONE, data => data.clone)
         .attr('transform', data => 'translate(' +
           (data.x + this.visData.global.column.padding) + ', ' + data.y + ')');
+
+    this.nodes.append('rect').call(drawMaxSizedRect);
 
     this.visNodes = this.nodes.append('g').attr('class', CLASS_NODE_VISIBLE);
 
@@ -305,6 +318,8 @@ class Nodes {
         )
       );
     }
+
+    this.nodes.call(this.isInvisible.bind(this));
   }
 
   get classNnodes () { return CLASS_NODES; }
@@ -1023,6 +1038,57 @@ class Nodes {
     this.updateVisibility();
   }
 
+  isInvisible (selection, customScrollTop) {
+    selection.classed('invisible', data => {
+      const scrollTop = customScrollTop ||
+        this.visData.nodes[data.depth].scrollTop;
+
+      // Node is right to the visible container
+      if (data.x + this.vis.dragged.x >= this.vis.width) {
+        return (data.invisible = true);
+      }
+      // Node is below the visible container
+      if (
+        data.y + scrollTop >= this.vis.height
+      ) {
+        return (data.invisible = true);
+      }
+      // Node is above the visible container
+      if (
+        data.y + this.visData.global.row.height +
+        scrollTop <= 0
+      ) {
+        return (data.invisible = true);
+      }
+      // Node is left to the visible container
+      if (data.x + this.vis.dragged.x + this.visData.global.column.width <= 0) {
+        return (data.invisible = true);
+      }
+      return (data.invisible = false);
+    });
+  }
+
+  makeAllTempVisible (unset) {
+    if (unset) {
+      this.nodes.classed(
+        'invisible', data => {
+          const prevInvisible = data._invisible;
+          data._invisible = undefined;
+
+          return prevInvisible;
+        }
+      );
+    } else {
+      this.nodes
+        .classed(
+          'invisible', data => {
+            data._invisible = data.invisible;
+            return false;
+          }
+        );
+    }
+  }
+
   highlightNodes (
     d3El, className, restriction, excludeClones, noVisibilityCheck
   ) {
@@ -1221,7 +1287,10 @@ class Nodes {
     this.nodes.classed(appliedClassName + '-directly', false);
     this.nodes.classed(appliedClassName + '-indirectly', false);
 
-    if (this.currentLinks[appliedClassName][data.id]) {
+    if (
+      this.currentLinks[appliedClassName] &&
+      this.currentLinks[appliedClassName][data.id]
+    ) {
       this.links.highlight(
         this.currentLinks[appliedClassName][data.id],
         false,
@@ -1275,6 +1344,7 @@ class Nodes {
       .call(allTransitionsEnded, () => {
         this.vis.updateLevelsVisibility();
         this.vis.updateScrolling();
+        this.nodes.call(this.isInvisible.bind(this));
       });
 
     this.vis.links.updateVisibility();

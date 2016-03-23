@@ -38,7 +38,7 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  */
 export function onDragDrop (
   selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged,
-  orientation, limits, notWhenTrue
+  orientation, limits, notWhenTrue, dragData
 ) {
   const drag = d3.behavior.drag();
 
@@ -49,14 +49,21 @@ export function onDragDrop (
       if (typeof limits === 'function') {
         appliedLimits = limits();
       }
-      dragStartHandler();
+      // dragStartHandler();
     });
   }
 
   if (dragMoveHandler) {
     drag.on('drag', function (data) {
+      for (let i = notWhenTrue.length; i--;) {
+        if (notWhenTrue[i]()) {
+          return;
+        }
+      }
+      d3.event.sourceEvent.preventDefault();
+      dragStartHandler();
       dragMoveHandler.call(
-        this, data, elsToBeDragged, orientation, appliedLimits, notWhenTrue
+        this, data, elsToBeDragged, orientation, appliedLimits
       );
     });
   }
@@ -70,7 +77,7 @@ export function onDragDrop (
 
     // Set default data if not available.
     if (!data) {
-      data = { dragX: 0, dragY: 0 };  // eslint-disable-line no-param-reassign
+      data = { drag: dragData };  // eslint-disable-line no-param-reassign
       el.datum(data);
     }
 
@@ -80,14 +87,8 @@ export function onDragDrop (
 }
 
 export function dragMoveHandler (
-  data, elsToBeDragged, orientation, limits, notWhenTrue
+  data, elsToBeDragged, orientation, limits
 ) {
-  for (let i = notWhenTrue.length; i--;) {
-    if (notWhenTrue[i]()) {
-      return;
-    }
-  }
-
   let els = d3.select(this);
 
   if (elsToBeDragged && elsToBeDragged.length) {
@@ -115,20 +116,20 @@ export function dragMoveHandler (
 
   if (orientation === 'horizontal' || orientation === 'vertical') {
     if (orientation === 'horizontal') {
-      data.dragX += d3.event.dx;
-      data.dragX = withinLimits(data.dragX + d3.event.dx, limits.x);
-      els.style('transform', 'translateX(' + data.dragX + 'px)');
+      data.drag.x += d3.event.dx;
+      data.drag.x = withinLimits(data.drag.x + d3.event.dx, limits.x);
+      els.style('transform', 'translateX(' + data.drag.x + 'px)');
     }
     if (orientation === 'vertical') {
-      data.dragY += d3.event.dy;
-      data.dragX = withinLimits(data.dragY + d3.event.dy, limits.y);
-      els.style('transform', 'translateY(' + data.dragY + 'px)');
+      data.drag.y += d3.event.dy;
+      data.drag.x = withinLimits(data.drag.y + d3.event.dy, limits.y);
+      els.style('transform', 'translateY(' + data.drag.y + 'px)');
     }
   } else {
-    data.dragX += d3.event.dx;
-    data.dragY += d3.event.dy;
+    data.drag.x += d3.event.dx;
+    data.drag.y += d3.event.dy;
     els.style(
-      'transform', 'translate(' + data.dragX + 'px,' + data.dragY + 'px)'
+      'transform', 'translate(' + data.drag.x + 'px,' + data.drag.y + 'px)'
     );
   }
 }

@@ -141,6 +141,8 @@ class ListGraph {
 
     this.baseElJq.addClass(config.CLASSNAME);
 
+    this.dragged = { x: 0, y: 0 };
+
     if (init.forceWidth) {
       this.baseElJq.width(this.width);
     }
@@ -241,7 +243,7 @@ class ListGraph {
             that.registerOutSideClickHandler(
               'nodeContextMenu',
               [that.nodeContextMenu.wrapper.node()],
-              ['node'],
+              ['visible-node'],
               () => {
                 // The context of this method is the context of the outer click
                 // handler.
@@ -334,7 +336,7 @@ class ListGraph {
     this.svgD3.call(
       onDragDrop,
       this.dragStartHandler.bind(this),
-      dragMoveHandler,
+      this.dragMoveHandler.bind(this),
       this.dragEndHandler.bind(this),
       [
         this.container,
@@ -342,7 +344,8 @@ class ListGraph {
       ],
       'horizontal',
       this.getDragLimits.bind(this),
-      [this.scrollbarDragging.bind(this)]
+      [this.scrollbarDragging.bind(this)],
+      this.dragged
     );
 
     this.events.on(
@@ -400,6 +403,20 @@ class ListGraph {
 
     // Initialize `this.left` and `this.top`
     this.getBoundingRect();
+  }
+
+  dragMoveHandler (data, elsToBeDragged, orientation, limits, notWhenTrue) {
+    dragMoveHandler(
+      data, elsToBeDragged, orientation, limits, notWhenTrue
+    );
+    this.checkNodeVisibility();
+  }
+
+  checkNodeVisibility (level, customScrollTop) {
+    const nodes = level ?
+      this.nodes.nodes.filter(data => data.depth === level) : this.nodes.nodes;
+
+    nodes.call(this.nodes.isInvisible.bind(this.nodes), customScrollTop);
   }
 
   registerOutSideClickHandler (id, els, elClassNames, callback) {
@@ -510,13 +527,15 @@ class ListGraph {
   }
 
   dragStartHandler () {
-    this.noInteractions = true;
-    this.baseElD3.classed('unselectable', true);
+    if (!this.dragging) {
+      this.noInteractions = (this.dragging = true);
+    }
   }
 
   dragEndHandler () {
-    this.noInteractions = false;
-    this.baseElD3.classed('unselectable', false);
+    if (this.dragging) {
+      this.noInteractions = (this.dragging = false);
+    }
   }
 
   static scrollElVertically (el, offset) {
@@ -533,7 +552,6 @@ class ListGraph {
   globalMouseUp (event) {
     this.noInteractions = false;
     if (this.activeScrollbar) {
-      this.baseElD3.classed('unselectable', false);
       const data = this.activeScrollbar.datum();
       const deltaY = data.scrollbar.clientY - event.clientY;
 
@@ -565,6 +583,7 @@ class ListGraph {
 
   globalMouseMove (event) {
     if (this.activeScrollbar) {
+      event.preventDefault();
       const data = this.activeScrollbar.datum();
       const deltaY = data.scrollbar.clientY - event.clientY;
 
@@ -589,6 +608,9 @@ class ListGraph {
         ),
         -data.scrollHeight
       );
+
+      // Check if nodes are visible.
+      this.checkNodeVisibility(data.level, contentScrollTop);
 
       ListGraph.scrollElVertically(
         data.nodes,
@@ -646,7 +668,6 @@ class ListGraph {
 
   scrollbarMouseDown (el, event) {
     this.noInteractions = true;
-    this.baseElD3.classed('unselectable', true);
     this.activeScrollbar = d3.select(el).classed('active', true);
     this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
   }
@@ -655,6 +676,8 @@ class ListGraph {
     event.preventDefault();
 
     const data = d3.select(el).datum();
+
+    this.checkNodeVisibility(data.level);
 
     if (data.scrollHeight > 0) {
       // Scroll nodes
@@ -759,6 +782,7 @@ class ListGraph {
     );
     this.links.sort(this.layout.links(level - 1, level + 1));
     this.nodeContextMenu.updatePosition();
+    this.checkNodeVisibility();
   }
 
   sortAllColumns (property, newSortType) {
@@ -775,6 +799,7 @@ class ListGraph {
 
     this.links.sort(this.layout.links());
     this.nodeContextMenu.updatePosition();
+    this.checkNodeVisibility();
   }
 
   switchBarMode (mode) {
@@ -832,8 +857,10 @@ class ListGraph {
         height = this.height > contBBox.height ? this.height : contBBox.height;
       }
 
-      x = contBBox.x;
+      x = contBBox.x + this.dragged.x;
       y = contBBox.y;
+
+      this.nodes.makeAllTempVisible();
 
       this.svgD3
         .classed('zoomedOut', true)
@@ -845,6 +872,8 @@ class ListGraph {
 
   zoomedView () {
     if (!this.zoomedOut) {
+      this.nodes.makeAllTempVisible(true);
+
       this.svgD3
         .classed('zoomedOut', false)
         .transition()
