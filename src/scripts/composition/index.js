@@ -854,7 +854,7 @@ class ListGraph {
         height = this.height > contBBox.height ? this.height : contBBox.height;
       }
 
-      x = contBBox.x;
+      x = contBBox.x + this.dragged.x;
       y = contBBox.y;
 
       this.nodes.makeAllTempVisible();
