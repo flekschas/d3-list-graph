@@ -120,6 +120,15 @@ class Nodes {
         .classed(className, true);
     }
 
+    function drawMaxSizedRect (selection) {
+      selection
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', that.visData.global.column.contentWidth)
+        .attr('height', that.visData.global.row.height)
+        .attr('class', 'invisible-container');
+    }
+
     this.groups = baseSelection.append('g')
       .attr('class', CLASS_NODES)
       .call(selection => {
@@ -137,6 +146,8 @@ class Nodes {
         .classed(CLASS_CLONE, data => data.clone)
         .attr('transform', data => 'translate(' +
           (data.x + this.visData.global.column.padding) + ', ' + data.y + ')');
+
+    this.nodes.append('rect').call(drawMaxSizedRect);
 
     this.visNodes = this.nodes.append('g').attr('class', CLASS_NODE_VISIBLE);
 
