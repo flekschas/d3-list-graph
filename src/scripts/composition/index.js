@@ -782,6 +782,7 @@ class ListGraph {
     );
     this.links.sort(this.layout.links(level - 1, level + 1));
     this.nodeContextMenu.updatePosition();
+    this.checkNodeVisibility();
   }
 
   sortAllColumns (property, newSortType) {
@@ -798,6 +799,7 @@ class ListGraph {
 
     this.links.sort(this.layout.links());
     this.nodeContextMenu.updatePosition();
+    this.checkNodeVisibility();
   }
 
   switchBarMode (mode) {
