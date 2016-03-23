@@ -1034,18 +1034,12 @@ class Nodes {
 
       // Node is right to the visible container
       if (data.x + this.vis.dragged.x >= this.vis.width) {
-        if (data.id === '2-1-1-1') {
-          console.log('Oh woooot girl right');
-        }
         return (data.invisible = true);
       }
       // Node is below the visible container
       if (
         data.y + scrollTop >= this.vis.height
       ) {
-        if (data.id === '2-1-1-1') {
-          console.log('Oh woooot girl below');
-        }
         return (data.invisible = true);
       }
       // Node is above the visible container
@@ -1053,20 +1047,11 @@ class Nodes {
         data.y + this.visData.global.row.height +
         scrollTop <= 0
       ) {
-        if (data.id === '2-1-1-1') {
-          console.log('Oh woooot girl above');
-        }
         return (data.invisible = true);
       }
       // Node is left to the visible container
       if (data.x + this.vis.dragged.x + this.visData.global.column.width <= 0) {
-        if (data.id === '2-1-1-1') {
-          console.log('Oh woooot girl left');
-        }
         return (data.invisible = true);
-      }
-      if (data.id === '2-1-1-1') {
-        console.log('Oh yes girl');
       }
       return (data.invisible = false);
     });
