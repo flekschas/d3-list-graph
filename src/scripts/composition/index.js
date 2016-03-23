@@ -141,6 +141,8 @@ class ListGraph {
 
     this.baseElJq.addClass(config.CLASSNAME);
 
+    this.dragged = { x: 0, y: 0 };
+
     if (init.forceWidth) {
       this.baseElJq.width(this.width);
     }
@@ -331,11 +333,10 @@ class ListGraph {
       .on('mousemove', () => { this.globalMouseMove(d3.event); });
 
     // Enable dragging of the whole graph.
-    this.dragged = { x: 0, y: 0 };
     this.svgD3.call(
       onDragDrop,
       this.dragStartHandler.bind(this),
-      dragMoveHandler,
+      this.dragMoveHandler.bind(this),
       this.dragEndHandler.bind(this),
       [
         this.container,
@@ -402,6 +403,20 @@ class ListGraph {
 
     // Initialize `this.left` and `this.top`
     this.getBoundingRect();
+  }
+
+  dragMoveHandler (data, elsToBeDragged, orientation, limits, notWhenTrue) {
+    dragMoveHandler(
+      data, elsToBeDragged, orientation, limits, notWhenTrue
+    );
+    this.checkNodeVisibility();
+  }
+
+  checkNodeVisibility (level, customScrollTop) {
+    const nodes = level ?
+      this.nodes.nodes.filter(data => data.depth === level) : this.nodes.nodes;
+
+    nodes.call(this.nodes.isInvisible.bind(this.nodes), customScrollTop);
   }
 
   registerOutSideClickHandler (id, els, elClassNames, callback) {
@@ -592,6 +607,9 @@ class ListGraph {
         -data.scrollHeight
       );
 
+      // Check if nodes are visible.
+      this.checkNodeVisibility(data.level, contentScrollTop);
+
       ListGraph.scrollElVertically(
         data.nodes,
         contentScrollTop
@@ -657,6 +675,8 @@ class ListGraph {
     event.preventDefault();
 
     const data = d3.select(el).datum();
+
+    this.checkNodeVisibility(data.level);
 
     if (data.scrollHeight > 0) {
       // Scroll nodes
@@ -837,6 +857,8 @@ class ListGraph {
       x = contBBox.x;
       y = contBBox.y;
 
+      this.nodes.makeAllTempVisible();
+
       this.svgD3
         .classed('zoomedOut', true)
         .transition()
@@ -847,6 +869,8 @@ class ListGraph {
 
   zoomedView () {
     if (!this.zoomedOut) {
+      this.nodes.makeAllTempVisible(true);
+
       this.svgD3
         .classed('zoomedOut', false)
         .transition()

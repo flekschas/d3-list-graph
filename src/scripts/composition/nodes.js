@@ -36,8 +36,10 @@ class Nodes {
     this.events = events;
     this.currentLinks = {};
     this.iconDimension = Math.min(
-      (this.visData.global.row.contentHeight / 2 -
-      this.visData.global.cell.padding * 2),
+      (
+        this.visData.global.row.contentHeight / 2 -
+        this.visData.global.cell.padding * 2
+      ),
       this.visData.global.column.padding / 2 - 4
     );
 
@@ -305,6 +307,8 @@ class Nodes {
         )
       );
     }
+
+    this.nodes.call(this.isInvisible.bind(this));
   }
 
   get classNnodes () { return CLASS_NODES; }
@@ -1021,6 +1025,72 @@ class Nodes {
       );
     }
     this.updateVisibility();
+  }
+
+  isInvisible (selection, customScrollTop) {
+    selection.classed('invisible', data => {
+      const scrollTop = customScrollTop ||
+        this.visData.nodes[data.depth].scrollTop;
+
+      // Node is right to the visible container
+      if (data.x + this.vis.dragged.x >= this.vis.width) {
+        if (data.id === '2-1-1-1') {
+          console.log('Oh woooot girl right');
+        }
+        return (data.invisible = true);
+      }
+      // Node is below the visible container
+      if (
+        data.y + scrollTop >= this.vis.height
+      ) {
+        if (data.id === '2-1-1-1') {
+          console.log('Oh woooot girl below');
+        }
+        return (data.invisible = true);
+      }
+      // Node is above the visible container
+      if (
+        data.y + this.visData.global.row.height +
+        scrollTop <= 0
+      ) {
+        if (data.id === '2-1-1-1') {
+          console.log('Oh woooot girl above');
+        }
+        return (data.invisible = true);
+      }
+      // Node is left to the visible container
+      if (data.x + this.vis.dragged.x + this.visData.global.column.width <= 0) {
+        if (data.id === '2-1-1-1') {
+          console.log('Oh woooot girl left');
+        }
+        return (data.invisible = true);
+      }
+      if (data.id === '2-1-1-1') {
+        console.log('Oh yes girl');
+      }
+      return (data.invisible = false);
+    });
+  }
+
+  makeAllTempVisible (unset) {
+    if (unset) {
+      this.nodes.classed(
+        'invisible', data => {
+          const prevInvisible = data._invisible;
+          data._invisible = undefined;
+
+          return prevInvisible;
+        }
+      );
+    } else {
+      this.nodes
+        .classed(
+          'invisible', data => {
+            data._invisible = data.invisible;
+            return false;
+          }
+        );
+    }
   }
 
   highlightNodes (
