@@ -511,12 +511,12 @@ class ListGraph {
 
   dragStartHandler () {
     this.noInteractions = true;
-    this.baseElD3.classed('unselectable', true);
+    this.baseElD3.classed('dragging', true).classed('unselectable', true);
   }
 
   dragEndHandler () {
     this.noInteractions = false;
-    this.baseElD3.classed('unselectable', false);
+    this.baseElD3.classed('dragging', false).classed('unselectable', false);
   }
 
   static scrollElVertically (el, offset) {
@@ -533,7 +533,7 @@ class ListGraph {
   globalMouseUp (event) {
     this.noInteractions = false;
     if (this.activeScrollbar) {
-      this.baseElD3.classed('unselectable', false);
+      this.baseElD3.classed('dragging', false).classed('unselectable', false);
       const data = this.activeScrollbar.datum();
       const deltaY = data.scrollbar.clientY - event.clientY;
 
