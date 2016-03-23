@@ -331,6 +331,7 @@ class ListGraph {
       .on('mousemove', () => { this.globalMouseMove(d3.event); });
 
     // Enable dragging of the whole graph.
+    this.dragged = { x: 0, y: 0 };
     this.svgD3.call(
       onDragDrop,
       this.dragStartHandler.bind(this),
@@ -342,7 +343,8 @@ class ListGraph {
       ],
       'horizontal',
       this.getDragLimits.bind(this),
-      [this.scrollbarDragging.bind(this)]
+      [this.scrollbarDragging.bind(this)],
+      this.dragged
     );
 
     this.events.on(
