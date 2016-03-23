@@ -1344,6 +1344,7 @@ class Nodes {
       .call(allTransitionsEnded, () => {
         this.vis.updateLevelsVisibility();
         this.vis.updateScrolling();
+        this.nodes.call(this.isInvisible.bind(this));
       });
 
     this.vis.links.updateVisibility();
