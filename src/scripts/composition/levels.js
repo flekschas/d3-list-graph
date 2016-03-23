@@ -26,7 +26,8 @@ class Levels {
             }
             return false;
           }
-        );
+        )
+        .each(data => { data.scrollTop = 0; });
 
     // We need to add an empty rectangle that fills up the whole column to ensure
     // that the `g`'s size is at a maximum, otherwise scrolling will be halted
