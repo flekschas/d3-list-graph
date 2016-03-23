@@ -1221,7 +1221,10 @@ class Nodes {
     this.nodes.classed(appliedClassName + '-directly', false);
     this.nodes.classed(appliedClassName + '-indirectly', false);
 
-    if (this.currentLinks && this.currentLinks[appliedClassName][data.id]) {
+    if (
+      this.currentLinks[appliedClassName] &&
+      this.currentLinks[appliedClassName][data.id]
+    ) {
       this.links.highlight(
         this.currentLinks[appliedClassName][data.id],
         false,
