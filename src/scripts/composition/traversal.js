@@ -48,7 +48,7 @@ function _down (node, callback, depth, includeClones, visitedNodes) {
     return;
   }
 
-  const nodes = includeClones ? collectInclClones(node, true) : [node];
+  const nodes = includeClones ? collectInclClones(node) : [node];
 
   for (let i = nodes.length; i--;) {
     callback(nodes[i]);

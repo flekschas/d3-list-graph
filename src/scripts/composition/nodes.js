@@ -1134,14 +1134,23 @@ class Nodes {
 
     if (includeParents && includeChildren) {
       traverse.upAndDown(
-        data, traverseCallbackUp, traverseCallbackDown, undefined, includeClones
+        data.clone ? data.originalNode : data,
+        traverseCallbackUp,
+        traverseCallbackDown,
+        undefined,
+        includeClones
       );
     }
     if (includeParents && !includeChildren) {
       traverse.up(data, traverseCallbackUp, undefined, includeClones);
     }
     if (!includeParents && includeChildren) {
-      traverse.down(data, traverseCallbackUp, undefined, includeClones);
+      traverse.down(
+        data.clone ? data.originalNode : data,
+        traverseCallbackUp,
+        undefined,
+        includeClones
+      );
     }
 
     currentNodeData.hovering = 1;
