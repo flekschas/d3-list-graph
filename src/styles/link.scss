@@ -1,13 +1,13 @@
 .list-graph {
   .link {
     fill: none;
-    transition: all $transition-fast $ease-in-out-cubic;
 
     .link-direct {
       stroke: #000;
       stroke-width: 2;
       stroke-opacity: 0;
-      transition: all $transition-fast $ease-in-out-cubic;
+      transition: stroke-opacity $transition-fast $ease-in-out-cubic,
+                  stroke-width $transition-fast $ease-in-out-cubic;
     }
     &.visible .link-direct {
       stroke-opacity: 0.2;
