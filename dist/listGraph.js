@@ -925,17 +925,21 @@ var ListGraph = (function ($,d3) {
 
   function _up(node, callback, depth, includeClones, child, visitedNodes) {
     if (visitedNodes[node.id]) {
+      if (!visitedNodes[node.id][child.id]) {
+        callback(node, child);
+      }
       return;
     }
 
     var nodes = includeClones ? collectInclClones(node) : [node];
 
     for (var i = nodes.length; i--;) {
+      visitedNodes[nodes[i].id] = {};
+
       if (child) {
         callback(nodes[i], child);
+        visitedNodes[nodes[i].id][child.id] = true;
       }
-
-      visitedNodes[nodes[i].id] = true;
 
       if (!isFinite(depth) || depth > 0) {
         var parentsId = Object.keys(nodes[i].parents);
@@ -956,7 +960,7 @@ var ListGraph = (function ($,d3) {
       return;
     }
 
-    var nodes = includeClones ? collectInclClones(node, true) : [node];
+    var nodes = includeClones ? collectInclClones(node) : [node];
 
     for (var i = nodes.length; i--;) {
       callback(nodes[i]);
@@ -1658,12 +1662,6 @@ var ListGraph = (function ($,d3) {
             });
           }
         }
-
-        this.events.broadcast('d3ListGraphUpdateBarsRequest', {
-          id: events.rooted.id,
-          clone: events.rooted.clone,
-          clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
-        });
       }
     }, {
       key: 'focusNodes',
@@ -2261,13 +2259,13 @@ var ListGraph = (function ($,d3) {
         };
 
         if (includeParents && includeChildren) {
-          upAndDown(data, traverseCallbackUp, traverseCallbackDown, undefined, includeClones);
+          upAndDown(data.clone ? data.originalNode : data, traverseCallbackUp, traverseCallbackDown, undefined, includeClones);
         }
         if (includeParents && !includeChildren) {
           up(data, traverseCallbackUp, undefined, includeClones);
         }
         if (!includeParents && includeChildren) {
-          down(data, traverseCallbackUp, undefined, includeClones);
+          down(data.clone ? data.originalNode : data, traverseCallbackUp, undefined, includeClones);
         }
 
         currentNodeData.hovering = 1;

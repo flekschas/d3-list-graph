@@ -472,13 +472,12 @@
   fill-opacity: 1 !important; }
 
 .list-graph .link {
-  fill: none;
-  transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  fill: none; }
   .list-graph .link .link-direct {
     stroke: #000;
     stroke-width: 2;
     stroke-opacity: 0;
-    transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+    transition: stroke-opacity 0.2s cubic-bezier(0.3, 0.1, 0.6, 1), stroke-width 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .link.visible .link-direct {
     stroke-opacity: 0.2; }
   .list-graph .link.visible.hovering .link-direct {

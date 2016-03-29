@@ -6,17 +6,21 @@ import { collectInclClones } from './utils';
 
 function _up (node, callback, depth, includeClones, child, visitedNodes) {
   if (visitedNodes[node.id]) {
+    if (!visitedNodes[node.id][child.id]) {
+      callback(node, child);
+    }
     return;
   }
 
   const nodes = includeClones ? collectInclClones(node) : [node];
 
   for (let i = nodes.length; i--;) {
+    visitedNodes[nodes[i].id] = {};
+
     if (child) {
       callback(nodes[i], child);
+      visitedNodes[nodes[i].id][child.id] = true;
     }
-
-    visitedNodes[nodes[i].id] = true;
 
     if (!isFinite(depth) || depth > 0) {
       const parentsId = Object.keys(nodes[i].parents);
@@ -44,7 +48,7 @@ function _down (node, callback, depth, includeClones, visitedNodes) {
     return;
   }
 
-  const nodes = includeClones ? collectInclClones(node, true) : [node];
+  const nodes = includeClones ? collectInclClones(node) : [node];
 
   for (let i = nodes.length; i--;) {
     callback(nodes[i]);
