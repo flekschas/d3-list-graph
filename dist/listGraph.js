@@ -960,7 +960,7 @@ var ListGraph = (function ($,d3) {
       return;
     }
 
-    var nodes = includeClones ? collectInclClones(node, true) : [node];
+    var nodes = includeClones ? collectInclClones(node) : [node];
 
     for (var i = nodes.length; i--;) {
       callback(nodes[i]);
@@ -2259,13 +2259,13 @@ var ListGraph = (function ($,d3) {
         };
 
         if (includeParents && includeChildren) {
-          upAndDown(data, traverseCallbackUp, traverseCallbackDown, undefined, includeClones);
+          upAndDown(data.clone ? data.originalNode : data, traverseCallbackUp, traverseCallbackDown, undefined, includeClones);
         }
         if (includeParents && !includeChildren) {
           up(data, traverseCallbackUp, undefined, includeClones);
         }
         if (!includeParents && includeChildren) {
-          down(data, traverseCallbackUp, undefined, includeClones);
+          down(data.clone ? data.originalNode : data, traverseCallbackUp, undefined, includeClones);
         }
 
         currentNodeData.hovering = 1;
