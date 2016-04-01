@@ -6,6 +6,7 @@
     display: block;
     transition: all $transition-lightning-fast $ease-in-out-cubic;
   }
+
   &.open {
     opacity: 1;
   }
