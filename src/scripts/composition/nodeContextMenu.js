@@ -649,6 +649,10 @@ class NodeContextMenu {
       this.updateQuery();
     }
   }
+
+  isOpenSameColumn (columnNum) {
+    return this.opened && this.node.datum().depth === columnNum;
+  }
 }
 
 export default NodeContextMenu;

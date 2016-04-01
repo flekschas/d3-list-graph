@@ -734,7 +734,7 @@ class ListGraph {
       );
     }
 
-    if (this.nodeContextMenu.opened) {
+    if (this.nodeContextMenu.isOpenSameColumn(columnData.level)) {
       this.nodeContextMenu.scrollY(columnData.scrollTop);
     }
   }
