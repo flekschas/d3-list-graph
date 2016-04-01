@@ -430,6 +430,12 @@ class NodeContextMenu {
     selection.transition().duration(0).attr('height', 0);
   }
 
+  /* ---------------------------------- I ----------------------------------- */
+
+  isOpenSameColumn (columnNum) {
+    return this.opened && this.node.datum().depth === columnNum;
+  }
+
   /* ---------------------------------- O ----------------------------------- */
 
   open (node) {
@@ -648,10 +654,6 @@ class NodeContextMenu {
       this.checkRoot();
       this.updateQuery();
     }
-  }
-
-  isOpenSameColumn (columnNum) {
-    return this.opened && this.node.datum().depth === columnNum;
   }
 }
 
