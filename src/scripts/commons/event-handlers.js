@@ -2,6 +2,7 @@
 
 // External
 import * as d3 from 'd3';
+import isFunction from '../../../node_modules/lodash-es/isFunction';
 
 // Internal
 import { ExtendableError } from './error';
@@ -43,6 +44,7 @@ export function onDragDrop (
   orientation, limits, noDraggingWhenTrue, dragData
 ) {
   const drag = d3.behavior.drag();
+  const checkWhenDragging = isFunction(noDraggingWhenTrue);
 
   let appliedLimits = limits || {};  // eslint-disable-line no-param-reassign
 
@@ -54,10 +56,8 @@ export function onDragDrop (
 
   if (dragMoveHandler) {
     drag.on('drag', function (data) {
-      for (let i = noDraggingWhenTrue.length; i--;) {
-        if (noDraggingWhenTrue[i]()) {
-          return;
-        }
+      if (checkWhenDragging && noDraggingWhenTrue()) {
+        return;
       }
       d3.event.sourceEvent.preventDefault();
       dragStartHandler();
