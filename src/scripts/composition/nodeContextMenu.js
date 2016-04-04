@@ -146,26 +146,28 @@ class NodeContextMenu {
 
   /* ---------------------------------- A ----------------------------------- */
 
-  addLabel (selection, label, labelTwo) {
+  addLabel (selection, fullWidth, label, labelTwo) {
+    const width = this.visData.global.column.width *
+      (fullWidth ? 1 : 0.5) - this.visData.global.row.padding * 4;
+    const height = this.visData.global.row.contentHeight -
+        this.visData.global.cell.padding * 2;
+
     const div = selection.append('foreignObject')
       .attr('x', this.visData.global.row.padding * 2)
       .attr('y', this.visData.global.row.padding +
         this.visData.global.cell.padding)
-      .attr('width', this.visData.global.column.contentWidth)
-      .attr('height', this.visData.global.row.contentHeight -
-        this.visData.global.cell.padding * 2)
+      .attr('width', width)
+      .attr('height', height)
       .attr('class', 'label-wrapper')
       .append('xhtml:div')
-        .style('line-height', (this.visData.global.row.contentHeight -
-          this.visData.global.cell.padding * 2) + 'px');
+        .style('line-height', (height - 2) + 'px')
+        .style('width', width + 'px');
 
-    div.append('xhtml:span')
-      .attr('class', 'label')
-      .attr('title', label)
-      .text(label);
+    div.append('xhtml:span').attr('class', 'label').text(label);
 
     if (labelTwo) {
-      div.append('xhtml:span').attr('class', `label-two ${labelTwo}`);
+      div.append('xhtml:span').attr('class', 'separator').text(':');
+      div.append('xhtml:span').attr('class', 'label-two');
     }
   }
 
@@ -319,6 +321,7 @@ class NodeContextMenu {
       )
       .call(
         this.addLabel.bind(this),
+        properties.fullWidth,
         properties.label,
         properties.labelTwo
       )
@@ -650,7 +653,7 @@ class NodeContextMenu {
     this.buttonQuery
       .classed('semi-active', !!queryMode)
       .classed('active', !!state)
-      .select('.query-mode')
+      .select('.label-two')
         .text(queryMode || 'not queried')
         .classed('inactive', !queryMode);
   }
