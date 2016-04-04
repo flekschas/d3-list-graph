@@ -194,7 +194,14 @@ class NodeContextMenu {
     }
     this.buttons.call(this.positionButton.bind(this));
     this.bg.classed('is-mirrored-horizontally', this.toBottom);
-    this.dropShadow.classed('is-mirrored-horizontally', this.toBottom);
+    this.bg
+      .classed('is-mirrored-horizontally', this.toBottom)
+      .style(
+        'filter',
+        'url(#drop-shadow-context-menu' + (
+          this.toBottom ? '-inverted' : ''
+        ) + ')'
+      );
   }
 
   checkRoot (debounced, time) {
