@@ -29,8 +29,14 @@ class NodeContextMenu {
     this.visData = visData;
     this.baseEl = baseEl;
     this.events = events;
+    this.querying = querying;
 
-    this.numButtonRows = querying ? 2 : 3;
+    this.numButtonRows = 1;
+    this.numButtonRows = this.querying ?
+      ++this.numButtonRows : this.numButtonRows;
+    this.numButtonRows = this.infoFields && this.infoFields.length ?
+      ++this.numButtonRows : this.numButtonRows;
+
     this.height = this.visData.global.row.height * this.numButtonRows;
     this.toBottom = false;
 
