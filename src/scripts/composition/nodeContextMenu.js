@@ -63,21 +63,23 @@ class NodeContextMenu {
       }))
       .style('filter', 'url(#drop-shadow-context-menu)');
 
-    this.buttonQuery = this.wrapper.append('g')
-      .call(this.createButton.bind(this), {
-        alignRight: false,
-        classNames: [],
-        distanceFromCenter: 1,
-        fullWidth: true,
-        label: 'Query:',
-        labelTwo: 'query-mode',
-        bamEffect: true
-      })
-      .on('click', function () {
-        that.clickQueryHandler.call(that, this);
-      });
-    this.buttonQueryFill = this.buttonQuery.select('.bg-fill-effect');
-    this.buttonQueryBamEffect = this.buttonQuery.select('.bg-bam-effect');
+    if (this.querying) {
+      this.buttonQuery = this.wrapper.append('g')
+        .call(this.createButton.bind(this), {
+          alignRight: false,
+          classNames: [],
+          distanceFromCenter: 1,
+          fullWidth: true,
+          label: 'Query',
+          labelTwo: true,
+          bamEffect: true
+        })
+        .on('click', function () {
+          that.clickQueryHandler.call(that, this);
+        });
+      this.buttonQueryFill = this.buttonQuery.select('.bg-fill-effect');
+      this.buttonQueryBamEffect = this.buttonQuery.select('.bg-bam-effect');
+    }
 
     this.buttonRoot = this.wrapper.append('g')
       .call(this.createButton.bind(this), {
