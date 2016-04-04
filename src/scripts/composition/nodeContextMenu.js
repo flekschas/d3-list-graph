@@ -79,10 +79,41 @@ class NodeContextMenu {
           distanceFromCenter: this.querying ? 2 : 1,
           fullWidth: true,
           labels: this.infoFields
-        })
-        .on('click', function () {
-          that.clickNodeInfo.call(that, this);
         });
+
+      if (this.infoFields.length > 1) {
+        const toggler = this.textNodeInfo.append('g')
+          .attr('class', 'toggler')
+          .on('click', function () {
+            that.clickNodeInfo.call(that, this);
+          });
+
+        const togglerX = this.visData.global.column.width -
+          this.visData.global.row.contentHeight -
+          this.visData.global.row.padding +
+          this.visData.global.cell.padding;
+
+        const togglerY = this.visData.global.row.padding +
+          this.visData.global.cell.padding;
+
+        toggler.append('rect')
+          .attr('class', 'bg')
+          .attr('x', togglerX)
+          .attr('y', togglerY)
+          .attr('width', this.visData.global.row.contentHeight)
+          .attr('height', this.visData.global.row.contentHeight);
+
+        toggler.append('use')
+          .attr(
+            'x', togglerX + ((this.visData.global.row.contentHeight - 10) / 2)
+          )
+          .attr(
+            'y', togglerY + ((this.visData.global.row.contentHeight - 10) / 2)
+          )
+          .attr('width', 10)
+          .attr('height', 10)
+          .attr('xlink:href', this.vis.iconPath + '#arrow-right');
+      }
     }
 
     if (this.querying) {

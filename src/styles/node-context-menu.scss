@@ -62,6 +62,21 @@
     }
   }
 
+  .toggler {
+    opacity: 0.5;
+    cursor: pointer;
+    transition: all $transition-lightning-fast $ease-in-out-cubic;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .toggler > .bg {
+    fill: white;
+    opacity: 0.9;
+  }
+
   @keyframes bam-effect {
     0% {
       opacity: 0;
