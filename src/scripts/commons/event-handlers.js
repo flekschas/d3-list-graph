@@ -46,14 +46,11 @@ export function onDragDrop (
 
   let appliedLimits = limits || {};  // eslint-disable-line no-param-reassign
 
-  if (dragStartHandler) {
-    drag.on('dragstart', () => {
-      if (typeof limits === 'function') {
-        appliedLimits = limits();
-      }
-      // dragStartHandler();
-    });
-  }
+  drag.on('dragstart', () => {
+    if (typeof limits === 'function') {
+      appliedLimits = limits();
+    }
+  });
 
   if (dragMoveHandler) {
     drag.on('drag', function (data) {
