@@ -57,8 +57,7 @@ class NodeContextMenu {
         height: this.height + 2,
         radius: ARROW_SIZE - 2,
         arrowSize: ARROW_SIZE
-      }))
-      .style('filter', 'url(#drop-shadow-context-menu)');
+      }));
 
     this.bg = this.wrapper.append('path')
       .attr('class', 'bg')
