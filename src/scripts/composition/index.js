@@ -1,6 +1,7 @@
 // External
 import * as $ from '$';
 import * as d3 from 'd3';
+import isArray from '../../../node_modules/lodash-es/isArray';
 
 // Internal
 import { LayoutNotAvailable } from './errors';
@@ -137,6 +138,9 @@ class ListGraph {
     // Initial sort order. Anything other than `asc` will fall back to `desc`.
     this.sortOrder = init.sortOrder === 'asc' ? 1 : config.DEFAULT_SORT_ORDER;
 
+    this.nodeInfoContextMenu = isArray(init.nodeInfoContextMenu) ?
+      init.nodeInfoContextMenu : [];
+
     this.events = new Events(this.baseEl, init.dispatcher);
 
     this.baseElJq.addClass(config.CLASSNAME);
@@ -214,7 +218,8 @@ class ListGraph {
       this.visData,
       this.container,
       this.events,
-      this.querying
+      this.querying,
+      this.nodeInfoContextMenu
     );
 
     dropShadow(this.svgD3, 'context-menu', 0, 1, 2, 0.2);
