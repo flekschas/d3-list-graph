@@ -222,6 +222,10 @@ class ListGraph {
       this.nodeInfoContextMenu
     );
 
+    this.nodeContextMenu.wrapper.on('mousedown', () => {
+      this.mouseDownOnContextMenu = true;
+    });
+
     dropShadow(this.svgD3, 'context-menu', 0, 1, 2, 0.2);
     dropShadow(this.svgD3, 'context-menu-inverted', 0, -1, 2, 0.2);
 
@@ -348,7 +352,7 @@ class ListGraph {
       ],
       'horizontal',
       this.getDragLimits.bind(this),
-      [this.scrollbarDragging.bind(this)],
+      this.noDragging.bind(this),
       this.dragged
     );
 
@@ -549,12 +553,14 @@ class ListGraph {
     );
   }
 
-  scrollbarDragging () {
-    return !!this.activeScrollbar;
+  noDragging () {
+    return !!this.activeScrollbar || this.mouseDownOnContextMenu;
   }
 
   globalMouseUp (event) {
     this.noInteractions = false;
+    this.mouseDownOnContextMenu = false;
+
     if (this.activeScrollbar) {
       const data = this.activeScrollbar.datum();
       const deltaY = data.scrollbar.clientY - event.clientY;
