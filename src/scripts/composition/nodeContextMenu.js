@@ -687,6 +687,10 @@ class NodeContextMenu {
   }
 
   updateQuery (debounced, time) {
+    if (!this.querying) {
+      return;
+    }
+
     const state = this.node.datum().data.state.query;
     let queryMode = state;
 
