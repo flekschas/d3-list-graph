@@ -161,6 +161,7 @@
 
   .controls .expandable-label {
     position: relative;
+    margin-left: 0.125rem;
   }
 
   .controls .expandable-label .letter {
@@ -194,6 +195,11 @@
     width: 1rem;
     height: 1rem;
     transition: all $transition-fast $ease-in-out-cubic;
+  }
+
+  .local-controls .control-btn [class^='icon-'],
+  .local-controls .control-btn [class*=' icon-'] {
+    right: 0.25rem;
   }
 
   .control-btn .icon-zoom-out {
@@ -230,10 +236,24 @@
   }
 
   .controls .sort-precision:hover {
-    box-shadow: 2px 0 3px 0 rgba(0, 0, 0, 0.25), 1px 0 1px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 0 3px 0 rgba(0, 0, 0, 0.25),
+                1px 0 1px 0 rgba(0, 0, 0, 0.1),
+                0 1px 0 0 mix($color-highlight-blue, $white, 20%);
+  }
+
+  .controls .sort-precision.active:hover {
+    box-shadow: 2px 0 3px 0 rgba(0, 0, 0, 0.25),
+                1px 0 1px 0 rgba(0, 0, 0, 0.1);
   }
 
   .controls .sort-recall:hover {
-    box-shadow: -2px 0 3px 0 rgba(0, 0, 0, 0.25), -1px 0 1px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: -2px 0 3px 0 rgba(0, 0, 0, 0.25),
+                -1px 0 1px 0 rgba(0, 0, 0, 0.1),
+                0 1px 0 0 mix($color-highlight-blue, $white, 20%);
+  }
+
+  .controls .sort-recall.active:hover {
+    box-shadow: -2px 0 3px 0 rgba(0, 0, 0, 0.25),
+                -1px 0 1px 0 rgba(0, 0, 0, 0.1);
   }
 }
