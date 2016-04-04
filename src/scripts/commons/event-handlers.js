@@ -21,24 +21,26 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  *
  * @method  onDragDrop
  * @author  Fritz Lekschas
- * @date    2016-01-23
+ * @date    2016-04-04
  * @param   {Object}  selection        D3 selection to listen for the drag
  *   event.
- * @param   {Object}           dragMoveHandler  Handler for drag-move.
- * @param   {Object}           dropHandler      Handler for drag-end, i.e. drop.
- * @param   {Array}            elsToBeDragged   Array of D3 selections to be
- *   moved according to the drag event. If empty or undefined `selection` will
- *   be used.
- * @param   {String}           orientation      Can either be "horizontal",
- *   "vertical" or `undefined`, i.e. both directions.
- * @param   {Object|Function}  limits           X and Y drag limits. E.g.
+ * @param   {Object}           dragMoveHandler         Handler for drag-move.
+ * @param   {Object}           dropHandler             Handler for drag-end,
+ *   i.e. drop.
+ * @param   {Array}            elsToBeDragged          Array of D3 selections to
+ *   be moved according to the drag event. If empty or undefined `selection`
+ *   will be used.
+ * @param   {String}           orientation             Can either be
+ *   "horizontal", "vertical" or `undefined`, i.e. both directions.
+ * @param   {Object|Function}  limits                  X and Y drag limits. E.g.
  *   `{ x: { min: 0, max: 10 } }`.
- * @param   {Array}             notWhenTrue     List if function returning a
- *   Boolean value which should prevent the dragMoveHandler from working.
+ * @param   {Array}             noDraggingWhenTrue     List if function
+ *   returning a Boolean value which should prevent the dragMoveHandler from
+ *   working.
  */
 export function onDragDrop (
   selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged,
-  orientation, limits, notWhenTrue, dragData
+  orientation, limits, noDraggingWhenTrue, dragData
 ) {
   const drag = d3.behavior.drag();
 
@@ -55,8 +57,8 @@ export function onDragDrop (
 
   if (dragMoveHandler) {
     drag.on('drag', function (data) {
-      for (let i = notWhenTrue.length; i--;) {
-        if (notWhenTrue[i]()) {
+      for (let i = noDraggingWhenTrue.length; i--;) {
+        if (noDraggingWhenTrue[i]()) {
           return;
         }
       }
