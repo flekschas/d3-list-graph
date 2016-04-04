@@ -232,36 +232,34 @@ class ListGraph {
     });
 
     // Add jQuery delegated event listeners instead of direct listeners of D3.
-    if (this.querying) {
-      this.svgJq.on(
-        'click',
-        `.${this.nodes.classNodeVisible}`,
-        function () {
-          // Add a new global outside click listener using this node and the
-          // node context menu as the related elements.
-          requestNextAnimationFrame(() => {
-            that.registerOutSideClickHandler(
-              'nodeContextMenu',
-              [that.nodeContextMenu.wrapper.node()],
-              ['visible-node'],
-              () => {
-                // The context of this method is the context of the outer click
-                // handler.
-                that.nodeContextMenu.close();
-                that.unregisterOutSideClickHandler.call(
-                  that, 'nodeContextMenu'
-                );
-              }
-            );
-          });
-
-          that.nodeContextMenu.toggle.call(
-            that.nodeContextMenu,
-            d3.select(this.parentNode)
+    this.svgJq.on(
+      'click',
+      `.${this.nodes.classNodeVisible}`,
+      function () {
+        // Add a new global outside click listener using this node and the
+        // node context menu as the related elements.
+        requestNextAnimationFrame(() => {
+          that.registerOutSideClickHandler(
+            'nodeContextMenu',
+            [that.nodeContextMenu.wrapper.node()],
+            ['visible-node'],
+            () => {
+              // The context of this method is the context of the outer click
+              // handler.
+              that.nodeContextMenu.close();
+              that.unregisterOutSideClickHandler.call(
+                that, 'nodeContextMenu'
+              );
+            }
           );
-        }
-      );
-    }
+        });
+
+        that.nodeContextMenu.toggle.call(
+          that.nodeContextMenu,
+          d3.select(this.parentNode)
+        );
+      }
+    );
 
     this.svgJq.on(
       'click',
