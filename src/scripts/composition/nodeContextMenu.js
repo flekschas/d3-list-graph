@@ -17,7 +17,7 @@ const BUTTON_DEFAULT_DEBOUNCE = 150;
 const BUTTON_BAM_EFFECT_ANIMATION_TIME = 700;
 
 class NodeContextMenu {
-  constructor (vis, visData, baseEl, events, querying) {
+  constructor (vis, visData, baseEl, events, querying, infoFields) {
     const that = this;
 
     this._x = 0;
@@ -30,6 +30,7 @@ class NodeContextMenu {
     this.baseEl = baseEl;
     this.events = events;
     this.querying = querying;
+    this.infoFields = infoFields;
 
     this.numButtonRows = 1;
     this.numButtonRows = this.querying ?
@@ -39,6 +40,8 @@ class NodeContextMenu {
 
     this.height = this.visData.global.row.height * this.numButtonRows;
     this.toBottom = false;
+
+    this.nodeInfoId = 0;
 
     this.wrapper = this.baseEl.append('g')
       .attr('class', CLASS_NAME);
@@ -68,6 +71,20 @@ class NodeContextMenu {
         arrowSize: ARROW_SIZE
       }))
       .style('filter', 'url(#drop-shadow-context-menu)');
+
+    if (this.infoFields && this.infoFields.length) {
+      this.textNodeInfo = this.wrapper.append('g')
+        .call(this.createTextField.bind(this), {
+          alignRight: false,
+          classNames: [],
+          distanceFromCenter: this.querying ? 2 : 1,
+          fullWidth: true,
+          labels: this.infoFields
+        })
+        .on('click', function () {
+          that.clickNodeInfo.call(that, this);
+        });
+    }
 
     if (this.querying) {
       this.buttonQuery = this.wrapper.append('g')
@@ -204,7 +221,7 @@ class NodeContextMenu {
     }
     this.components.call(this.positionComponent.bind(this));
     this.bgBorder.classed('is-mirrored-horizontally', this.toBottom);
-    this.bgBorder
+    this.bg
       .classed('is-mirrored-horizontally', this.toBottom)
       .style(
         'filter',
@@ -273,6 +290,18 @@ class NodeContextMenu {
       }
       this.buttonLock.classed('fill-effect', false);
     }, BUTTON_DEFAULT_DEBOUNCE);
+  }
+
+  clickNodeInfo () {
+    this.nodeInfoId = (this.nodeInfoId + 1) % this.infoFields.length;
+
+    this.textNodeInfo.select('.label').text(
+      this.infoFields[this.nodeInfoId].label
+    );
+
+    this.textNodeInfo.select('.label-two').text(
+      this.getNodeProperty(this.infoFields[this.nodeInfoId].property)
+    );
   }
 
   clickQueryHandler () {
@@ -407,6 +436,28 @@ class NodeContextMenu {
       .attr('rx', height - 2);
   }
 
+  createTextField (selection, properties) {
+    let classNames = 'component text-field';
+    if (properties.classNames && properties.classNames.length) {
+      classNames += ' ' + properties.classNames.join(' ');
+    }
+    selection.attr('class', classNames);
+
+    selection
+      .datum(properties)
+      .call(
+        this.addLabel.bind(this),
+        true,
+        properties.labels[this.nodeInfoId].label,
+        true
+      )
+      .call(
+        this.positionComponent.bind(this),
+        properties.distanceFromCenter,
+        properties.alignRight
+      );
+  }
+
   /* ---------------------------------- E ----------------------------------- */
 
   emptyButton (selection, time) {
@@ -440,6 +491,16 @@ class NodeContextMenu {
           .ease('linear')
           .attr('height', data => data.height);
       });
+  }
+
+  /* ---------------------------------- G ----------------------------------- */
+
+  getNodeProperty (property) {
+    try {
+      return property(this.node.datum());
+    } catch (e) {
+      return undefined;
+    }
   }
 
   /* ---------------------------------- H ----------------------------------- */
@@ -606,6 +667,20 @@ class NodeContextMenu {
       );
   }
 
+  updateInfoText () {
+    if (!this.infoFields || !this.infoFields.length) {
+      return;
+    }
+
+    this.textNodeInfo.select('.label').text(
+      this.infoFields[this.nodeInfoId].label
+    );
+
+    this.textNodeInfo.select('.label-two').text(
+      this.getNodeProperty(this.infoFields[this.nodeInfoId].property)
+    );
+  }
+
   updatePosition () {
     if (this.node && this.opened) {
       this.open(this.node);
@@ -671,6 +746,7 @@ class NodeContextMenu {
       this.checkLock();
       this.checkRoot();
       this.updateQuery();
+      this.updateInfoText();
     }
   }
 }
