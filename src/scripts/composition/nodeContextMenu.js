@@ -403,8 +403,8 @@ class NodeContextMenu {
     selection.datum(data => {
       data.x = this.visData.global.row.padding;
       data.y = this.visData.global.row.padding;
-      data.width = this.visData.global.column.width * (params.fullWidth ? 1 : 0.5) -
-        this.visData.global.row.padding * 2;
+      data.width = this.visData.global.column.width *
+        (params.fullWidth ? 1 : 0.5) - this.visData.global.row.padding * 2;
       data.height = this.visData.global.row.contentHeight;
       data.rx = 2;
       data.ry = 2;
