@@ -45,7 +45,7 @@ class NodeContextMenu {
 
     this.updateAppearance();
 
-    this.bg = this.wrapper.append('path')
+    this.bgBorder = this.wrapper.append('path')
       .attr('class', 'bgBorder')
       .attr('d', dropMenu({
         x: -1,
@@ -57,7 +57,7 @@ class NodeContextMenu {
       }))
       .style('filter', 'url(#drop-shadow-context-menu)');
 
-    this.dropShadow = this.wrapper.append('path')
+    this.bg = this.wrapper.append('path')
       .attr('class', 'bg')
       .attr('d', dropMenu({
         x: 0,
@@ -203,8 +203,8 @@ class NodeContextMenu {
       this.toBottom = true;
     }
     this.components.call(this.positionComponent.bind(this));
-    this.bg.classed('is-mirrored-horizontally', this.toBottom);
-    this.bg
+    this.bgBorder.classed('is-mirrored-horizontally', this.toBottom);
+    this.bgBorder
       .classed('is-mirrored-horizontally', this.toBottom)
       .style(
         'filter',
