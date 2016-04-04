@@ -109,7 +109,7 @@ class NodeContextMenu {
     this.buttonLockBamEffect = this.buttonLock.select('.bg-bam-effect');
     this.checkboxLock = this.createCheckbox(this.buttonLock);
 
-    this.buttons = this.wrapper.selectAll('.button');
+    this.components = this.wrapper.selectAll('.component');
 
     this.debouncedQueryHandler = debounce(
       this.queryHandler, BUTTON_QUERY_DEBOUNCE
@@ -192,7 +192,7 @@ class NodeContextMenu {
     } else {
       this.toBottom = true;
     }
-    this.buttons.call(this.positionButton.bind(this));
+    this.components.call(this.positionComponent.bind(this));
     this.bg.classed('is-mirrored-horizontally', this.toBottom);
     this.bg
       .classed('is-mirrored-horizontally', this.toBottom)
@@ -303,7 +303,7 @@ class NodeContextMenu {
   }
 
   createButton (selection, properties) {
-    let classNames = 'button';
+    let classNames = 'component button';
     if (properties.classNames && properties.classNames.length) {
       classNames += ' ' + properties.classNames.join(' ');
     }
@@ -323,7 +323,7 @@ class NodeContextMenu {
         properties.labelTwo
       )
       .call(
-        this.positionButton.bind(this),
+        this.positionComponent.bind(this),
         properties.distanceFromCenter,
         properties.alignRight
       );
@@ -472,7 +472,7 @@ class NodeContextMenu {
 
   /* ---------------------------------- P ----------------------------------- */
 
-  positionButton (selection, distanceFromCenter, alignRight) {
+  positionComponent (selection, distanceFromCenter, alignRight) {
     selection.datum(data => {
       // Lets cache some values to make our lifes easier when checking the
       // position again in `checkOrientation`.
