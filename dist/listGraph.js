@@ -54,6 +54,31 @@ var ListGraph = (function ($,d3) {
 
   babelHelpers;
 
+  /**
+   * Checks if `value` is classified as an `Array` object.
+   *
+   * @static
+   * @memberOf _
+   * @type {Function}
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+   * @example
+   *
+   * _.isArray([1, 2, 3]);
+   * // => true
+   *
+   * _.isArray(document.body.children);
+   * // => false
+   *
+   * _.isArray('abc');
+   * // => false
+   *
+   * _.isArray(_.noop);
+   * // => false
+   */
+  var isArray = Array.isArray;
+
   var ExtendableError = function (_Error) {
     babelHelpers.inherits(ExtendableError, _Error);
 
@@ -2537,31 +2562,6 @@ var ListGraph = (function ($,d3) {
     return Scrollbars;
   }();
 
-  /**
-   * Checks if `value` is classified as an `Array` object.
-   *
-   * @static
-   * @memberOf _
-   * @type {Function}
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
-   * @example
-   *
-   * _.isArray([1, 2, 3]);
-   * // => true
-   *
-   * _.isArray(document.body.children);
-   * // => false
-   *
-   * _.isArray('abc');
-   * // => false
-   *
-   * _.isArray(_.noop);
-   * // => false
-   */
-  var isArray = Array.isArray;
-
   var Events = function () {
     function Events(el, broadcast) {
       babelHelpers.classCallCheck(this, Events);
@@ -4433,7 +4433,7 @@ var ListGraph = (function ($,d3) {
   var BUTTON_BAM_EFFECT_ANIMATION_TIME = 700;
 
   var NodeContextMenu = function () {
-    function NodeContextMenu(vis, visData, baseEl, events, querying) {
+    function NodeContextMenu(vis, visData, baseEl, events, querying, infoFields) {
       babelHelpers.classCallCheck(this, NodeContextMenu);
 
       var that = this;
@@ -4447,25 +4447,32 @@ var ListGraph = (function ($,d3) {
       this.visData = visData;
       this.baseEl = baseEl;
       this.events = events;
+      this.querying = querying;
+      this.infoFields = infoFields;
 
-      this.numButtonRows = querying ? 2 : 3;
+      this.numButtonRows = 1;
+      this.numButtonRows = this.querying ? ++this.numButtonRows : this.numButtonRows;
+      this.numButtonRows = this.infoFields && this.infoFields.length ? ++this.numButtonRows : this.numButtonRows;
+
       this.height = this.visData.global.row.height * this.numButtonRows;
       this.toBottom = false;
+
+      this.nodeInfoId = 0;
 
       this.wrapper = this.baseEl.append('g').attr('class', CLASS_NAME);
 
       this.updateAppearance();
 
-      this.bg = this.wrapper.append('path').attr('class', 'bgBorder').attr('d', dropMenu({
+      this.bgBorder = this.wrapper.append('path').attr('class', 'bgBorder').attr('d', dropMenu({
         x: -1,
         y: -1,
         width: this.visData.global.column.width + 2,
         height: this.height + 2,
         radius: ARROW_SIZE - 2,
         arrowSize: ARROW_SIZE
-      })).style('filter', 'url(#drop-shadow-context-menu)');
+      }));
 
-      this.dropShadow = this.wrapper.append('path').attr('class', 'bg').attr('d', dropMenu({
+      this.bg = this.wrapper.append('path').attr('class', 'bg').attr('d', dropMenu({
         x: 0,
         y: 0,
         width: this.visData.global.column.width,
@@ -4474,19 +4481,45 @@ var ListGraph = (function ($,d3) {
         arrowSize: ARROW_SIZE
       })).style('filter', 'url(#drop-shadow-context-menu)');
 
-      this.buttonQuery = this.wrapper.append('g').call(this.createButton.bind(this), {
-        alignRight: false,
-        classNames: [],
-        distanceFromCenter: 1,
-        fullWidth: true,
-        label: 'Query:',
-        labelTwo: 'query-mode',
-        bamEffect: true
-      }).on('click', function () {
-        that.clickQueryHandler.call(that, this);
-      });
-      this.buttonQueryFill = this.buttonQuery.select('.bg-fill-effect');
-      this.buttonQueryBamEffect = this.buttonQuery.select('.bg-bam-effect');
+      if (this.infoFields && this.infoFields.length) {
+        this.textNodeInfo = this.wrapper.append('g').call(this.createTextField.bind(this), {
+          alignRight: false,
+          classNames: [],
+          distanceFromCenter: this.querying ? 2 : 1,
+          fullWidth: true,
+          labels: this.infoFields
+        });
+
+        if (this.infoFields.length > 1) {
+          var toggler = this.textNodeInfo.append('g').attr('class', 'toggler').on('click', function () {
+            that.clickNodeInfo.call(that, this);
+          });
+
+          var togglerX = this.visData.global.column.width - this.visData.global.row.contentHeight - this.visData.global.row.padding + this.visData.global.cell.padding;
+
+          var togglerY = this.visData.global.row.padding + this.visData.global.cell.padding;
+
+          toggler.append('rect').attr('class', 'bg').attr('x', togglerX).attr('y', togglerY).attr('width', this.visData.global.row.contentHeight).attr('height', this.visData.global.row.contentHeight);
+
+          toggler.append('use').attr('x', togglerX + (this.visData.global.row.contentHeight - 10) / 2).attr('y', togglerY + (this.visData.global.row.contentHeight - 10) / 2).attr('width', 10).attr('height', 10).attr('xlink:href', this.vis.iconPath + '#arrow-right');
+        }
+      }
+
+      if (this.querying) {
+        this.buttonQuery = this.wrapper.append('g').call(this.createButton.bind(this), {
+          alignRight: false,
+          classNames: [],
+          distanceFromCenter: 1,
+          fullWidth: true,
+          label: 'Query',
+          labelTwo: true,
+          bamEffect: true
+        }).on('click', function () {
+          that.clickQueryHandler.call(that, this);
+        });
+        this.buttonQueryFill = this.buttonQuery.select('.bg-fill-effect');
+        this.buttonQueryBamEffect = this.buttonQuery.select('.bg-bam-effect');
+      }
 
       this.buttonRoot = this.wrapper.append('g').call(this.createButton.bind(this), {
         alignRight: false,
@@ -4514,7 +4547,7 @@ var ListGraph = (function ($,d3) {
       this.buttonLockBamEffect = this.buttonLock.select('.bg-bam-effect');
       this.checkboxLock = this.createCheckbox(this.buttonLock);
 
-      this.buttons = this.wrapper.selectAll('.button');
+      this.components = this.wrapper.selectAll('.component');
 
       this.debouncedQueryHandler = debounce(this.queryHandler, BUTTON_QUERY_DEBOUNCE);
       this.debouncedRootHandler = debounce(this.rootHandler, BUTTON_ROOT_DEBOUNCE);
@@ -4534,13 +4567,17 @@ var ListGraph = (function ($,d3) {
 
       /* ---------------------------------- A ----------------------------------- */
 
-      value: function addLabel(selection, label, labelTwo) {
-        var div = selection.append('foreignObject').attr('x', this.visData.global.row.padding * 2).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2).attr('class', 'label-wrapper').append('xhtml:div').style('line-height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2 + 'px');
+      value: function addLabel(selection, fullWidth, label, labelTwo) {
+        var width = this.visData.global.column.width * (fullWidth ? 1 : 0.5) - this.visData.global.row.padding * 4;
+        var height = this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2;
 
-        div.append('xhtml:span').attr('class', 'label').attr('title', label).text(label);
+        var div = selection.append('foreignObject').attr('x', this.visData.global.row.padding * 2).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', width).attr('height', height).attr('class', 'label-wrapper').append('xhtml:div').style('line-height', height - 2 + 'px').style('width', width + 'px');
+
+        div.append('xhtml:span').attr('class', 'label').text(label);
 
         if (labelTwo) {
-          div.append('xhtml:span').attr('class', 'label-two ' + labelTwo);
+          div.append('xhtml:span').attr('class', 'separator').text(':');
+          div.append('xhtml:span').attr('class', 'label-two');
         }
       }
 
@@ -4567,9 +4604,9 @@ var ListGraph = (function ($,d3) {
         } else {
           this.toBottom = true;
         }
-        this.buttons.call(this.positionButton.bind(this));
-        this.bg.classed('is-mirrored-horizontally', this.toBottom);
-        this.dropShadow.classed('is-mirrored-horizontally', this.toBottom);
+        this.components.call(this.positionComponent.bind(this));
+        this.bgBorder.classed('is-mirrored-horizontally', this.toBottom);
+        this.bg.classed('is-mirrored-horizontally', this.toBottom).style('filter', 'url(#drop-shadow-context-menu' + (this.toBottom ? '-inverted' : '') + ')');
       }
     }, {
       key: 'checkRoot',
@@ -4634,6 +4671,15 @@ var ListGraph = (function ($,d3) {
         }, BUTTON_DEFAULT_DEBOUNCE);
       }
     }, {
+      key: 'clickNodeInfo',
+      value: function clickNodeInfo() {
+        this.nodeInfoId = (this.nodeInfoId + 1) % this.infoFields.length;
+
+        this.textNodeInfo.select('.label').text(this.infoFields[this.nodeInfoId].label);
+
+        this.textNodeInfo.select('.label-two').text(this.getNodeProperty(this.infoFields[this.nodeInfoId].property));
+      }
+    }, {
       key: 'clickQueryHandler',
       value: function clickQueryHandler() {
         this.buttonQuery.classed('fill-effect', true);
@@ -4678,7 +4724,7 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'createButton',
       value: function createButton(selection, properties) {
-        var classNames = 'button';
+        var classNames = 'component button';
         if (properties.classNames && properties.classNames.length) {
           classNames += ' ' + properties.classNames.join(' ');
         }
@@ -4687,7 +4733,7 @@ var ListGraph = (function ($,d3) {
         selection.datum(properties).call(this.createButtonBg.bind(this), {
           bamEffect: properties.bamEffect,
           fullWidth: properties.fullWidth
-        }).call(this.addLabel.bind(this), properties.label, properties.labelTwo).call(this.positionButton.bind(this), properties.distanceFromCenter, properties.alignRight);
+        }).call(this.addLabel.bind(this), properties.fullWidth, properties.label, properties.labelTwo).call(this.positionComponent.bind(this), properties.distanceFromCenter, properties.alignRight);
       }
     }, {
       key: 'createButtonBg',
@@ -4763,6 +4809,17 @@ var ListGraph = (function ($,d3) {
           return data.width + x + 1;
         }).attr('y', height / 2 + this.visData.global.row.padding + 1).attr('width', height - 2).attr('height', height - 2).attr('rx', height - 2);
       }
+    }, {
+      key: 'createTextField',
+      value: function createTextField(selection, properties) {
+        var classNames = 'component text-field';
+        if (properties.classNames && properties.classNames.length) {
+          classNames += ' ' + properties.classNames.join(' ');
+        }
+        selection.attr('class', classNames);
+
+        selection.datum(properties).call(this.addLabel.bind(this), true, properties.labels[this.nodeInfoId].label, true).call(this.positionComponent.bind(this), properties.distanceFromCenter, properties.alignRight);
+      }
 
       /* ---------------------------------- E ----------------------------------- */
 
@@ -4794,12 +4851,32 @@ var ListGraph = (function ($,d3) {
         });
       }
 
+      /* ---------------------------------- G ----------------------------------- */
+
+    }, {
+      key: 'getNodeProperty',
+      value: function getNodeProperty(property) {
+        try {
+          return property(this.node.datum());
+        } catch (e) {
+          return undefined;
+        }
+      }
+
       /* ---------------------------------- H ----------------------------------- */
 
     }, {
       key: 'hideFillButton',
       value: function hideFillButton(selection) {
         selection.transition().duration(0).attr('height', 0);
+      }
+
+      /* ---------------------------------- I ----------------------------------- */
+
+    }, {
+      key: 'isOpenSameColumn',
+      value: function isOpenSameColumn(columnNum) {
+        return this.opened && this.node.datum().depth === columnNum;
       }
 
       /* ---------------------------------- O ----------------------------------- */
@@ -4838,8 +4915,8 @@ var ListGraph = (function ($,d3) {
       /* ---------------------------------- P ----------------------------------- */
 
     }, {
-      key: 'positionButton',
-      value: function positionButton(selection, distanceFromCenter, alignRight) {
+      key: 'positionComponent',
+      value: function positionComponent(selection, distanceFromCenter, alignRight) {
         var _this5 = this;
 
         selection.datum(function (data) {
@@ -4969,6 +5046,17 @@ var ListGraph = (function ($,d3) {
         this.wrapper.classed('transitionable', this.visible).classed('open', this.opened).style('transform', this.translate + ' ' + this.scale).style('transform-origin', this.visData.global.column.width / 2 + 'px ' + centerY + 'px');
       }
     }, {
+      key: 'updateInfoText',
+      value: function updateInfoText() {
+        if (!this.infoFields || !this.infoFields.length) {
+          return;
+        }
+
+        this.textNodeInfo.select('.label').text(this.infoFields[this.nodeInfoId].label);
+
+        this.textNodeInfo.select('.label-two').text(this.getNodeProperty(this.infoFields[this.nodeInfoId].property));
+      }
+    }, {
       key: 'updatePosition',
       value: function updatePosition() {
         if (this.node && this.opened) {
@@ -4978,6 +5066,10 @@ var ListGraph = (function ($,d3) {
     }, {
       key: 'updateQuery',
       value: function updateQuery(debounced, time) {
+        if (!this.querying) {
+          return;
+        }
+
         var state = this.node.datum().data.state.query;
         var queryMode = state;
 
@@ -5023,7 +5115,7 @@ var ListGraph = (function ($,d3) {
           this.emptyButton(this.buttonQueryFill, time);
         }
 
-        this.buttonQuery.classed('semi-active', !!queryMode).classed('active', !!state).select('.query-mode').text(queryMode || 'not queried').classed('inactive', !queryMode);
+        this.buttonQuery.classed('semi-active', !!queryMode).classed('active', !!state).select('.label-two').text(queryMode || 'not queried').classed('inactive', !queryMode);
       }
     }, {
       key: 'updateStates',
@@ -5032,6 +5124,7 @@ var ListGraph = (function ($,d3) {
           this.checkLock();
           this.checkRoot();
           this.updateQuery();
+          this.updateInfoText();
         }
       }
     }, {
@@ -5070,41 +5163,39 @@ var ListGraph = (function ($,d3) {
    *
    * @method  onDragDrop
    * @author  Fritz Lekschas
-   * @date    2016-01-23
+   * @date    2016-04-04
    * @param   {Object}  selection        D3 selection to listen for the drag
    *   event.
-   * @param   {Object}           dragMoveHandler  Handler for drag-move.
-   * @param   {Object}           dropHandler      Handler for drag-end, i.e. drop.
-   * @param   {Array}            elsToBeDragged   Array of D3 selections to be
-   *   moved according to the drag event. If empty or undefined `selection` will
-   *   be used.
-   * @param   {String}           orientation      Can either be "horizontal",
-   *   "vertical" or `undefined`, i.e. both directions.
-   * @param   {Object|Function}  limits           X and Y drag limits. E.g.
+   * @param   {Object}           dragMoveHandler         Handler for drag-move.
+   * @param   {Object}           dropHandler             Handler for drag-end,
+   *   i.e. drop.
+   * @param   {Array}            elsToBeDragged          Array of D3 selections to
+   *   be moved according to the drag event. If empty or undefined `selection`
+   *   will be used.
+   * @param   {String}           orientation             Can either be
+   *   "horizontal", "vertical" or `undefined`, i.e. both directions.
+   * @param   {Object|Function}  limits                  X and Y drag limits. E.g.
    *   `{ x: { min: 0, max: 10 } }`.
-   * @param   {Array}             notWhenTrue     List if function returning a
-   *   Boolean value which should prevent the dragMoveHandler from working.
+   * @param   {Array}             noDraggingWhenTrue     List if function
+   *   returning a Boolean value which should prevent the dragMoveHandler from
+   *   working.
    */
-  function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, notWhenTrue, dragData) {
+  function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, noDraggingWhenTrue, dragData) {
     var drag = d3.behavior.drag();
+    var checkWhenDragging = isFunction(noDraggingWhenTrue);
 
     var appliedLimits = limits || {}; // eslint-disable-line no-param-reassign
 
-    if (dragStartHandler) {
-      drag.on('dragstart', function () {
-        if (typeof limits === 'function') {
-          appliedLimits = limits();
-        }
-        // dragStartHandler();
-      });
-    }
+    drag.on('dragstart', function () {
+      if (typeof limits === 'function') {
+        appliedLimits = limits();
+      }
+    });
 
     if (dragMoveHandler) {
       drag.on('drag', function (data) {
-        for (var i = notWhenTrue.length; i--;) {
-          if (notWhenTrue[i]()) {
-            return;
-          }
+        if (checkWhenDragging && noDraggingWhenTrue()) {
+          return;
         }
         d3.event.sourceEvent.preventDefault();
         dragStartHandler();
@@ -5310,6 +5401,8 @@ var ListGraph = (function ($,d3) {
       // Initial sort order. Anything other than `asc` will fall back to `desc`.
       this.sortOrder = init.sortOrder === 'asc' ? 1 : DEFAULT_SORT_ORDER;
 
+      this.nodeInfoContextMenu = isArray(init.nodeInfoContextMenu) ? init.nodeInfoContextMenu : [];
+
       this.events = new Events(this.baseEl, init.dispatcher);
 
       this.baseElJq.addClass(CLASSNAME);
@@ -5360,9 +5453,14 @@ var ListGraph = (function ($,d3) {
       this.levels.scrollPreparation(this, this.scrollbarWidth);
       this.scrollbars = new Scrollbars(this.levels.groups, this.visData, this.scrollbarWidth);
 
-      this.nodeContextMenu = new NodeContextMenu(this, this.visData, this.container, this.events, this.querying);
+      this.nodeContextMenu = new NodeContextMenu(this, this.visData, this.container, this.events, this.querying, this.nodeInfoContextMenu);
 
-      dropShadow(this.svgD3, 'context-menu', 1, 1, 2, 0.2);
+      this.nodeContextMenu.wrapper.on('mousedown', function () {
+        _this.mouseDownOnContextMenu = true;
+      });
+
+      dropShadow(this.svgD3, 'context-menu', 0, 1, 2, 0.2);
+      dropShadow(this.svgD3, 'context-menu-inverted', 0, -1, 2, 0.2);
 
       // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
       // We are using delegated event listeners to provide better scaling
@@ -5377,22 +5475,20 @@ var ListGraph = (function ($,d3) {
       });
 
       // Add jQuery delegated event listeners instead of direct listeners of D3.
-      if (this.querying) {
-        this.svgJq.on('click', '.' + this.nodes.classNodeVisible, function () {
-          // Add a new global outside click listener using this node and the
-          // node context menu as the related elements.
-          requestNextAnimationFrame(function () {
-            that.registerOutSideClickHandler('nodeContextMenu', [that.nodeContextMenu.wrapper.node()], ['visible-node'], function () {
-              // The context of this method is the context of the outer click
-              // handler.
-              that.nodeContextMenu.close();
-              that.unregisterOutSideClickHandler.call(that, 'nodeContextMenu');
-            });
+      this.svgJq.on('click', '.' + this.nodes.classNodeVisible, function () {
+        // Add a new global outside click listener using this node and the
+        // node context menu as the related elements.
+        requestNextAnimationFrame(function () {
+          that.registerOutSideClickHandler('nodeContextMenu', [that.nodeContextMenu.wrapper.node()], ['visible-node'], function () {
+            // The context of this method is the context of the outer click
+            // handler.
+            that.nodeContextMenu.close();
+            that.unregisterOutSideClickHandler.call(that, 'nodeContextMenu');
           });
-
-          that.nodeContextMenu.toggle.call(that.nodeContextMenu, d3.select(this.parentNode));
         });
-      }
+
+        that.nodeContextMenu.toggle.call(that.nodeContextMenu, d3.select(this.parentNode));
+      });
 
       this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classRoot, function () {
         that.nodes.rootHandler.call(that.nodes, d3.select(this), true);
@@ -5442,7 +5538,7 @@ var ListGraph = (function ($,d3) {
       });
 
       // Enable dragging of the whole graph.
-      this.svgD3.call(onDragDrop, this.dragStartHandler.bind(this), this.dragMoveHandler.bind(this), this.dragEndHandler.bind(this), [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), [this.scrollbarDragging.bind(this)], this.dragged);
+      this.svgD3.call(onDragDrop, this.dragStartHandler.bind(this), this.dragMoveHandler.bind(this), this.dragEndHandler.bind(this), [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), this.noDragging.bind(this), this.dragged);
 
       this.events.on('d3ListGraphLevelFocus', function (levelId) {
         return _this.levels.focus(levelId);
@@ -5618,14 +5714,16 @@ var ListGraph = (function ($,d3) {
         }
       }
     }, {
-      key: 'scrollbarDragging',
-      value: function scrollbarDragging() {
-        return !!this.activeScrollbar;
+      key: 'noDragging',
+      value: function noDragging() {
+        return !!this.activeScrollbar || this.mouseDownOnContextMenu;
       }
     }, {
       key: 'globalMouseUp',
       value: function globalMouseUp(event) {
         this.noInteractions = false;
+        this.mouseDownOnContextMenu = false;
+
         if (this.activeScrollbar) {
           var data = this.activeScrollbar.datum();
           var deltaY = data.scrollbar.clientY - event.clientY;
@@ -5727,7 +5825,7 @@ var ListGraph = (function ($,d3) {
           this.nodes.updateLinkLocationIndicators(columnData.level - 1, columnData.level + 1);
         }
 
-        if (this.nodeContextMenu.opened) {
+        if (this.nodeContextMenu.isOpenSameColumn(columnData.level)) {
           this.nodeContextMenu.scrollY(columnData.scrollTop);
         }
       }
