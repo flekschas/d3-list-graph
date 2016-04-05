@@ -63,13 +63,17 @@
   }
 
   .toggler {
-    opacity: 0.5;
+    opacity: 0;
     cursor: pointer;
     transition: all $transition-lightning-fast $ease-in-out-cubic;
 
     &:hover {
       opacity: 1;
     }
+  }
+
+  &:hover .toggler {
+    opacity: 0.5;
   }
 
   .toggler > .bg {
