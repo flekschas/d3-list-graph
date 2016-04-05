@@ -5270,6 +5270,9 @@ var ListGraph = (function ($,d3) {
     var appliedLimits = limits || {}; // eslint-disable-line no-param-reassign
 
     drag.on('dragstart', function () {
+      if (checkWhenDragging && noDraggingWhenTrue()) {
+        return;
+      }
       if (typeof limits === 'function') {
         appliedLimits = limits();
       }

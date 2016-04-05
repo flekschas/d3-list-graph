@@ -575,11 +575,13 @@
     .list-graph .context-menu .button .bg-bam-effect.active {
       animation: bam-effect 0.66s cubic-bezier(0.2, 0.1, 0.2, 1); }
   .list-graph .context-menu .toggler {
-    opacity: 0.5;
+    opacity: 0;
     cursor: pointer;
     transition: all 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
     .list-graph .context-menu .toggler:hover {
       opacity: 1; }
+  .list-graph .context-menu:hover .toggler {
+    opacity: 0.5; }
   .list-graph .context-menu .toggler > .bg {
     fill: white;
     opacity: 0.9; }
