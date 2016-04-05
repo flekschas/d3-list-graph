@@ -9,6 +9,11 @@
       d="M13.333,2.539L10.764,0L2.667,8l8.097,8l2.569-2.538L7.804,8L13.333,2.539z"
       fill="currentColor"/>
   </symbol>
+  <symbol id="arrow-right" viewBox="0 0 16 16">
+    <path
+      d="M8.196,8l-5.529,5.462L5.236,16l8.097-8L5.236,0L2.667,2.539L8.196,8z"
+      fill="currentColor"/>
+  </symbol>
   <symbol id="cursor-default" viewBox="0 0 16 16">
     <path
       d="M8,8.727l3.272,5.819L8.8,16l-3.345-5.891l-3.273,4.437V0l11.637,8.727H8z"

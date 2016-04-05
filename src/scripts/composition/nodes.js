@@ -395,12 +395,12 @@ class Nodes {
       '.' + CLASS_INDICATOR_ABOVE
     ).attr(
       'y',
-      data => data.total ?
+      data => (data.total ?
         barAboveRefTop - data.above / data.total * barRefHeight :
-        barAboveRefTop
+        barAboveRefTop)
     ).attr(
       'height',
-      data => data.total ? data.above / data.total * barRefHeight : 0
+      data => (data.total ? data.above / data.total * barRefHeight : 0)
     );
 
     selection.selectAll(
@@ -408,7 +408,7 @@ class Nodes {
       '.' + CLASS_INDICATOR_BELOW
     ).attr(
       'height',
-      data => data.total ? data.below / data.total * barRefHeight : 0
+      data => (data.total ? data.below / data.total * barRefHeight : 0)
     );
   }
 

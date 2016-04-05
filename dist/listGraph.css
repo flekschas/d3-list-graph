@@ -147,7 +147,8 @@
   .list-graph .top-bar .controls .control-btn {
     position: absolute; }
   .list-graph .top-bar .controls .expandable-label {
-    position: relative; }
+    position: relative;
+    margin-left: 0.125rem; }
   .list-graph .top-bar .controls .expandable-label .letter {
     display: inline-block;
     float: left;
@@ -171,6 +172,9 @@
     width: 1rem;
     height: 1rem;
     transition: all 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
+  .list-graph .top-bar .local-controls .control-btn [class^='icon-'],
+  .list-graph .top-bar .local-controls .control-btn [class*=' icon-'] {
+    right: 0.25rem; }
   .list-graph .top-bar .control-btn .icon-zoom-out {
     width: 0.85rem;
     height: 0.85rem;
@@ -195,8 +199,12 @@
     .list-graph .top-bar .sort-name:hover:before {
       background: #0088ff; }
   .list-graph .top-bar .controls .sort-precision:hover {
+    box-shadow: 2px 0 3px 0 rgba(0, 0, 0, 0.25), 1px 0 1px 0 rgba(0, 0, 0, 0.1), 0 1px 0 0 #cce7ff; }
+  .list-graph .top-bar .controls .sort-precision.active:hover {
     box-shadow: 2px 0 3px 0 rgba(0, 0, 0, 0.25), 1px 0 1px 0 rgba(0, 0, 0, 0.1); }
   .list-graph .top-bar .controls .sort-recall:hover {
+    box-shadow: -2px 0 3px 0 rgba(0, 0, 0, 0.25), -1px 0 1px 0 rgba(0, 0, 0, 0.1), 0 1px 0 0 #cce7ff; }
+  .list-graph .top-bar .controls .sort-recall.active:hover {
     box-shadow: -2px 0 3px 0 rgba(0, 0, 0, 0.25), -1px 0 1px 0 rgba(0, 0, 0, 0.1); }
 
 .list-graph .scrollbar {
@@ -566,6 +574,17 @@
     animation-iteration-count: infinite; }
     .list-graph .context-menu .button .bg-bam-effect.active {
       animation: bam-effect 0.66s cubic-bezier(0.2, 0.1, 0.2, 1); }
+  .list-graph .context-menu .toggler {
+    opacity: 0;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
+    .list-graph .context-menu .toggler:hover {
+      opacity: 1; }
+  .list-graph .context-menu:hover .toggler {
+    opacity: 0.5; }
+  .list-graph .context-menu .toggler > .bg {
+    fill: white;
+    opacity: 0.9; }
 
 @keyframes bam-effect {
   0% {
@@ -576,19 +595,25 @@
   100% {
     opacity: 0;
     transform: scale(1.33); } }
-  .list-graph .context-menu .button .label,
-  .list-graph .context-menu .button .label-two {
+  .list-graph .context-menu .component .label-wrapper {
     display: block;
-    float: left;
-    height: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; }
+  .list-graph .context-menu .component .label,
+  .list-graph .context-menu .component .label-two,
+  .list-graph .context-menu .component .separator {
     color: rgba(0, 0, 0, 0.6);
-    font-size: 0.75rem;
-    line-height: inherit; }
-    .list-graph .context-menu .button .label.inactive,
-    .list-graph .context-menu .button .label-two.inactive {
+    font-size: 0.75rem; }
+    .list-graph .context-menu .component .label.inactive,
+    .list-graph .context-menu .component .label-two.inactive,
+    .list-graph .context-menu .component .separator.inactive {
       color: rgba(0, 0, 0, 0.2); }
-  .list-graph .context-menu .label-two {
-    margin-left: 0.25rem; }
+  .list-graph .context-menu .component.text-field .label,
+  .list-graph .context-menu .component.text-field .separator {
+    font-weight: bold; }
+  .list-graph .context-menu .component .separator {
+    padding-right: 0.25rem; }
   .list-graph .context-menu .button:hover {
     cursor: pointer; }
     .list-graph .context-menu .button:hover .bg {

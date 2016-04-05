@@ -6,6 +6,7 @@
     display: block;
     transition: all $transition-lightning-fast $ease-in-out-cubic;
   }
+
   &.open {
     opacity: 1;
   }
@@ -61,6 +62,25 @@
     }
   }
 
+  .toggler {
+    opacity: 0;
+    cursor: pointer;
+    transition: all $transition-lightning-fast $ease-in-out-cubic;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  &:hover .toggler {
+    opacity: 0.5;
+  }
+
+  .toggler > .bg {
+    fill: white;
+    opacity: 0.9;
+  }
+
   @keyframes bam-effect {
     0% {
       opacity: 0;
@@ -75,22 +95,31 @@
     }
   }
 
-  .button .label,
-  .button .label-two {
+  .component .label-wrapper {
     display: block;
-    float: left;
-    height: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .component .label,
+  .component .label-two,
+  .component .separator {
     color: $text-color-normal-rgba;
     font-size: 0.75rem;
-    line-height: inherit;
 
     &.inactive {
       color: $text-color-inactive-rgba;
     }
   }
 
-  .label-two {
-    margin-left: 0.25rem;
+  .component.text-field .label,
+  .component.text-field .separator {
+    font-weight: bold;
+  }
+
+  .component .separator {
+    padding-right: 0.25rem;
   }
 
   .button:hover {

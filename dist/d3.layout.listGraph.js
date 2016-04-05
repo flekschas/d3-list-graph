@@ -59,10 +59,12 @@
    *
    * @static
    * @memberOf _
+   * @since 0.1.0
    * @type {Function}
    * @category Lang
    * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+   * @returns {boolean} Returns `true` if `value` is correctly classified,
+   *  else `false`.
    * @example
    *
    * _.isArray([1, 2, 3]);
@@ -134,13 +136,16 @@
   /**
    * Checks if `value` is a finite primitive number.
    *
-   * **Note:** This method is based on [`Number.isFinite`](https://mdn.io/Number/isFinite).
+   * **Note:** This method is based on
+   * [`Number.isFinite`](https://mdn.io/Number/isFinite).
    *
    * @static
    * @memberOf _
+   * @since 0.1.0
    * @category Lang
    * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a finite number, else `false`.
+   * @returns {boolean} Returns `true` if `value` is a finite number,
+   *  else `false`.
    * @example
    *
    * _.isFinite(3);
@@ -160,11 +165,13 @@
   }
 
   /**
-   * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
-   * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+   * Checks if `value` is the
+   * [language type](http://www.ecma-international.org/ecma-262/6.0/#sec-ecmascript-language-types)
+   * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
    *
    * @static
    * @memberOf _
+   * @since 0.1.0
    * @category Lang
    * @param {*} value The value to check.
    * @returns {boolean} Returns `true` if `value` is an object, else `false`.
@@ -188,11 +195,13 @@
   }
 
   /**
-   * Performs a [`SameValueZero`](http://ecma-international.org/ecma-262/6.0/#sec-samevaluezero)
+   * Performs a
+   * [`SameValueZero`](http://ecma-international.org/ecma-262/6.0/#sec-samevaluezero)
    * comparison between two values to determine if they are equivalent.
    *
    * @static
    * @memberOf _
+   * @since 4.0.0
    * @category Lang
    * @param {*} value The value to compare.
    * @param {*} other The other value to compare.
@@ -251,7 +260,7 @@
    *
    * @private
    * @param {Object} source The object to copy properties from.
-   * @param {Array} props The property names to copy.
+   * @param {Array} props The property identifiers to copy.
    * @param {Object} [object={}] The object to copy properties to.
    * @param {Function} [customizer] The function to customize copied values.
    * @returns {Object} Returns `object`.
@@ -279,7 +288,7 @@
    *
    * @private
    * @param {Object} source The object to copy properties from.
-   * @param {Array} props The property names to copy.
+   * @param {Array} props The property identifiers to copy.
    * @param {Object} [object={}] The object to copy properties to.
    * @returns {Object} Returns `object`.
    */
@@ -303,8 +312,9 @@
   /**
    * Gets the "length" property value of `object`.
    *
-   * **Note:** This function is used to avoid a [JIT bug](https://bugs.webkit.org/show_bug.cgi?id=142792)
-   * that affects Safari on at least iOS 8.1-8.3 ARM64.
+   * **Note:** This function is used to avoid a
+   * [JIT bug](https://bugs.webkit.org/show_bug.cgi?id=142792) that affects
+   * Safari on at least iOS 8.1-8.3 ARM64.
    *
    * @private
    * @param {Object} object The object to query.
@@ -318,7 +328,8 @@
   var objectProto$2 = Object.prototype;
 
   /**
-   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+   * Used to resolve the
+   * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
    * of values.
    */
   var objectToString = objectProto$2.toString;
@@ -328,9 +339,11 @@
    *
    * @static
    * @memberOf _
+   * @since 0.1.0
    * @category Lang
    * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+   * @returns {boolean} Returns `true` if `value` is correctly classified,
+   *  else `false`.
    * @example
    *
    * _.isFunction(_);
@@ -353,13 +366,16 @@
   /**
    * Checks if `value` is a valid array-like length.
    *
-   * **Note:** This function is loosely based on [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
+   * **Note:** This function is loosely based on
+   * [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
    *
    * @static
    * @memberOf _
+   * @since 4.0.0
    * @category Lang
    * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+   * @returns {boolean} Returns `true` if `value` is a valid length,
+   *  else `false`.
    * @example
    *
    * _.isLength(3);
@@ -386,6 +402,7 @@
    *
    * @static
    * @memberOf _
+   * @since 4.0.0
    * @category Lang
    * @param {*} value The value to check.
    * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
@@ -434,7 +451,8 @@
    * @param {*} value The potential iteratee value argument.
    * @param {*} index The potential iteratee index or key argument.
    * @param {*} object The potential iteratee object argument.
-   * @returns {boolean} Returns `true` if the arguments are from an iteratee call, else `false`.
+   * @returns {boolean} Returns `true` if the arguments are from an iteratee call,
+   *  else `false`.
    */
   function isIterateeCall(value, index, object) {
     if (!isObject(object)) {
@@ -442,8 +460,9 @@
     }
     var type = typeof index;
     if (type == 'number'
-        ? (isArrayLike(object) && isIndex(index, object.length))
-        : (type == 'string' && index in object)) {
+          ? (isArrayLike(object) && isIndex(index, object.length))
+          : (type == 'string' && index in object)
+        ) {
       return eq(object[index], value);
     }
     return false;
@@ -456,7 +475,7 @@
    * @private
    * @param {Function} func The function to invoke.
    * @param {*} thisArg The `this` binding of `func`.
-   * @param {...*} args The arguments to invoke `func` with.
+   * @param {Array} args The arguments to invoke `func` with.
    * @returns {*} Returns the result of `func`.
    */
   function apply(func, thisArg, args) {
@@ -468,6 +487,70 @@
       case 3: return func.call(thisArg, args[0], args[1], args[2]);
     }
     return func.apply(thisArg, args);
+  }
+
+  /**
+   * Checks if `value` is object-like. A value is object-like if it's not `null`
+   * and has a `typeof` result of "object".
+   *
+   * @static
+   * @memberOf _
+   * @since 4.0.0
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+   * @example
+   *
+   * _.isObjectLike({});
+   * // => true
+   *
+   * _.isObjectLike([1, 2, 3]);
+   * // => true
+   *
+   * _.isObjectLike(_.noop);
+   * // => false
+   *
+   * _.isObjectLike(null);
+   * // => false
+   */
+  function isObjectLike(value) {
+    return !!value && typeof value == 'object';
+  }
+
+  /** `Object#toString` result references. */
+  var symbolTag = '[object Symbol]';
+
+  /** Used for built-in method references. */
+  var objectProto$3 = Object.prototype;
+
+  /**
+   * Used to resolve the
+   * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+   * of values.
+   */
+  var objectToString$1 = objectProto$3.toString;
+
+  /**
+   * Checks if `value` is classified as a `Symbol` primitive or object.
+   *
+   * @static
+   * @memberOf _
+   * @since 4.0.0
+   * @category Lang
+   * @param {*} value The value to check.
+   * @returns {boolean} Returns `true` if `value` is correctly classified,
+   *  else `false`.
+   * @example
+   *
+   * _.isSymbol(Symbol.iterator);
+   * // => true
+   *
+   * _.isSymbol('abc');
+   * // => false
+   */
+  function isSymbol(value) {
+    return typeof value == 'symbol' ||
+      (isObjectLike(value) && objectToString$1.call(value) == symbolTag);
   }
 
   /** Used as references for various `Number` constants. */
@@ -493,6 +576,7 @@
    *
    * @static
    * @memberOf _
+   * @since 4.0.0
    * @category Lang
    * @param {*} value The value to process.
    * @returns {number} Returns the number.
@@ -511,6 +595,12 @@
    * // => 3
    */
   function toNumber(value) {
+    if (typeof value == 'number') {
+      return value;
+    }
+    if (isSymbol(value)) {
+      return NAN;
+    }
     if (isObject(value)) {
       var other = isFunction(value.valueOf) ? value.valueOf() : value;
       value = isObject(other) ? (other + '') : other;
@@ -530,10 +620,12 @@
   /**
    * Converts `value` to an integer.
    *
-   * **Note:** This function is loosely based on [`ToInteger`](http://www.ecma-international.org/ecma-262/6.0/#sec-tointeger).
+   * **Note:** This function is loosely based on
+   * [`ToInteger`](http://www.ecma-international.org/ecma-262/6.0/#sec-tointeger).
    *
    * @static
    * @memberOf _
+   * @since 4.0.0
    * @category Lang
    * @param {*} value The value to convert.
    * @returns {number} Returns the converted integer.
@@ -572,12 +664,15 @@
 
   /**
    * Creates a function that invokes `func` with the `this` binding of the
-   * created function and arguments from `start` and beyond provided as an array.
+   * created function and arguments from `start` and beyond provided as
+   * an array.
    *
-   * **Note:** This method is based on the [rest parameter](https://mdn.io/rest_parameters).
+   * **Note:** This method is based on the
+   * [rest parameter](https://mdn.io/rest_parameters).
    *
    * @static
    * @memberOf _
+   * @since 4.0.0
    * @category Function
    * @param {Function} func The function to apply a rest parameter to.
    * @param {number} [start=func.length-1] The start position of the rest parameter.
@@ -655,7 +750,7 @@
   }
 
   /** Used for built-in method references. */
-  var objectProto$3 = Object.prototype;
+  var objectProto$4 = Object.prototype;
 
   /**
    * Checks if `value` is likely a prototype object.
@@ -666,19 +761,30 @@
    */
   function isPrototype(value) {
     var Ctor = value && value.constructor,
-        proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto$3;
+        proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto$4;
 
     return value === proto;
   }
 
+  /* Built-in method references for those with the same name as other `lodash` methods. */
+  var nativeGetPrototype = Object.getPrototypeOf;
+
+  /**
+   * Gets the `[[Prototype]]` of `value`.
+   *
+   * @private
+   * @param {*} value The value to query.
+   * @returns {null|Object} Returns the `[[Prototype]]`.
+   */
+  function getPrototype(value) {
+    return nativeGetPrototype(Object(value));
+  }
+
   /** Used for built-in method references. */
-  var objectProto$4 = Object.prototype;
+  var objectProto$5 = Object.prototype;
 
   /** Used to check objects for own properties. */
-  var hasOwnProperty$2 = objectProto$4.hasOwnProperty;
-
-  /** Built-in value references. */
-  var getPrototypeOf = Object.getPrototypeOf;
+  var hasOwnProperty$2 = objectProto$5.hasOwnProperty;
 
   /**
    * The base implementation of `_.has` without support for deep paths.
@@ -693,7 +799,7 @@
     // that are composed entirely of index properties, return `false` for
     // `hasOwnProperty` checks of them.
     return hasOwnProperty$2.call(object, key) ||
-      (typeof object == 'object' && key in object && getPrototypeOf(object) === null);
+      (typeof object == 'object' && key in object && getPrototype(object) === null);
   }
 
   /* Built-in method references for those with the same name as other `lodash` methods. */
@@ -731,41 +837,16 @@
   }
 
   /**
-   * Checks if `value` is object-like. A value is object-like if it's not `null`
-   * and has a `typeof` result of "object".
-   *
-   * @static
-   * @memberOf _
-   * @category Lang
-   * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
-   * @example
-   *
-   * _.isObjectLike({});
-   * // => true
-   *
-   * _.isObjectLike([1, 2, 3]);
-   * // => true
-   *
-   * _.isObjectLike(_.noop);
-   * // => false
-   *
-   * _.isObjectLike(null);
-   * // => false
-   */
-  function isObjectLike(value) {
-    return !!value && typeof value == 'object';
-  }
-
-  /**
    * This method is like `_.isArrayLike` except that it also checks if `value`
    * is an object.
    *
    * @static
    * @memberOf _
+   * @since 4.0.0
    * @category Lang
    * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is an array-like object, else `false`.
+   * @returns {boolean} Returns `true` if `value` is an array-like object,
+   *  else `false`.
    * @example
    *
    * _.isArrayLikeObject([1, 2, 3]);
@@ -788,28 +869,31 @@
   var argsTag = '[object Arguments]';
 
   /** Used for built-in method references. */
-  var objectProto$5 = Object.prototype;
+  var objectProto$6 = Object.prototype;
 
   /** Used to check objects for own properties. */
-  var hasOwnProperty$3 = objectProto$5.hasOwnProperty;
+  var hasOwnProperty$3 = objectProto$6.hasOwnProperty;
 
   /**
-   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+   * Used to resolve the
+   * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
    * of values.
    */
-  var objectToString$1 = objectProto$5.toString;
+  var objectToString$2 = objectProto$6.toString;
 
   /** Built-in value references. */
-  var propertyIsEnumerable$1 = objectProto$5.propertyIsEnumerable;
+  var propertyIsEnumerable$1 = objectProto$6.propertyIsEnumerable;
 
   /**
    * Checks if `value` is likely an `arguments` object.
    *
    * @static
    * @memberOf _
+   * @since 0.1.0
    * @category Lang
    * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+   * @returns {boolean} Returns `true` if `value` is correctly classified,
+   *  else `false`.
    * @example
    *
    * _.isArguments(function() { return arguments; }());
@@ -821,29 +905,32 @@
   function isArguments(value) {
     // Safari 8.1 incorrectly makes `arguments.callee` enumerable in strict mode.
     return isArrayLikeObject(value) && hasOwnProperty$3.call(value, 'callee') &&
-      (!propertyIsEnumerable$1.call(value, 'callee') || objectToString$1.call(value) == argsTag);
+      (!propertyIsEnumerable$1.call(value, 'callee') || objectToString$2.call(value) == argsTag);
   }
 
   /** `Object#toString` result references. */
   var stringTag = '[object String]';
 
   /** Used for built-in method references. */
-  var objectProto$6 = Object.prototype;
+  var objectProto$7 = Object.prototype;
 
   /**
-   * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+   * Used to resolve the
+   * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
    * of values.
    */
-  var objectToString$2 = objectProto$6.toString;
+  var objectToString$3 = objectProto$7.toString;
 
   /**
    * Checks if `value` is classified as a `String` primitive or object.
    *
    * @static
+   * @since 0.1.0
    * @memberOf _
    * @category Lang
    * @param {*} value The value to check.
-   * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+   * @returns {boolean} Returns `true` if `value` is correctly classified,
+   *  else `false`.
    * @example
    *
    * _.isString('abc');
@@ -854,7 +941,7 @@
    */
   function isString(value) {
     return typeof value == 'string' ||
-      (!isArray(value) && isObjectLike(value) && objectToString$2.call(value) == stringTag);
+      (!isArray(value) && isObjectLike(value) && objectToString$3.call(value) == stringTag);
   }
 
   /**
@@ -882,6 +969,7 @@
    * for more details.
    *
    * @static
+   * @since 0.1.0
    * @memberOf _
    * @category Object
    * @param {Object} object The object to query.
@@ -934,15 +1022,16 @@
   var nonEnumShadows = !propertyIsEnumerable.call({ 'valueOf': 1 }, 'valueOf');
 
   /**
-   * Assigns own enumerable properties of source objects to the destination
-   * object. Source objects are applied from left to right. Subsequent sources
-   * overwrite property assignments of previous sources.
+   * Assigns own enumerable string keyed properties of source objects to the
+   * destination object. Source objects are applied from left to right.
+   * Subsequent sources overwrite property assignments of previous sources.
    *
    * **Note:** This method mutates `object` and is loosely based on
    * [`Object.assign`](https://mdn.io/Object/assign).
    *
    * @static
    * @memberOf _
+   * @since 0.10.0
    * @category Object
    * @param {Object} object The destination object.
    * @param {...Object} [sources] The source objects.

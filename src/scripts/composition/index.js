@@ -1,6 +1,7 @@
 // External
 import * as $ from '$';
 import * as d3 from 'd3';
+import isArray from '../../../node_modules/lodash-es/isArray';
 
 // Internal
 import { LayoutNotAvailable } from './errors';
@@ -137,6 +138,9 @@ class ListGraph {
     // Initial sort order. Anything other than `asc` will fall back to `desc`.
     this.sortOrder = init.sortOrder === 'asc' ? 1 : config.DEFAULT_SORT_ORDER;
 
+    this.nodeInfoContextMenu = isArray(init.nodeInfoContextMenu) ?
+      init.nodeInfoContextMenu : [];
+
     this.events = new Events(this.baseEl, init.dispatcher);
 
     this.baseElJq.addClass(config.CLASSNAME);
@@ -214,10 +218,16 @@ class ListGraph {
       this.visData,
       this.container,
       this.events,
-      this.querying
+      this.querying,
+      this.nodeInfoContextMenu
     );
 
-    dropShadow(this.svgD3, 'context-menu', 1, 1, 2, 0.2);
+    this.nodeContextMenu.wrapper.on('mousedown', () => {
+      this.mouseDownOnContextMenu = true;
+    });
+
+    dropShadow(this.svgD3, 'context-menu', 0, 1, 2, 0.2);
+    dropShadow(this.svgD3, 'context-menu-inverted', 0, -1, 2, 0.2);
 
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
     // We are using delegated event listeners to provide better scaling
@@ -232,36 +242,34 @@ class ListGraph {
     });
 
     // Add jQuery delegated event listeners instead of direct listeners of D3.
-    if (this.querying) {
-      this.svgJq.on(
-        'click',
-        `.${this.nodes.classNodeVisible}`,
-        function () {
-          // Add a new global outside click listener using this node and the
-          // node context menu as the related elements.
-          requestNextAnimationFrame(() => {
-            that.registerOutSideClickHandler(
-              'nodeContextMenu',
-              [that.nodeContextMenu.wrapper.node()],
-              ['visible-node'],
-              () => {
-                // The context of this method is the context of the outer click
-                // handler.
-                that.nodeContextMenu.close();
-                that.unregisterOutSideClickHandler.call(
-                  that, 'nodeContextMenu'
-                );
-              }
-            );
-          });
-
-          that.nodeContextMenu.toggle.call(
-            that.nodeContextMenu,
-            d3.select(this.parentNode)
+    this.svgJq.on(
+      'click',
+      `.${this.nodes.classNodeVisible}`,
+      function () {
+        // Add a new global outside click listener using this node and the
+        // node context menu as the related elements.
+        requestNextAnimationFrame(() => {
+          that.registerOutSideClickHandler(
+            'nodeContextMenu',
+            [that.nodeContextMenu.wrapper.node()],
+            ['visible-node'],
+            () => {
+              // The context of this method is the context of the outer click
+              // handler.
+              that.nodeContextMenu.close();
+              that.unregisterOutSideClickHandler.call(
+                that, 'nodeContextMenu'
+              );
+            }
           );
-        }
-      );
-    }
+        });
+
+        that.nodeContextMenu.toggle.call(
+          that.nodeContextMenu,
+          d3.select(this.parentNode)
+        );
+      }
+    );
 
     this.svgJq.on(
       'click',
@@ -344,7 +352,7 @@ class ListGraph {
       ],
       'horizontal',
       this.getDragLimits.bind(this),
-      [this.scrollbarDragging.bind(this)],
+      this.noDragging.bind(this),
       this.dragged
     );
 
@@ -545,12 +553,14 @@ class ListGraph {
     );
   }
 
-  scrollbarDragging () {
-    return !!this.activeScrollbar;
+  noDragging () {
+    return !!this.activeScrollbar || this.mouseDownOnContextMenu;
   }
 
   globalMouseUp (event) {
     this.noInteractions = false;
+    this.mouseDownOnContextMenu = false;
+
     if (this.activeScrollbar) {
       const data = this.activeScrollbar.datum();
       const deltaY = data.scrollbar.clientY - event.clientY;
@@ -734,7 +744,7 @@ class ListGraph {
       );
     }
 
-    if (this.nodeContextMenu.opened) {
+    if (this.nodeContextMenu.isOpenSameColumn(columnData.level)) {
       this.nodeContextMenu.scrollY(columnData.scrollTop);
     }
   }

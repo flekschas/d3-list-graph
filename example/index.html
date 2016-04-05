@@ -64,7 +64,14 @@
         querying: true,
         hideOutwardsLinks: true,
         showLinkLocation: true,
-        noRootActiveLevelDiff: 1
+        noRootActiveLevelDiff: 1,
+        nodeInfoContextMenu: [{
+          label: 'ID',
+          property: (data) => data.id
+        }, {
+          label: 'Name',
+          property: (data) => data.data.name
+        }]
       });
     }
 

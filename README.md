@@ -123,6 +123,9 @@ Can be used to listen to internal events.
 **hideOutwardsLinks**: _Boolean_ [`false`].
 If `true` links that point to invisible nodes will not be shown.
 
+**nodeInfoContextMenu**: _Array_ [`[]`].
+An array of objects specifying which node properties the _node context menu_ should be displayed. E.g. `[{ label: 'ID', property: function (data) { return data.id } }]`.
+
 ## Develop
 
 To preview the toy development example website do:
