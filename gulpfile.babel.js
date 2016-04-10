@@ -2,13 +2,13 @@ import autoprefixer from 'gulp-autoprefixer';
 import babel from 'rollup-plugin-babel';
 import bump from 'gulp-bump';
 import clean from 'gulp-clean';
+import cleanCss from 'gulp-clean-css';
 import eslint from 'gulp-eslint';
 import flatten from 'gulp-flatten';
 import gulp from 'gulp';
 import gulpIf from 'gulp-if';
 import gulpUtil from 'gulp-util';
 import ignore from 'gulp-ignore';
-import minifyCss from 'gulp-minify-css';
 import notify from 'gulp-notify';
 import opn from 'opn';
 import path from 'path';
@@ -178,7 +178,7 @@ gulp.task('sass', () => gulp
     cascade: true
   }))
   // Minify stylesheet in production mode
-  .pipe(minifyCss())
+  .pipe(cleanCss())
   // Write sourcemap
   .pipe(sourcemaps.write('.'))
   .pipe(gulp.dest(config.globalPaths.dist))
