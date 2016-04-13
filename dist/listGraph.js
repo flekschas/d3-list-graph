@@ -1039,8 +1039,8 @@ var ListGraph = (function ($,d3) {
     // The root node doesn't have a `parents` property but might have `siblings`.
     if (node.siblings) {
       var siblingsId = Object.keys(node.siblings);
-      for (var i = siblingsId.length; i--;) {
-        callback(node.siblings[siblingsId[i]]);
+      for (var _i = siblingsId.length; _i--;) {
+        callback(node.siblings[siblingsId[_i]]);
       }
     }
   }
@@ -1546,14 +1546,14 @@ var ListGraph = (function ($,d3) {
           if (outgoing) {
             data.links.outgoing.above = 0;
             data.links.outgoing.below = 0;
-            for (var i = data.links.outgoing.total; i--;) {
+            for (var _i = data.links.outgoing.total; _i--;) {
               // We are checking the target location of the outgoing link. The
               // source location is the location of the node of the column being
               // scrolled.
-              if ((data.links.outgoing.refs[i].hidden & 4) > 0) {
+              if ((data.links.outgoing.refs[_i].hidden & 4) > 0) {
                 data.links.outgoing.above++;
               }
-              if ((data.links.outgoing.refs[i].hidden & 8) > 0) {
+              if ((data.links.outgoing.refs[_i].hidden & 8) > 0) {
                 data.links.outgoing.below++;
               }
             }
@@ -4298,7 +4298,7 @@ var ListGraph = (function ($,d3) {
    * on the trailing edge of the timeout only if the debounced function is
    * invoked more than once during the `wait` timeout.
    *
-   * See [David Corbacho's article](http://drupalmotion.com/article/debounce-and-throttle-visual-explanation)
+   * See [David Corbacho's article](https://css-tricks.com/debouncing-throttling-explained-examples/)
    * for details over the differences between `_.debounce` and `_.throttle`.
    *
    * @static
@@ -4475,7 +4475,7 @@ var ListGraph = (function ($,d3) {
     var ids = {};
 
     function requestId() {
-      var id = undefined;
+      var id = void 0;
       do {
         id = Math.floor(Math.random() * 1E9);
       } while (id in ids);
@@ -5315,7 +5315,7 @@ var ListGraph = (function ($,d3) {
     }
 
     function withinLimits(value, applyingLimits) {
-      var restrictedValue = undefined;
+      var restrictedValue = void 0;
 
       if (applyingLimits) {
         try {
@@ -5692,8 +5692,8 @@ var ListGraph = (function ($,d3) {
         var newLength = this.outsideClickHandler[id] = {
           id: id, els: els, elClassNames: elClassNames, callback: callback
         };
-        for (var i = elClassNames.length; i--;) {
-          this.outsideClickClassHandler[elClassNames[i]] = this.outsideClickHandler[id];
+        for (var _i = elClassNames.length; _i--;) {
+          this.outsideClickClassHandler[elClassNames[_i]] = this.outsideClickHandler[id];
         }
         return newLength;
       }
@@ -5728,10 +5728,10 @@ var ListGraph = (function ($,d3) {
             }
             if (checkClass) {
               var classNames = Object.keys(this.outsideClickClassHandler);
-              for (var i = classNames.length; i--;) {
+              for (var _i2 = classNames.length; _i2--;) {
                 var className = el.getAttribute('class');
-                if (className && className.indexOf(classNames[i]) >= 0) {
-                  found[this.outsideClickClassHandler[classNames[i]].id] = true;
+                if (className && className.indexOf(classNames[_i2]) >= 0) {
+                  found[this.outsideClickClassHandler[classNames[_i2]].id] = true;
                 }
               }
             }
@@ -5742,9 +5742,9 @@ var ListGraph = (function ($,d3) {
         }
 
         var handlerIds = Object.keys(this.outsideClickHandler);
-        for (var i = handlerIds.length; i--;) {
-          if (!found[handlerIds[i]]) {
-            this.outsideClickHandler[handlerIds[i]].callback.call(this);
+        for (var _i3 = handlerIds.length; _i3--;) {
+          if (!found[handlerIds[_i3]]) {
+            this.outsideClickHandler[handlerIds[_i3]].callback.call(this);
           }
         }
       }

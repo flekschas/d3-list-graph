@@ -1235,12 +1235,12 @@
           // Keep the old object reference for quick access, e.g.
           // `node.data.barRefs.precision`
           node.data.barRefs = {};
-          for (var i = 0, len = keys.length; i < len; i++) {
-            node.data.barRefs[keys[i]] = Math.max(Math.min(node.data.bars[keys[i]], 1), 0);
+          for (var _i = 0, _len = keys.length; _i < _len; _i++) {
+            node.data.barRefs[keys[_i]] = Math.max(Math.min(node.data.bars[keys[_i]], 1), 0);
             bars.push({
-              barId: node.id + '.' + keys[i],
-              id: keys[i],
-              value: node.data.barRefs[keys[i]]
+              barId: node.id + '.' + keys[_i],
+              id: keys[_i],
+              value: node.data.barRefs[keys[_i]]
             });
           }
           node.data.bars = bars;
@@ -1472,13 +1472,13 @@
 
   var _colRelPadding = COL_REL_PADDING;
   var _rowRelPadding = ROW_REL_PADDING;
-  var _columnWidth = undefined;
-  var _rowHeight = undefined;
-  var _colAbsPadding = undefined;
-  var _colAbsContentWidth = undefined;
-  var _rowAbsPadding = undefined;
-  var _rowAbsContentHeight = undefined;
-  var _cellAbsInnerPadding = undefined;
+  var _columnWidth = void 0;
+  var _rowHeight = void 0;
+  var _colAbsPadding = void 0;
+  var _colAbsContentWidth = void 0;
+  var _rowAbsPadding = void 0;
+  var _rowAbsContentHeight = void 0;
+  var _cellAbsInnerPadding = void 0;
 
   var ListGraphLayout = function () {
     /**
@@ -1636,8 +1636,8 @@
       value: function sort(level, property, sortOrder) {
         var itr = 0;
         var end = Object.keys(this.columnCache).length;
-        var getValue = undefined;
-        var sortProperty = undefined;
+        var getValue = void 0;
+        var sortProperty = void 0;
 
         // 1 = asc, -1 = desc [default]
         var numericSortOrder = sortOrder === 1 ? 1 : -1;
@@ -1795,9 +1795,9 @@
           }
         }
 
-        for (var i = keys.length; i--;) {
-          if (this.data[keys[i]].links) {
-            allLinks = allLinks.concat(this.data[keys[i]].links.outgoing.refs);
+        for (var _i = keys.length; _i--;) {
+          if (this.data[keys[_i]].links) {
+            allLinks = allLinks.concat(this.data[keys[_i]].links.outgoing.refs);
           }
         }
 
@@ -1906,7 +1906,7 @@
     }, {
       key: 'updateNodesVisibility',
       value: function updateNodesVisibility() {
-        var skipped = undefined;
+        var skipped = void 0;
 
         for (var i = Object.keys(this.columnCache).length; i--;) {
           skipped = 0;
