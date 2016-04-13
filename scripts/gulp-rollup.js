@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * @usage
  *
@@ -8,61 +6,65 @@
  *     .pipe(gulp.dest('dist'));
  */
 
-var through     = require('through2'),
-    gutil       = require('gulp-util'),
-    PluginError = gutil.PluginError,
-    fs          = require('fs'),
-    path        = require('path'),
-    rollup      = require('rollup'),
-    PLUGIN_NAME = 'gulp-rollup';
+import through from 'through2';
+import gulpUtils from 'gulp-util';
+import fs from 'fs';
+import path from 'path';
+import rollup from 'rollup';
 
-module.exports = function(options) {
-  options = options || {};
+const PLUGIN_NAME = 'gulp-rollup';
 
-  return through.obj(function(file, enc, callback) {
-    if (!file.path) { return callback(); }
+function unixStylePath (filePath) {
+  return filePath.split(path.sep).join('/');
+}
+
+function gulpRollup (_options_) {
+  const options = _options_ || {};
+
+  return through.obj((file, enc, callback) => {
+    if (!file.path) { callback(); }
 
     if (file.isStream()) {
-      return callback(new PluginError(PLUGIN_NAME, 'Streaming not supported'));
+      callback(
+        new gulpUtils.PluginError(PLUGIN_NAME, 'Streaming not supported')
+      );
     }
 
     try {
-      var stats = fs.lstatSync(file.path);
+      const stats = fs.lstatSync(file.path);
       if (stats.isFile()) {
-        var finalOptions = options;
-        if (typeof(options) == 'function') {
+        let finalOptions = options;
+        if (typeof(options) === 'function') {
           finalOptions = options(file);
         }
         finalOptions.entry = file.path;
 
-        rollup.rollup(finalOptions).then(function(bundle) {
-          var res = bundle.generate(finalOptions);
+        rollup.rollup(finalOptions).then(bundle => {
+          const res = bundle.generate(finalOptions);
           file.contents = new Buffer(res.code);
-          var map = res.map;
+          const map = res.map;
           if (map) {
             // This makes sure the paths in the generated source map (file and
             // sources) are relative to file.base:
             map.file = unixStylePath(file.relative);
-            map.sources = map.sources.map(function(fileName) {
-              return unixStylePath(path.relative(file.base, fileName));
-            });
+            map.sources = map.sources.map(
+              fileName => unixStylePath(path.relative(file.base, fileName))
+            );
             file.sourceMap = map;
           }
           callback(null, file);
-        }, function(err) {
-          setImmediate(function() {
-            callback(new PluginError(PLUGIN_NAME, err));
-          });
+        }, err => {
+          setImmediate(() => callback(
+            new gulpUtils.PluginError(PLUGIN_NAME, err))
+          );
         });
       }
     } catch (err) {
-      callback(new PluginError(PLUGIN_NAME, err));
+      callback(new gulpUtils.PluginError(PLUGIN_NAME, err));
     }
-  }, function() {
+  }, function () {
     this.emit('end');
   });
-};
-
-function unixStylePath(filePath) {
-  return filePath.split(path.sep).join('/');
 }
+
+export default gulpRollup;
