@@ -5012,8 +5012,6 @@ var ListGraph = (function ($,d3) {
 
       var that = this;
 
-      this.version = '0.16.1';
-
       this.baseEl = init.element;
       this.baseEl.__d3ListGraphBase__ = true;
 
@@ -5805,6 +5803,8 @@ var ListGraph = (function ($,d3) {
     }]);
     return ListGraph;
   }();
+
+  ListGraph.version = '0.16.1';
 
   return ListGraph;
 
