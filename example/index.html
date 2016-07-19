@@ -9,7 +9,7 @@
   <title>List Graph Prototype</title>
 </head>
 <body>
-  <h1>D3 List Graph <em>v0.16.1</em></h1>
+  <h1>D3 List Graph <em id="version"></em></h1>
   <h2>Small: 28 nodes</h2>
   <div id="example-small" class="list-graph">
     <div class="top-bar"></div>
@@ -42,6 +42,8 @@
   <script src="../dist/listGraph.js"></script>
   <script>
     'use strict';
+
+    document.querySelector('#version').innerHTML = 'v' + ListGraph.version;
 
     var customDispatcher = function (event, data) {
       // console.log('Custom dispatcher: has ' + event, data);
