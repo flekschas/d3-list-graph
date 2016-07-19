@@ -48,8 +48,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/flekschas/d3-list-graph.git"
-  },
-  "scripts": {
-    "build": "node scripts/build.js"
   }
 }
