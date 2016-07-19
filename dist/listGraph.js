@@ -5804,7 +5804,7 @@ var ListGraph = (function ($,d3) {
     return ListGraph;
   }();
 
-  ListGraph.version = '0.16.1';
+  ListGraph.version = '0.16.2';
 
   return ListGraph;
 
