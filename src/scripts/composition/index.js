@@ -34,8 +34,6 @@ class ListGraph {
 
     const that = this;
 
-    this.version = '0.16.1';
-
     this.baseEl = init.element;
     this.baseEl.__d3ListGraphBase__ = true;
 
@@ -993,5 +991,7 @@ class ListGraph {
     return 0;
   }
 }
+
+ListGraph.version = '0.16.1';
 
 export default ListGraph;
