@@ -34,6 +34,7 @@
     "prefer-template": 0,
     // Temporary issue:
     // https://github.com/eslint/eslint/issues/5074#issuecomment-189509063
-    "prefer-const": 1
+    "prefer-const": 1,
+    "no-underscore-dangle": 0
   }
 }
