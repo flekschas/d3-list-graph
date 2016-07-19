@@ -705,7 +705,7 @@ class ListGraph {
   scrollY (columnData, scrollbarDragging) {
     ListGraph.scrollElVertically(columnData.nodes, columnData.scrollTop);
 
-    if (true || !scrollbarDragging) {
+    if (!scrollbarDragging) {
       // Scroll scrollbar
       columnData.scrollbar.scrollTop = columnData.scrollbar.heightScale(
         -columnData.scrollTop
