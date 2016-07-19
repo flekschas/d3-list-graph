@@ -2,58 +2,6 @@
 var ListGraph = (function ($,d3) {
   'use strict';
 
-  var babelHelpers = {};
-
-  babelHelpers.classCallCheck = function (instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-      throw new TypeError("Cannot call a class as a function");
-    }
-  };
-
-  babelHelpers.createClass = function () {
-    function defineProperties(target, props) {
-      for (var i = 0; i < props.length; i++) {
-        var descriptor = props[i];
-        descriptor.enumerable = descriptor.enumerable || false;
-        descriptor.configurable = true;
-        if ("value" in descriptor) descriptor.writable = true;
-        Object.defineProperty(target, descriptor.key, descriptor);
-      }
-    }
-
-    return function (Constructor, protoProps, staticProps) {
-      if (protoProps) defineProperties(Constructor.prototype, protoProps);
-      if (staticProps) defineProperties(Constructor, staticProps);
-      return Constructor;
-    };
-  }();
-
-  babelHelpers.inherits = function (subClass, superClass) {
-    if (typeof superClass !== "function" && superClass !== null) {
-      throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
-    }
-
-    subClass.prototype = Object.create(superClass && superClass.prototype, {
-      constructor: {
-        value: subClass,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-    if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
-  };
-
-  babelHelpers.possibleConstructorReturn = function (self, call) {
-    if (!self) {
-      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-    }
-
-    return call && (typeof call === "object" || typeof call === "function") ? call : self;
-  };
-
-  babelHelpers;
-
   /**
    * Checks if `value` is classified as an `Array` object.
    *
@@ -81,13 +29,61 @@ var ListGraph = (function ($,d3) {
    */
   var isArray = Array.isArray;
 
+  var classCallCheck = function (instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
+    }
+  };
+
+  var createClass = function () {
+    function defineProperties(target, props) {
+      for (var i = 0; i < props.length; i++) {
+        var descriptor = props[i];
+        descriptor.enumerable = descriptor.enumerable || false;
+        descriptor.configurable = true;
+        if ("value" in descriptor) descriptor.writable = true;
+        Object.defineProperty(target, descriptor.key, descriptor);
+      }
+    }
+
+    return function (Constructor, protoProps, staticProps) {
+      if (protoProps) defineProperties(Constructor.prototype, protoProps);
+      if (staticProps) defineProperties(Constructor, staticProps);
+      return Constructor;
+    };
+  }();
+
+  var inherits = function (subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) {
+      throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+    }
+
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+  };
+
+  var possibleConstructorReturn = function (self, call) {
+    if (!self) {
+      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+    }
+
+    return call && (typeof call === "object" || typeof call === "function") ? call : self;
+  };
+
   var ExtendableError = function (_Error) {
-    babelHelpers.inherits(ExtendableError, _Error);
+    inherits(ExtendableError, _Error);
 
     function ExtendableError(message) {
-      babelHelpers.classCallCheck(this, ExtendableError);
+      classCallCheck(this, ExtendableError);
 
-      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
+      var _this = possibleConstructorReturn(this, Object.getPrototypeOf(ExtendableError).call(this, message));
 
       _this.name = _this.constructor.name;
       _this.message = message;
@@ -99,22 +95,22 @@ var ListGraph = (function ($,d3) {
   }(Error);
 
   var LayoutNotAvailable = function (_ExtendableError) {
-    babelHelpers.inherits(LayoutNotAvailable, _ExtendableError);
+    inherits(LayoutNotAvailable, _ExtendableError);
 
     function LayoutNotAvailable(message) {
-      babelHelpers.classCallCheck(this, LayoutNotAvailable);
-      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LayoutNotAvailable).call(this, message || 'D3.layout.listGraph.js has not been loaded yet.'));
+      classCallCheck(this, LayoutNotAvailable);
+      return possibleConstructorReturn(this, Object.getPrototypeOf(LayoutNotAvailable).call(this, message || 'D3.layout.listGraph.js has not been loaded yet.'));
     }
 
     return LayoutNotAvailable;
   }(ExtendableError);
 
   var EventDispatcherNoFunction = function (_ExtendableError2) {
-    babelHelpers.inherits(EventDispatcherNoFunction, _ExtendableError2);
+    inherits(EventDispatcherNoFunction, _ExtendableError2);
 
     function EventDispatcherNoFunction(message) {
-      babelHelpers.classCallCheck(this, EventDispatcherNoFunction);
-      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(EventDispatcherNoFunction).call(this, message || 'Dispatcher needs to be a function.'));
+      classCallCheck(this, EventDispatcherNoFunction);
+      return possibleConstructorReturn(this, Object.getPrototypeOf(EventDispatcherNoFunction).call(this, message || 'Dispatcher needs to be a function.'));
     }
 
     return EventDispatcherNoFunction;
@@ -145,6 +141,8 @@ var ListGraph = (function ($,d3) {
   var TRANSITION_LIGHTNING_FAST = 150;
   var TRANSITION_SEMI_FAST = 250;
 
+  // eslint-disable-line import/no-unresolved
+
   var TOPBAR_EL = 'div';
   var TOPBAR_CLASS = 'top-bar';
 
@@ -156,7 +154,7 @@ var ListGraph = (function ($,d3) {
     function Topbar(vis, selection, visData) {
       var _this = this;
 
-      babelHelpers.classCallCheck(this, Topbar);
+      classCallCheck(this, Topbar);
 
       var that = this;
 
@@ -387,7 +385,7 @@ var ListGraph = (function ($,d3) {
     //   console.log('Toggle column');
     // }
 
-    babelHelpers.createClass(Topbar, [{
+    createClass(Topbar, [{
       key: 'selectNodesLevel',
       value: function selectNodesLevel(el) {
         return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
@@ -527,6 +525,8 @@ var ListGraph = (function ($,d3) {
     return Topbar;
   }();
 
+  // eslint-disable-line import/no-unresolved
+
   var COLUMN_CLASS = 'column';
   var SCROLL_CONTAINER_CLASS = 'scroll-container';
 
@@ -534,7 +534,7 @@ var ListGraph = (function ($,d3) {
     function Levels(selection, vis, visData) {
       var _this = this;
 
-      babelHelpers.classCallCheck(this, Levels);
+      classCallCheck(this, Levels);
 
       this.vis = vis;
       this.visData = visData;
@@ -560,7 +560,7 @@ var ListGraph = (function ($,d3) {
       }).attr('width', this.visData.global.column.width + 1).attr('height', this.visData.global.column.height);
     }
 
-    babelHelpers.createClass(Levels, [{
+    createClass(Levels, [{
       key: 'scrollPreparation',
       value: function scrollPreparation(vis, scrollbarWidth) {
         var _this2 = this;
@@ -664,7 +664,7 @@ var ListGraph = (function ($,d3) {
     function Links(vis, levels, visData, layout) {
       var _this = this;
 
-      babelHelpers.classCallCheck(this, Links);
+      classCallCheck(this, Links);
 
       this.vis = vis;
       this.visData = visData;
@@ -691,7 +691,7 @@ var ListGraph = (function ($,d3) {
       });
     }
 
-    babelHelpers.createClass(Links, [{
+    createClass(Links, [{
       key: 'linkVisibility',
       value: function linkVisibility(data) {
         // Cache visibility.
@@ -856,43 +856,17 @@ var ListGraph = (function ($,d3) {
     return (value && value.Object === Object) ? value : null;
   }
 
-  /** Used to determine if values are of the language type `Object`. */
-  var objectTypes = {
-    'function': true,
-    'object': true
-  };
-
-  /** Detect free variable `exports`. */
-  var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
-    ? exports
-    : undefined;
-
-  /** Detect free variable `module`. */
-  var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
-    ? module
-    : undefined;
-
   /** Detect free variable `global` from Node.js. */
-  var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
+  var freeGlobal = checkGlobal(typeof global == 'object' && global);
 
   /** Detect free variable `self`. */
-  var freeSelf = checkGlobal(objectTypes[typeof self] && self);
-
-  /** Detect free variable `window`. */
-  var freeWindow = checkGlobal(objectTypes[typeof window] && window);
+  var freeSelf = checkGlobal(typeof self == 'object' && self);
 
   /** Detect `this` as the global object. */
-  var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
+  var thisGlobal = checkGlobal(typeof undefined == 'object' && undefined);
 
-  /**
-   * Used as a reference to the global object.
-   *
-   * The `this` value is used if it's the global object to avoid Greasemonkey's
-   * restricted `window` object, otherwise the `window` object is used.
-   */
-  var root = freeGlobal ||
-    ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
-      freeSelf || thisGlobal || Function('return this')();
+  /** Used as a reference to the global object. */
+  var root = freeGlobal || freeSelf || thisGlobal || Function('return this')();
 
   /* Built-in method references for those with the same name as other `lodash` methods. */
   var nativeIsFinite = root.isFinite;
@@ -915,13 +889,13 @@ var ListGraph = (function ($,d3) {
    * _.isFinite(3);
    * // => true
    *
-   * _.isFinite(Number.MAX_VALUE);
-   * // => true
-   *
-   * _.isFinite(3.14);
+   * _.isFinite(Number.MIN_VALUE);
    * // => true
    *
    * _.isFinite(Infinity);
+   * // => false
+   *
+   * _.isFinite('3');
    * // => false
    */
   function isFinite(value) {
@@ -1050,7 +1024,7 @@ var ListGraph = (function ($,d3) {
   var Bar = function Bar(barGroup, barData, nodeData, visData, bars) {
     var _this = this;
 
-    babelHelpers.classCallCheck(this, Bar);
+    classCallCheck(this, Bar);
 
     this.data = barData;
     this.nodeData = nodeData;
@@ -1073,9 +1047,6 @@ var ListGraph = (function ($,d3) {
     });
 
     // Local helper method to avoid code duplication.
-    // Calling a class method from within the consructor is possible but `this`
-    // is not available. Thus, we need to create local function and pass in
-    // `this` as `that`, which feels very hacky but it works.
     function setupMagnitude(selection) {
       var _this2 = this;
 
@@ -1148,7 +1119,7 @@ var ListGraph = (function ($,d3) {
 
   var Bars = function () {
     function Bars(vis, selection, mode, visData) {
-      babelHelpers.classCallCheck(this, Bars);
+      classCallCheck(this, Bars);
 
       var that = this;
 
@@ -1165,7 +1136,7 @@ var ListGraph = (function ($,d3) {
       });
     }
 
-    babelHelpers.createClass(Bars, [{
+    createClass(Bars, [{
       key: 'updateAll',
       value: function updateAll(update, sortBy) {
         var _this = this;
@@ -1249,8 +1220,8 @@ var ListGraph = (function ($,d3) {
       key: 'generateOneBarPath',
       value: function generateOneBarPath(data, currentSorting, indicator, adjustWidth) {
         var height = this.visData.global.row.contentHeight;
-        var normValue = Math.min(data.value, 1);
-        var normIndicator = Math.min(indicator, 1);
+        var normValue = Math.min(data.value, 1) || 0;
+        var normIndicator = Math.min(indicator, 1) || 0;
 
         var x = 0;
         var width = 2;
@@ -1358,7 +1329,7 @@ var ListGraph = (function ($,d3) {
     function Nodes(vis, baseSelection, visData, links, events) {
       var _this = this;
 
-      babelHelpers.classCallCheck(this, Nodes);
+      classCallCheck(this, Nodes);
 
       var that = this;
 
@@ -1515,7 +1486,7 @@ var ListGraph = (function ($,d3) {
       this.nodes.call(this.isInvisible.bind(this));
     }
 
-    babelHelpers.createClass(Nodes, [{
+    createClass(Nodes, [{
       key: 'updateLinkLocationIndicators',
       value: function updateLinkLocationIndicators(left, right) {
         this.calcHeightLinkLocationIndicator(left, false, true);
@@ -1797,7 +1768,7 @@ var ListGraph = (function ($,d3) {
         this.nodes
         // Filter by node ID
         .filter(function (data) {
-          return !! ~nodeIds.indexOf(data.id);
+          return !!~nodeIds.indexOf(data.id);
         }).each(function triggerCallback() {
           var d3El = d3.select(this);
 
@@ -2537,7 +2508,7 @@ var ListGraph = (function ($,d3) {
 
   var Scrollbars = function () {
     function Scrollbars(baseSelection, visData, width) {
-      babelHelpers.classCallCheck(this, Scrollbars);
+      classCallCheck(this, Scrollbars);
 
       this.visData = visData;
       this.width = width;
@@ -2556,7 +2527,7 @@ var ListGraph = (function ($,d3) {
       }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
     }
 
-    babelHelpers.createClass(Scrollbars, [{
+    createClass(Scrollbars, [{
       key: 'updateVisibility',
       value: function updateVisibility() {
         this.all.transition().duration(TRANSITION_LIGHTNING_FAST).attr({
@@ -2574,7 +2545,7 @@ var ListGraph = (function ($,d3) {
 
   var Events = function () {
     function Events(el, broadcast) {
-      babelHelpers.classCallCheck(this, Events);
+      classCallCheck(this, Events);
 
       if (broadcast && !isFunction(broadcast)) {
         throw new EventDispatcherNoFunction();
@@ -2585,7 +2556,7 @@ var ListGraph = (function ($,d3) {
       this.dispatch = broadcast || this._dispatchEvent;
     }
 
-    babelHelpers.createClass(Events, [{
+    createClass(Events, [{
       key: '_dispatchEvent',
       value: function _dispatchEvent(eventName, data) {
         var event = document.createEvent('CustomEvent');
@@ -2745,7 +2716,7 @@ var ListGraph = (function ($,d3) {
   var browserWindow = (typeof window !== 'undefined') ? window : undefined;
   var browserGlobal = browserWindow || {};
   var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
-  var isNode = typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
+  var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
 
   // test for web worker but not in IE10
   var isWorker = typeof Uint8ClampedArray !== 'undefined' &&
@@ -2836,19 +2807,19 @@ var ListGraph = (function ($,d3) {
 
   function then(onFulfillment, onRejection) {
     var parent = this;
-    var state = parent._state;
-
-    if (state === FULFILLED && !onFulfillment || state === REJECTED && !onRejection) {
-      return this;
-    }
 
     var child = new this.constructor(noop);
-    var result = parent._result;
+
+    if (child[PROMISE_ID] === undefined) {
+      makePromise(child);
+    }
+
+    var state = parent._state;
 
     if (state) {
       var callback = arguments[state - 1];
       asap(function(){
-        invokeCallback(state, child, callback, result);
+        invokeCallback(state, child, callback, parent._result);
       });
     } else {
       subscribe(parent, child, onFulfillment, onRejection);
@@ -2888,7 +2859,7 @@ var ListGraph = (function ($,d3) {
     @return {Promise} a promise that will become fulfilled with the given
     `value`
   */
-  function resolve$1(object) {
+  function resolve(object) {
     /*jshint validthis:true */
     var Constructor = this;
 
@@ -2897,9 +2868,11 @@ var ListGraph = (function ($,d3) {
     }
 
     var promise = new Constructor(noop);
-    resolve(promise, object);
+    _resolve(promise, object);
     return promise;
   }
+
+  var PROMISE_ID = Math.random().toString(36).substring(16);
 
   function noop() {}
 
@@ -2941,7 +2914,7 @@ var ListGraph = (function ($,d3) {
         if (sealed) { return; }
         sealed = true;
         if (thenable !== value) {
-          resolve(promise, value);
+          _resolve(promise, value);
         } else {
           fulfill(promise, value);
         }
@@ -2966,7 +2939,7 @@ var ListGraph = (function ($,d3) {
       _reject(promise, thenable._result);
     } else {
       subscribe(thenable, undefined, function(value) {
-        resolve(promise, value);
+        _resolve(promise, value);
       }, function(reason) {
         _reject(promise, reason);
       });
@@ -2976,7 +2949,7 @@ var ListGraph = (function ($,d3) {
   function handleMaybeThenable(promise, maybeThenable, then$$) {
     if (maybeThenable.constructor === promise.constructor &&
         then$$ === then &&
-        constructor.resolve === resolve$1) {
+        constructor.resolve === resolve) {
       handleOwnThenable(promise, maybeThenable);
     } else {
       if (then$$ === GET_THEN_ERROR) {
@@ -2991,7 +2964,7 @@ var ListGraph = (function ($,d3) {
     }
   }
 
-  function resolve(promise, value) {
+  function _resolve(promise, value) {
     if (promise === value) {
       _reject(promise, selfFulfillment());
     } else if (objectOrFunction(value)) {
@@ -3108,7 +3081,7 @@ var ListGraph = (function ($,d3) {
     if (promise._state !== PENDING) {
       // noop
     } else if (hasCallback && succeeded) {
-      resolve(promise, value);
+      _resolve(promise, value);
     } else if (failed) {
       _reject(promise, error);
     } else if (settled === FULFILLED) {
@@ -3121,13 +3094,171 @@ var ListGraph = (function ($,d3) {
   function initializePromise(promise, resolver) {
     try {
       resolver(function resolvePromise(value){
-        resolve(promise, value);
+        _resolve(promise, value);
       }, function rejectPromise(reason) {
         _reject(promise, reason);
       });
     } catch(e) {
       _reject(promise, e);
     }
+  }
+
+  var id = 0;
+  function nextId() {
+    return id++;
+  }
+
+  function makePromise(promise) {
+    promise[PROMISE_ID] = id++;
+    promise._state = undefined;
+    promise._result = undefined;
+    promise._subscribers = [];
+  }
+
+  function Enumerator(Constructor, input) {
+    this._instanceConstructor = Constructor;
+    this.promise = new Constructor(noop);
+
+    if (!this.promise[PROMISE_ID]) {
+      makePromise(this.promise);
+    }
+
+    if (isArray$1(input)) {
+      this._input     = input;
+      this.length     = input.length;
+      this._remaining = input.length;
+
+      this._result = new Array(this.length);
+
+      if (this.length === 0) {
+        fulfill(this.promise, this._result);
+      } else {
+        this.length = this.length || 0;
+        this._enumerate();
+        if (this._remaining === 0) {
+          fulfill(this.promise, this._result);
+        }
+      }
+    } else {
+      _reject(this.promise, validationError());
+    }
+  }
+
+  function validationError() {
+    return new Error('Array Methods must be provided an Array');
+  };
+
+  Enumerator.prototype._enumerate = function() {
+    var length  = this.length;
+    var input   = this._input;
+
+    for (var i = 0; this._state === PENDING && i < length; i++) {
+      this._eachEntry(input[i], i);
+    }
+  };
+
+  Enumerator.prototype._eachEntry = function(entry, i) {
+    var c = this._instanceConstructor;
+    var resolve$$ = c.resolve;
+
+    if (resolve$$ === resolve) {
+      var then$$ = getThen(entry);
+
+      if (then$$ === then &&
+          entry._state !== PENDING) {
+        this._settledAt(entry._state, i, entry._result);
+      } else if (typeof then$$ !== 'function') {
+        this._remaining--;
+        this._result[i] = entry;
+      } else if (c === Promise$1) {
+        var promise = new c(noop);
+        handleMaybeThenable(promise, entry, then$$);
+        this._willSettleAt(promise, i);
+      } else {
+        this._willSettleAt(new c(function(resolve$$) { resolve$$(entry); }), i);
+      }
+    } else {
+      this._willSettleAt(resolve$$(entry), i);
+    }
+  };
+
+  Enumerator.prototype._settledAt = function(state, i, value) {
+    var promise = this.promise;
+
+    if (promise._state === PENDING) {
+      this._remaining--;
+
+      if (state === REJECTED) {
+        _reject(promise, value);
+      } else {
+        this._result[i] = value;
+      }
+    }
+
+    if (this._remaining === 0) {
+      fulfill(promise, this._result);
+    }
+  };
+
+  Enumerator.prototype._willSettleAt = function(promise, i) {
+    var enumerator = this;
+
+    subscribe(promise, undefined, function(value) {
+      enumerator._settledAt(FULFILLED, i, value);
+    }, function(reason) {
+      enumerator._settledAt(REJECTED, i, reason);
+    });
+  };
+
+  /**
+    `Promise.all` accepts an array of promises, and returns a new promise which
+    is fulfilled with an array of fulfillment values for the passed promises, or
+    rejected with the reason of the first passed promise to be rejected. It casts all
+    elements of the passed iterable to promises as it runs this algorithm.
+
+    Example:
+
+    ```javascript
+    var promise1 = resolve(1);
+    var promise2 = resolve(2);
+    var promise3 = resolve(3);
+    var promises = [ promise1, promise2, promise3 ];
+
+    Promise.all(promises).then(function(array){
+      // The array here would be [ 1, 2, 3 ];
+    });
+    ```
+
+    If any of the `promises` given to `all` are rejected, the first promise
+    that is rejected will be given as an argument to the returned promises's
+    rejection handler. For example:
+
+    Example:
+
+    ```javascript
+    var promise1 = resolve(1);
+    var promise2 = reject(new Error("2"));
+    var promise3 = reject(new Error("3"));
+    var promises = [ promise1, promise2, promise3 ];
+
+    Promise.all(promises).then(function(array){
+      // Code here never runs because there are rejected promises!
+    }, function(error) {
+      // error.message === "2"
+    });
+    ```
+
+    @method all
+    @static
+    @param {Array} entries array of promises
+    @param {String} label optional string for labeling the promise.
+    Useful for tooling.
+    @return {Promise} promise that is fulfilled when all `promises` have been
+    fulfilled, or rejected if any of them become rejected.
+    @static
+  */
+  function all(entries) {
+    return new Enumerator(this, entries).promise;
   }
 
   /**
@@ -3199,28 +3330,18 @@ var ListGraph = (function ($,d3) {
     /*jshint validthis:true */
     var Constructor = this;
 
-    var promise = new Constructor(noop);
-
     if (!isArray$1(entries)) {
-      _reject(promise, new TypeError('You must pass an array to race.'));
-      return promise;
+      return new Constructor(function(resolve, reject) {
+        reject(new TypeError('You must pass an array to race.'));
+      });
+    } else {
+      return new Constructor(function(resolve, reject) {
+        var length = entries.length;
+        for (var i = 0; i < length; i++) {
+          Constructor.resolve(entries[i]).then(resolve, reject);
+        }
+      });
     }
-
-    var length = entries.length;
-
-    function onFulfillment(value) {
-      resolve(promise, value);
-    }
-
-    function onRejection(reason) {
-      _reject(promise, reason);
-    }
-
-    for (var i = 0; promise._state === PENDING && i < length; i++) {
-      subscribe(Constructor.resolve(entries[i]), undefined, onFulfillment, onRejection);
-    }
-
-    return promise;
   }
 
   /**
@@ -3265,13 +3386,11 @@ var ListGraph = (function ($,d3) {
     return promise;
   }
 
-  var counter$1 = 0;
-
-  function needsResolver$1() {
+  function needsResolver() {
     throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
   }
 
-  function needsNew$1() {
+  function needsNew() {
     throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
   }
 
@@ -3379,20 +3498,19 @@ var ListGraph = (function ($,d3) {
     @constructor
   */
   function Promise$1(resolver) {
-    this._id = counter$1++;
-    this._state = undefined;
-    this._result = undefined;
+    this[PROMISE_ID] = nextId();
+    this._result = this._state = undefined;
     this._subscribers = [];
 
     if (noop !== resolver) {
-      typeof resolver !== 'function' && needsResolver$1();
-      this instanceof Promise$1 ? initializePromise(this, resolver) : needsNew$1();
+      typeof resolver !== 'function' && needsResolver();
+      this instanceof Promise$1 ? initializePromise(this, resolver) : needsNew();
     }
   }
 
   Promise$1.all = all;
   Promise$1.race = race;
-  Promise$1.resolve = resolve$1;
+  Promise$1.resolve = resolve;
   Promise$1.reject = reject;
   Promise$1._setScheduler = setScheduler;
   Promise$1._setAsap = setAsap;
@@ -3628,511 +3746,6 @@ var ListGraph = (function ($,d3) {
     }
   };
 
-  function Enumerator(Constructor, input) {
-    this._instanceConstructor = Constructor;
-    this.promise = new Constructor(noop);
-
-    if (Array.isArray(input)) {
-      this._input     = input;
-      this.length     = input.length;
-      this._remaining = input.length;
-
-      this._result = new Array(this.length);
-
-      if (this.length === 0) {
-        fulfill(this.promise, this._result);
-      } else {
-        this.length = this.length || 0;
-        this._enumerate();
-        if (this._remaining === 0) {
-          fulfill(this.promise, this._result);
-        }
-      }
-    } else {
-      _reject(this.promise, this._validationError());
-    }
-  }
-
-  Enumerator.prototype._validationError = function() {
-    return new Error('Array Methods must be provided an Array');
-  };
-
-  Enumerator.prototype._enumerate = function() {
-    var length  = this.length;
-    var input   = this._input;
-
-    for (var i = 0; this._state === PENDING && i < length; i++) {
-      this._eachEntry(input[i], i);
-    }
-  };
-
-  Enumerator.prototype._eachEntry = function(entry, i) {
-    var c = this._instanceConstructor;
-    var resolve = c.resolve;
-
-    if (resolve === resolve$1) {
-      var then$$ = getThen(entry);
-
-      if (then$$ === then &&
-          entry._state !== PENDING) {
-        this._settledAt(entry._state, i, entry._result);
-      } else if (typeof then$$ !== 'function') {
-        this._remaining--;
-        this._result[i] = entry;
-      } else if (c === Promise$1) {
-        var promise = new c(noop);
-        handleMaybeThenable(promise, entry, then$$);
-        this._willSettleAt(promise, i);
-      } else {
-        this._willSettleAt(new c(function(resolve) { resolve(entry); }), i);
-      }
-    } else {
-      this._willSettleAt(resolve(entry), i);
-    }
-  };
-
-  Enumerator.prototype._settledAt = function(state, i, value) {
-    var promise = this.promise;
-
-    if (promise._state === PENDING) {
-      this._remaining--;
-
-      if (state === REJECTED) {
-        _reject(promise, value);
-      } else {
-        this._result[i] = value;
-      }
-    }
-
-    if (this._remaining === 0) {
-      fulfill(promise, this._result);
-    }
-  };
-
-  Enumerator.prototype._willSettleAt = function(promise, i) {
-    var enumerator = this;
-
-    subscribe(promise, undefined, function(value) {
-      enumerator._settledAt(FULFILLED, i, value);
-    }, function(reason) {
-      enumerator._settledAt(REJECTED, i, reason);
-    });
-  };
-
-  /**
-    `Promise.all` accepts an array of promises, and returns a new promise which
-    is fulfilled with an array of fulfillment values for the passed promises, or
-    rejected with the reason of the first passed promise to be rejected. It casts all
-    elements of the passed iterable to promises as it runs this algorithm.
-
-    Example:
-
-    ```javascript
-    var promise1 = resolve(1);
-    var promise2 = resolve(2);
-    var promise3 = resolve(3);
-    var promises = [ promise1, promise2, promise3 ];
-
-    Promise.all(promises).then(function(array){
-      // The array here would be [ 1, 2, 3 ];
-    });
-    ```
-
-    If any of the `promises` given to `all` are rejected, the first promise
-    that is rejected will be given as an argument to the returned promises's
-    rejection handler. For example:
-
-    Example:
-
-    ```javascript
-    var promise1 = resolve(1);
-    var promise2 = reject(new Error("2"));
-    var promise3 = reject(new Error("3"));
-    var promises = [ promise1, promise2, promise3 ];
-
-    Promise.all(promises).then(function(array){
-      // Code here never runs because there are rejected promises!
-    }, function(error) {
-      // error.message === "2"
-    });
-    ```
-
-    @method all
-    @static
-    @param {Array} entries array of promises
-    @param {String} label optional string for labeling the promise.
-    Useful for tooling.
-    @return {Promise} promise that is fulfilled when all `promises` have been
-    fulfilled, or rejected if any of them become rejected.
-    @static
-  */
-  function all(entries) {
-    return new Enumerator(this, entries).promise;
-  }
-
-  var counter = 0;
-
-  function needsResolver() {
-    throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
-  }
-
-  function needsNew() {
-    throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
-  }
-
-  /**
-    Promise objects represent the eventual result of an asynchronous operation. The
-    primary way of interacting with a promise is through its `then` method, which
-    registers callbacks to receive either a promise's eventual value or the reason
-    why the promise cannot be fulfilled.
-
-    Terminology
-    -----------
-
-    - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
-    - `thenable` is an object or function that defines a `then` method.
-    - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
-    - `exception` is a value that is thrown using the throw statement.
-    - `reason` is a value that indicates why a promise was rejected.
-    - `settled` the final resting state of a promise, fulfilled or rejected.
-
-    A promise can be in one of three states: pending, fulfilled, or rejected.
-
-    Promises that are fulfilled have a fulfillment value and are in the fulfilled
-    state.  Promises that are rejected have a rejection reason and are in the
-    rejected state.  A fulfillment value is never a thenable.
-
-    Promises can also be said to *resolve* a value.  If this value is also a
-    promise, then the original promise's settled state will match the value's
-    settled state.  So a promise that *resolves* a promise that rejects will
-    itself reject, and a promise that *resolves* a promise that fulfills will
-    itself fulfill.
-
-
-    Basic Usage:
-    ------------
-
-    ```js
-    var promise = new Promise(function(resolve, reject) {
-      // on success
-      resolve(value);
-
-      // on failure
-      reject(reason);
-    });
-
-    promise.then(function(value) {
-      // on fulfillment
-    }, function(reason) {
-      // on rejection
-    });
-    ```
-
-    Advanced Usage:
-    ---------------
-
-    Promises shine when abstracting away asynchronous interactions such as
-    `XMLHttpRequest`s.
-
-    ```js
-    function getJSON(url) {
-      return new Promise(function(resolve, reject){
-        var xhr = new XMLHttpRequest();
-
-        xhr.open('GET', url);
-        xhr.onreadystatechange = handler;
-        xhr.responseType = 'json';
-        xhr.setRequestHeader('Accept', 'application/json');
-        xhr.send();
-
-        function handler() {
-          if (this.readyState === this.DONE) {
-            if (this.status === 200) {
-              resolve(this.response);
-            } else {
-              reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
-            }
-          }
-        };
-      });
-    }
-
-    getJSON('/posts.json').then(function(json) {
-      // on fulfillment
-    }, function(reason) {
-      // on rejection
-    });
-    ```
-
-    Unlike callbacks, promises are great composable primitives.
-
-    ```js
-    Promise.all([
-      getJSON('/posts'),
-      getJSON('/comments')
-    ]).then(function(values){
-      values[0] // => postsJSON
-      values[1] // => commentsJSON
-
-      return values;
-    });
-    ```
-
-    @class Promise
-    @param {function} resolver
-    Useful for tooling.
-    @constructor
-  */
-  function Promise(resolver) {
-    this._id = counter++;
-    this._state = undefined;
-    this._result = undefined;
-    this._subscribers = [];
-
-    if (noop !== resolver) {
-      typeof resolver !== 'function' && needsResolver();
-      this instanceof Promise ? initializePromise(this, resolver) : needsNew();
-    }
-  }
-
-  Promise.all = all;
-  Promise.race = race;
-  Promise.resolve = resolve$1;
-  Promise.reject = reject;
-  Promise._setScheduler = setScheduler;
-  Promise._setAsap = setAsap;
-  Promise._asap = asap;
-
-  Promise.prototype = {
-    constructor: Promise,
-
-  /**
-    The primary way of interacting with a promise is through its `then` method,
-    which registers callbacks to receive either a promise's eventual value or the
-    reason why the promise cannot be fulfilled.
-
-    ```js
-    findUser().then(function(user){
-      // user is available
-    }, function(reason){
-      // user is unavailable, and you are given the reason why
-    });
-    ```
-
-    Chaining
-    --------
-
-    The return value of `then` is itself a promise.  This second, 'downstream'
-    promise is resolved with the return value of the first promise's fulfillment
-    or rejection handler, or rejected if the handler throws an exception.
-
-    ```js
-    findUser().then(function (user) {
-      return user.name;
-    }, function (reason) {
-      return 'default name';
-    }).then(function (userName) {
-      // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
-      // will be `'default name'`
-    });
-
-    findUser().then(function (user) {
-      throw new Error('Found user, but still unhappy');
-    }, function (reason) {
-      throw new Error('`findUser` rejected and we're unhappy');
-    }).then(function (value) {
-      // never reached
-    }, function (reason) {
-      // if `findUser` fulfilled, `reason` will be 'Found user, but still unhappy'.
-      // If `findUser` rejected, `reason` will be '`findUser` rejected and we're unhappy'.
-    });
-    ```
-    If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
-
-    ```js
-    findUser().then(function (user) {
-      throw new PedagogicalException('Upstream error');
-    }).then(function (value) {
-      // never reached
-    }).then(function (value) {
-      // never reached
-    }, function (reason) {
-      // The `PedgagocialException` is propagated all the way down to here
-    });
-    ```
-
-    Assimilation
-    ------------
-
-    Sometimes the value you want to propagate to a downstream promise can only be
-    retrieved asynchronously. This can be achieved by returning a promise in the
-    fulfillment or rejection handler. The downstream promise will then be pending
-    until the returned promise is settled. This is called *assimilation*.
-
-    ```js
-    findUser().then(function (user) {
-      return findCommentsByAuthor(user);
-    }).then(function (comments) {
-      // The user's comments are now available
-    });
-    ```
-
-    If the assimliated promise rejects, then the downstream promise will also reject.
-
-    ```js
-    findUser().then(function (user) {
-      return findCommentsByAuthor(user);
-    }).then(function (comments) {
-      // If `findCommentsByAuthor` fulfills, we'll have the value here
-    }, function (reason) {
-      // If `findCommentsByAuthor` rejects, we'll have the reason here
-    });
-    ```
-
-    Simple Example
-    --------------
-
-    Synchronous Example
-
-    ```javascript
-    var result;
-
-    try {
-      result = findResult();
-      // success
-    } catch(reason) {
-      // failure
-    }
-    ```
-
-    Errback Example
-
-    ```js
-    findResult(function(result, err){
-      if (err) {
-        // failure
-      } else {
-        // success
-      }
-    });
-    ```
-
-    Promise Example;
-
-    ```javascript
-    findResult().then(function(result){
-      // success
-    }, function(reason){
-      // failure
-    });
-    ```
-
-    Advanced Example
-    --------------
-
-    Synchronous Example
-
-    ```javascript
-    var author, books;
-
-    try {
-      author = findAuthor();
-      books  = findBooksByAuthor(author);
-      // success
-    } catch(reason) {
-      // failure
-    }
-    ```
-
-    Errback Example
-
-    ```js
-
-    function foundBooks(books) {
-
-    }
-
-    function failure(reason) {
-
-    }
-
-    findAuthor(function(author, err){
-      if (err) {
-        failure(err);
-        // failure
-      } else {
-        try {
-          findBoooksByAuthor(author, function(books, err) {
-            if (err) {
-              failure(err);
-            } else {
-              try {
-                foundBooks(books);
-              } catch(reason) {
-                failure(reason);
-              }
-            }
-          });
-        } catch(error) {
-          failure(err);
-        }
-        // success
-      }
-    });
-    ```
-
-    Promise Example;
-
-    ```javascript
-    findAuthor().
-      then(findBooksByAuthor).
-      then(function(books){
-        // found books
-    }).catch(function(reason){
-      // something went wrong
-    });
-    ```
-
-    @method then
-    @param {Function} onFulfilled
-    @param {Function} onRejected
-    Useful for tooling.
-    @return {Promise}
-  */
-    then: then,
-
-  /**
-    `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
-    as the catch block of a try/catch statement.
-
-    ```js
-    function findAuthor(){
-      throw new Error('couldn't find that author');
-    }
-
-    // synchronous
-    try {
-      findAuthor();
-    } catch(reason) {
-      // something went wrong
-    }
-
-    // async with promises
-    findAuthor().catch(function(reason){
-      // something went wrong
-    });
-    ```
-
-    @method catch
-    @param {Function} onRejection
-    Useful for tooling.
-    @return {Promise}
-  */
-    'catch': function(onRejection) {
-      return this.then(null, onRejection);
-    }
-  };
-
   /**
    * Gets the timestamp of the number of milliseconds that have elapsed since
    * the Unix epoch (1 January 1970 00:00:00 UTC).
@@ -4140,7 +3753,6 @@ var ListGraph = (function ($,d3) {
    * @static
    * @memberOf _
    * @since 2.4.0
-   * @type {Function}
    * @category Date
    * @returns {number} Returns the timestamp.
    * @example
@@ -4148,9 +3760,11 @@ var ListGraph = (function ($,d3) {
    * _.defer(function(stamp) {
    *   console.log(_.now() - stamp);
    * }, _.now());
-   * // => Logs the number of milliseconds it took for the deferred function to be invoked.
+   * // => Logs the number of milliseconds it took for the deferred invocation.
    */
-  var now = Date.now;
+  function now() {
+    return Date.now();
+  }
 
   /**
    * Checks if `value` is object-like. A value is object-like if it's not `null`
@@ -4245,8 +3859,8 @@ var ListGraph = (function ($,d3) {
    * @returns {number} Returns the number.
    * @example
    *
-   * _.toNumber(3);
-   * // => 3
+   * _.toNumber(3.2);
+   * // => 3.2
    *
    * _.toNumber(Number.MIN_VALUE);
    * // => 5e-324
@@ -4254,8 +3868,8 @@ var ListGraph = (function ($,d3) {
    * _.toNumber(Infinity);
    * // => Infinity
    *
-   * _.toNumber('3');
-   * // => 3
+   * _.toNumber('3.2');
+   * // => 3.2
    */
   function toNumber(value) {
     if (typeof value == 'number') {
@@ -4337,12 +3951,13 @@ var ListGraph = (function ($,d3) {
   function debounce(func, wait, options) {
     var lastArgs,
         lastThis,
+        maxWait,
         result,
         timerId,
-        lastCallTime = 0,
+        lastCallTime,
         lastInvokeTime = 0,
         leading = false,
-        maxWait = false,
+        maxing = false,
         trailing = true;
 
     if (typeof func != 'function') {
@@ -4351,7 +3966,8 @@ var ListGraph = (function ($,d3) {
     wait = toNumber(wait) || 0;
     if (isObject(options)) {
       leading = !!options.leading;
-      maxWait = 'maxWait' in options && nativeMax(toNumber(options.maxWait) || 0, wait);
+      maxing = 'maxWait' in options;
+      maxWait = maxing ? nativeMax(toNumber(options.maxWait) || 0, wait) : maxWait;
       trailing = 'trailing' in options ? !!options.trailing : trailing;
     }
 
@@ -4379,7 +3995,7 @@ var ListGraph = (function ($,d3) {
           timeSinceLastInvoke = time - lastInvokeTime,
           result = wait - timeSinceLastCall;
 
-      return maxWait === false ? result : nativeMin(result, maxWait - timeSinceLastInvoke);
+      return maxing ? nativeMin(result, maxWait - timeSinceLastInvoke) : result;
     }
 
     function shouldInvoke(time) {
@@ -4389,8 +4005,8 @@ var ListGraph = (function ($,d3) {
       // Either this is the first call, activity has stopped and we're at the
       // trailing edge, the system time has gone backwards and we're treating
       // it as the trailing edge, or we've hit the `maxWait` limit.
-      return (!lastCallTime || (timeSinceLastCall >= wait) ||
-        (timeSinceLastCall < 0) || (maxWait !== false && timeSinceLastInvoke >= maxWait));
+      return (lastCallTime === undefined || (timeSinceLastCall >= wait) ||
+        (timeSinceLastCall < 0) || (maxing && timeSinceLastInvoke >= maxWait));
     }
 
     function timerExpired() {
@@ -4403,7 +4019,6 @@ var ListGraph = (function ($,d3) {
     }
 
     function trailingEdge(time) {
-      clearTimeout(timerId);
       timerId = undefined;
 
       // Only invoke if we have `lastArgs` which means `func` has been
@@ -4416,11 +4031,8 @@ var ListGraph = (function ($,d3) {
     }
 
     function cancel() {
-      if (timerId !== undefined) {
-        clearTimeout(timerId);
-      }
-      lastCallTime = lastInvokeTime = 0;
-      lastArgs = lastThis = timerId = undefined;
+      lastInvokeTime = 0;
+      lastArgs = lastCallTime = lastThis = timerId = undefined;
     }
 
     function flush() {
@@ -4439,10 +4051,14 @@ var ListGraph = (function ($,d3) {
         if (timerId === undefined) {
           return leadingEdge(lastCallTime);
         }
-        // Handle invocations in a tight loop.
-        clearTimeout(timerId);
+        if (maxing) {
+          // Handle invocations in a tight loop.
+          timerId = setTimeout(timerExpired, wait);
+          return invokeFunc(lastCallTime);
+        }
+      }
+      if (timerId === undefined) {
         timerId = setTimeout(timerExpired, wait);
-        return invokeFunc(lastCallTime);
       }
       return result;
     }
@@ -4517,7 +4133,7 @@ var ListGraph = (function ($,d3) {
 
   var NodeContextMenu = function () {
     function NodeContextMenu(vis, visData, baseEl, events, querying, infoFields) {
-      babelHelpers.classCallCheck(this, NodeContextMenu);
+      classCallCheck(this, NodeContextMenu);
 
       var that = this;
 
@@ -4640,7 +4256,7 @@ var ListGraph = (function ($,d3) {
      * Getter / Setter
      * ------------------------------------------------------------------------ */
 
-    babelHelpers.createClass(NodeContextMenu, [{
+    createClass(NodeContextMenu, [{
       key: 'addLabel',
 
 
@@ -4790,7 +4406,7 @@ var ListGraph = (function ($,d3) {
         var _this2 = this;
 
         if (!this.closing) {
-          this.closing = new Promise(function (resolve) {
+          this.closing = new Promise$1(function (resolve) {
             _this2.opened = false;
             _this2.updateAppearance();
 
@@ -4969,7 +4585,7 @@ var ListGraph = (function ($,d3) {
       value: function open(node) {
         var _this4 = this;
 
-        return new Promise(function (resolve) {
+        return new Promise$1(function (resolve) {
           _this4.node = node;
           _this4.closing = undefined;
 
@@ -5091,9 +4707,9 @@ var ListGraph = (function ($,d3) {
       value: function toggle(node) {
         var _this6 = this;
 
-        return new Promise(function (resolve) {
+        return new Promise$1(function (resolve) {
           var nodeId = node.datum().id;
-          var closed = Promise.resolve();
+          var closed = Promise$1.resolve();
 
           if (_this6.visible) {
             closed = _this6.close();
@@ -5231,11 +4847,11 @@ var ListGraph = (function ($,d3) {
   }();
 
   var LimitsUnsupportedFormat = function (_ExtendableError) {
-    babelHelpers.inherits(LimitsUnsupportedFormat, _ExtendableError);
+    inherits(LimitsUnsupportedFormat, _ExtendableError);
 
     function LimitsUnsupportedFormat(message) {
-      babelHelpers.classCallCheck(this, LimitsUnsupportedFormat);
-      return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(LimitsUnsupportedFormat).call(this, message || 'The limits are wrongly formatted. Please provide an ' + 'object of the following format: `{ x: { min: 0, max: 1 }, y: { min: ' + '0, max: 1 } }`'));
+      classCallCheck(this, LimitsUnsupportedFormat);
+      return possibleConstructorReturn(this, Object.getPrototypeOf(LimitsUnsupportedFormat).call(this, message || 'The limits are wrongly formatted. Please provide an ' + 'object of the following format: `{ x: { min: 0, max: 1 }, y: { min: ' + '0, max: 1 } }`'));
     }
 
     return LimitsUnsupportedFormat;
@@ -5388,13 +5004,15 @@ var ListGraph = (function ($,d3) {
     function ListGraph(init) {
       var _this = this;
 
-      babelHelpers.classCallCheck(this, ListGraph);
+      classCallCheck(this, ListGraph);
 
       if (!d3.layout.listGraph) {
         throw new LayoutNotAvailable();
       }
 
       var that = this;
+
+      this.version = '0.16.1';
 
       this.baseEl = init.element;
       this.baseEl.__d3ListGraphBase__ = true;
@@ -5662,7 +5280,7 @@ var ListGraph = (function ($,d3) {
       this.getBoundingRect();
     }
 
-    babelHelpers.createClass(ListGraph, [{
+    createClass(ListGraph, [{
       key: 'dragMoveHandler',
       value: function dragMoveHandler$$(data, elsToBeDragged, orientation, limits, notWhenTrue) {
         dragMoveHandler(data, elsToBeDragged, orientation, limits, notWhenTrue);
@@ -5891,7 +5509,7 @@ var ListGraph = (function ($,d3) {
       value: function scrollY(columnData, scrollbarDragging) {
         ListGraph.scrollElVertically(columnData.nodes, columnData.scrollTop);
 
-        if (true || !scrollbarDragging) {
+        if (!scrollbarDragging) {
           // Scroll scrollbar
           columnData.scrollbar.scrollTop = columnData.scrollbar.heightScale(-columnData.scrollTop);
 
