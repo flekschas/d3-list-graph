@@ -10,7 +10,7 @@ import through from 'through2';
 import gulpUtils from 'gulp-util';
 import fs from 'fs';
 import path from 'path';
-import rollup from 'rollup';
+import { rollup } from 'rollup';
 
 const PLUGIN_NAME = 'gulp-rollup';
 
@@ -39,7 +39,7 @@ function gulpRollup (_options_) {
         }
         finalOptions.entry = file.path;
 
-        rollup.rollup(finalOptions).then(bundle => {
+        rollup(finalOptions).then(bundle => {
           const res = bundle.generate(finalOptions);
           file.contents = new Buffer(res.code);
           const map = res.map;
