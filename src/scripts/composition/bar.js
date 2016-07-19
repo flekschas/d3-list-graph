@@ -27,9 +27,6 @@ class Bar {
           data.id === this.visData.nodes[this.nodeData.depth].sortBy);
 
     // Local helper method to avoid code duplication.
-    // Calling a class method from within the consructor is possible but `this`
-    // is not available. Thus, we need to create local function and pass in
-    // `this` as `that`, which feels very hacky but it works.
     function setupMagnitude (selection) {
       const currentSorting = this.visData.nodes[this.nodeData.depth].sortBy;
 
