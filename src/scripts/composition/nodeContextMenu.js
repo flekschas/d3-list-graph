@@ -1,5 +1,5 @@
 // External
-import Promise from '../../../node_modules/es6-promise/lib/es6-promise/Promise';
+import Promise from '../../../node_modules/es6-promise/lib/es6-promise/promise';
 import debounce from '../../../node_modules/lodash-es/debounce';
 
 // Internal
