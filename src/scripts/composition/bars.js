@@ -117,8 +117,8 @@ class Bars {
     data, currentSorting, indicator, adjustWidth
   ) {
     const height = this.visData.global.row.contentHeight;
-    const normValue = Math.min(data.value, 1);
-    const normIndicator = Math.min(indicator, 1);
+    const normValue = Math.min(data.value, 1) || 0;
+    const normIndicator = Math.min(indicator, 1) || 0;
 
     let x = 0;
     let width = 2;
