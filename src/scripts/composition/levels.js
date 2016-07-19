@@ -1,5 +1,5 @@
 // External
-import * as d3 from 'd3';
+import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 
 const COLUMN_CLASS = 'column';
 const SCROLL_CONTAINER_CLASS = 'scroll-container';

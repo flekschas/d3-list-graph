@@ -1,5 +1,5 @@
 // External
-import * as d3 from 'd3';
+import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 
 // Internal
 import * as config from './config';

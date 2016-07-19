@@ -1,5 +1,5 @@
 // External
-import * as d3 from 'd3';
+import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 import isFunction from '../../../node_modules/lodash-es/isFunction';
 
 // Internal

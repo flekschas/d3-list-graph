@@ -1,6 +1,6 @@
 // External
-import * as $ from '$';
-import * as d3 from 'd3';
+import * as $ from '$';  // eslint-disable-line import/no-unresolved
+import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 import isArray from '../../../node_modules/lodash-es/isArray';
 
 // Internal

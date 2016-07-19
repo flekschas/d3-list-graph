@@ -1,5 +1,5 @@
 // External
-import * as d3 from 'd3';
+import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 
 const TOPBAR_EL = 'div';
 const TOPBAR_CLASS = 'top-bar';
