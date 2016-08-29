@@ -982,10 +982,12 @@ class ListGraph {
    */
   linkPointsOutside (data) {
     const y = data.node.y + data.offsetY;
-    if (y + this.visData.global.row.height <= 0) {
+    if (
+      y + this.visData.global.row.height - this.visData.global.row.padding <= 0
+    ) {
       return 1;
     }
-    if (y >= this.height) {
+    if (y + this.visData.global.row.padding >= this.height) {
       return 2;
     }
     return 0;
