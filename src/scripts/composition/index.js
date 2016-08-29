@@ -994,6 +994,6 @@ class ListGraph {
   }
 }
 
-ListGraph.version = '0.16.2';
+ListGraph.version = '0.16.3';
 
 export default ListGraph;
