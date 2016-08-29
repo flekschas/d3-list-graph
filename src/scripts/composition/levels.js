@@ -44,14 +44,15 @@ class Levels {
   scrollPreparation (vis, scrollbarWidth) {
     this.groups.each((data, index) => {
       const contentHeight = data.nodes.getBoundingClientRect().height +
-        2 * this.visData.global.row.padding;
+        (2 * this.visData.global.row.padding);
       const scrollHeight = contentHeight - this.visData.global.column.height;
       const scrollbarHeight = scrollHeight > 0 ?
         Math.max(
           (
-            this.visData.global.column.height *
-            this.visData.global.column.height /
-            contentHeight
+            (
+              this.visData.global.column.height *
+              this.visData.global.column.height
+            ) / contentHeight
           ),
           10
         ) : 0;
@@ -66,7 +67,7 @@ class Levels {
       data.scrollTop = 0;
       data.scrollbar = {
         el: undefined,
-        x: data.x + this.visData.global.column.width - scrollbarWidth,
+        x: data.x + (this.visData.global.column.width - scrollbarWidth),
         y: 0,
         width: scrollbarWidth,
         height: scrollbarHeight,
@@ -83,14 +84,15 @@ class Levels {
   updateScrollProperties () {
     this.groups.each(data => {
       const contentHeight = data.nodes.getBoundingClientRect().height +
-        2 * this.visData.global.row.padding;
+        (2 * this.visData.global.row.padding);
       const scrollHeight = contentHeight - this.visData.global.column.height;
       const scrollbarHeight = scrollHeight > 0 ?
         Math.max(
           (
-            this.visData.global.column.height *
-            this.visData.global.column.height /
-            contentHeight
+            (
+              this.visData.global.column.height *
+              this.visData.global.column.height
+            ) / contentHeight
           ),
           10
         ) : 0;

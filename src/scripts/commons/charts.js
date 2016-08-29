@@ -42,14 +42,14 @@ export function roundRect (x, y, width, height, radius) {
  */
 export function dropMenu (c) {
   return 'M' + (c.x + c.radius) + ',' + c.y +
-    'h' + (c.width - c.radius * 2) +
+    'h' + (c.width - (c.radius * 2)) +
     'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + c.radius + ',' + c.radius +
-    'v' + (c.height - c.radius * 2) +
+    'v' + (c.height - (c.radius * 2)) +
     'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + -c.radius + ',' + c.radius +
-    'h' + (-(c.width - c.radius * 2 - c.arrowSize * 2) / 2) +
+    'h' + (-(c.width - (c.radius * 2) - (c.arrowSize * 2)) / 2) +
     'l' + (-c.arrowSize) + ',' + (c.arrowSize) +
     'l' + (-c.arrowSize) + ',' + (-c.arrowSize) +
-    'h' + (-(c.width - c.radius * 2 - c.arrowSize * 2) / 2) +
+    'h' + (-(c.width - (c.radius * 2) - (c.arrowSize * 2)) / 2) +
     'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + -c.radius + ',' + -c.radius +
     'v' + (c.radius - (c.height - c.radius)) +
     'a' + c.radius + ',' + c.radius + ' 0 0 1 ' + c.radius + ',' + -c.radius +

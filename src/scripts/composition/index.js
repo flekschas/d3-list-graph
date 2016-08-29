@@ -307,7 +307,7 @@ class ListGraph {
       `.${this.nodes.classNodeVisible}`,
       function () {
         that.interactionWrapper.call(that, function (domEl, data) {
-          if (!!!this.vis.activeScrollbar) {
+          if (!this.vis.activeScrollbar) {
             this.enterHandler.call(this, domEl, data);
           }
         }.bind(that.nodes), [this, d3.select(this).datum()]);
@@ -319,7 +319,7 @@ class ListGraph {
       `.${this.nodes.classNodeVisible}`,
       function () {
         that.interactionWrapper.call(that, function (domEl, data) {
-          if (!!!this.vis.activeScrollbar) {
+          if (!this.vis.activeScrollbar) {
             this.leaveHandler.call(this, domEl, data);
           }
         }.bind(that.nodes), [this, d3.select(this).datum()]);
@@ -849,7 +849,7 @@ class ListGraph {
       let y = 0;
       let width = 0;
       let height = 0;
-      let cRect = undefined;
+      let cRect;
       const contBBox = this.container.node().getBBox();
 
       const globalCRect = this.svgD3.node().getBoundingClientRect();
@@ -857,8 +857,14 @@ class ListGraph {
       if (selectionInterst && !selectionInterst.empty()) {
         selectionInterst.each(function () {
           cRect = this.getBoundingClientRect();
-          width = Math.max(width, cRect.left - globalCRect.left + cRect.width);
-          height = Math.max(height, cRect.top - globalCRect.top + cRect.height);
+          width = Math.max(
+            width,
+            cRect.left - (globalCRect.left + cRect.width)
+          );
+          height = Math.max(
+            height,
+            cRect.top - (globalCRect.top + cRect.height)
+          );
         });
         width = this.width > width ? this.width : width;
         height = this.height > height ? this.height : height;

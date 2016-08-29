@@ -60,7 +60,7 @@ class Links {
 
     function getY (source) {
       return source.node.y + source.offsetY +
-        this.visData.global.row.height / 2;
+        (this.visData.global.row.height / 2);
     }
 
     return data => {

@@ -10,13 +10,13 @@ class Bar {
     this.data.x = nodeData.x;
     this.data.level = nodeData.depth;
 
-    this.height = this.visData.global.row.contentHeight /
-      (this.data.length * 2) -
-      this.visData.global.cell.padding * 2;
+    this.height = (this.visData.global.row.contentHeight /
+      (this.data.length * 2)) -
+      (this.visData.global.cell.padding * 2);
 
     this.activeHeight = this.visData.global.row.contentHeight - 2;
 
-    this.inactiveheight = this.visData.global.cell.padding * 2 - 1;
+    this.inactiveheight = (this.visData.global.cell.padding * 2) - 1;
 
     this.selection = barGroup.selectAll(BAR_CLASS)
       .data(this.data)

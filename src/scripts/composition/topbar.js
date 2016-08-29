@@ -315,7 +315,7 @@ class Topbar {
           return false;
         })
         .style({
-          width: that.visData.global.column.contentWidth / 2 + 'px',
+          width: (that.visData.global.column.contentWidth / 2) + 'px',
           left: that.visData.global.column.padding + 'px'
         })
         .on('click', function (controlData) {
@@ -369,8 +369,8 @@ class Topbar {
           return false;
         })
         .style({
-          width: that.visData.global.column.contentWidth / 2 + 'px',
-          left: that.visData.global.column.contentWidth / 2 +
+          width: (that.visData.global.column.contentWidth / 2) + 'px',
+          left: (that.visData.global.column.contentWidth / 2) +
             that.visData.global.column.padding + 'px'
         })
         .on('click', function (controlData) {
@@ -386,8 +386,8 @@ class Topbar {
         .on('mouseleave', function () {
           that.highlightBars(this.parentNode, 'recall', true);
           d3.select(this).style({
-            width: (that.visData.global.column.contentWidth) / 2 + 'px',
-            left: (that.visData.global.column.contentWidth / 2 +
+            width: (that.visData.global.column.contentWidth / 2) + 'px',
+            left: ((that.visData.global.column.contentWidth / 2) +
               that.visData.global.column.padding) + 'px'
           });
         })

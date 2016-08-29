@@ -471,11 +471,11 @@ class ListGraphLayout {
 
     _colAbsPadding = _columnWidth * _colRelPadding;
     _colAbsContentWidth = _columnWidth * (
-      1 - 2 * _colRelPadding
+      1 - (2 * _colRelPadding)
     );
 
     _rowAbsPadding = Math.max(_rowHeight * _rowRelPadding, 2);
-    _rowAbsContentHeight = _rowHeight - 2 * _rowAbsPadding;
+    _rowAbsContentHeight = _rowHeight - (2 * _rowAbsPadding);
 
     _cellAbsInnerPadding = _cellRelInnerPadding * Math.min(
       _colAbsContentWidth,

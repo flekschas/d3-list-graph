@@ -84,12 +84,12 @@ export function exponentialGradient (el, start, end, name, power, steps) {
     gradient.append('stop')
       .attr(
         'offset',
-        (start.offset + (i * stepSize) * (end.offset - start.offset)) + '%'
+        (start.offset + ((i * stepSize) * (end.offset - start.offset))) + '%'
       )
       .attr('stop-color', end.color)
       .attr(
         'stop-opacity',
-        start.opacity + scale(i * stepSize) * (end.opacity - start.opacity)
+        start.opacity + (scale(i * stepSize) * (end.opacity - start.opacity))
       );
   }
 

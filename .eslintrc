@@ -35,6 +35,9 @@
     // Temporary issue:
     // https://github.com/eslint/eslint/issues/5074#issuecomment-189509063
     "prefer-const": 1,
-    "no-underscore-dangle": 0
+    "no-underscore-dangle": 0,
+    "import/prefer-default-export": 0,
+    "no-lonely-if": 0,
+    "no-mixed-operators": ["error", {"allowSamePrecedence": true}]
   }
 }

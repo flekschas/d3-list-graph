@@ -37,10 +37,10 @@ class Nodes {
     this.currentLinks = {};
     this.iconDimension = Math.min(
       (
-        this.visData.global.row.contentHeight / 2 -
-        this.visData.global.cell.padding * 2
+        (this.visData.global.row.contentHeight / 2) -
+        (this.visData.global.cell.padding * 2)
       ),
-      this.visData.global.column.padding / 2 - 4
+      (this.visData.global.column.padding / 2) - 4
     );
 
     const linkDensityBg = d3.scale.linear()
@@ -60,7 +60,7 @@ class Nodes {
           'd',
           roundRect(
             incoming ? -7 : this.visData.global.column.contentWidth,
-            this.visData.global.row.height / 2 - 1,
+            (this.visData.global.row.height / 2) - 1,
             7,
             2,
             {
@@ -92,8 +92,8 @@ class Nodes {
         .attr(
           'y',
           above ?
-            this.visData.global.row.height / 2 - 1 :
-            this.visData.global.row.height / 2 + 1
+            (this.visData.global.row.height / 2) - 1 :
+            (this.visData.global.row.height / 2) + 1
         )
         .attr('width', 3)
         .attr('height', 3)
@@ -109,11 +109,11 @@ class Nodes {
         .attr('y', that.visData.global.row.padding + shrinkingAmount)
         .attr(
           'width',
-          that.visData.global.column.contentWidth - 2 * shrinkingAmount
+          that.visData.global.column.contentWidth - (2 * shrinkingAmount)
         )
         .attr(
           'height',
-          that.visData.global.row.contentHeight - 2 * shrinkingAmount
+          that.visData.global.row.contentHeight - (2 * shrinkingAmount)
         )
         .attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount)
         .attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount)
@@ -261,13 +261,13 @@ class Nodes {
         this.visData.global.cell.padding)
       .attr('width', this.visData.global.column.contentWidth)
       .attr('height', this.visData.global.row.contentHeight -
-        this.visData.global.cell.padding * 2)
+        (this.visData.global.cell.padding * 2))
       .attr('class', CLASS_LABEL_WRAPPER)
       .append('xhtml:div')
         .attr('class', 'label')
         .attr('title', data => data.data.name)
         .style('line-height', (this.visData.global.row.contentHeight -
-          this.visData.global.cell.padding * 2) + 'px')
+          (this.visData.global.cell.padding * 2)) + 'px')
         .append('xhtml:span')
           .text(data => data.data.name);
 
@@ -382,8 +382,8 @@ class Nodes {
   }
 
   updateHeightLinkLocationIndicatorBars (selection, outgoing) {
-    const barRefHeight = this.visData.global.row.contentHeight / 2 - 1;
-    const barAboveRefTop = this.visData.global.row.height / 2 - 1;
+    const barRefHeight = (this.visData.global.row.contentHeight / 2) - 1;
+    const barAboveRefTop = (this.visData.global.row.height / 2) - 1;
 
     const baseClassName = '.' + CLASS_INDICATOR_LOCATION +
       '.' + (
@@ -396,7 +396,7 @@ class Nodes {
     ).attr(
       'y',
       data => (data.total ?
-        barAboveRefTop - data.above / data.total * barRefHeight :
+        barAboveRefTop - (data.above / data.total * barRefHeight) :
         barAboveRefTop)
     ).attr(
       'height',
@@ -935,14 +935,16 @@ class Nodes {
     let x = 0 - (paddedDim * (position + 1));
 
     if (location === 'right') {
-      x = this.visData.global.column.contentWidth + 2 + paddedDim * position;
+      x = this.visData.global.column.contentWidth + 2 + (paddedDim * position);
     }
 
     const y = this.visData.global.row.padding +
       (
-        this.visData.global.row.contentHeight -
-        2 * this.visData.global.cell.padding
-      ) / 4;
+        (
+          this.visData.global.row.contentHeight -
+          (2 * this.visData.global.cell.padding)
+        ) / 4
+      );
 
     if (mode === 'bg') {
       selection
@@ -1091,7 +1093,7 @@ class Nodes {
     const currentNodeData = data.clone ? data.originalNode : data;
     const includeParents = true;
     const appliedClassName = className || 'hovering';
-    const includeClones = !!!excludeClones;
+    const includeClones = !excludeClones;
     const includeChildren = restriction !== 'directParentsOnly';
 
     // Store link IDs
@@ -1260,7 +1262,7 @@ class Nodes {
     const traverseCallback = nodeData => { nodeData.hovering = 0; };
     const includeParents = true;
     const appliedClassName = className || 'hovering';
-    const includeClones = !!!excludeClones;
+    const includeClones = !excludeClones;
     const includeChildren = restriction !== 'directParentsOnly';
 
     data.hovering = 0;
