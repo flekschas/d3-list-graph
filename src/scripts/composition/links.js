@@ -119,8 +119,8 @@ class Links {
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('d', this.diagonal)
-      .each('start', start)
-      .each('end', end);
+      .on('start', start)
+      .on('end', end);
   }
 
   updateVisibility () {
