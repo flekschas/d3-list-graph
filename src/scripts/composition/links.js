@@ -32,16 +32,12 @@ class Links {
         );
 
     this.links.append('path')
-      .attr({
-        class: LINK_CLASS + '-bg',
-        d: this.diagonal
-      });
+      .attr('class', LINK_CLASS + '-bg')
+      .attr('d', this.diagonal.bind(this));
 
     this.links.append('path')
-      .attr({
-        class: LINK_CLASS + '-direct',
-        d: this.diagonal
-      });
+      .attr('class', LINK_CLASS + '-direct')
+      .attr('d', this.diagonal.bind(this));
   }
 
   get diagonal () {
