@@ -7,10 +7,12 @@ import assign from '../../../node_modules/lodash-es/assign';
 
 // Internal
 import * as defaults from './defaults';
+import { D3VersionFourRequired } from '../commons/errors';
 import { NoRootNodes } from './errors';
 import traverseGraph from './process-nodes';
 
 // Private variables
+let _d3 = d3;
 const _cellRelInnerPadding = defaults.CELL_REL_INNER_PADDING;
 const _grid = {
   columns: defaults.GRID.columns,
@@ -44,11 +46,20 @@ class ListGraphLayout {
    *   `[200,20]` or an Object, e.g. `{width: 200, height: 20}`.
    * @param  {Array|Object}  grid  New grid configuration. Can either be an
    *   Array, e.g. `[5,3]` or an Object, e.g. `{columns: 5, rows: 3}`.
+   * @param  {Object}  specificD3  Provide a specific version of D3.js.
    */
-  constructor (size, grid) {
+  constructor (size, grid, specificD3) {
+    if (specificD3) {
+      _d3 = specificD3;
+    }
+
+    if (_d3.version[0] !== '4') {
+      throw new D3VersionFourRequired(_d3.version);
+    }
+
     this.scale = {
-      x: d3.scaleLinear(),
-      y: d3.scaleLinear(),
+      x: _d3.scaleLinear(),
+      y: _d3.scaleLinear(),
       linkPosition: {}
     };
 
