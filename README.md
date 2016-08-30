@@ -1,8 +1,10 @@
 # D3 List Graph [![Build Status](https://travis-ci.org/flekschas/d3-list-graph.svg?branch=master)](https://travis-ci.org/flekschas/d3-list-graph)
 
-> A flat horizontal scrollable node-link diagram, implemented in ES6 and orchestrated by D3.
+> A flat horizontal scrollable node-link diagram, implemented in ES6 and orchestrated by D3 **v4**.
 
 Demo: https://flekschas.github.io/d3-list-graph/
+
+Note: Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. Please use D3.js **v4.x** instead.
 
 ## Install
 
@@ -14,7 +16,7 @@ bower install flekschas/d3-list-graph --save
 
 This visualization depends on the following libraries to be available globally:
 
-- D3
+- D3 **v4**
 - jQuery
 - jQuery's Mousewheel Plugin
 
@@ -28,7 +30,7 @@ This example assumes that you're using Bower to fetch all code.
 <head>
   <meta charset="utf-8">
   <title>Example</title>
-  <link href="bower_components/d3-list-graph/dist/listGraph.min.css" rel="stylesheet" type="text/css">
+  <link href="bower_components/d3-list-graph/dist/listGraph.css" rel="stylesheet" type="text/css">
 </head>
 <body>
   <div class="list-graph">
@@ -38,8 +40,8 @@ This example assumes that you're using Bower to fetch all code.
   <script src="bower_components/jquery/dist/jquery.js"></script>
   <script src="bower_components/jquery-mousewheel/jquery.mousewheel.js"></script>
   <script src="bower_components/d3/d3.js"></script>
-  <script src="bower_components/d3-list-graph/dist/d3.layout.listGraph.js"></script>
-  <script src="bower_components/d3-list-graph/dist/listGraph.min.js"></script>
+  <script src="bower_components/d3-list-graph/dist/d3.listGraph.js"></script>
+  <script src="bower_components/d3-list-graph/dist/listGraph.js"></script>
   <script>
     d3.json('bower_components/d3-list-graph/example/data.json', function (error, data) {
       if (error) throw error;
@@ -55,6 +57,49 @@ This example assumes that you're using Bower to fetch all code.
 </body>
 </html>
 ```
+
+### Migration D3.js v3 to v4
+
+Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. If you still need to run old code on D3.js v4 please stick to the following pattern to load both versions but use v4 for the tree graph.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Example</title>
+  <link href="bower_components/d3-list-graph/dist/listGraph.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+  <div class="list-graph">
+    <div class="top-bar"></div>
+    <div class="wrapper"><svg class="base"></svg></div>
+  </div>
+  <script src="bower_components/jquery/dist/jquery.js"></script>
+  <script src="bower_components/jquery-mousewheel/jquery.mousewheel.js"></script>
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script src="bower_components/d3-list-graph/dist/d3.listGraph.js"></script>
+  <script src="bower_components/d3-list-graph/dist/listGraph.js"></script>
+  <script>var d3V4 = d3;</script>
+  <script src="https://d3js.org/d3.v3.js"></script>
+  <script>
+    d3.json('bower_components/d3-list-graph/example/data.json', function (error, data) {
+      if (error) throw error;
+
+      var graph = new ListGraph({
+        d3: d3V4,
+        data: data,
+        element: document.querySelector('.list-graph'),
+        iconPath: '/dist/icons.svg',
+        rootNodes: [1, 2]
+      });
+    });
+  </script>
+</body>
+</html>
+```
+
+Make sure to load D3.js v4, the tree graph layout, the tree graph app, and all other version 4 related code first. Then reassign the global variable `d3` to `d3V4` (or anything else you like). Finally, specify the version 4 of D3 when loading the list graph by püassing a property called `d3` and assign `d3V4` to it. When that property is unassigned the tool will use the globally available `d3` variable and complain if the version doesn't match `4.x.y`.
 
 ### Parameters
 
@@ -75,6 +120,9 @@ Path to the SVG icon file. Default is an empty string, which is equivalent to in
 ---
 
 #### Optional parameters:
+
+**d3**: _Object_.
+D3 library. Useful when working with two different version of D3 on the same page.
 
 **width**: _Number_ [100% of the SVG container].
 Number of columns to be shown.
