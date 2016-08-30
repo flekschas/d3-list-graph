@@ -296,7 +296,7 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, scale, links) {
         const childId = node.children[j];
         const child = graph[childId];
 
-        if (!!child) {
+        if (child) {
           let clone = true;
 
           if (!visited[childId]) {

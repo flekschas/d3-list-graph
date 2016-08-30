@@ -32,16 +32,12 @@ class Links {
         );
 
     this.links.append('path')
-      .attr({
-        class: LINK_CLASS + '-bg',
-        d: this.diagonal
-      });
+      .attr('class', LINK_CLASS + '-bg')
+      .attr('d', this.diagonal.bind(this));
 
     this.links.append('path')
-      .attr({
-        class: LINK_CLASS + '-direct',
-        d: this.diagonal
-      });
+      .attr('class', LINK_CLASS + '-direct')
+      .attr('d', this.diagonal.bind(this));
   }
 
   get diagonal () {
@@ -60,7 +56,7 @@ class Links {
 
     function getY (source) {
       return source.node.y + source.offsetY +
-        this.visData.global.row.height / 2;
+        (this.visData.global.row.height / 2);
     }
 
     return data => {
@@ -119,8 +115,8 @@ class Links {
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .attr('d', this.diagonal)
-      .each('start', start)
-      .each('end', end);
+      .on('start', start)
+      .on('end', end);
   }
 
   updateVisibility () {

@@ -1,4 +1,5 @@
 // External
+import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 import Promise from '../../../node_modules/es6-promise/lib/es6-promise/promise';
 import debounce from '../../../node_modules/lodash-es/debounce';
 
@@ -202,10 +203,10 @@ class NodeContextMenu {
   /* ---------------------------------- A ----------------------------------- */
 
   addLabel (selection, fullWidth, label, labelTwo) {
-    const width = this.visData.global.column.width *
-      (fullWidth ? 1 : 0.5) - this.visData.global.row.padding * 4;
+    const width = (this.visData.global.column.width *
+      (fullWidth ? 1 : 0.5)) - (this.visData.global.row.padding * 4);
     const height = this.visData.global.row.contentHeight -
-        this.visData.global.cell.padding * 2;
+        (this.visData.global.cell.padding * 2);
 
     const div = selection.append('foreignObject')
       .attr('x', this.visData.global.row.padding * 2)
@@ -403,8 +404,8 @@ class NodeContextMenu {
     selection.datum(data => {
       data.x = this.visData.global.row.padding;
       data.y = this.visData.global.row.padding;
-      data.width = this.visData.global.column.width *
-        (params.fullWidth ? 1 : 0.5) - this.visData.global.row.padding * 2;
+      data.width = (this.visData.global.column.width *
+        (params.fullWidth ? 1 : 0.5)) - (this.visData.global.row.padding * 2);
       data.height = this.visData.global.row.contentHeight;
       data.rx = 2;
       data.ry = 2;
@@ -442,14 +443,14 @@ class NodeContextMenu {
 
   createCheckbox (selection) {
     const height = Math.round(selection.datum().height / 2);
-    const x = -1.75 * height + this.visData.global.row.padding;
+    const x = (-1.75 * height) + this.visData.global.row.padding;
 
     const container = selection.append('g').attr('class', CLASS_CHECKBOX);
 
     container.append('rect')
       .attr('class', 'checkbox-bg')
       .attr('x', data => data.width + x)
-      .attr('y', height / 2 + this.visData.global.row.padding)
+      .attr('y', (height / 2) + this.visData.global.row.padding)
       .attr('width', height * 1.5)
       .attr('height', height)
       .attr('rx', height / 2)
@@ -460,7 +461,7 @@ class NodeContextMenu {
     return container.append('rect')
       .attr('class', 'checkbox-knob')
       .attr('x', data => data.width + x + 1)
-      .attr('y', height / 2 + this.visData.global.row.padding + 1)
+      .attr('y', (height / 2) + this.visData.global.row.padding + 1)
       .attr('width', height - 2)
       .attr('height', height - 2)
       .attr('rx', height - 2);
@@ -500,7 +501,7 @@ class NodeContextMenu {
         selection
           .transition()
           .duration(time || BUTTON_DEFAULT_DEBOUNCE)
-          .ease('linear')
+          .ease(d3.easeLinear)
           .attr('y', data => data.height)
           .attr('height', 0);
       });
@@ -518,7 +519,7 @@ class NodeContextMenu {
         selection
           .transition()
           .duration(time || BUTTON_DEFAULT_DEBOUNCE)
-          .ease('linear')
+          .ease(d3.easeLinear)
           .attr('height', data => data.height);
       });
   }

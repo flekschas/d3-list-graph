@@ -61,7 +61,7 @@ export function linearGradient (el, start, end, name) {
  * @param   {Number}  steps  Interpolation steps.
  */
 export function exponentialGradient (el, start, end, name, power, steps) {
-  const scale = d3.scale.pow().exponent(power || 2);
+  const scale = d3.scalePow().exponent(power || 2);
   const stepSize = 1 / ((steps || 0) + 1);
 
   const gradient = el.append('defs')
@@ -84,12 +84,12 @@ export function exponentialGradient (el, start, end, name, power, steps) {
     gradient.append('stop')
       .attr(
         'offset',
-        (start.offset + (i * stepSize) * (end.offset - start.offset)) + '%'
+        (start.offset + ((i * stepSize) * (end.offset - start.offset))) + '%'
       )
       .attr('stop-color', end.color)
       .attr(
         'stop-opacity',
-        start.opacity + scale(i * stepSize) * (end.opacity - start.opacity)
+        start.opacity + (scale(i * stepSize) * (end.opacity - start.opacity))
       );
   }
 

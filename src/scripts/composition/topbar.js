@@ -314,10 +314,8 @@ class Topbar {
           }
           return false;
         })
-        .style({
-          width: that.visData.global.column.contentWidth / 2 + 'px',
-          left: that.visData.global.column.padding + 'px'
-        })
+        .style('width', (that.visData.global.column.contentWidth / 2) + 'px')
+        .style('left', that.visData.global.column.padding + 'px')
         .on('click', function (controlData) {
           that.sortColumn(this, controlData.level, 'precision');
         })
@@ -368,28 +366,28 @@ class Topbar {
           }
           return false;
         })
-        .style({
-          width: that.visData.global.column.contentWidth / 2 + 'px',
-          left: that.visData.global.column.contentWidth / 2 +
+        .style('width', (that.visData.global.column.contentWidth / 2) + 'px')
+        .style(
+          'left',
+          (that.visData.global.column.contentWidth / 2) +
             that.visData.global.column.padding + 'px'
-        })
+        )
         .on('click', function (controlData) {
           that.sortColumn(this, controlData.level, 'recall');
         })
         .on('mouseenter', function () {
           that.highlightBars(this.parentNode, 'recall');
-          d3.select(this).style({
-            width: (that.visData.global.column.contentWidth - 16) + 'px',
-            left: (that.visData.global.column.padding + 16) + 'px'
-          });
+          d3.select(this)
+          .style('width', (that.visData.global.column.contentWidth - 16) + 'px')
+          .style('left', (that.visData.global.column.padding + 16) + 'px');
         })
         .on('mouseleave', function () {
           that.highlightBars(this.parentNode, 'recall', true);
-          d3.select(this).style({
-            width: (that.visData.global.column.contentWidth) / 2 + 'px',
-            left: (that.visData.global.column.contentWidth / 2 +
-              that.visData.global.column.padding) + 'px'
-          });
+          d3.select(this)
+            .style('width', (that.visData.global.column.contentWidth / 2) + 'px')
+            .style('left', ((that.visData.global.column.contentWidth / 2) +
+                that.visData.global.column.padding) + 'px'
+            );
         })
         .html(
           '<div class="expandable-label">' +
