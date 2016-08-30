@@ -48,10 +48,13 @@ export function onDragDrop (
 
   let appliedLimits = limits || {};  // eslint-disable-line no-param-reassign
 
+  const filter = function filter () {
+    return !(checkWhenDragging && noDraggingWhenTrue());
+  };
+
+  drag.filter(filter);
+
   drag.on('start', () => {
-    if (checkWhenDragging && noDraggingWhenTrue()) {
-      return;
-    }
     if (typeof limits === 'function') {
       appliedLimits = limits();
     }
