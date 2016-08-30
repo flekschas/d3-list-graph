@@ -5,14 +5,10 @@ export function mergeSelections (selections) {
   // Create a new empty selection
   const mergedSelection = d3.selectAll('.d3-list-graph-not-existent');
 
-  function pushSelection (selection) {
-    selection.each(function pushDomNode () {
-      mergedSelection[0].push(this);
-    });
-  }
-
   for (let i = selections.length; i--;) {
-    pushSelection(selections[i]);
+    mergedSelection._groups = mergedSelection._groups.concat(
+      selections[i]._groups
+    );
   }
 
   return mergedSelection;
