@@ -1,4 +1,4 @@
-import { ExtendableError } from '../commons/error.js';
+import { ExtendableError } from '../commons/errors.js';
 
 export class NoRootNodes extends ExtendableError {
   constructor (message) {

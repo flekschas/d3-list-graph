@@ -5,7 +5,7 @@ import * as d3 from 'd3';
 import isFunction from '../../../node_modules/lodash-es/isFunction';
 
 // Internal
-import { ExtendableError } from './error';
+import { ExtendableError } from './errors';
 import { mergeSelections } from './d3-utils';
 
 export class LimitsUnsupportedFormat extends ExtendableError {
@@ -43,15 +43,18 @@ export function onDragDrop (
   selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged,
   orientation, limits, noDraggingWhenTrue, dragData
 ) {
-  const drag = d3.behavior.drag();
+  const drag = d3.drag();
   const checkWhenDragging = isFunction(noDraggingWhenTrue);
 
   let appliedLimits = limits || {};  // eslint-disable-line no-param-reassign
 
-  drag.on('dragstart', () => {
-    if (checkWhenDragging && noDraggingWhenTrue()) {
-      return;
-    }
+  const filter = function filter () {
+    return !(checkWhenDragging && noDraggingWhenTrue());
+  };
+
+  drag.filter(filter);
+
+  drag.on('start', () => {
     if (typeof limits === 'function') {
       appliedLimits = limits();
     }
@@ -71,7 +74,7 @@ export function onDragDrop (
   }
 
   if (dropHandler) {
-    drag.on('dragend', dropHandler);
+    drag.on('end', dropHandler);
   }
 
   selection.each(function (data) {

@@ -99,7 +99,7 @@ gulp.task('bundle', () => gulp
     banner: '/* Copyright ' + packageJson.author + ': ' + config.js.bundles[
       path.dirname(path.relative(file.base, file.path))
     ].banner + ' */',
-    format: 'iife',
+    format: 'umd',
     moduleName: config.js.bundles[
         path.dirname(path.relative(file.base, file.path))
       ].name,

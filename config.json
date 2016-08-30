@@ -14,14 +14,14 @@
   "js": {
     "bundles": {
       "composition": {
-        "banner": "D3 example visualization app using list-based graphs",
+        "banner": "D3 example visualization app using the list-like graph layout",
         "name": "ListGraph",
         "output": "listGraph"
       },
       "layout": {
-        "banner": "D3 layout for list-based graphs",
-        "name": "D3LayoutListGraph",
-        "output": "d3.layout.listGraph"
+        "banner": "D3 layout for list-like graphs",
+        "name": "d3",
+        "output": "d3.listGraph"
       }
     }
   },

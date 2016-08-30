@@ -43,7 +43,7 @@ class Nodes {
       (this.visData.global.column.padding / 2) - 4
     );
 
-    const linkDensityBg = d3.scale.linear()
+    const linkDensityBg = d3.scaleLinear()
       .domain([1, this.vis.rows])
       .range(['#ccc', '#000']);
 
@@ -948,32 +948,26 @@ class Nodes {
 
     if (mode === 'bg') {
       selection
-        .attr({
-          class: className,
-          cx: x + (this.iconDimension / 2),
-          cy: y + (this.iconDimension / 2),
-          r: this.iconDimension * 3 / 4
-        });
+        .attr('class', className)
+        .attr('cx', x + (this.iconDimension / 2))
+        .attr('cy', y + (this.iconDimension / 2))
+        .attr('r', this.iconDimension * 3 / 4);
     } else if (mode === 'hover-helper') {
       selection
-        .attr({
-          class: className,
-          x: x - 4,
-          y: y - 4,
-          width: this.iconDimension + 8,
-          height: this.iconDimension + 8,
-          rx: this.iconDimension,
-          ry: this.iconDimension
-        });
+        .attr('class', className)
+        .attr('x', x - 4)
+        .attr('y', y - 4)
+        .attr('width', this.iconDimension + 8)
+        .attr('height', this.iconDimension + 8)
+        .attr('rx', this.iconDimension)
+        .attr('ry', this.iconDimension);
     } else {
       selection
-        .attr({
-          class: className,
-          x,
-          y,
-          width: this.iconDimension,
-          height: this.iconDimension
-        });
+        .attr('class', className)
+        .attr('x', x)
+        .attr('y', y)
+        .attr('width', this.iconDimension)
+        .attr('height', this.iconDimension);
     }
   }
 

@@ -4,6 +4,7 @@ import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 import isArray from '../../../node_modules/lodash-es/isArray';
 
 // Internal
+import { D3VersionFourRequired } from '../commons/errors';
 import { LayoutNotAvailable } from './errors';
 import * as config from './config';
 import Topbar from './topbar';
@@ -18,6 +19,9 @@ import { allTransitionsEnded } from '../commons/d3-utils';
 import { dropShadow } from '../commons/filters';
 import { requestNextAnimationFrame } from '../commons/shims';
 
+// Private Variables
+let _d3 = d3;
+
 function setOption (value, defaultValue, noFalsyValue) {
   if (noFalsyValue) {
     return value || defaultValue;
@@ -28,7 +32,15 @@ function setOption (value, defaultValue, noFalsyValue) {
 
 class ListGraph {
   constructor (init) {
-    if (!d3.layout.listGraph) {
+    if (init.d3) {
+      _d3 = init.d3;
+    }
+
+    if (_d3.version[0] !== '4') {
+      throw new D3VersionFourRequired(_d3.version);
+    }
+
+    if (!_d3.listGraph) {
       throw new LayoutNotAvailable();
     }
 
@@ -37,7 +49,7 @@ class ListGraph {
     this.baseEl = init.element;
     this.baseEl.__d3ListGraphBase__ = true;
 
-    this.baseElD3 = d3.select(this.baseEl);
+    this.baseElD3 = _d3.select(this.baseEl);
     this.baseElJq = $(this.baseEl);
     this.svgD3 = this.baseElD3.select('svg.base');
     this.svgEl = this.svgD3.node();
@@ -151,7 +163,7 @@ class ListGraph {
       this.baseElJq.width(this.width);
     }
 
-    this.layout = new d3.layout.listGraph( // eslint-disable-line new-cap
+    this.layout = new _d3.listGraph( // eslint-disable-line new-cap
       [
         this.width,
         this.height
@@ -159,7 +171,8 @@ class ListGraph {
       [
         this.columns,
         this.rows
-      ]
+      ],
+      _d3
     );
 
     this.data = init.data;
@@ -266,7 +279,7 @@ class ListGraph {
 
         that.nodeContextMenu.toggle.call(
           that.nodeContextMenu,
-          d3.select(this.parentNode)
+          _d3.select(this.parentNode)
         );
       }
     );
@@ -275,7 +288,7 @@ class ListGraph {
       'click',
       `.${this.nodes.classFocusControls}.${this.nodes.classRoot}`,
       function () {
-        that.nodes.rootHandler.call(that.nodes, d3.select(this), true);
+        that.nodes.rootHandler.call(that.nodes, _d3.select(this), true);
       }
     );
 
@@ -286,7 +299,7 @@ class ListGraph {
         function () {
           that.nodes.queryHandler.call(
             that.nodes,
-            d3.select(this.parentNode),
+            _d3.select(this.parentNode),
             'unquery'
           );
           that.nodeContextMenu.updateStates();
@@ -298,7 +311,7 @@ class ListGraph {
       'click',
       `.${this.nodes.classFocusControls}.${this.nodes.classLock}`,
       function () {
-        that.nodes.lockHandler.call(that.nodes, this, d3.select(this).datum());
+        that.nodes.lockHandler.call(that.nodes, this, _d3.select(this).datum());
       }
     );
 
@@ -310,7 +323,7 @@ class ListGraph {
           if (!this.vis.activeScrollbar) {
             this.enterHandler.call(this, domEl, data);
           }
-        }.bind(that.nodes), [this, d3.select(this).datum()]);
+        }.bind(that.nodes), [this, _d3.select(this).datum()]);
       }
     );
 
@@ -322,7 +335,7 @@ class ListGraph {
           if (!this.vis.activeScrollbar) {
             this.leaveHandler.call(this, domEl, data);
           }
-        }.bind(that.nodes), [this, d3.select(this).datum()]);
+        }.bind(that.nodes), [this, _d3.select(this).datum()]);
       }
     );
 
@@ -330,15 +343,15 @@ class ListGraph {
     // the class' `this` property instead of the DOM element we need to use an
     // arrow function.
     this.scrollbars.all.on('mousedown', function () {
-      that.scrollbarMouseDown(this, d3.event);
+      that.scrollbarMouseDown(this, _d3.event);
     });
 
     // We need to listen to `mouseup` and `mousemove` globally otherwise
     // scrolling will only work as long as the cursor hovers the actual
     // scrollbar, which is super annoying.
-    d3.select(document)
-      .on('mouseup', () => { this.globalMouseUp(d3.event); })
-      .on('mousemove', () => { this.globalMouseMove(d3.event); });
+    _d3.select(document)
+      .on('mouseup', () => { this.globalMouseUp(_d3.event); })
+      .on('mousemove', () => { this.globalMouseMove(_d3.event); });
 
     // Enable dragging of the whole graph.
     this.svgD3.call(
@@ -547,7 +560,7 @@ class ListGraph {
   }
 
   static scrollElVertically (el, offset) {
-    d3.select(el).attr(
+    _d3.select(el).attr(
       'transform',
       'translate(0, ' + offset + ')'
     );
@@ -678,14 +691,14 @@ class ListGraph {
 
   scrollbarMouseDown (el, event) {
     this.noInteractions = true;
-    this.activeScrollbar = d3.select(el).classed('active', true);
+    this.activeScrollbar = _d3.select(el).classed('active', true);
     this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
   }
 
   mousewheelColumn (el, event) {
     event.preventDefault();
 
-    const data = d3.select(el).datum();
+    const data = _d3.select(el).datum();
 
     this.checkNodeVisibility(data.level);
 
@@ -754,7 +767,7 @@ class ListGraph {
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
       .tween('scrollY', data => {
-        const scrollPositionY = d3.interpolateNumber(data.scrollTop, positionY);
+        const scrollPositionY = _d3.interpolateNumber(data.scrollTop, positionY);
         return time => {
           data.scrollTop = scrollPositionY(time);
           this.scrollY(data);
@@ -767,7 +780,7 @@ class ListGraph {
   }
 
   selectByLevel (level, selector) {
-    return d3.select(this.levels.groups[0][level]).selectAll(selector);
+    return _d3.select(this.levels.groups._groups[0][level]).selectAll(selector);
   }
 
   updateSorting () {
