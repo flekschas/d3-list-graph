@@ -1,4 +1,5 @@
 // External
+import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 import Promise from '../../../node_modules/es6-promise/lib/es6-promise/promise';
 import debounce from '../../../node_modules/lodash-es/debounce';
 
@@ -500,7 +501,7 @@ class NodeContextMenu {
         selection
           .transition()
           .duration(time || BUTTON_DEFAULT_DEBOUNCE)
-          .ease('linear')
+          .ease(d3.easeLinear)
           .attr('y', data => data.height)
           .attr('height', 0);
       });
@@ -518,7 +519,7 @@ class NodeContextMenu {
         selection
           .transition()
           .duration(time || BUTTON_DEFAULT_DEBOUNCE)
-          .ease('linear')
+          .ease(d3.easeLinear)
           .attr('height', data => data.height);
       });
   }
