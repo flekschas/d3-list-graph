@@ -1,5 +1,5 @@
 // Internal
-import { ExtendableError } from '../commons/error';
+import { ExtendableError } from '../commons/errors';
 
 export class LayoutNotAvailable extends ExtendableError {
   constructor (message) {

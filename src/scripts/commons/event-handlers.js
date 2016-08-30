@@ -5,7 +5,7 @@ import * as d3 from 'd3';
 import isFunction from '../../../node_modules/lodash-es/isFunction';
 
 // Internal
-import { ExtendableError } from './error';
+import { ExtendableError } from './errors';
 import { mergeSelections } from './d3-utils';
 
 export class LimitsUnsupportedFormat extends ExtendableError {
