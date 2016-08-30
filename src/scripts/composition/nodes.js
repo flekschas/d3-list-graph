@@ -43,7 +43,7 @@ class Nodes {
       (this.visData.global.column.padding / 2) - 4
     );
 
-    const linkDensityBg = d3.scale.linear()
+    const linkDensityBg = d3.scaleLinear()
       .domain([1, this.vis.rows])
       .range(['#ccc', '#000']);
 

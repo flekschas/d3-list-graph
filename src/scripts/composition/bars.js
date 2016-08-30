@@ -16,7 +16,7 @@ class Bars {
     this.mode = mode;
     this.visData = visData;
 
-    this.indicatorX = d3.scale.linear()
+    this.indicatorX = d3.scaleLinear()
       .domain([0, 1])
       .range([1, this.visData.global.column.contentWidth - 3]);
 

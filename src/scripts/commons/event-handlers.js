@@ -43,12 +43,12 @@ export function onDragDrop (
   selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged,
   orientation, limits, noDraggingWhenTrue, dragData
 ) {
-  const drag = d3.behavior.drag();
+  const drag = d3.drag();
   const checkWhenDragging = isFunction(noDraggingWhenTrue);
 
   let appliedLimits = limits || {};  // eslint-disable-line no-param-reassign
 
-  drag.on('dragstart', () => {
+  drag.on('start', () => {
     if (checkWhenDragging && noDraggingWhenTrue()) {
       return;
     }
@@ -71,7 +71,7 @@ export function onDragDrop (
   }
 
   if (dropHandler) {
-    drag.on('dragend', dropHandler);
+    drag.on('end', dropHandler);
   }
 
   selection.each(function (data) {

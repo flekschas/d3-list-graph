@@ -28,7 +28,7 @@ function setOption (value, defaultValue, noFalsyValue) {
 
 class ListGraph {
   constructor (init) {
-    if (!d3.layout.listGraph) {
+    if (!d3.listGraph) {
       throw new LayoutNotAvailable();
     }
 
@@ -151,7 +151,7 @@ class ListGraph {
       this.baseElJq.width(this.width);
     }
 
-    this.layout = new d3.layout.listGraph( // eslint-disable-line new-cap
+    this.layout = new d3.listGraph( // eslint-disable-line new-cap
       [
         this.width,
         this.height
@@ -767,7 +767,7 @@ class ListGraph {
   }
 
   selectByLevel (level, selector) {
-    return d3.select(this.levels.groups[0][level]).selectAll(selector);
+    return d3.select(this.levels.groups._groups[0][level]).selectAll(selector);
   }
 
   updateSorting () {

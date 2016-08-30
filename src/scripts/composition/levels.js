@@ -73,7 +73,7 @@ class Levels {
         height: scrollbarHeight,
         scrollHeight: this.visData.global.column.height - scrollbarHeight,
         scrollTop: 0,
-        heightScale: d3.scale.linear()
+        heightScale: d3.scaleLinear()
           .domain([0, scrollHeight])
           .range([0, this.visData.global.column.height - scrollbarHeight])
       };
@@ -105,7 +105,7 @@ class Levels {
       data.scrollbar.scrollHeight = this.visData.global.column.height -
         scrollbarHeight;
       data.scrollbar.scrollTop = 0;
-      data.scrollbar.heightScale = d3.scale.linear()
+      data.scrollbar.heightScale = d3.scaleLinear()
         .domain([0, scrollHeight])
         .range([0, this.visData.global.column.height - scrollbarHeight]);
     });
