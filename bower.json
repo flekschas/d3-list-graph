@@ -15,8 +15,8 @@
     "tests"
   ],
   "devDependencies": {
-    "d3": "~3.5.16",
-    "jquery": "~2.1.4",
-    "jquery-mousewheel": "~3.1.13"
+    "d3": "4.2.2",
+    "jquery": "3.1.0",
+    "jquery-mousewheel": "3.1.13"
   }
 }
