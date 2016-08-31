@@ -4,7 +4,7 @@
 
 Demo: https://flekschas.github.io/d3-list-graph/
 
-Note: Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. Please use D3.js **v4.x** instead.
+Note: Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. Please use D3.js **v4.x** instead. If you need to both version please [see here](#migration-d3js-v3-to-v4).
 
 ## Install
 
@@ -58,7 +58,7 @@ This example assumes that you're using Bower to fetch all code.
 </html>
 ```
 
-### Migration D3.js v3 to v4
+### Migration from D3.js v3 to v4
 
 Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. If you still need to run old code on D3.js v4 please stick to the following pattern to load both versions but use v4 for the tree graph.
 
@@ -99,7 +99,7 @@ Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. If you 
 </html>
 ```
 
-Make sure to load D3.js v4, the tree graph layout, the tree graph app, and all other version 4 related code first. Then reassign the global variable `d3` to `d3V4` (or anything else you like). Finally, specify the version 4 of D3 when loading the list graph by püassing a property called `d3` and assign `d3V4` to it. When that property is unassigned the tool will use the globally available `d3` variable and complain if the version doesn't match `4.x.y`.
+Make sure to load D3.js v4, the list graph layout, the list graph app, and all other version 4 related code first. Then reassign the global variable `d3` to `d3V4` (or whatever you like to call it). Finally, specify the version 4 of D3 when loading the list graph by püassing a property called `d3` and assign `d3V4` to it. When that property is unassigned the tool will use the globally available `d3` variable and complain if the version doesn't match `4.x.y`.
 
 ### Parameters
 
