@@ -62,6 +62,8 @@ This example assumes that you're using Bower to fetch all code.
 
 Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. If you still need to run old code on D3.js v4 please stick to the following pattern to load both versions but use v4 for the tree graph.
 
+**Note:** D3.js v4 does not actually create a new object and overwrite the global `d3` object because it embraces extensibility and modularization. Therefore, you have to load D3.js v4 **first**, reassign the variable, and then overwrite it with D3.js v3.
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
