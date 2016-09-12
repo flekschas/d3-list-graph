@@ -653,9 +653,6 @@ class ListGraph {
       -data.scrollHeight
     );
 
-    // Check if nodes are visible.
-    this.checkNodeVisibility(data.level, contentScrollTop);
-
     ListGraph.scrollElVertically(
       data.nodes,
       contentScrollTop
@@ -693,6 +690,9 @@ class ListGraph {
     if (this.nodeContextMenu.opened) {
       this.nodeContextMenu.scrollY(contentScrollTop);
     }
+
+    // Check if nodes are visible.
+    this.checkNodeVisibility(data.level, contentScrollTop);
   }
 
   get barMode () {
@@ -720,8 +720,6 @@ class ListGraph {
 
     const data = _d3.select(el).datum();
 
-    this.checkNodeVisibility(data.level);
-
     if (data.scrollHeight > 0) {
       // Scroll nodes
       data.scrollTop = Math.max(
@@ -731,6 +729,9 @@ class ListGraph {
 
       this.scrollY(data);
     }
+
+    // Check if nodes are visible.
+    this.checkNodeVisibility(data.level);
   }
 
   scrollY (columnData, scrollbarDragging) {
