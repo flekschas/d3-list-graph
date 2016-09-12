@@ -37,3 +37,22 @@ export class D3VersionFourRequired extends ExtendableError {
   }
 }
 
+/**
+ * When varible is no object
+ */
+export class NoObject extends ExtendableError {
+  /**
+   * Constructor
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {String}  variableName  Name of the variable that ought to be an
+   *   object.
+   */
+  constructor (variableName) {
+    super(
+      'The "' + variableName + '" must be an object.'
+    );
+  }
+}
