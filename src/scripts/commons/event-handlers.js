@@ -91,6 +91,19 @@ export function onDragDrop (
   });
 }
 
+/**
+ * Custom drag-move handler used by the custom drag-drop handler.
+ *
+ * @method  dragMoveHandler
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}           data            D3's drag event object.
+ * @param   {Array}            elsToBeDragged  Array of D3 selections.
+ * @param   {String}           orientation     Can either be "horizontal",
+ *   "vertical" or `undefined`, i.e. both directions.
+ * @param   {Object|Function}  limits          X and Y drag limits. E.g.
+ *   `{ x: { min: 0, max: 10 } }`.
+ */
 export function dragMoveHandler (
   data, elsToBeDragged, orientation, limits
 ) {
