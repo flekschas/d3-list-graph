@@ -604,74 +604,94 @@ class ListGraph {
     }
   }
 
+  /**
+   * Distributor method to delegate actions when the move cursor is moved.
+   *
+   * @method  globalMouseMove
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {Object}  event  D3's _mousemove_ event object.
+   */
   globalMouseMove (event) {
     if (this.activeScrollbar) {
-      event.preventDefault();
-      const data = this.activeScrollbar.datum();
-      const deltaY = data.scrollbar.clientY - event.clientY;
+      this.dragScrollbar(event);
+    }
+  }
 
-      // Scroll scrollbar
-      ListGraph.scrollElVertically(
-        this.activeScrollbar.node(),
-        Math.min(
-          Math.max(
-            data.scrollbar.scrollTop - deltaY,
-            0
-          ),
-          data.scrollbar.scrollHeight
-        )
-      );
+  /**
+   * Method for scrolling a column of nodes when the scrollbar is dragged.
+   *
+   * @method  dragScrollbar
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {Object}  event  D3's _mousemove_ event object.
+   */
+  dragScrollbar (event) {
+    event.preventDefault();
+    const data = this.activeScrollbar.datum();
+    const deltaY = data.scrollbar.clientY - event.clientY;
 
-      // Scroll content
-      const contentScrollTop = Math.max(
-        Math.min(
-          data.scrollTop +
-          data.invertedHeightScale(deltaY),
+    // Scroll scrollbar
+    ListGraph.scrollElVertically(
+      this.activeScrollbar.node(),
+      Math.min(
+        Math.max(
+          data.scrollbar.scrollTop - deltaY,
           0
         ),
-        -data.scrollHeight
+        data.scrollbar.scrollHeight
+      )
+    );
+
+    // Scroll content
+    const contentScrollTop = Math.max(
+      Math.min(
+        data.scrollTop +
+        data.invertedHeightScale(deltaY),
+        0
+      ),
+      -data.scrollHeight
+    );
+
+    // Check if nodes are visible.
+    this.checkNodeVisibility(data.level, contentScrollTop);
+
+    ListGraph.scrollElVertically(
+      data.nodes,
+      contentScrollTop
+    );
+
+    // Scroll Links
+    if (data.level !== this.visData.nodes.length) {
+      this.links.scroll(
+        data.linkSelections.outgoing,
+        this.layout.offsetLinks(
+          data.level,
+          contentScrollTop,
+          'source'
+        )
       );
+    }
 
-      // Check if nodes are visible.
-      this.checkNodeVisibility(data.level, contentScrollTop);
-
-      ListGraph.scrollElVertically(
-        data.nodes,
-        contentScrollTop
+    if (data.level > 0) {
+      this.links.scroll(
+        data.linkSelections.incoming,
+        this.layout.offsetLinks(
+          data.level - 1,
+          contentScrollTop,
+          'target'
+        )
       );
+    }
 
-      // Scroll Links
-      if (data.level !== this.visData.nodes.length) {
-        this.links.scroll(
-          data.linkSelections.outgoing,
-          this.layout.offsetLinks(
-            data.level,
-            contentScrollTop,
-            'source'
-          )
-        );
-      }
+    if (this.showLinkLocation) {
+      this.nodes.updateLinkLocationIndicators(
+        data.level - 1, data.level + 1
+      );
+    }
 
-      if (data.level > 0) {
-        this.links.scroll(
-          data.linkSelections.incoming,
-          this.layout.offsetLinks(
-            data.level - 1,
-            contentScrollTop,
-            'target'
-          )
-        );
-      }
-
-      if (this.showLinkLocation) {
-        this.nodes.updateLinkLocationIndicators(
-          data.level - 1, data.level + 1
-        );
-      }
-
-      if (this.nodeContextMenu.opened) {
-        this.nodeContextMenu.scrollY(contentScrollTop);
-      }
+    if (this.nodeContextMenu.opened) {
+      this.nodeContextMenu.scrollY(contentScrollTop);
     }
   }
 
