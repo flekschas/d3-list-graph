@@ -5,7 +5,7 @@ import debounce from '../../../node_modules/lodash-es/debounce';
 
 // Internal
 import { dropMenu } from '../commons/charts';
-import { requestNextAnimationFrame } from '../commons/shims';
+import { requestNextAnimationFrame } from '../commons/animationFrame';
 import { allTransitionsEnded } from '../commons/d3-utils';
 
 const CLASS_NAME = 'context-menu';

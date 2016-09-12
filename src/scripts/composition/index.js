@@ -17,7 +17,7 @@ import NodeContextMenu from './nodeContextMenu';
 import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 import { allTransitionsEnded } from '../commons/d3-utils';
 import { dropShadow } from '../commons/filters';
-import { requestNextAnimationFrame } from '../commons/shims';
+import { requestNextAnimationFrame } from '../commons/animationFrame';
 
 // Private Variables
 let _d3 = d3;
