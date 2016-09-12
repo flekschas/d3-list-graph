@@ -1027,6 +1027,17 @@ class Nodes {
     this.updateVisibility();
   }
 
+  /**
+   * Marks nodes as being invisible via assigning a class depending on the
+   * custom scroll top position or the columns scroll top position.
+   *
+   * @method  isInvisible
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {Object}  selection        D3 selection of nodes to be checked.
+   * @param   {Number}  customScrollTop  Custom scroll top position. Used when
+   *   column is actively scrolled.
+   */
   isInvisible (selection, customScrollTop) {
     selection.classed('invisible', data => {
       const scrollTop = customScrollTop ||
