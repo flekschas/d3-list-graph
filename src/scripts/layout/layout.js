@@ -7,13 +7,13 @@ import assign from '../../../node_modules/lodash-es/assign';
 
 // Internal
 import * as defaults from './defaults';
-import { D3VersionFourRequired } from '../commons/errors';
+import { D3VersionFourRequired, NoObject } from '../commons/errors';
 import { NoRootNodes } from './errors';
 import traverseGraph from './process-nodes';
+import { setOption } from '../commons/utils';
 
 // Private variables
-let _d3 = d3;
-const _cellRelInnerPadding = defaults.CELL_REL_INNER_PADDING;
+
 const _grid = {
   columns: defaults.GRID.columns,
   rows: defaults.GRID.rows
@@ -24,33 +24,142 @@ const _size = {
 };
 const _links = {};
 
-let _colRelPadding = defaults.COL_REL_PADDING;
-let _rowRelPadding = defaults.ROW_REL_PADDING;
+/**
+ * Holds the global or specified version of D3.js
+ *
+ * @type  {Object}
+ */
+let _d3 = d3;
+
+/**
+ * Relative inner node padding.
+ *
+ * @type  {Float}
+ */
+let _nodeRelInnerPadding;
+
+/**
+ * Relative inner column padding.
+ *
+ * @type  {Float}
+ */
+let _colRelPadding;
+
+/**
+ * Relative inner row padding.
+ *
+ * @type  {Float}
+ */
+let _rowRelPadding;
+
+/**
+ * Absolute column width.
+ *
+ * @type  {Float}
+ */
 let _columnWidth;
+
+/**
+ * Absolute row height.
+ *
+ * @type  {Float}
+ */
 let _rowHeight;
+
+/**
+ * Absolute column padding.
+ *
+ * @type  {Float}
+ */
 let _colAbsPadding;
+
+/**
+ * Absolute width of a columns.
+ *
+ * @type  {Float}
+ */
 let _colAbsContentWidth;
+
+/**
+ * Absolute row padding.
+ *
+ * @type  {Float}
+ */
 let _rowAbsPadding;
+
+/**
+ * Absolute height of a row.
+ *
+ * @type  {Float}
+ */
 let _rowAbsContentHeight;
+
+/**
+ * Absolute inner node padding .
+ *
+ * @type  {Float}
+ */
 let _cellAbsInnerPadding;
 
 class ListGraphLayout {
   /**
    * ListGraph class constructor.
    *
+   * @example
+   * ```
+   * new d3.listGraph({
+   *   size: [
+   *     this.width,
+   *     this.height
+   *   ],
+   *   grid: [
+   *     this.columns,
+   *     this.rows
+   *   ],
+   *   d3: _d3,
+   *   nodeInnerPadding: 0,
+   *   rowPadding: 0,
+   *   columnPadding: 0.1
+   * });
+   * ```
+   *
+   * @description
+   * `option.size` can either be an Array, e.g., `[200,20]`, or an Object like
+   * `{width: 200, height: 20}`.
+   * `option.grid` Can either be an Array, e.g., `[5,3]`, or an Object like
+   * `{columns: 5, rows: 3}`.
+   * `options.d3` provides a specific version of D3.js or defaults back to the
+   * globally available version of d3.
+   * `options.innerNodePadding` specifies the relative inner padding of a node.
+   * `options.columnPadding` is the relative amount of the columns width to be
+   *   used as padding. E.g., `0.1` uses 10% as padding on the left and right
+   *   side of nodes.
+   * `options.rowPadding` specifies the relative padding per row. The ratio has
+   *   to related to at least 2 pixel.
+   *
    * @author  Fritz Lekschas
    * @date  2015-11-10
    *
    * @constructor
+   * @param  {Object}  options  Object holding all adjustable parameters.
+   *
    * @param  {Array|Object}  size  New size. Can either be an Array, e.g.
    *   `[200,20]` or an Object, e.g. `{width: 200, height: 20}`.
    * @param  {Array|Object}  grid  New grid configuration. Can either be an
    *   Array, e.g. `[5,3]` or an Object, e.g. `{columns: 5, rows: 3}`.
    * @param  {Object}  specificD3  Provide a specific version of D3.js.
    */
-  constructor (size, grid, specificD3) {
-    if (specificD3) {
-      _d3 = specificD3;
+  constructor (options) {
+    if (!isObject(options)) {
+      throw new NoObject('options');
+    }
+
+    if (options.specificD3) {
+      if (isObject(options.specificD3)) {
+        _d3 = options.specificD3;
+      } else {
+        throw new NoObject('d3');
+      }
     }
 
     if (_d3.version[0] !== '4') {
@@ -63,8 +172,23 @@ class ListGraphLayout {
       linkPosition: {}
     };
 
-    this.grid(grid);
-    this.size(size);
+    _nodeRelInnerPadding = setOption(
+      options.innerNodePadding,
+      defaults.NODE_REL_INNER_PADDING
+    );
+
+    _colRelPadding = setOption(
+      options.columnPadding,
+      defaults.COL_REL_PADDING
+    );
+
+    _rowRelPadding = setOption(
+      options.rowPadding,
+      defaults.ROW_REL_PADDING
+    );
+
+    this.grid(options.grid);
+    this.size(options.size);
 
     this.columnCache = {};
     this.columns = {};
@@ -488,7 +612,7 @@ class ListGraphLayout {
     _rowAbsPadding = Math.max(_rowHeight * _rowRelPadding, 2);
     _rowAbsContentHeight = _rowHeight - (2 * _rowAbsPadding);
 
-    _cellAbsInnerPadding = _cellRelInnerPadding * Math.min(
+    _cellAbsInnerPadding = _nodeRelInnerPadding * Math.min(
       _colAbsContentWidth,
       _rowAbsContentHeight,
       1

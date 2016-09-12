@@ -156,17 +156,17 @@ class ListGraph {
       this.baseElJq.width(this.width);
     }
 
-    this.layout = new _d3.listGraph( // eslint-disable-line new-cap
-      [
+    this.layout = new _d3.listGraph({ // eslint-disable-line new-cap
+      size: [
         this.width,
         this.height
       ],
-      [
+      grid: [
         this.columns,
         this.rows
       ],
-      _d3
-    );
+      d3: _d3
+    });
 
     this.data = init.data;
     this.visData = this.layout.process(
