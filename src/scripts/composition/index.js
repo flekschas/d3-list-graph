@@ -18,17 +18,10 @@ import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 import { allTransitionsEnded } from '../commons/d3-utils';
 import { dropShadow } from '../commons/filters';
 import { requestNextAnimationFrame } from '../commons/animationFrame';
+import { setOption } from '../commons/utils';
 
 // Private Variables
 let _d3 = d3;
-
-function setOption (value, defaultValue, noFalsyValue) {
-  if (noFalsyValue) {
-    return value || defaultValue;
-  }
-
-  return typeof value !== 'undefined' ? value : defaultValue;
-}
 
 class ListGraph {
   constructor (init) {
