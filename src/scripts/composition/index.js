@@ -343,8 +343,7 @@ class ListGraph {
     // scrolling will only work as long as the cursor hovers the actual
     // scrollbar, which is super annoying.
     _d3.select(document)
-      .on('mouseup', () => { this.globalMouseUp(_d3.event); })
-      .on('mousemove', () => { this.globalMouseMove(_d3.event); });
+      .on('mouseup', () => { this.globalMouseUp(_d3.event); });
 
     // Enable dragging of the whole graph.
     this.svgD3.call(
@@ -594,21 +593,18 @@ class ListGraph {
       this.activeScrollbar.classed('active', false);
 
       this.activeScrollbar = undefined;
+
+      this.stopScrollBarMouseMove();
     }
   }
 
-  /**
-   * Distributor method to delegate actions when the move cursor is moved.
-   *
-   * @method  globalMouseMove
-   * @author  Fritz Lekschas
-   * @date    2016-09-12
-   * @param   {Object}  event  D3's _mousemove_ event object.
-   */
-  globalMouseMove (event) {
-    if (this.activeScrollbar) {
-      this.dragScrollbar(event);
-    }
+  startScrollBarMouseMove () {
+    _d3.select(document)
+      .on('mousemove', () => { this.dragScrollbar(_d3.event); });
+  }
+
+  stopScrollBarMouseMove () {
+    _d3.select(document).on('mousemove', null);
   }
 
   /**
@@ -706,6 +702,7 @@ class ListGraph {
     this.noInteractions = true;
     this.activeScrollbar = _d3.select(el).classed('active', true);
     this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
+    this.startScrollBarMouseMove();
   }
 
   mousewheelColumn (el, event) {
