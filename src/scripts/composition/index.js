@@ -358,7 +358,8 @@ class ListGraph {
       'horizontal',
       this.getDragLimits.bind(this),
       this.noDragging.bind(this),
-      this.dragged
+      this.dragged,
+      2
     );
 
     this.events.on(

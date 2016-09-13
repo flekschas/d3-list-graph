@@ -22,7 +22,7 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  *
  * @method  onDragDrop
  * @author  Fritz Lekschas
- * @date    2016-04-04
+ * @date    2016-09-12
  * @param   {Object}  selection        D3 selection to listen for the drag
  *   event.
  * @param   {Object}           dragMoveHandler         Handler for drag-move.
@@ -38,10 +38,14 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  * @param   {Array}             noDraggingWhenTrue     List if function
  *   returning a Boolean value which should prevent the dragMoveHandler from
  *   working.
+ * @param   {String}           clickTolerance          Specify the number of
+ *   pixel that are allowed to move but still trigger a click event. Sometimes
+ *   it is useful to allow the user to move 1 or 2 pixel, especially in high
+ *   res environments. [Default is 0]
  */
 export function onDragDrop (
   selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged,
-  orientation, limits, noDraggingWhenTrue, dragData
+  orientation, limits, noDraggingWhenTrue, dragData, clickTolerance
 ) {
   const drag = d3.drag();
   const checkWhenDragging = isFunction(noDraggingWhenTrue);
@@ -54,7 +58,13 @@ export function onDragDrop (
 
   drag.filter(filter);
 
+  let dX;
+  let dY;
+  let mouseMoved;
+
   drag.on('start', () => {
+    dX = 0;
+    dY = 0;
     if (typeof limits === 'function') {
       appliedLimits = limits();
     }
@@ -70,11 +80,27 @@ export function onDragDrop (
       dragMoveHandler.call(
         this, data, elsToBeDragged, orientation, appliedLimits
       );
+      if (!mouseMoved) {
+        dX += Math.abs(d3.event.dx);
+        dY += Math.abs(d3.event.dy);
+        if (Math.max(dX, dY) > (clickTolerance || 0)) {
+          mouseMoved = true;
+        }
+      }
     });
   }
 
   if (dropHandler) {
-    drag.on('end', dropHandler);
+    drag.on('end', function () {
+      dropHandler.call(this);
+
+      if (!mouseMoved) {
+        d3.select(window).on('click.drag', null);
+      }
+      console.log(dX, dY, clickTolerance);
+
+      mouseMoved = false;
+    });
   }
 
   selection.each(function (data) {
