@@ -58,13 +58,10 @@ export function onDragDrop (
 
   drag.filter(filter);
 
-  let dX;
-  let dY;
-  let mouseMoved;
+  let d2;
 
   drag.on('start', () => {
-    dX = 0;
-    dY = 0;
+    d2 = 0;
     if (typeof limits === 'function') {
       appliedLimits = limits();
     }
@@ -80,13 +77,8 @@ export function onDragDrop (
       dragMoveHandler.call(
         this, data, elsToBeDragged, orientation, appliedLimits
       );
-      if (!mouseMoved) {
-        dX += Math.abs(d3.event.dx);
-        dY += Math.abs(d3.event.dy);
-        if (Math.max(dX, dY) > (clickTolerance || 0)) {
-          mouseMoved = true;
-        }
-      }
+
+      d2 += (d3.event.dx * d3.event.dx) + (d3.event.dy * d3.event.dy);
     });
   }
 
@@ -94,12 +86,10 @@ export function onDragDrop (
     drag.on('end', function () {
       dropHandler.call(this);
 
-      if (!mouseMoved) {
+      if (d2 <= (clickTolerance || 0)) {
+        // Don't supress the click event for minor mouse movements.
         d3.select(window).on('click.drag', null);
       }
-      console.log(dX, dY, clickTolerance);
-
-      mouseMoved = false;
     });
   }
 
