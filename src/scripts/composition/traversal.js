@@ -52,9 +52,9 @@ function _up (node, callback, depth, includeClones, child, visitedNodes) {
  * @param   {Boolean}   includeClones  If `true` cloned nodes will be traversed
  *   as well.
  */
-export function up (node, callback, depth, includeClones, child) {
+export function up (node, callback, depth, includeClones) {
   const visitedNodes = {};
-  _up(node, callback, depth, includeClones, child, visitedNodes);
+  _up(node, callback, depth, includeClones, undefined, visitedNodes);
 }
 
 function _down (node, callback, depth, includeClones, visitedNodes) {
