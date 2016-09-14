@@ -112,7 +112,7 @@ class NodeContextMenu {
    * @param   {Object}   init  Initialization object. See example.
    */
   constructor (init) {
-    const that = this;
+    const self = this;
 
     this._x = 0;
     this._y = 0;
@@ -181,7 +181,7 @@ class NodeContextMenu {
         const toggler = this.textNodeInfo.append('g')
           .attr('class', 'toggler')
           .on('click', function () {
-            that.clickNodeInfo.call(that, this);
+            self.clickNodeInfo.call(self, this);
           });
 
         const togglerX = this.visData.global.column.width -
@@ -224,7 +224,7 @@ class NodeContextMenu {
           bamEffect: true
         })
         .on('click', function () {
-          that.clickQueryHandler.call(that, this);
+          self.clickQueryHandler.call(self, this);
         });
       this.buttonQueryFill = this.buttonQuery.select('.bg-fill-effect');
       this.buttonQueryBamEffect = this.buttonQuery.select('.bg-bam-effect');
@@ -239,7 +239,7 @@ class NodeContextMenu {
         label: 'Root'
       })
       .on('click', function () {
-        that.clickRootHandler.call(that, this);
+        self.clickRootHandler.call(self, this);
       });
     this.buttonRootFill = this.buttonRoot.select('.bg-fill-effect');
     this.checkboxRoot = this.createCheckbox(this.buttonRoot);
@@ -254,7 +254,7 @@ class NodeContextMenu {
         bamEffect: true
       })
       .on('click', function () {
-        that.clickLockHandler.call(that, this);
+        self.clickLockHandler.call(self, this);
       });
     this.buttonLockFill = this.buttonLock.select('.bg-fill-effect');
     this.buttonLockBamEffect = this.buttonLock.select('.bg-bam-effect');
@@ -903,7 +903,7 @@ class NodeContextMenu {
       return data;
     }).attr('transform', data => {
       const x = data.alignRight ? this.visData.global.column.width / 2 : 0;
-      // When the buttons are created I assume that the menu is positioned
+      // When the buttons are created I assume self the menu is positioned
       // above the node; i.e. `distanceFromCenter` needs to be inverted.
       const y = (this.visData.global.row.height * (
         this.toBottom ?
