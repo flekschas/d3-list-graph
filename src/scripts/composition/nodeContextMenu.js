@@ -8,13 +8,73 @@ import { dropMenu } from '../commons/charts';
 import { requestNextAnimationFrame } from '../commons/animationFrame';
 import { allTransitionsEnded } from '../commons/d3-utils';
 
+/**
+ * Class name assigned to the context menu's root element
+ *
+ * @type  {String}
+ */
 const CLASS_NAME = 'context-menu';
+
+/**
+ * Class name assigned to checkboxes.
+ *
+ * @type  {String}
+ */
 const CLASS_CHECKBOX = 'checkbox';
+
+/**
+ * Size of the dialog arrow in pixel.
+ *
+ * @type  {Number}
+ */
 const ARROW_SIZE = 6;
+
+/**
+ * General transition speed.
+ *
+ * @type  {Number}
+ */
 const TRANSITION_SPEED = 125;
+
+/**
+ * Time in milliseconds before the query button click actially triggers its
+ * action.
+ *
+ * The time is resetted every time the user clicks on the button again within
+ * the time interval.
+ *
+ * @type  {Number}
+ */
 const BUTTON_QUERY_DEBOUNCE = 666;
+
+/**
+ * Time in milliseconds before the root button click actially triggers its
+ * action.
+ *
+ * The time is resetted every time the user clicks on the button again within
+ * the time interval.
+ *
+ * @type  {Number}
+ */
 const BUTTON_ROOT_DEBOUNCE = 500;
+
+
+/**
+ * Default time in milliseconds before a button click actially triggers its
+ * action.
+ *
+ * The time is resetted every time the user clicks on the button again within
+ * the time interval.
+ *
+ * @type  {Number}
+ */
 const BUTTON_DEFAULT_DEBOUNCE = 150;
+
+/**
+ * [BUTTON_BAM_EFFECT_ANIMATION_TIME description]
+ *
+ * @type  {Number}
+ */
 const BUTTON_BAM_EFFECT_ANIMATION_TIME = 700;
 
 class NodeContextMenu {
