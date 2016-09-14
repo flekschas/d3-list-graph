@@ -10,7 +10,7 @@ const TOPBAR_GLOBAL_CONTROL_CLASS = 'global-controls';
 
 class Topbar {
   constructor (vis, selection, visData) {
-    const that = this;
+    const self = this;
 
     this.vis = vis;
     this.visData = visData;
@@ -39,16 +39,16 @@ class Topbar {
     this.globalPrecision = this.globalControls.append('li')
       .attr('class', 'control-btn sort-precision')
       .classed('active', function () {
-        if (that.vis.currentSorting.global.type === 'precision') {
+        if (self.vis.currentSorting.global.type === 'precision') {
           // Save currently active element. Needed when when re-sorting for the
           // first time, to be able to de-highlight this element.
-          that.vis.currentSorting.global.el = d3.select(this);
+          self.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
         return false;
       })
       .on('click', function () {
-        that.sortAllColumns(this, 'precision');
+        self.sortAllColumns(this, 'precision');
       })
       .on('mouseenter', () => {
         this.vis.interactionWrapper.call(this.vis, () => {
@@ -98,15 +98,15 @@ class Topbar {
     this.globalRecall = this.globalControls.append('li')
       .attr('class', 'control-btn sort-recall')
       .classed('active', function () {
-        if (that.vis.currentSorting.global.type === 'recall') {
+        if (self.vis.currentSorting.global.type === 'recall') {
           // See precision
-          that.vis.currentSorting.global.el = d3.select(this);
+          self.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
         return false;
       })
       .on('click', function () {
-        that.sortAllColumns(this, 'recall');
+        self.sortAllColumns(this, 'recall');
       })
       .on('mouseenter', () => {
         this.vis.interactionWrapper.call(this.vis, () => {
@@ -156,15 +156,15 @@ class Topbar {
     this.globalName = this.globalControls.append('li')
       .attr('class', 'control-btn sort-name')
       .classed('active', function () {
-        if (that.vis.currentSorting.global.type === 'name') {
+        if (self.vis.currentSorting.global.type === 'name') {
           // See precision
-          that.vis.currentSorting.global.el = d3.select(this);
+          self.vis.currentSorting.global.el = d3.select(this);
           return true;
         }
         return false;
       })
       .on('click', function () {
-        that.sortAllColumns(this, 'name');
+        self.sortAllColumns(this, 'name');
       })
       .on('mouseenter', () => {
         this.vis.interactionWrapper.call(this.vis, () => {
@@ -215,7 +215,7 @@ class Topbar {
       .attr('class', 'control-btn one-bar')
       .classed('active', this.vis.barMode === 'one')
       .on('click', function () {
-        that.switchBarMode(this, 'one');
+        self.switchBarMode(this, 'one');
       });
 
     this.globalOneBarWrapper = this.globalOneBar.append('div')
@@ -232,7 +232,7 @@ class Topbar {
       .attr('class', 'control-btn two-bars')
       .classed('active', this.vis.barMode === 'two')
       .on('click', function () {
-        that.switchBarMode(this, 'two');
+        self.switchBarMode(this, 'two');
       });
 
     this.globalTwoBarsWrapper = this.globalTwoBars.append('div')
@@ -259,8 +259,8 @@ class Topbar {
         }, []);
       })
       .on('click', function () {
-        that.vis.toggleView.call(that.vis);
-        d3.select(this).classed('active', that.vis.zoomedOut);
+        self.vis.toggleView.call(self.vis);
+        d3.select(this).classed('active', self.vis.zoomedOut);
       });
 
     this.globalZoomOutWrapper = this.globalZoomOut.append('div')
@@ -293,7 +293,7 @@ class Topbar {
        * 1 = asc
        * -1 = desc
        */
-      that.vis.currentSorting.local[index] = {
+      self.vis.currentSorting.local[index] = {
         type: data.sortBy,
         order: data.sortOrder,
         el: undefined
@@ -301,36 +301,36 @@ class Topbar {
 
       control.append('li')
         .attr('class', 'control-btn toggle')
-        .style('width', that.visData.global.column.padding + 'px')
-        .on('click', that.toggleColumn);
+        .style('width', self.visData.global.column.padding + 'px')
+        .on('click', self.toggleColumn);
 
       control.append('li')
         .attr('class', 'control-btn sort-precision ease-all')
         .classed('active', function () {
-          if (that.vis.currentSorting.local[index].type === 'precision') {
+          if (self.vis.currentSorting.local[index].type === 'precision') {
             // See precision
-            that.vis.currentSorting.local[index].el = d3.select(this);
+            self.vis.currentSorting.local[index].el = d3.select(this);
             return true;
           }
           return false;
         })
-        .style('width', (that.visData.global.column.contentWidth / 2) + 'px')
-        .style('left', that.visData.global.column.padding + 'px')
+        .style('width', (self.visData.global.column.contentWidth / 2) + 'px')
+        .style('left', self.visData.global.column.padding + 'px')
         .on('click', function (controlData) {
-          that.sortColumn(this, controlData.level, 'precision');
+          self.sortColumn(this, controlData.level, 'precision');
         })
         .on('mouseenter', function () {
-          that.highlightBars(this.parentNode, 'precision');
+          self.highlightBars(this.parentNode, 'precision');
           d3.select(this).style(
             'width',
-            (that.visData.global.column.contentWidth - 16) + 'px'
+            (self.visData.global.column.contentWidth - 16) + 'px'
           );
         })
         .on('mouseleave', function () {
-          that.highlightBars(this.parentNode, 'precision', true);
+          self.highlightBars(this.parentNode, 'precision', true);
           d3.select(this).style(
             'width',
-            (that.visData.global.column.contentWidth / 2) + 'px'
+            (self.visData.global.column.contentWidth / 2) + 'px'
           );
         })
         .html(
@@ -345,48 +345,48 @@ class Topbar {
           '  <span class="letter">o</span>' +
           '  <span class="letter">n</span>' +
           '</div>' +
-          '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'precision' ? 'visible' : '') + '">' +  // eslint-disable-line
-          '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' +
+          '<svg class="icon-unsort invisible-default ' + (self.vis.currentSorting.local[index].type !== 'precision' ? 'visible' : '') + '">' +  // eslint-disable-line
+          '  <use xlink:href="' + self.vis.iconPath + '#unsort"></use>' +
           '</svg>' +
-          '<svg class="icon-sort-asc invisible-default ' + ((that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order === 1) ? 'visible' : '') + '">' +  // eslint-disable-line
-          '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' +
+          '<svg class="icon-sort-asc invisible-default ' + ((self.vis.currentSorting.local[index].type === 'precision' && self.vis.currentSorting.local[index].order === 1) ? 'visible' : '') + '">' +  // eslint-disable-line
+          '  <use xlink:href="' + self.vis.iconPath + '#sort-asc"></use>' +
           '</svg>' +
-          '<svg class="icon-sort-desc invisible-default ' + ((that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order !== 1) ? 'visible' : '') + '">' +  // eslint-disable-line
-          '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' +
+          '<svg class="icon-sort-desc invisible-default ' + ((self.vis.currentSorting.local[index].type === 'precision' && self.vis.currentSorting.local[index].order !== 1) ? 'visible' : '') + '">' +  // eslint-disable-line
+          '  <use xlink:href="' + self.vis.iconPath + '#sort-desc"></use>' +
           '</svg>'
         );
 
       control.append('li')
         .attr('class', 'control-btn sort-recall ease-all')
         .classed('active', function () {
-          if (that.vis.currentSorting.local[index].type === 'recall') {
+          if (self.vis.currentSorting.local[index].type === 'recall') {
             // See recall
-            that.vis.currentSorting.local[index].el = d3.select(this);
+            self.vis.currentSorting.local[index].el = d3.select(this);
             return true;
           }
           return false;
         })
-        .style('width', (that.visData.global.column.contentWidth / 2) + 'px')
+        .style('width', (self.visData.global.column.contentWidth / 2) + 'px')
         .style(
           'left',
-          (that.visData.global.column.contentWidth / 2) +
-            that.visData.global.column.padding + 'px'
+          (self.visData.global.column.contentWidth / 2) +
+            self.visData.global.column.padding + 'px'
         )
         .on('click', function (controlData) {
-          that.sortColumn(this, controlData.level, 'recall');
+          self.sortColumn(this, controlData.level, 'recall');
         })
         .on('mouseenter', function () {
-          that.highlightBars(this.parentNode, 'recall');
+          self.highlightBars(this.parentNode, 'recall');
           d3.select(this)
-          .style('width', (that.visData.global.column.contentWidth - 16) + 'px')
-          .style('left', (that.visData.global.column.padding + 16) + 'px');
+          .style('width', (self.visData.global.column.contentWidth - 16) + 'px')
+          .style('left', (self.visData.global.column.padding + 16) + 'px');
         })
         .on('mouseleave', function () {
-          that.highlightBars(this.parentNode, 'recall', true);
+          self.highlightBars(this.parentNode, 'recall', true);
           d3.select(this)
-            .style('width', (that.visData.global.column.contentWidth / 2) + 'px')
-            .style('left', ((that.visData.global.column.contentWidth / 2) +
-                that.visData.global.column.padding) + 'px'
+            .style('width', (self.visData.global.column.contentWidth / 2) + 'px')
+            .style('left', ((self.visData.global.column.contentWidth / 2) +
+                self.visData.global.column.padding) + 'px'
             );
         })
         .html(
@@ -398,30 +398,30 @@ class Topbar {
           '  <span class="letter abbr">l</span>' +
           '  <span class="letter">l</span>' +
           '</div>' +
-          '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'recall' ? 'visible' : '') + '">' +  // eslint-disable-line
-          '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' +
+          '<svg class="icon-unsort invisible-default ' + (self.vis.currentSorting.local[index].type !== 'recall' ? 'visible' : '') + '">' +  // eslint-disable-line
+          '  <use xlink:href="' + self.vis.iconPath + '#unsort"></use>' +
           '</svg>' +
-          '<svg class="icon-sort-asc invisible-default ' + ((that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order === 1) ? 'visible' : '') + '">' +  // eslint-disable-line
-          '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' +
+          '<svg class="icon-sort-asc invisible-default ' + ((self.vis.currentSorting.local[index].type === 'recall' && self.vis.currentSorting.local[index].order === 1) ? 'visible' : '') + '">' +  // eslint-disable-line
+          '  <use xlink:href="' + self.vis.iconPath + '#sort-asc"></use>' +
           '</svg>' +
-          '<svg class="icon-sort-desc invisible-default ' + ((that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order !== 1) ? 'visible' : '') + '">' +  // eslint-disable-line
-          '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' +
+          '<svg class="icon-sort-desc invisible-default ' + ((self.vis.currentSorting.local[index].type === 'recall' && self.vis.currentSorting.local[index].order !== 1) ? 'visible' : '') + '">' +  // eslint-disable-line
+          '  <use xlink:href="' + self.vis.iconPath + '#sort-desc"></use>' +
           '</svg>'
         );
 
       control.append('li')
         .attr('class', 'control-btn options')
-        .style('width', that.visData.global.column.padding + 'px')
-        .on('click', that.toggleOptions)
+        .style('width', self.visData.global.column.padding + 'px')
+        .on('click', self.toggleOptions)
         .html(
           '<svg class="icon-gear">' +
-          '  <use xlink:href="' + that.vis.iconPath + '#gear"></use>' +
+          '  <use xlink:href="' + self.vis.iconPath + '#gear"></use>' +
           '</svg>'
         );
 
-      if (that.vis.currentSorting.local[index].type) {
-        that.vis.currentSorting.local[index].el = control.select(
-          '.sort-' + that.vis.currentSorting.local[index].type
+      if (self.vis.currentSorting.local[index].type) {
+        self.vis.currentSorting.local[index].el = control.select(
+          '.sort-' + self.vis.currentSorting.local[index].type
         );
       }
     });

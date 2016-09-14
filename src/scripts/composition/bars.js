@@ -10,7 +10,7 @@ const BARS_CLASS = 'bars';
 
 class Bars {
   constructor (vis, selection, mode, visData) {
-    const that = this;
+    const self = this;
 
     this.vis = vis;
     this.mode = mode;
@@ -23,7 +23,7 @@ class Bars {
     this.selection = selection.append('g').attr('class', BARS_CLASS);
 
     this.selection.each(function (datum) {
-      new Bar(d3.select(this), datum.data.bars, datum, that.visData, that);
+      new Bar(d3.select(this), datum.data.bars, datum, self.visData, self);
     });
   }
 

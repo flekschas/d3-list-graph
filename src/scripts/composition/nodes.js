@@ -28,7 +28,7 @@ const CLASS_INDICATOR_BELOW = 'below';
 
 class Nodes {
   constructor (vis, baseSelection, visData, links, events) {
-    const that = this;
+    const self = this;
 
     this.vis = vis;
     this.visData = visData;
@@ -106,14 +106,14 @@ class Nodes {
 
       selection
         .attr('x', shrinkingAmount)
-        .attr('y', that.visData.global.row.padding + shrinkingAmount)
+        .attr('y', self.visData.global.row.padding + shrinkingAmount)
         .attr(
           'width',
-          that.visData.global.column.contentWidth - (2 * shrinkingAmount)
+          self.visData.global.column.contentWidth - (2 * shrinkingAmount)
         )
         .attr(
           'height',
-          that.visData.global.row.contentHeight - (2 * shrinkingAmount)
+          self.visData.global.row.contentHeight - (2 * shrinkingAmount)
         )
         .attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount)
         .attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount)
@@ -124,8 +124,8 @@ class Nodes {
       selection
         .attr('x', 0)
         .attr('y', 0)
-        .attr('width', that.visData.global.column.contentWidth)
-        .attr('height', that.visData.global.row.height)
+        .attr('width', self.visData.global.column.contentWidth)
+        .attr('height', self.visData.global.row.height)
         .attr('class', 'invisible-container');
     }
 
@@ -630,7 +630,7 @@ class Nodes {
   }
 
   eventHelper (nodeIds, callback, optionalParams, subSelectionClass) {
-    const that = this;
+    const self = this;
 
     this.nodes
       // Filter by node ID
@@ -643,7 +643,7 @@ class Nodes {
         }
 
         callback.apply(
-          that,
+          self,
           [d3El].concat(optionalParams || [])
         );
       });
@@ -685,21 +685,21 @@ class Nodes {
   }
 
   lockNode (id) {
-    const that = this;
+    const self = this;
     const els = this.nodes.filter(data => data.id === id);
 
     els.each(function (data) {
-      that.highlightNodes(d3.select(this), 'lock', undefined);
+      self.highlightNodes(d3.select(this), 'lock', undefined);
       data.data.state.lock = true;
     });
   }
 
   unlockNode (id) {
-    const that = this;
+    const self = this;
     const els = this.nodes.filter(data => data.id === id);
 
     els.each(function (data) {
-      that.unhighlightNodes(d3.select(this), 'lock', undefined);
+      self.unhighlightNodes(d3.select(this), 'lock', undefined);
       data.data.state.lock = undefined;
     });
   }
@@ -1092,7 +1092,7 @@ class Nodes {
   highlightNodes (
     d3El, className, restriction, excludeClones, noVisibilityCheck
   ) {
-    const that = this;
+    const self = this;
     const data = d3El.datum();
     const nodeId = data.id;
     const currentNodeData = data.clone ? data.originalNode : data;
@@ -1181,7 +1181,7 @@ class Nodes {
     function checkNodeVisibility (_el, _data) {
       return noVisibilityCheck || (
         !_data.hidden &&
-        !that.vis.isHidden.call(that.vis, _el)
+        !self.vis.isHidden.call(self.vis, _el)
       );
     }
 
@@ -1221,7 +1221,7 @@ class Nodes {
      * @param   {Object}  selection  D3 node selection.
      */
     function updateDirectBarIndicator (selection) {
-      that.bars.updateIndicator(
+      self.bars.updateIndicator(
         selection,
         currentlyActiveBar.value,
         true
@@ -1237,7 +1237,7 @@ class Nodes {
      * @param   {Object}  selection  D3 node selection.
      */
     function updateIndirectBarIndicator (selection) {
-      that.bars.updateIndicator(
+      self.bars.updateIndicator(
         selection,
         currentlyActiveBar.value
       );

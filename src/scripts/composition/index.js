@@ -37,7 +37,7 @@ class ListGraph {
       throw new LayoutNotAvailable();
     }
 
-    const that = this;
+    const self = this;
 
     this.baseEl = init.element;
     this.baseEl.__d3ListGraphBase__ = true;
@@ -240,13 +240,13 @@ class ListGraph {
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
     // We are using delegated event listeners to provide better scaling
     this.svgJq.on('mousewheel', '.' + this.levels.className, function (event) {
-      if (!that.zoomedOut) {
-        that.mousewheelColumn(this, event);
+      if (!self.zoomedOut) {
+        self.mousewheelColumn(this, event);
       }
     });
 
     this.svgJq.on('click', event => {
-      that.checkGlobalClick.call(that, event.target);
+      self.checkGlobalClick.call(self, event.target);
     });
 
     // Add jQuery delegated event listeners instead of direct listeners of D3.
@@ -257,23 +257,23 @@ class ListGraph {
         // Add a new global outside click listener using this node and the
         // node context menu as the related elements.
         requestNextAnimationFrame(() => {
-          that.registerOutSideClickHandler(
+          self.registerOutSideClickHandler(
             'nodeContextMenu',
-            [that.nodeContextMenu.wrapper.node()],
+            [self.nodeContextMenu.wrapper.node()],
             ['visible-node'],
             () => {
               // The context of this method is the context of the outer click
               // handler.
-              that.nodeContextMenu.close();
-              that.unregisterOutSideClickHandler.call(
-                that, 'nodeContextMenu'
+              self.nodeContextMenu.close();
+              self.unregisterOutSideClickHandler.call(
+                self, 'nodeContextMenu'
               );
             }
           );
         });
 
-        that.nodeContextMenu.toggle.call(
-          that.nodeContextMenu,
+        self.nodeContextMenu.toggle.call(
+          self.nodeContextMenu,
           _d3.select(this.parentNode)
         );
       }
@@ -283,7 +283,7 @@ class ListGraph {
       'click',
       `.${this.nodes.classFocusControls}.${this.nodes.classRoot}`,
       function () {
-        that.nodes.rootHandler.call(that.nodes, _d3.select(this), true);
+        self.nodes.rootHandler.call(self.nodes, _d3.select(this), true);
       }
     );
 
@@ -292,12 +292,12 @@ class ListGraph {
         'click',
         `.${this.nodes.classFocusControls}.${this.nodes.classQuery}`,
         function () {
-          that.nodes.queryHandler.call(
-            that.nodes,
+          self.nodes.queryHandler.call(
+            self.nodes,
             _d3.select(this.parentNode),
             'unquery'
           );
-          that.nodeContextMenu.updateStates();
+          self.nodeContextMenu.updateStates();
         }
       );
     }
@@ -306,7 +306,7 @@ class ListGraph {
       'click',
       `.${this.nodes.classFocusControls}.${this.nodes.classLock}`,
       function () {
-        that.nodes.lockHandler.call(that.nodes, this, _d3.select(this).datum());
+        self.nodes.lockHandler.call(self.nodes, this, _d3.select(this).datum());
       }
     );
 
@@ -314,11 +314,11 @@ class ListGraph {
       'mouseenter',
       `.${this.nodes.classNodeVisible}`,
       function () {
-        that.interactionWrapper.call(that, function (domEl, data) {
+        self.interactionWrapper.call(self, function (domEl, data) {
           if (!this.vis.activeScrollbar) {
             this.enterHandler.call(this, domEl, data);
           }
-        }.bind(that.nodes), [this, _d3.select(this).datum()]);
+        }.bind(self.nodes), [this, _d3.select(this).datum()]);
       }
     );
 
@@ -326,11 +326,11 @@ class ListGraph {
       'mouseleave',
       `.${this.nodes.classNodeVisible}`,
       function () {
-        that.interactionWrapper.call(that, function (domEl, data) {
+        self.interactionWrapper.call(self, function (domEl, data) {
           if (!this.vis.activeScrollbar) {
             this.leaveHandler.call(this, domEl, data);
           }
-        }.bind(that.nodes), [this, _d3.select(this).datum()]);
+        }.bind(self.nodes), [this, _d3.select(this).datum()]);
       }
     );
 
@@ -338,7 +338,7 @@ class ListGraph {
     // the class' `this` property instead of the DOM element we need to use an
     // arrow function.
     this.scrollbars.all.on('mousedown', function () {
-      that.scrollbarMouseDown(this, _d3.event);
+      self.scrollbarMouseDown(this, _d3.event);
     });
 
     // We need to listen to `mouseup` and `mousemove` globally otherwise
