@@ -78,7 +78,40 @@ const BUTTON_DEFAULT_DEBOUNCE = 150;
 const BUTTON_BAM_EFFECT_ANIMATION_TIME = 700;
 
 class NodeContextMenu {
-  constructor (vis, visData, baseEl, events, querying, infoFields) {
+  /**
+   * Node context menu constructor
+   *
+   * @description
+   * The `init` object must contain the follow properties:
+   *  - visData: the List Graph App's data. [Object]
+   *  - baseEl: D3 selection of the base element. [Object]
+   *  - events: the List Graph App's event library. [Object]
+   *  - nodes: the List Graph App's nodes. [Object]
+   *  - infoField: the List Graph App's info field definition. [Object]
+   *  - iconPath: the List Graph App's `iconPath`. [String]
+   *  - isQueryable: If `true` the query button will be shown. [Boolean]
+   *  - isDebounced: If `true` the menu will be debounced. [Boolean]
+   *
+   * @example
+   * ```
+   *  const nodeContextMenu = new NodeContextMenu({
+   *   visData: {...},
+   *   baseEl: {...},
+   *   events: {...},
+   *   nodes: {...},
+   *   infoField: {...},
+   *   iconPath: '...',
+   *   isQueryable: true,
+   *   isDebounced: true
+   * });
+   * ```
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}   init  Initialization object. See example.
+   */
+  constructor (init) {
     const that = this;
 
     this._x = 0;
@@ -86,17 +119,19 @@ class NodeContextMenu {
     this._yOffset = 0;
     this._scale = 0;
 
-    this.vis = vis;
-    this.visData = visData;
-    this.baseEl = baseEl;
-    this.events = events;
-    this.querying = querying;
-    this.infoFields = infoFields;
+    this.visData = init.visData;
+    this.baseEl = init.baseEl;
+    this.events = init.events;
+    this.nodes = init.nodes;
+    this.isQueryable = init.isQueryable;
+    this.infoField = init.infoField;
+    this.isDebounced = init.isDebounced;
+    this.iconPath = init.iconPath;
 
     this.numButtonRows = 1;
-    this.numButtonRows = this.querying ?
+    this.numButtonRows = this.isQueryable ?
       ++this.numButtonRows : this.numButtonRows;
-    this.numButtonRows = this.infoFields && this.infoFields.length ?
+    this.numButtonRows = this.infoField && this.infoField.length ?
       ++this.numButtonRows : this.numButtonRows;
 
     this.height = this.visData.global.row.height * this.numButtonRows;
@@ -132,17 +167,17 @@ class NodeContextMenu {
       }))
       .style('filter', 'url(#drop-shadow-context-menu)');
 
-    if (this.infoFields && this.infoFields.length) {
+    if (this.infoField && this.infoField.length) {
       this.textNodeInfo = this.wrapper.append('g')
         .call(this.createTextField.bind(this), {
           alignRight: false,
           classNames: [],
-          distanceFromCenter: this.querying ? 2 : 1,
+          distanceFromCenter: this.isQueryable ? 2 : 1,
           fullWidth: true,
-          labels: this.infoFields
+          labels: this.infoField
         });
 
-      if (this.infoFields.length > 1) {
+      if (this.infoField.length > 1) {
         const toggler = this.textNodeInfo.append('g')
           .attr('class', 'toggler')
           .on('click', function () {
@@ -173,11 +208,11 @@ class NodeContextMenu {
           )
           .attr('width', 10)
           .attr('height', 10)
-          .attr('xlink:href', this.vis.iconPath + '#arrow-right');
+          .attr('xlink:href', this.iconPath + '#arrow-right');
       }
     }
 
-    if (this.querying) {
+    if (this.isQueryable) {
       this.buttonQuery = this.wrapper.append('g')
         .call(this.createButton.bind(this), {
           alignRight: false,
@@ -239,10 +274,26 @@ class NodeContextMenu {
    * Getter / Setter
    * ------------------------------------------------------------------------ */
 
+  /**
+   * Generates CSS string for scaling.
+   *
+   * @method  scale
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @return  {String}  CSS formatted string containing the scale.
+   */
   get scale () {
     return 'scale(' + (this.opened ? 1 : 0.5) + ')';
   }
 
+  /**
+   * Generates a CSS string for translation
+   *
+   * @method  translate
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @return  {String}  CSS formatted string containing the translate.
+   */
   get translate () {
     const y = this.toBottom ?
       this._y + this.height + this.visData.global.row.height - ARROW_SIZE :
@@ -251,6 +302,14 @@ class NodeContextMenu {
     return 'translate(' + this._x + 'px,' + (y + this._yOffset) + 'px)';
   }
 
+  /**
+   * Set x and y values.
+   *
+   * @method  translate
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  position  Object containing x and y coordinates.
+   */
   set translate (position) {
     this._x = position.x;
     this._y = position.y;
@@ -262,6 +321,19 @@ class NodeContextMenu {
 
   /* ---------------------------------- A ----------------------------------- */
 
+  /**
+   * Adds a XHTML-based text elements for labelling.
+   *
+   * @method  addLabel
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}   selection  D3 selection where the label should be added
+   *   to.
+   * @param   {Boolean}  fullWidth  If `true` the label is drawn over the full
+   *   width.
+   * @param   {String}   label      First label text.
+   * @param   {String}   labelTwo   Second label text.
+   */
   addLabel (selection, fullWidth, label, labelTwo) {
     const width = (this.visData.global.column.width *
       (fullWidth ? 1 : 0.5)) - (this.visData.global.row.padding * 4);
@@ -289,6 +361,14 @@ class NodeContextMenu {
 
   /* ---------------------------------- C ----------------------------------- */
 
+  /**
+   * Check the state of the lock button and alter its appearance accordingly.
+   *
+   * @method  checkLock
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @return  {Boolean}  If `true` the lock button is active.
+   */
   checkLock () {
     const checked = this.node.datum().data.state.lock;
     this.buttonLock.classed('semi-active', checked);
@@ -304,6 +384,13 @@ class NodeContextMenu {
     return checked;
   }
 
+  /**
+   * Check how the menu needs to be oriented, i.e., above or below the node.
+   *
+   * @method  checkOrientation
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   */
   checkOrientation () {
     if (this._y + this._yOffset >= 0) {
       this.toBottom = false;
@@ -322,6 +409,16 @@ class NodeContextMenu {
       );
   }
 
+  /**
+   * Check state of the root button and alter appearance accordingly.
+   *
+   * @method  checkRoot
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Boolean}  debounced  If `true` the root button will be debounced
+   *   by `time`.
+   * @param   {Number}   time       Debounce time in milliseconds.
+   */
   checkRoot (debounced, time) {
     const state = this.node.datum().data.state.root;
     let checked = state;
@@ -342,7 +439,7 @@ class NodeContextMenu {
         if (checked) {
           this.fillButton(this.buttonRootFill, time);
         } else {
-          this.hideFillButton(this.buttonRootFill);
+          this.hideElement(this.buttonRootFill);
         }
       } else {
         this.emptyButton(this.buttonRootFill, time);
@@ -352,7 +449,7 @@ class NodeContextMenu {
         if (!checked) {
           this.emptyButton(this.buttonRootFill, time);
         } else {
-          this.showFillButton(this.buttonRootFill);
+          this.showElement(this.buttonRootFill);
         }
       } else {
         this.fillButton(this.buttonRootFill, time);
@@ -366,9 +463,16 @@ class NodeContextMenu {
     );
   }
 
+  /**
+   * Click handler of the lock button.
+   *
+   * @method  clickLockHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   */
   clickLockHandler () {
     this.buttonLock.classed('fill-effect', true);
-    this.vis.nodes.lockHandler(this.node);
+    this.nodes.lockHandler(this.node);
     const checked = this.checkLock();
     if (checked) {
       this.buttonLock.classed('active', true);
@@ -383,38 +487,67 @@ class NodeContextMenu {
     }, BUTTON_DEFAULT_DEBOUNCE);
   }
 
+  /**
+   * Click handler of the info button.
+   *
+   * @method  clickNodeInfo
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   */
   clickNodeInfo () {
-    this.nodeInfoId = (this.nodeInfoId + 1) % this.infoFields.length;
+    this.nodeInfoId = (this.nodeInfoId + 1) % this.infoField.length;
 
     this.textNodeInfo.select('.label').text(
-      this.infoFields[this.nodeInfoId].label
+      this.infoField[this.nodeInfoId].label
     );
 
     this.textNodeInfo.select('.label-two').text(
-      this.getNodeProperty(this.infoFields[this.nodeInfoId].property)
+      this.getNodeProperty(this.infoField[this.nodeInfoId].property)
     );
   }
 
+  /**
+   * Click handler of the query button.
+   *
+   * @method  clickQueryHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   */
   clickQueryHandler () {
     this.buttonQuery.classed('fill-effect', true);
     this.updateQuery(true, BUTTON_QUERY_DEBOUNCE);
-    if (!this.vis.disableDebouncedContextMenu) {
+    if (!this.isDebounced) {
       this.debouncedQueryHandler(true);
     } else {
       this.queryHandler();
     }
   }
 
+  /**
+   * Click handler of the root button.
+   *
+   * @method  clickRootHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   */
   clickRootHandler () {
     this.buttonRoot.classed('fill-effect', true);
     this.checkRoot(true, BUTTON_ROOT_DEBOUNCE);
-    if (!this.vis.disableDebouncedContextMenu) {
+    if (!this.isDebounced) {
       this.debouncedRootHandler(true);
     } else {
       this.rootHandler();
     }
   }
 
+  /**
+   * Closes the menu.
+   *
+   * @method  close
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @return  {Object}  Promise resolving to `true` when the menu is closed.
+   */
   close () {
     if (!this.closing) {
       this.closing = new Promise(resolve => {
@@ -432,6 +565,23 @@ class NodeContextMenu {
     return this.closing;
   }
 
+  /**
+   * Helper method to create and append a button.
+   *
+   * @description
+   * The `properties` variable needs to contain the following properties:
+   *  - fullWidth: If `true` draws the button over the full width. [Boolean]
+   *  - label: The first label. Considered the main label if `labelTwo` is
+   *    `undefined`. [String]
+   *  - labelTwo: Second label. Considered the main label when given.
+   *
+   * @method  createButton
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  selection   D3 selection where the button should be
+   *   appended to.
+   * @param   {Object}  properties  The button's properties.
+   */
   createButton (selection, properties) {
     let classNames = 'component button';
     if (properties.classNames && properties.classNames.length) {
@@ -460,12 +610,29 @@ class NodeContextMenu {
       );
   }
 
-  createButtonBg (selection, params) {
+  /**
+   * Helper method to create and append a button background.
+   *
+   * @description
+   * The `properties` variable needs to contain the following properties:
+   *  - fullWidth: If `true` draws the button over the full width. [Boolean]
+   *  - bamEffect: If `true` adds an extra element for the click-bam-effect.
+   *
+   * @method  createButtonBg
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  selection   D3 selection where the background element
+   *   should be appended to.
+   * @param   {Object}  properties  The background element's properties.
+   */
+  createButtonBg (selection, properties) {
     selection.datum(data => {
       data.x = this.visData.global.row.padding;
       data.y = this.visData.global.row.padding;
-      data.width = (this.visData.global.column.width *
-        (params.fullWidth ? 1 : 0.5)) - (this.visData.global.row.padding * 2);
+      data.width = (
+          this.visData.global.column.width *
+          (properties.fullWidth ? 1 : 0.5)
+        ) - (this.visData.global.row.padding * 2);
       data.height = this.visData.global.row.contentHeight;
       data.rx = 2;
       data.ry = 2;
@@ -489,7 +656,7 @@ class NodeContextMenu {
       .attr('rx', data => data.rx)
       .attr('ry', data => data.ry);
 
-    if (params.bamEffect) {
+    if (properties.bamEffect) {
       selection.append('rect')
         .attr('class', 'bg-bam-effect')
         .attr('x', data => data.x)
@@ -501,6 +668,15 @@ class NodeContextMenu {
     }
   }
 
+  /**
+   * Helper method to create and append a checkbox-like button.
+   *
+   * @method  createCheckbox
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  selection  D3 selection where the checkbox element
+   *   should be appended to.
+   */
   createCheckbox (selection) {
     const height = Math.round(selection.datum().height / 2);
     const x = (-1.75 * height) + this.visData.global.row.padding;
@@ -527,6 +703,16 @@ class NodeContextMenu {
       .attr('rx', height - 2);
   }
 
+  /**
+   * Helper method to create and append a text field.
+   *
+   * @method  createTextField
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  selection   D3 selection where the text field should be
+   *   appended to.
+   * @param   {Object}  properties  The text field's properties.
+   */
   createTextField (selection, properties) {
     let classNames = 'component text-field';
     if (properties.classNames && properties.classNames.length) {
@@ -551,6 +737,16 @@ class NodeContextMenu {
 
   /* ---------------------------------- E ----------------------------------- */
 
+  /**
+   * Transitions out an element top down.
+   *
+   * @method  emptyButton
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  selection   D3 selection of the element to be
+   *   transitioned.
+   * @param   {Number}  time       Transition time in milliseconds.
+   */
   emptyButton (selection, time) {
     selection
       .transition()
@@ -569,6 +765,16 @@ class NodeContextMenu {
 
   /* ---------------------------------- F ----------------------------------- */
 
+  /**
+   * Transitions in an element top down.
+   *
+   * @method  fillButton
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  selection   D3 selection of the element to be
+   *   transitioned.
+   * @param   {Number}  time       Transition time in milliseconds.
+   */
   fillButton (selection, time) {
     selection
       .transition()
@@ -586,9 +792,18 @@ class NodeContextMenu {
 
   /* ---------------------------------- G ----------------------------------- */
 
-  getNodeProperty (property) {
+  /**
+   * Helper method to access a node property.
+   *
+   * @method  getNodeProperty
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Function}  callback  Callback returning a property of the node.
+   * @return  {*}                   The value returned by the callback.
+   */
+  getNodeProperty (callback) {
     try {
-      return property(this.node.datum());
+      return callback(this.node.datum());
     } catch (e) {
       return undefined;
     }
@@ -596,18 +811,44 @@ class NodeContextMenu {
 
   /* ---------------------------------- H ----------------------------------- */
 
-  hideFillButton (selection) {
+  /**
+   * Hide an element by setting the height to zero.
+   *
+   * @method  hideElement
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  selection  D3 selection of element to be hidden.
+   */
+  hideElement (selection) {
     selection.transition().duration(0).attr('height', 0);
   }
 
   /* ---------------------------------- I ----------------------------------- */
 
+  /**
+   * Check if menu is opened in the same column already.
+   *
+   * @method  isOpenSameColumn
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Number}   columnNum  Column number.
+   * @return  {Boolean}             If `true` menu is opened and in the same
+   *   column.
+   */
   isOpenSameColumn (columnNum) {
     return this.opened && this.node.datum().depth === columnNum;
   }
 
   /* ---------------------------------- O ----------------------------------- */
 
+  /**
+   * Opens the menu.
+   *
+   * @method  open
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  node  D3 selection of the node the menu relates to.
+   */
   open (node) {
     return new Promise(resolve => {
       this.node = node;
@@ -635,9 +876,23 @@ class NodeContextMenu {
 
   /* ---------------------------------- P ----------------------------------- */
 
+  /**
+   * Positions component.
+   *
+   * @method  positionComponent
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}   selection           D3 selection of the element to be
+   *   positioned.
+   * @param   {Boolean}  distanceFromCenter  If `true` positions component from
+   *   the center.
+   * @param   {Boolean}  alignRight          If `true` aligns component to the
+   *   right.
+   * @return  {String}                       CSS-formatted translation string.
+   */
   positionComponent (selection, distanceFromCenter, alignRight) {
     selection.datum(data => {
-      // Lets cache some values to make our lifes easier when checking the
+      // Lets cache some values to make our lives easier when checking the
       // position again in `checkOrientation`.
       if (distanceFromCenter) {
         data.distanceFromCenter = distanceFromCenter;
@@ -663,20 +918,28 @@ class NodeContextMenu {
 
   /* ---------------------------------- Q ----------------------------------- */
 
+  /**
+   * Handle the four different query states: none, or, and, and not.
+   *
+   * @method  queryHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Boolean}  debounced  If `true` the handler will debounce.
+   */
   queryHandler (debounced) {
     if (debounced) {
       if (this.tempQueryMode !== this.currentQueryMode) {
         if (this.tempQueryMode) {
-          this.vis.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
+          this.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
           this.triggerButtonBamEffect(this.buttonQueryBamEffect);
           this.buttonQuery.classed('active', true);
         } else {
-          this.vis.nodes.queryHandler(this.node, 'unquery');
+          this.nodes.queryHandler(this.node, 'unquery');
           this.buttonQuery.classed('active', false);
         }
       }
     } else {
-      this.vis.nodes.queryHandler(this.node);
+      this.nodes.queryHandler(this.node);
     }
 
     // Reset temporary query modes.
@@ -687,10 +950,18 @@ class NodeContextMenu {
 
   /* ---------------------------------- R ----------------------------------- */
 
+  /**
+   * Handle re-rooting of the graph.
+   *
+   * @method  rootHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Boolean}  debounced  If `true` the handler will debounce.
+   */
   rootHandler (debounced) {
     if (!debounced || this.tempRoot !== this.currentRootState) {
       this.close();
-      this.vis.nodes.rootHandler(this.node);
+      this.nodes.rootHandler(this.node);
     }
 
     // Reset temporary root values.
@@ -703,12 +974,28 @@ class NodeContextMenu {
 
   /* ---------------------------------- S ----------------------------------- */
 
+  /**
+   * Scrolls the menu vertically.
+   *
+   * @method  scrollY
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Number}  offset  Scroll related offset.
+   */
   scrollY (offset) {
     this._yOffset = offset;
     this.updateAppearance();
   }
 
-  showFillButton (selection) {
+  /**
+   * Transition element in by resetting its original height.
+   *
+   * @method  showElement
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  selection  D3 selection to be transitioned in.
+   */
+  showElement (selection) {
     selection.transition().duration(0)
       .attr('y', data => data.y)
       .attr('height', data => data.height);
@@ -716,6 +1003,14 @@ class NodeContextMenu {
 
   /* ---------------------------------- T ----------------------------------- */
 
+  /**
+   * Toggle menu visibility
+   *
+   * @method  toggle
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  node  D3 selection of the related node.
+   */
   toggle (node) {
     return new Promise(resolve => {
       const nodeId = node.datum().id;
@@ -735,6 +1030,14 @@ class NodeContextMenu {
     });
   }
 
+  /**
+   * Call button BAM effect.
+   *
+   * @method  triggerButtonBamEffect
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}  node  D3 selection of the button to be BAM-effected.
+   */
   triggerButtonBamEffect (button) {
     button.classed('active', true);
     setTimeout(() => {
@@ -744,6 +1047,13 @@ class NodeContextMenu {
 
   /* ---------------------------------- U ----------------------------------- */
 
+  /**
+   * Update appearance of the menu.
+   *
+   * @method  updateAppearance
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   */
   updateAppearance () {
     const centerY = this.toBottom ?
       0 : this.height + this.visData.global.row.height;
@@ -758,28 +1068,54 @@ class NodeContextMenu {
       );
   }
 
+  /**
+   * Toggle through the info text fields.
+   *
+   * @method  updateInfoText
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   */
   updateInfoText () {
-    if (!this.infoFields || !this.infoFields.length) {
+    if (!this.infoField || !this.infoField.length) {
       return;
     }
 
     this.textNodeInfo.select('.label').text(
-      this.infoFields[this.nodeInfoId].label
+      this.infoField[this.nodeInfoId].label
     );
 
     this.textNodeInfo.select('.label-two').text(
-      this.getNodeProperty(this.infoFields[this.nodeInfoId].property)
+      this.getNodeProperty(this.infoField[this.nodeInfoId].property)
     );
   }
 
+  /**
+   * Open menu on another node.
+   *
+   * @description
+   * Updates the position of the menu and its content.
+   *
+   * @method  updatePosition
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   */
   updatePosition () {
     if (this.node && this.opened) {
       this.open(this.node);
     }
   }
 
+  /**
+   * Update querying when toggling through different query options.
+   *
+   * @method  updateQuery
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Boolean}  debounced  If `true` debounces querying.
+   * @param   {Number}   time       Debounce time in milliseconds.
+   */
   updateQuery (debounced, time) {
-    if (!this.querying) {
+    if (!this.isQueryable) {
       return;
     }
 
@@ -813,7 +1149,7 @@ class NodeContextMenu {
     if (debounced) {
       if (queryMode) {
         if (queryMode === state) {
-          this.showFillButton(this.buttonQueryFill);
+          this.showElement(this.buttonQueryFill);
         } else {
           this.fillButton(this.buttonQueryFill, time);
         }
@@ -821,7 +1157,7 @@ class NodeContextMenu {
         if (state) {
           this.emptyButton(this.buttonQueryFill, time);
         } else {
-          this.hideFillButton(this.buttonQueryFill);
+          this.hideElement(this.buttonQueryFill);
         }
       }
     } else {
@@ -836,6 +1172,13 @@ class NodeContextMenu {
         .classed('inactive', !queryMode);
   }
 
+  /**
+   * Helper method to trigger a check of all buttons and text fields.
+   *
+   * @method  updateStates
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   */
   updateStates () {
     if (this.node) {
       this.checkLock();
