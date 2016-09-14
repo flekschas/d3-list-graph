@@ -1,7 +1,20 @@
 const BAR_CLASS = 'bar';
 
 class Bar {
-  constructor (barGroup, barData, nodeData, visData, bars) {
+  /**
+   * Bar constructor
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  baseEl    D3 selection of the base element where bars
+   *   should be appended to.
+   * @param   {Object}  barData   Object with the bar properties.
+   * @param   {Object}  nodeData  Object with the node properties.
+   * @param   {Object}  visData   Object with the list graph app properties.
+   * @param   {Object}  bars      Bars class.
+   */
+  constructor (baseEl, barData, nodeData, visData, bars) {
     this.data = barData;
     this.nodeData = nodeData;
     this.visData = visData;
@@ -18,7 +31,7 @@ class Bar {
 
     this.inactiveheight = (this.visData.global.cell.padding * 2) - 1;
 
-    this.selection = barGroup.selectAll(BAR_CLASS)
+    this.selection = baseEl.selectAll(BAR_CLASS)
       .data(this.data)
       .enter()
       .append('g')
