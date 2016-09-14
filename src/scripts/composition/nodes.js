@@ -248,7 +248,7 @@ class Nodes {
           .attr('xlink:href', this.vis.iconPath + '#not');
     }
 
-    this.bars = new Bars(this.vis, this.visNodes, this.vis.barMode, this.visData);
+    this.bars = new Bars(this.visNodes, this.vis.barMode, this.visData);
 
     this.visNodes
       .append('rect')
