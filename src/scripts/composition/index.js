@@ -219,14 +219,16 @@ class ListGraph {
       this.scrollbarWidth
     );
 
-    this.nodeContextMenu = new NodeContextMenu(
-      this,
-      this.visData,
-      this.container,
-      this.events,
-      this.querying,
-      this.nodeInfoContextMenu
-    );
+    this.nodeContextMenu = new NodeContextMenu({
+      visData: this.visData,
+      baseEl: this.container,
+      events: this.events,
+      nodes: this.nodes,
+      iconPath: this.iconPath,
+      isQueryable: this.querying,
+      isInfoField: this.nodeInfoContextMenu,
+      isDebounced: !this.disableDebouncedContextMenu
+    });
 
     this.nodeContextMenu.wrapper.on('mousedown', () => {
       this.mouseDownOnContextMenu = true;
