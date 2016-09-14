@@ -1,10 +1,32 @@
 // External
 import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 
+/**
+ * Class name of columns.
+ *
+ * @type  {String}
+ */
 const COLUMN_CLASS = 'column';
+
+/**
+ * Class name of scroll containers.
+ *
+ * @type  {String}
+ */
 const SCROLL_CONTAINER_CLASS = 'scroll-container';
 
 class Levels {
+  /**
+   * Level / column constructor.
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  selection  D3 selection of element the levels should be
+   *   appended to.
+   * @param   {Object}  vis        List Graph App.
+   * @param   {Object}  visData    List Graph App data.
+   */
   constructor (selection, vis, visData) {
     this.vis = vis;
     this.visData = visData;
@@ -41,7 +63,15 @@ class Levels {
         .attr('height', this.visData.global.column.height);
   }
 
-  scrollPreparation (vis, scrollbarWidth) {
+  /**
+   * Prepare column for scrolling.
+   *
+   * @method  scrollPreparation
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Number}  scrollbarWidth  Width of the scrollbar in pixel.
+   */
+  scrollPreparation (scrollbarWidth) {
     this.groups.each((data, index) => {
       const contentHeight = data.nodes.getBoundingClientRect().height +
         (2 * this.visData.global.row.padding);
@@ -60,8 +90,8 @@ class Levels {
       data.height = contentHeight;
       data.linkSelections = {
         incoming: index > 0 ?
-          vis.selectByLevel(index - 1, '.link') : null,
-        outgoing: vis.selectByLevel(index, '.link')
+          this.vis.selectByLevel(index - 1, '.link') : null,
+        outgoing: this.vis.selectByLevel(index, '.link')
       };
       data.scrollHeight = scrollHeight;
       data.scrollTop = 0;
@@ -81,6 +111,13 @@ class Levels {
     });
   }
 
+  /**
+   * Update the properties for column scrolling.
+   *
+   * @method  updateScrollProperties
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   */
   updateScrollProperties () {
     this.groups.each(data => {
       const contentHeight = data.nodes.getBoundingClientRect().height +
@@ -111,6 +148,13 @@ class Levels {
     });
   }
 
+  /**
+   * Check if column should be hidden when it's not in the visible area.
+   *
+   * @method  updateVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   */
   updateVisibility () {
     this.groups.each(function () {
       const group = d3.select(this);
@@ -120,20 +164,52 @@ class Levels {
     });
   }
 
+  /**
+   * Get the column's class name.
+   *
+   * @method  className
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @return  {String}  Class name of the column.
+   */
   get className () {
     return COLUMN_CLASS;
   }
 
+  /**
+   * Get the column's height.
+   *
+   * @method  height
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @return  {Number}  Column height in pixel.
+   */
   get height () {
     return this.visData.global.column.height;
   }
 
+  /**
+   * Focus a level.
+   *
+   * @method  focus
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Number}  level  ID of the column.
+   */
   focus (level) {
     if (this.vis.highlightActiveLevel) {
       this.groups.filter(data => data.level === level).classed('active', true);
     }
   }
 
+  /**
+   * Blur a level.
+   *
+   * @method  blur
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Number}  level  ID of the column.
+   */
   blur (level) {
     if (this.vis.highlightActiveLevel) {
       if (level) {

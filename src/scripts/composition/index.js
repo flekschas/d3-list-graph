@@ -212,7 +212,7 @@ class ListGraph {
       this.links,
       this.events
     );
-    this.levels.scrollPreparation(this, this.scrollbarWidth);
+    this.levels.scrollPreparation(this.scrollbarWidth);
     this.scrollbars = new Scrollbars(
       this.levels.groups,
       this.visData,
