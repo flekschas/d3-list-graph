@@ -4,10 +4,32 @@ import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 // Internal
 import * as config from './config';
 
+/**
+ * Class name of the group of link container.
+ *
+ * @type  {String}
+ */
 const LINKS_CLASS = 'links';
+
+/**
+ * Class name of a link element.
+ *
+ * @type  {String}
+ */
 const LINK_CLASS = 'link';
 
 class Links {
+  /**
+   * [constructor description]
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}   vis      List Graph App.
+   * @param   {Object}   levels   List Graph App's levels.
+   * @param   {Object}   visData  List Graph App's data.
+   * @param   {Object}   layout   List Graph Layout.
+   */
   constructor (vis, levels, visData, layout) {
     this.vis = vis;
     this.visData = visData;
@@ -40,6 +62,14 @@ class Links {
       .attr('d', this.diagonal.bind(this));
   }
 
+  /**
+   * Get a SVG path string for links.
+   *
+   * @method  diagonal
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @return  {String}  SVG path string.
+   */
   get diagonal () {
     const extraOffsetX = this.vis.showLinkLocation ? 6 : 0;
 
@@ -77,18 +107,46 @@ class Links {
     };
   }
 
+  /**
+   * Assess link visibility
+   *
+   * @method  linkVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  data  D3 selection data object of links.
+   */
   linkVisibility (data) {
     // Cache visibility.
     data.hidden = this.vis.pointsOutside.call(this.vis, data);
     return data.hidden === 0;
   }
 
+  /**
+   * [highlight description]
+   *
+   * @method  highlight
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Array}    nodeIds    Array of Node IDs.
+   * @param   {Boolean}  highlight  If `true` highlights links.
+   * @param   {String}   className  Class name added for CSS-based highlighting.
+   */
   highlight (nodeIds, highlight, className) {
     this.links
       .filter(data => nodeIds[data.id])
       .classed(className, highlight);
   }
 
+  /**
+   * Scroll links when the container is scrolled.
+   *
+   * @method  scroll
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  selection  D3 selection of links.
+   * @param   {Object}  data       Updated link data depending on scroll
+   *   position.
+   */
   scroll (selection, data) {
     // Update data of `g`.
     selection.data(data);
@@ -103,6 +161,15 @@ class Links {
       .attr('d', this.diagonal);
   }
 
+  /**
+   * Sort links by applying updated data and transitioning to the new position.
+   *
+   * @method  sort
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {[type]}    update  [description]
+   * @return  {[type]}            [description]
+   */
   sort (update) {
     const start = function () { d3.select(this).classed('sorting', true); };
     const end = function () { d3.select(this).classed('sorting', false); };
@@ -119,6 +186,13 @@ class Links {
       .on('end', end);
   }
 
+  /**
+   * Update the visual state of the link according to the current state of data.
+   *
+   * @method  updateVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   */
   updateVisibility () {
     this.links.selectAll('path')
       .classed(
