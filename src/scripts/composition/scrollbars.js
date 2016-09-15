@@ -56,10 +56,8 @@ class Scrollbars {
     this.all
       .transition()
       .duration(config.TRANSITION_LIGHTNING_FAST)
-      .attr({
-        x: data => data.scrollbar.x,
-        height: data => data.scrollbar.height
-      });
+      .attr('x', data => data.scrollbar.x)
+      .attr('height', data => data.scrollbar.height);
   }
 }
 
