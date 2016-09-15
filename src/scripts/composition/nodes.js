@@ -897,7 +897,6 @@ class Nodes {
 
     if (!data.data.state.query || data.data.state.query === 'not') {
       data.data.queryBeforeRooting = false;
-      // this.queryHandler(d3El, 'query', 'or');
       return {
         query: true
       };
@@ -918,7 +917,6 @@ class Nodes {
     this.showNodes();
 
     if (!data.data.queryBeforeRooting) {
-      // this.queryHandler(d3El, 'unquery');
       return {
         unquery: true
       };
