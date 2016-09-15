@@ -144,7 +144,18 @@ class NodeContextMenu {
 
     this.updateAppearance();
 
-    this.bgBorder = this.wrapper.append('path')
+    this.bgWrapper = this.wrapper.append('g')
+      .classed('bgOuterWrapper', true)
+      .attr(
+        'transform',
+        'translate(' +
+        (this.visData.global.column.width / 2) + ' ' + (this.height / 2) +
+        ')'
+      )
+      .append('g')
+        .classed('bgInnerWrapper', true);
+
+    this.bgBorder = this.bgWrapper.append('path')
       .attr('class', 'bgBorder')
       .attr('d', dropMenu({
         x: -1,
@@ -153,9 +164,15 @@ class NodeContextMenu {
         height: this.height + 2,
         radius: ARROW_SIZE - 2,
         arrowSize: ARROW_SIZE
-      }));
+      }))
+      .attr(
+        'transform',
+        'translate(' +
+        (-this.visData.global.column.width / 2) + ' ' + (-this.height / 2) +
+        ')'
+      );
 
-    this.bg = this.wrapper.append('path')
+    this.bg = this.bgWrapper.append('path')
       .attr('class', 'bg')
       .attr('d', dropMenu({
         x: 0,
@@ -165,7 +182,13 @@ class NodeContextMenu {
         radius: ARROW_SIZE - 1,
         arrowSize: ARROW_SIZE
       }))
-      .style('filter', 'url(#drop-shadow-context-menu)');
+      .style('filter', 'url(#drop-shadow-context-menu)')
+      .attr(
+        'transform',
+        'translate(' +
+        (-this.visData.global.column.width / 2) + ' ' + (-this.height / 2) +
+        ')'
+      );
 
     if (this.infoFields && this.infoFields.length) {
       this.textNodeInfo = this.wrapper.append('g')
@@ -398,15 +421,23 @@ class NodeContextMenu {
       this.toBottom = true;
     }
     this.components.call(this.positionComponent.bind(this));
-    this.bgBorder.classed('is-mirrored-horizontally', this.toBottom);
+    this.bgWrapper.classed('is-mirrored-horizontally', this.toBottom);
+
+    const translate = 'translate(' +
+      (-this.visData.global.column.width / 2) + ' ' +
+      (-((this.height / 2) + (this.toBottom ? ARROW_SIZE : 0))) +
+      ')';
+
     this.bg
-      .classed('is-mirrored-horizontally', this.toBottom)
+      .attr('transform', translate)
       .style(
         'filter',
         'url(#drop-shadow-context-menu' + (
           this.toBottom ? '-inverted' : ''
         ) + ')'
       );
+
+    this.bgBorder.attr('transform', translate);
   }
 
   /**
@@ -657,14 +688,26 @@ class NodeContextMenu {
       .attr('ry', data => data.ry);
 
     if (properties.bamEffect) {
-      selection.append('rect')
-        .attr('class', 'bg-bam-effect')
-        .attr('x', data => data.x)
-        .attr('y', data => data.y)
-        .attr('width', data => data.width)
-        .attr('height', data => data.height)
-        .attr('rx', data => data.rx)
-        .attr('ry', data => data.ry);
+      selection
+        .append('g')
+        .attr(
+          'transform',
+          data => 'translate(' + (data.width / 2) + ' ' + (data.height / 2) + ')'
+        )
+        .append('g')
+          .attr('class', 'bam-effect')
+          .append('rect')
+            .attr('class', 'bam-effect-bg')
+            .attr('x', data => data.x)
+            .attr('y', data => data.y)
+            .attr('width', data => data.width)
+            .attr('height', data => data.height)
+            .attr('rx', data => data.rx)
+            .attr('ry', data => data.ry)
+            .attr(
+              'transform',
+              data => 'translate(' + (-data.width / 2) + ' ' + (-data.height / 2) + ')'
+            );
     }
   }
 
