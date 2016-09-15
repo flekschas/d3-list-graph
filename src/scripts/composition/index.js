@@ -225,8 +225,8 @@ class ListGraph {
       events: this.events,
       nodes: this.nodes,
       iconPath: this.iconPath,
+      infoFields: this.nodeInfoContextMenu,
       isQueryable: this.querying,
-      isInfoField: this.nodeInfoContextMenu,
       isDebounced: !this.disableDebouncedContextMenu
     });
 
