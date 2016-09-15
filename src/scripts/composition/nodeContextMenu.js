@@ -87,7 +87,7 @@ class NodeContextMenu {
    *  - baseEl: D3 selection of the base element. [Object]
    *  - events: the List Graph App's event library. [Object]
    *  - nodes: the List Graph App's nodes. [Object]
-   *  - infoField: the List Graph App's info field definition. [Object]
+   *  - infoFields: the List Graph App's info field definition. [Object]
    *  - iconPath: the List Graph App's `iconPath`. [String]
    *  - isQueryable: If `true` the query button will be shown. [Boolean]
    *  - isDebounced: If `true` the menu will be debounced. [Boolean]
@@ -99,7 +99,7 @@ class NodeContextMenu {
    *   baseEl: {...},
    *   events: {...},
    *   nodes: {...},
-   *   infoField: {...},
+   *   infoFields: {...},
    *   iconPath: '...',
    *   isQueryable: true,
    *   isDebounced: true
@@ -124,14 +124,14 @@ class NodeContextMenu {
     this.events = init.events;
     this.nodes = init.nodes;
     this.isQueryable = init.isQueryable;
-    this.infoField = init.infoField;
+    this.infoFields = init.infoFields;
     this.isDebounced = init.isDebounced;
     this.iconPath = init.iconPath;
 
     this.numButtonRows = 1;
     this.numButtonRows = this.isQueryable ?
       ++this.numButtonRows : this.numButtonRows;
-    this.numButtonRows = this.infoField && this.infoField.length ?
+    this.numButtonRows = this.infoFields && this.infoFields.length ?
       ++this.numButtonRows : this.numButtonRows;
 
     this.height = this.visData.global.row.height * this.numButtonRows;
@@ -167,17 +167,17 @@ class NodeContextMenu {
       }))
       .style('filter', 'url(#drop-shadow-context-menu)');
 
-    if (this.infoField && this.infoField.length) {
+    if (this.infoFields && this.infoFields.length) {
       this.textNodeInfo = this.wrapper.append('g')
         .call(this.createTextField.bind(this), {
           alignRight: false,
           classNames: [],
           distanceFromCenter: this.isQueryable ? 2 : 1,
           fullWidth: true,
-          labels: this.infoField
+          labels: this.infoFields
         });
 
-      if (this.infoField.length > 1) {
+      if (this.infoFields.length > 1) {
         const toggler = this.textNodeInfo.append('g')
           .attr('class', 'toggler')
           .on('click', function () {
@@ -495,14 +495,14 @@ class NodeContextMenu {
    * @date    2016-09-13
    */
   clickNodeInfo () {
-    this.nodeInfoId = (this.nodeInfoId + 1) % this.infoField.length;
+    this.nodeInfoId = (this.nodeInfoId + 1) % this.infoFields.length;
 
     this.textNodeInfo.select('.label').text(
-      this.infoField[this.nodeInfoId].label
+      this.infoFields[this.nodeInfoId].label
     );
 
     this.textNodeInfo.select('.label-two').text(
-      this.getNodeProperty(this.infoField[this.nodeInfoId].property)
+      this.getNodeProperty(this.infoFields[this.nodeInfoId].property)
     );
   }
 
@@ -1076,16 +1076,16 @@ class NodeContextMenu {
    * @date    2016-09-13
    */
   updateInfoText () {
-    if (!this.infoField || !this.infoField.length) {
+    if (!this.infoFields || !this.infoFields.length) {
       return;
     }
 
     this.textNodeInfo.select('.label').text(
-      this.infoField[this.nodeInfoId].label
+      this.infoFields[this.nodeInfoId].label
     );
 
     this.textNodeInfo.select('.label-two').text(
-      this.getNodeProperty(this.infoField[this.nodeInfoId].property)
+      this.getNodeProperty(this.infoFields[this.nodeInfoId].property)
     );
   }
 
