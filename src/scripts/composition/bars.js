@@ -26,7 +26,7 @@ class Bars {
     this.mode = mode;
     this.visData = visData;
 
-    this.indicatorX = d3.scaleLinear()
+    this.xScale = d3.scaleLinear()
       .domain([0, 1])
       .range([1, this.visData.global.column.contentWidth - 3]);
 
@@ -172,7 +172,7 @@ class Bars {
     };
 
     if (data.id !== sortBy) {
-      x = this.indicatorX(normValue);
+      x = this.xScale(normValue);
       radius = {};
     } else {
       width = this.visData.global.column.contentWidth * normValue;
