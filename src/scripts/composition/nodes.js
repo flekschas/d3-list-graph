@@ -72,7 +72,12 @@ class Nodes {
           )
         )
         .attr('fill', data => linkDensityBg(data.links[direction].refs.length))
-        .classed('visible', data => data.links[direction].refs.length > 0);
+        .classed('visible', data => data.links[direction].refs.length > 0)
+        .style(
+          'transform-origin',
+          (incoming ? 0 : this.visData.global.column.contentWidth) + 'px ' +
+          (this.visData.global.row.height / 2) + 'px'
+        );
     }
 
     function drawLinkLocationIndicator (selection, direction, position) {
