@@ -241,12 +241,6 @@
     fill-opacity: 0.2;
   }
 
-  .bar-indicator {
-    fill: $color-highlight-red;
-    opacity: 0;
-    transition: opacity $transition-fast $ease-in-out-cubic;
-  }
-
   .bar.active .bar-magnitude {
     shape-rendering: auto;
   }
@@ -282,11 +276,6 @@
   .node.hovering-directly .active .bar-magnitude {
     fill: $color-highlight-red;
     fill-opacity: 0.5;
-  }
-
-  .node.hovering-directly .bar.active .bar-indicator,
-  .node.hovering-indirectly .bar.active .bar-indicator {
-    opacity: 1;
   }
 
   .bar.highlight .bar-magnitude {

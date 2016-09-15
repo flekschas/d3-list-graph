@@ -89,21 +89,6 @@ class Bars {
   }
 
   /**
-   * Update the vertical indicator bar.
-   *
-   * @method  updateIndicator
-   * @author  Fritz Lekschas
-   * @date    2016-09-14
-   * @param   {Object}  selection       D3 selection of the indicator bar.
-   * @param   {Number}  referenceValue  Value of the reference.
-   */
-  updateIndicator (selection, referenceValue) {
-    selection
-      .attr('x', this.indicatorX(referenceValue))
-      .attr('width', 2);
-  }
-
-  /**
    * Switch one and two-bar display mode.
    *
    * @method  switchMode

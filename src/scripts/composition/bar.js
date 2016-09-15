@@ -59,17 +59,6 @@ class Bar {
         .classed('bar-border', true);
     }
 
-    function setupIndicator (selection) {
-      selection
-        .attr({
-          class: 'bar-indicator',
-          x: 0,
-          y: this.visData.global.row.padding,
-          width: 2,
-          height: this.visData.global.row.contentHeight
-        });
-    }
-
     this.selection
       .append('rect')
         .call(setupBorder.bind(this));
@@ -77,10 +66,6 @@ class Bar {
     this.selection
       .append('path')
         .call(setupMagnitude.bind(this));
-
-    this.selection
-      .append('rect')
-        .call(setupIndicator.bind(this));
   }
 }
 

@@ -1211,49 +1211,10 @@ class Nodes {
       return nodeData.hovering === 2 && checkNodeVisibility(this, nodeData);
     }
 
-    /**
-     * Helper method to update bar indicators of the directly hovered node and
-     * clones.
-     *
-     * @method  updateDirectBarIndicator
-     * @author  Fritz Lekschas
-     * @date    2016-02-25
-     * @param   {Object}  selection  D3 node selection.
-     */
-    function updateDirectBarIndicator (selection) {
-      self.bars.updateIndicator(
-        selection,
-        currentlyActiveBar.value,
-        true
-      );
-    }
-
-    /**
-     * Helper method to update bar indicators of the indirectly hovered nodes.
-     *
-     * @method  updateDirectBarIndicator
-     * @author  Fritz Lekschas
-     * @date    2016-02-25
-     * @param   {Object}  selection  D3 node selection.
-     */
-    function updateIndirectBarIndicator (selection) {
-      self.bars.updateIndicator(
-        selection,
-        currentlyActiveBar.value
-      );
-    }
-
-    const barIndicatorClass = currentlyActiveBar ?
-      '.bar.' + currentlyActiveBar.id + ' .bar-indicator' : '';
-    const directNodes = this.nodes.filter(checkNodeDirect)
+    this.nodes.filter(checkNodeDirect)
       .classed(appliedClassName + '-directly', true);
-    const indirectNodes = this.nodes.filter(checkNodeIndirect)
+    this.nodes.filter(checkNodeIndirect)
       .classed(appliedClassName + '-indirectly', true);
-
-    if (currentlyActiveBar) {
-      directNodes.select(barIndicatorClass).call(updateDirectBarIndicator);
-      indirectNodes.select(barIndicatorClass).call(updateIndirectBarIndicator);
-    }
 
     this.links.highlight(
       this.currentLinks[appliedClassName][data.id],
