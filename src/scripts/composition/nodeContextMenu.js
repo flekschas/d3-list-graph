@@ -198,7 +198,7 @@ class NodeContextMenu {
           distanceFromCenter: this.isQueryable ? 2 : 1,
           fullWidth: true,
           labels: this.infoFields
-        });
+        }, this.infoFields.length > 1);
 
       if (this.infoFields.length > 1) {
         const toggler = this.textNodeInfo.append('g')
@@ -349,17 +349,27 @@ class NodeContextMenu {
    *
    * @method  addLabel
    * @author  Fritz Lekschas
-   * @date    2016-09-13
-   * @param   {Object}   selection  D3 selection where the label should be added
-   *   to.
-   * @param   {Boolean}  fullWidth  If `true` the label is drawn over the full
+   * @date    2016-09-15
+   * @param   {Object}   selection   D3 selection where the label should be
+   *   added to.
+   * @param   {Boolean}  fullWidth   If `true` the label is drawn over the full
    *   width.
-   * @param   {String}   label      First label text.
-   * @param   {String}   labelTwo   Second label text.
+   * @param   {String}   label       First label text.
+   * @param   {String}   labelTwo    Second label text.
+   * @param   {Boolean}  isToggable  If `true` substracts the toggler width.
+   *   This is only needed because the because Firefox's layering system seems
+   *   to be buggy when it comes to `foreignObject`s. For whatever reason the
+   *   `foreignObject` is drawn on top of the following `g` even though in SVG
+   *   it should be the other way around.
    */
-  addLabel (selection, fullWidth, label, labelTwo) {
-    const width = (this.visData.global.column.width *
-      (fullWidth ? 1 : 0.5)) - (this.visData.global.row.padding * 4);
+  addLabel (selection, fullWidth, label, labelTwo, isToggable) {
+    const width = (
+        this.visData.global.column.width *
+        (fullWidth ? 1 : 0.5)
+      ) -
+      (this.visData.global.row.padding * 4) -
+      (isToggable ? this.visData.global.row.contentHeight : 0);
+
     const height = this.visData.global.row.contentHeight -
         (this.visData.global.cell.padding * 2);
 
@@ -751,12 +761,17 @@ class NodeContextMenu {
    *
    * @method  createTextField
    * @author  Fritz Lekschas
-   * @date    2016-09-13
+   * @date    2016-09-15
    * @param   {Object}  selection   D3 selection where the text field should be
    *   appended to.
    * @param   {Object}  properties  The text field's properties.
+   * @param   {Boolean}  isToggable  If `true` substracts the toggler width.
+   *   This is only needed because the because Firefox's layering system seems
+   *   to be buggy when it comes to `foreignObject`s. For whatever reason the
+   *   `foreignObject` is drawn on top of the following `g` even though in SVG
+   *   it should be the other way around.
    */
-  createTextField (selection, properties) {
+  createTextField (selection, properties, isToggable) {
     let classNames = 'component text-field';
     if (properties.classNames && properties.classNames.length) {
       classNames += ' ' + properties.classNames.join(' ');
@@ -769,7 +784,8 @@ class NodeContextMenu {
         this.addLabel.bind(this),
         true,
         properties.labels[this.nodeInfoId].label,
-        true
+        true,
+        isToggable
       )
       .call(
         this.positionComponent.bind(this),
