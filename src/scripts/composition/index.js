@@ -959,9 +959,9 @@ class ListGraph {
    * Assesses any of the two ends of a link points outwards.
    *
    * @description
-   * In order to be able to determine where a link points to the output of
+   * In order to be able to determine where a link points to, the output of
    * `linkPointsOutside` for the source and target location is shifted bitwise
-   * in such a way that this method return 9 unique numbers.
+   * in such a way that this method return 11 unique numbers.
    * - 0: link is completely inwards
    * - 1: source is outwards to the top
    * - 2: source is outwards to the bottom
@@ -971,8 +971,10 @@ class ListGraph {
    * - 6: source is outwards to the bottom and target is outwards to the top
    * - 9: source is outwards to the top and target is outwards to the bottom
    * - 10: source and target are outwards to the bottom
+   * - 16: source is invisible
+   * - 64: target is invisible
    *
-   * If you're asking yourself: "WAT?!?!!" Think of a 4x4 matrix:
+   * If you're asking yourself: "WAT?!?!!" Think of a 4x4 binary matrix:
    * |    target    |    source    |
    * | bottom | top | bottom | top |
    * |    0   |  0  |    0   |  0  | (=0)
@@ -985,14 +987,18 @@ class ListGraph {
    * |    1   |  0  |    0   |  1  | (=9)
    * |    1   |  0  |    1   |  0  | (=10)
    *
-   * Checker whether the source or target location is above, below or within the
-   * global SVG container is very simple. For example, to find out if the target
-   * location is above, all we need to do is `<VALUE> & 4 > 0`. This performs a
-   * bit-wise AND operation with only two possible outcomes: 4 and 0.
+   * *Note: 16 and 64 are two special values when the source or target node is
+   * hidden. The numbers are so hight just because that the bitwise-and with 4
+   * and 8 results to 0.
+   *
+   * To check whether the source or target location is above, below or within
+   * the global SVG container is very simple. For example, to find out if the
+   * target location is above, all we need to do is `<VALUE> & 4 > 0`. This
+   * performs a bit-wise AND operation with only two possible outcomes: 4 and 0.
    *
    * @method  pointsOutside
    * @author  Fritz Lekschas
-   * @date    2016-02-29
+   * @date    2016-09-14
    * @param   {Object}  data  Link data.
    * @return  {Number}  Numberical represenation of the links constallation. See
    *   description for details.
@@ -1008,13 +1014,17 @@ class ListGraph {
    *
    * @method  linkPointsOutside
    * @author  Fritz Lekschas
-   * @date    2016-02-29
+   * @date    2016-09-14
    * @param   {Object}  data  Link data.
    * @return  {Number}  If link ends inwards returns `0`, if it points outwards
-   *   to the top returns `1` otherwise `2`.
+   *   to the top returns `1` or `2` when it points to the bottom. If the node
+   *   pointed to is hidden return `16`.
    */
   linkPointsOutside (data) {
     const y = data.node.y + data.offsetY;
+    if (data.node.hidden) {
+      return 16;
+    }
     if (
       y + this.visData.global.row.height - this.visData.global.row.padding <= 0
     ) {
