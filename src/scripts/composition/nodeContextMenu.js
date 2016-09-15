@@ -516,7 +516,7 @@ class NodeContextMenu {
   clickQueryHandler () {
     this.buttonQuery.classed('fill-effect', true);
     this.updateQuery(true, BUTTON_QUERY_DEBOUNCE);
-    if (!this.isDebounced) {
+    if (this.isDebounced) {
       this.debouncedQueryHandler(true);
     } else {
       this.queryHandler();
@@ -533,7 +533,7 @@ class NodeContextMenu {
   clickRootHandler () {
     this.buttonRoot.classed('fill-effect', true);
     this.checkRoot(true, BUTTON_ROOT_DEBOUNCE);
-    if (!this.isDebounced) {
+    if (this.isDebounced) {
       this.debouncedRootHandler(true);
     } else {
       this.rootHandler();
