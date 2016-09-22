@@ -284,6 +284,16 @@ var TRANSITION_LIGHTNING_FAST = 150;
  * @type  {Number}
  */
 var TRANSITION_SEMI_FAST = 250;
+/**
+ * Strength of how much links should be bundled.
+ *
+ * @description
+ * The value ranges from 0 (no bundling at all) to 1 (move line through every
+ * controll point).
+ *
+ * @type  {Number}
+ */
+var LINK_BUNDLING_STRENGTH = 0.95;
 
 // External
 // eslint-disable-line import/no-unresolved
@@ -630,11 +640,6 @@ var Topbar = function () {
     value: function resetSemiActiveSortingEls() {
       this.el.selectAll('.semi-active').classed('semi-active', false);
     }
-
-    // toggleOptions () {
-    //   console.log('Toggle options');
-    // }
-
   }, {
     key: 'switch',
     value: function _switch() {
@@ -936,11 +941,11 @@ var Links = function () {
   }
 
   /**
-   * Get a SVG path string for links.
+   * Creates a SVG path string for links based on B-splines.
    *
    * @method  diagonal
    * @author  Fritz Lekschas
-   * @date    2016-09-14
+   * @date    2016-09-22
    * @return  {String}  SVG path string.
    */
 
@@ -980,6 +985,25 @@ var Links = function () {
       this.links.filter(function (data) {
         return nodeIds[data.id];
       }).classed(className, _highlight);
+    }
+
+    /**
+     * Make links temporarily visible.
+     *
+     * @method  makeAllTempVisible
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Boolean}  unset  If `true` reverts the temporal visibility.
+     */
+
+  }, {
+    key: 'makeAllTempVisible',
+    value: function makeAllTempVisible(unset) {
+      if (unset) {
+        this.links.classed('visible', this.linkVisibility.bind(this));
+      } else {
+        this.links.classed('visible', true);
+      }
     }
 
     /**
@@ -1040,6 +1064,12 @@ var Links = function () {
     /**
      * Update the visual state of the link according to the current state of data.
      *
+     * @description
+     * This method differs from checking whether a source or target node is
+     * visible as it purely depends on the `hidden` property of the node data. It
+     * is primarily used to hide links of hidden nodes, e.g., when nodes are
+     * hidden manually.
+     *
      * @method  updateVisibility
      * @author  Fritz Lekschas
      * @date    2016-09-14
@@ -1048,7 +1078,7 @@ var Links = function () {
   }, {
     key: 'updateVisibility',
     value: function updateVisibility() {
-      this.links.selectAll('path').classed('hidden', function (data) {
+      this.links.classed('hidden', function (data) {
         return data.target.node.hidden || data.source.node.hidden;
       }).transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal);
     }
@@ -1071,14 +1101,48 @@ var Links = function () {
         return source.node.y + source.offsetY + this.visData.global.row.height / 2;
       }
 
-      return function (data) {
-        var sourceY = getY.call(_this2, data.source);
-        var sourceX = getSourceX.call(_this2, data.source);
-        var targetY = getY.call(_this2, data.target);
-        var targetX = getTargetX.call(_this2, data.target);
-        var middleX = (sourceX + targetX) / 2;
+      var getLine = d3.line().x(function (data) {
+        return data.x;
+      }).y(function (data) {
+        return data.y;
+      }).curve(d3.curveBundle.beta(LINK_BUNDLING_STRENGTH));
 
-        return 'M' + sourceX + ',' + sourceY + 'h' + extraOffsetX + 'C' + (middleX + extraOffsetX) + ',' + sourceY + ' ' + (middleX - extraOffsetX) + ',' + targetY + ' ' + (targetX - extraOffsetX) + ',' + targetY + 'h' + extraOffsetX;
+      return function (data) {
+        var points = [];
+
+        var sourceX = getSourceX.call(_this2, data.source);
+        var sourceY = getY.call(_this2, data.source);
+
+        var targetX = getTargetX.call(_this2, data.target);
+        var targetY = getY.call(_this2, data.target);
+
+        var middleX = (sourceX + targetX) / 2;
+        var relMiddleX = (targetX - (sourceX + targetX) / 2) * 2 / 3;
+
+        // Push the start point
+        points.push({
+          x: sourceX + extraOffsetX,
+          y: sourceY
+        });
+
+        points.push({
+          x: middleX,
+          y: sourceY
+        });
+
+        // Push a control point
+        points.push({
+          x: targetX - relMiddleX,
+          y: targetY
+        });
+
+        // Push a control point
+        points.push({
+          x: targetX - extraOffsetX,
+          y: targetY
+        });
+
+        return getLine(points);
       };
     }
   }]);
@@ -6717,6 +6781,7 @@ var ListGraph = function () {
           y = contBBox.y;
 
           _this5.nodes.makeAllTempVisible();
+          _this5.links.makeAllTempVisible();
 
           _this5.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
         })();
@@ -6727,6 +6792,7 @@ var ListGraph = function () {
     value: function zoomedView() {
       if (!this.zoomedOut) {
         this.nodes.makeAllTempVisible(true);
+        this.links.makeAllTempVisible(true);
 
         this.svgD3.classed('zoomedOut', false).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
       }
