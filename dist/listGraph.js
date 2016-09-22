@@ -1072,7 +1072,7 @@ var Links = function () {
      *
      * @method  updateVisibility
      * @author  Fritz Lekschas
-     * @date    2016-09-14
+     * @date    2016-09-22
      */
 
   }, {
@@ -1080,7 +1080,9 @@ var Links = function () {
     value: function updateVisibility() {
       this.links.classed('hidden', function (data) {
         return data.target.node.hidden || data.source.node.hidden;
-      }).transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal);
+      });
+
+      this.links.selectAll('path').transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal);
     }
   }, {
     key: 'diagonal',
@@ -1829,8 +1831,6 @@ var CLASS_LABEL_WRAPPER = 'label-wrapper';
 var CLASS_FOCUS_CONTROLS = 'focus-controls';
 var CLASS_ROOT = 'root';
 var CLASS_QUERY = 'query';
-var CLASS_LOCK = 'lock';
-var CLASS_INACTIVE = 'inactive';
 var CLASS_INDICATOR_BAR = 'link-indicator';
 var CLASS_INDICATOR_LOCATION = 'link-location-indicator';
 var CLASS_INDICATOR_INCOMING = 'incoming';
@@ -1932,17 +1932,15 @@ var Nodes = function () {
     }
 
     // Rooting icons
-    var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT + ' ' + CLASS_INACTIVE);
+    var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT);
 
     nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'hover-helper', 'hover-helper');
-
-    nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'icon', 'ease-all state-inactive invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#unlocked');
 
     nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
     // Querying icons
     if (this.vis.querying) {
-      var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY + ' ' + CLASS_INACTIVE);
+      var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY);
 
       nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'hover-helper', 'hover-helper');
 
@@ -2354,13 +2352,7 @@ var Nodes = function () {
     key: 'queryByNode',
     value: function queryByNode(d3El, mode) {
       d3El.datum().data.state.query = mode;
-      d3El.classed({
-        active: true,
-        inactive: false,
-        'query-and': mode === 'and',
-        'query-or': mode === 'or',
-        'query-not': mode === 'not'
-      });
+      d3El.classed('active', true).classed('inactive', false).classed('query-and', mode === 'and').classed('query-or', mode === 'or').classed('query-not', mode === 'not');
     }
   }, {
     key: 'unqueryByNode',
@@ -2370,13 +2362,7 @@ var Nodes = function () {
       data.data.state.query = undefined;
       data.data.queryBeforeRooting = undefined;
 
-      d3El.classed({
-        active: false,
-        inactive: true,
-        'query-and': false,
-        'query-or': false,
-        'query-not': false
-      });
+      d3El.classed('active', true).classed('inactive', false).classed('query-and', false).classed('query-or', false).classed('query-not', false);
 
       if (this.rootedNode) {
         this.updateVisibility();
@@ -2484,7 +2470,8 @@ var Nodes = function () {
 
       if (this.rootedNode) {
         // Reset current root node
-        this.rootedNode.classed({ active: false, inactive: true });
+        this.rootedNode.classed('active', false).classed('inactive', true);
+
         events.unrooted = this.rootedNode.datum();
         if (this.unrootNode(this.rootedNode).unquery) {
           queries.push({
@@ -2495,7 +2482,8 @@ var Nodes = function () {
 
         // Activate new root
         if (this.rootedNode.datum().id !== data.id && !setFalse) {
-          d3El.classed({ active: true, inactive: false });
+          d3El.classed('active', true).classed('inactive', false);
+
           this.rootedNode = d3El;
           events.rooted = d3El.datum();
           if (this.rootNode(d3El).query) {
@@ -2512,7 +2500,8 @@ var Nodes = function () {
         }
       } else {
         if (!setFalse) {
-          d3El.classed({ active: true, inactive: false });
+          d3El.classed('active', true).classed('inactive', false);
+
           this.rootedNode = d3El;
           events.rooted = d3El.datum();
           if (this.rootNode(d3El).query) {
@@ -2963,11 +2952,6 @@ var Nodes = function () {
     key: 'classQuery',
     get: function get() {
       return CLASS_QUERY;
-    }
-  }, {
-    key: 'classLock',
-    get: function get() {
-      return CLASS_LOCK;
     }
   }, {
     key: 'barMode',
@@ -4846,12 +4830,13 @@ var NodeContextMenu = function () {
         fullWidth: true,
         label: 'Query',
         labelTwo: true,
-        bamEffect: true
+        bamEffect: true,
+        unselectable: true
       }).on('click', function () {
         self.clickQueryHandler.call(self, this);
       });
       this.buttonQueryFill = this.buttonQuery.select('.bg-fill-effect');
-      this.buttonQueryBamEffect = this.buttonQuery.select('.bg-bam-effect');
+      this.buttonQueryBamEffect = this.buttonQuery.select('.bam-effect');
     }
 
     this.buttonRoot = this.wrapper.append('g').call(this.createButton.bind(this), {
@@ -4859,7 +4844,8 @@ var NodeContextMenu = function () {
       classNames: [],
       distanceFromCenter: 0,
       fullWidth: false,
-      label: 'Root'
+      label: 'Root',
+      unselectable: true
     }).on('click', function () {
       self.clickRootHandler.call(self, this);
     });
@@ -4872,12 +4858,13 @@ var NodeContextMenu = function () {
       distanceFromCenter: 0,
       fullWidth: false,
       label: 'Lock',
-      bamEffect: true
+      bamEffect: true,
+      unselectable: true
     }).on('click', function () {
       self.clickLockHandler.call(self, this);
     });
     this.buttonLockFill = this.buttonLock.select('.bg-fill-effect');
-    this.buttonLockBamEffect = this.buttonLock.select('.bg-bam-effect');
+    this.buttonLockBamEffect = this.buttonLock.select('.bam-effect');
     this.checkboxLock = this.createCheckbox(this.buttonLock);
 
     this.components = this.wrapper.selectAll('.component');
@@ -4916,24 +4903,26 @@ var NodeContextMenu = function () {
      * @method  addLabel
      * @author  Fritz Lekschas
      * @date    2016-09-15
-     * @param   {Object}   selection   D3 selection where the label should be
+     * @param   {Object}   selection      D3 selection where the label should be
      *   added to.
-     * @param   {Boolean}  fullWidth   If `true` the label is drawn over the full
-     *   width.
-     * @param   {String}   label       First label text.
-     * @param   {String}   labelTwo    Second label text.
-     * @param   {Boolean}  isToggable  If `true` substracts the toggler width.
+     * @param   {Boolean}  fullWidth      If `true` the label is drawn over the
+     *   full width.
+     * @param   {String}   label          First label text.
+     * @param   {String}   labelTwo       Second label text.
+     * @param   {Boolean}  isToggable     If `true` substracts the toggler width.
      *   This is only needed because the because Firefox's layering system seems
      *   to be buggy when it comes to `foreignObject`s. For whatever reason the
      *   `foreignObject` is drawn on top of the following `g` even though in SVG
      *   it should be the other way around.
+     * @param   {Boolean}  isUnselectable  If `true` adds a class for making the
+     *   div unselectable.
      */
-    value: function addLabel(selection, fullWidth, label, labelTwo, isToggable) {
+    value: function addLabel(selection, fullWidth, label, labelTwo, isToggable, isUnselectable) {
       var width = this.visData.global.column.width * (fullWidth ? 1 : 0.5) - this.visData.global.row.padding * 4 - (isToggable ? this.visData.global.row.contentHeight : 0);
 
       var height = this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2;
 
-      var div = selection.append('foreignObject').attr('x', this.visData.global.row.padding * 2).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', width).attr('height', height).attr('class', 'label-wrapper').append('xhtml:div').style('line-height', height - 2 + 'px').style('width', width + 'px');
+      var div = selection.append('foreignObject').attr('x', this.visData.global.row.padding * 2).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', width).attr('height', height).classed('label-wrapper', true).classed('unselectable', isUnselectable).append('xhtml:div').style('line-height', height - 2 + 'px').style('width', width + 'px');
 
       div.append('xhtml:span').attr('class', 'label').text(label);
 
@@ -5195,7 +5184,7 @@ var NodeContextMenu = function () {
       selection.datum(properties).call(this.createButtonBg.bind(this), {
         bamEffect: properties.bamEffect,
         fullWidth: properties.fullWidth
-      }).call(this.addLabel.bind(this), properties.fullWidth, properties.label, properties.labelTwo).call(this.positionComponent.bind(this), properties.distanceFromCenter, properties.alignRight);
+      }).call(this.addLabel.bind(this), properties.fullWidth, properties.label, properties.labelTwo, false, properties.unselectable).call(this.positionComponent.bind(this), properties.distanceFromCenter, properties.alignRight);
     }
 
     /**
@@ -5673,9 +5662,9 @@ var NodeContextMenu = function () {
   }, {
     key: 'triggerButtonBamEffect',
     value: function triggerButtonBamEffect(button) {
-      button.classed('active', true);
+      button.classed('trigger', true);
       setTimeout(function () {
-        button.classed('active', false);
+        button.classed('trigger', false);
       }, BUTTON_BAM_EFFECT_ANIMATION_TIME);
     }
 
@@ -6306,10 +6295,6 @@ var ListGraph = function () {
         self.nodeContextMenu.updateStates();
       });
     }
-
-    this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classLock, function () {
-      self.nodes.lockHandler.call(self.nodes, this, _d3.select(this).datum());
-    });
 
     this.svgJq.on('mouseenter', '.' + this.nodes.classNodeVisible, function () {
       self.interactionWrapper.call(self, function (domEl, data) {

@@ -394,11 +394,6 @@
 .list-graph .node.query-not .focus-controls.query:hover .state-not {
   color: #fff; }
 
-.list-graph .node.query-and .query .state-inactive,
-.list-graph .node.query-or .query .state-inactive,
-.list-graph .node.query-not .query .state-inactive {
-  opacity: 0 !important; }
-
 .list-graph .node.rooted .focus-controls.root .state-active,
 .list-graph .node.query-and .focus-controls.query .state-and-or,
 .list-graph .node.query-or .focus-controls.query .state-and-or,
@@ -558,7 +553,7 @@
     opacity: 0; }
     .list-graph .context-menu .button .bam-effect .bam-effect-bg {
       fill: #0088ff; }
-  .list-graph .context-menu .button.active .bam-effect {
+  .list-graph .context-menu .button .bam-effect.trigger {
     animation: bam-effect 0.66s cubic-bezier(0.2, 0.1, 0.2, 1); }
   .list-graph .context-menu .toggler {
     opacity: 0;
@@ -586,15 +581,21 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis; }
-  .list-graph .context-menu .component .label,
-  .list-graph .context-menu .component .label-two,
-  .list-graph .context-menu .component .separator {
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 0.75rem; }
-    .list-graph .context-menu .component .label.inactive,
-    .list-graph .context-menu .component .label-two.inactive,
-    .list-graph .context-menu .component .separator.inactive {
-      color: rgba(0, 0, 0, 0.2); }
+    .list-graph .context-menu .component .label-wrapper.unselectable,
+    .list-graph .context-menu .component .label-wrapper.unselectable * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none; }
+    .list-graph .context-menu .component .label-wrapper .label,
+    .list-graph .context-menu .component .label-wrapper .label-two,
+    .list-graph .context-menu .component .label-wrapper .separator {
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 0.75rem; }
+      .list-graph .context-menu .component .label-wrapper .label.inactive,
+      .list-graph .context-menu .component .label-wrapper .label-two.inactive,
+      .list-graph .context-menu .component .label-wrapper .separator.inactive {
+        color: rgba(0, 0, 0, 0.2); }
   .list-graph .context-menu .component.text-field .label,
   .list-graph .context-menu .component.text-field .separator {
     font-weight: bold; }
