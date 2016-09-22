@@ -17,7 +17,6 @@ const CLASS_LABEL_WRAPPER = 'label-wrapper';
 const CLASS_FOCUS_CONTROLS = 'focus-controls';
 const CLASS_ROOT = 'root';
 const CLASS_QUERY = 'query';
-const CLASS_LOCK = 'lock';
 const CLASS_INACTIVE = 'inactive';
 const CLASS_INDICATOR_BAR = 'link-indicator';
 const CLASS_INDICATOR_LOCATION = 'link-location-indicator';
@@ -335,7 +334,6 @@ class Nodes {
   get classFocusControls () { return CLASS_FOCUS_CONTROLS; }
   get classRoot () { return CLASS_ROOT; }
   get classQuery () { return CLASS_QUERY; }
-  get classLock () { return CLASS_LOCK; }
 
   updateLinkLocationIndicators (left, right) {
     this.calcHeightLinkLocationIndicator(left, false, true);

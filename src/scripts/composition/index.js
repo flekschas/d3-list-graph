@@ -303,14 +303,6 @@ class ListGraph {
     }
 
     this.svgJq.on(
-      'click',
-      `.${this.nodes.classFocusControls}.${this.nodes.classLock}`,
-      function () {
-        self.nodes.lockHandler.call(self.nodes, this, _d3.select(this).datum());
-      }
-    );
-
-    this.svgJq.on(
       'mouseenter',
       `.${this.nodes.classNodeVisible}`,
       function () {
