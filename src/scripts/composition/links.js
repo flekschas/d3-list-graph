@@ -242,13 +242,9 @@ class Links {
    * @date    2016-09-22
    */
   updateVisibility () {
-    this.links
-      .classed(
-        'hidden', data => data.target.node.hidden || data.source.node.hidden
-      )
-      .transition()
-      .duration(config.TRANSITION_SEMI_FAST)
-      .attr('d', this.diagonal);
+    this.links.classed(
+      'hidden', data => data.target.node.hidden || data.source.node.hidden
+    );
   }
 }
 
