@@ -244,7 +244,8 @@ class NodeContextMenu {
           fullWidth: true,
           label: 'Query',
           labelTwo: true,
-          bamEffect: true
+          bamEffect: true,
+          unselectable: true
         })
         .on('click', function () {
           self.clickQueryHandler.call(self, this);
@@ -259,7 +260,8 @@ class NodeContextMenu {
         classNames: [],
         distanceFromCenter: 0,
         fullWidth: false,
-        label: 'Root'
+        label: 'Root',
+        unselectable: true
       })
       .on('click', function () {
         self.clickRootHandler.call(self, this);
@@ -274,7 +276,8 @@ class NodeContextMenu {
         distanceFromCenter: 0,
         fullWidth: false,
         label: 'Lock',
-        bamEffect: true
+        bamEffect: true,
+        unselectable: true
       })
       .on('click', function () {
         self.clickLockHandler.call(self, this);
@@ -350,19 +353,21 @@ class NodeContextMenu {
    * @method  addLabel
    * @author  Fritz Lekschas
    * @date    2016-09-15
-   * @param   {Object}   selection   D3 selection where the label should be
+   * @param   {Object}   selection      D3 selection where the label should be
    *   added to.
-   * @param   {Boolean}  fullWidth   If `true` the label is drawn over the full
-   *   width.
-   * @param   {String}   label       First label text.
-   * @param   {String}   labelTwo    Second label text.
-   * @param   {Boolean}  isToggable  If `true` substracts the toggler width.
+   * @param   {Boolean}  fullWidth      If `true` the label is drawn over the
+   *   full width.
+   * @param   {String}   label          First label text.
+   * @param   {String}   labelTwo       Second label text.
+   * @param   {Boolean}  isToggable     If `true` substracts the toggler width.
    *   This is only needed because the because Firefox's layering system seems
    *   to be buggy when it comes to `foreignObject`s. For whatever reason the
    *   `foreignObject` is drawn on top of the following `g` even though in SVG
    *   it should be the other way around.
+   * @param   {Boolean}  isUnselectable  If `true` adds a class for making the
+   *   div unselectable.
    */
-  addLabel (selection, fullWidth, label, labelTwo, isToggable) {
+  addLabel (selection, fullWidth, label, labelTwo, isToggable, isUnselectable) {
     const width = (
         this.visData.global.column.width *
         (fullWidth ? 1 : 0.5)
@@ -379,7 +384,8 @@ class NodeContextMenu {
         this.visData.global.cell.padding)
       .attr('width', width)
       .attr('height', height)
-      .attr('class', 'label-wrapper')
+      .classed('label-wrapper', true)
+      .classed('unselectable', isUnselectable)
       .append('xhtml:div')
         .style('line-height', (height - 2) + 'px')
         .style('width', width + 'px');
@@ -642,7 +648,9 @@ class NodeContextMenu {
         this.addLabel.bind(this),
         properties.fullWidth,
         properties.label,
-        properties.labelTwo
+        properties.labelTwo,
+        false,
+        properties.unselectable
       )
       .call(
         this.positionComponent.bind(this),
@@ -990,6 +998,7 @@ class NodeContextMenu {
       if (this.tempQueryMode !== this.currentQueryMode) {
         if (this.tempQueryMode) {
           this.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
+          console.log('BAM');
           this.triggerButtonBamEffect(this.buttonQueryBamEffect);
           this.buttonQuery.classed('active', true);
         } else {

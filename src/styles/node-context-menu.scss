@@ -104,16 +104,24 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
 
-  .component .label,
-  .component .label-two,
-  .component .separator {
-    color: $text-color-normal-rgba;
-    font-size: 0.75rem;
+    &.unselectable,
+    &.unselectable * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
 
-    &.inactive {
-      color: $text-color-inactive-rgba;
+    .label,
+    .label-two,
+    .separator {
+      color: $text-color-normal-rgba;
+      font-size: 0.75rem;
+
+      &.inactive {
+        color: $text-color-inactive-rgba;
+      }
     }
   }
 
