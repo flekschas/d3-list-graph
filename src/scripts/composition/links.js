@@ -63,11 +63,11 @@ class Links {
   }
 
   /**
-   * Get a SVG path string for links.
+   * Creates a SVG path string for links based on B-splines.
    *
    * @method  diagonal
    * @author  Fritz Lekschas
-   * @date    2016-09-14
+   * @date    2016-09-22
    * @return  {String}  SVG path string.
    */
   get diagonal () {
@@ -89,21 +89,47 @@ class Links {
         (this.visData.global.row.height / 2);
     }
 
-    return data => {
-      const sourceY = getY.call(this, data.source);
-      const sourceX = getSourceX.call(this, data.source);
-      const targetY = getY.call(this, data.target);
-      const targetX = getTargetX.call(this, data.target);
-      const middleX = (sourceX + targetX) / 2;
+    const getLine = d3.line()
+      .x(data => data.x)
+      .y(data => data.y)
+      .curve(d3.curveBundle.beta(config.LINK_BUNDLING_STRENGTH));
 
-      return (
-        'M' + sourceX + ',' + sourceY +
-        'h' + extraOffsetX +
-        'C' + (middleX + extraOffsetX) + ',' + sourceY +
-        ' ' + (middleX - extraOffsetX) + ',' + targetY +
-        ' ' + (targetX - extraOffsetX) + ',' + targetY +
-        'h' + extraOffsetX
-      );
+    return data => {
+      const points = [];
+
+      const sourceX = getSourceX.call(this, data.source);
+      const sourceY = getY.call(this, data.source);
+
+      const targetX = getTargetX.call(this, data.target);
+      const targetY = getY.call(this, data.target);
+
+      const middleX = (sourceX + targetX) / 2;
+      const relMiddleX = (targetX - ((sourceX + targetX) / 2)) * 2 / 3;
+
+      // Push the start point
+      points.push({
+        x: sourceX + extraOffsetX,
+        y: sourceY
+      });
+
+      points.push({
+        x: middleX,
+        y: sourceY
+      });
+
+      // Push a control point
+      points.push({
+        x: targetX - relMiddleX,
+        y: targetY
+      });
+
+      // Push a control point
+      points.push({
+        x: targetX - extraOffsetX,
+        y: targetY
+      });
+
+      return getLine(points);
     };
   }
 
@@ -194,6 +220,7 @@ class Links {
    * @date    2016-09-14
    */
   updateVisibility () {
+    console.log('updateVisibility');
     this.links.selectAll('path')
       .classed(
         'hidden', data => data.target.node.hidden || data.source.node.hidden

@@ -132,3 +132,25 @@ export const TRANSITION_SLOW = 666;
  * @type  {Number}
  */
 export const TRANSITION_SLOWEST = 1;
+
+/**
+ * Strength of how much links should be bundled.
+ *
+ * @description
+ * The value ranges from 0 (no bundling at all) to 1 (move line through every
+ * controll point).
+ *
+ * @type  {Number}
+ */
+export const LINK_BUNDLING_STRENGTH = 0.95;
+
+/**
+ * Stretch out factor for link bundling.
+ *
+ * @description
+ * The value ranges from 0 (no stretch out at all) to 1 (which means the two
+ * middle control points defining the B-Spline are identical).
+ *
+ * @type  {Number}
+ */
+export const LINK_BUNDLING_STRETCH = 0.333;
