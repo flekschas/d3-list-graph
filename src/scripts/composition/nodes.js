@@ -17,7 +17,6 @@ const CLASS_LABEL_WRAPPER = 'label-wrapper';
 const CLASS_FOCUS_CONTROLS = 'focus-controls';
 const CLASS_ROOT = 'root';
 const CLASS_QUERY = 'query';
-const CLASS_INACTIVE = 'inactive';
 const CLASS_INDICATOR_BAR = 'link-indicator';
 const CLASS_INDICATOR_LOCATION = 'link-location-indicator';
 const CLASS_INDICATOR_INCOMING = 'incoming';
@@ -180,7 +179,7 @@ class Nodes {
 
     // Rooting icons
     const nodeRooted = this.nodes.append('g')
-      .attr('class', `${CLASS_FOCUS_CONTROLS} ${CLASS_ROOT} ${CLASS_INACTIVE}`);
+      .attr('class', `${CLASS_FOCUS_CONTROLS} ${CLASS_ROOT}`);
 
     nodeRooted.append('rect')
       .call(
@@ -197,17 +196,6 @@ class Nodes {
         'left',
         0.6,
         'icon',
-        'ease-all state-inactive invisible-default icon'
-      )
-      .append('use')
-        .attr('xlink:href', this.vis.iconPath + '#unlocked');
-
-    nodeRooted.append('svg')
-      .call(
-        this.setUpFocusControls.bind(this),
-        'left',
-        0.6,
-        'icon',
         'ease-all state-active invisible-default icon'
       )
       .append('use')
@@ -217,7 +205,7 @@ class Nodes {
     if (this.vis.querying) {
       const nodeQuery = this.nodes.append('g')
         .attr(
-          'class', `${CLASS_FOCUS_CONTROLS} ${CLASS_QUERY} ${CLASS_INACTIVE}`
+          'class', `${CLASS_FOCUS_CONTROLS} ${CLASS_QUERY}`
         );
 
       nodeQuery.append('rect')
