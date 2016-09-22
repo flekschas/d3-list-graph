@@ -550,10 +550,6 @@ class Topbar {
     this.el.selectAll('.semi-active').classed('semi-active', false);
   }
 
-  // toggleOptions () {
-  //   console.log('Toggle options');
-  // }
-
   switch () {
     this.el.classed('details', !this.el.classed('details'));
   }
