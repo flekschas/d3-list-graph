@@ -164,6 +164,22 @@ class Links {
   }
 
   /**
+   * Make links temporarily visible.
+   *
+   * @method  makeAllTempVisible
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Boolean}  unset  If `true` reverts the temporal visibility.
+   */
+  makeAllTempVisible (unset) {
+    if (unset) {
+      this.links.classed('visible', this.linkVisibility.bind(this));
+    } else {
+      this.links.classed('visible', true);
+    }
+  }
+
+  /**
    * Scroll links when the container is scrolled.
    *
    * @method  scroll

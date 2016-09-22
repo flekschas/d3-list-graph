@@ -904,6 +904,7 @@ class ListGraph {
       y = contBBox.y;
 
       this.nodes.makeAllTempVisible();
+      this.links.makeAllTempVisible();
 
       this.svgD3
         .classed('zoomedOut', true)
@@ -916,6 +917,7 @@ class ListGraph {
   zoomedView () {
     if (!this.zoomedOut) {
       this.nodes.makeAllTempVisible(true);
+      this.links.makeAllTempVisible(true);
 
       this.svgD3
         .classed('zoomedOut', false)
