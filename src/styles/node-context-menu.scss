@@ -62,7 +62,7 @@
     }
   }
 
-  .button.active .bam-effect {
+  .button .bam-effect.trigger {
     animation: bam-effect $transition-slow $ease-in-out-quadric;
   }
 

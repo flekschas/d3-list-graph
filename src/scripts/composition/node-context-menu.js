@@ -251,7 +251,7 @@ class NodeContextMenu {
           self.clickQueryHandler.call(self, this);
         });
       this.buttonQueryFill = this.buttonQuery.select('.bg-fill-effect');
-      this.buttonQueryBamEffect = this.buttonQuery.select('.bg-bam-effect');
+      this.buttonQueryBamEffect = this.buttonQuery.select('.bam-effect');
     }
 
     this.buttonRoot = this.wrapper.append('g')
@@ -283,7 +283,7 @@ class NodeContextMenu {
         self.clickLockHandler.call(self, this);
       });
     this.buttonLockFill = this.buttonLock.select('.bg-fill-effect');
-    this.buttonLockBamEffect = this.buttonLock.select('.bg-bam-effect');
+    this.buttonLockBamEffect = this.buttonLock.select('.bam-effect');
     this.checkboxLock = this.createCheckbox(this.buttonLock);
 
     this.components = this.wrapper.selectAll('.component');
@@ -1107,9 +1107,9 @@ class NodeContextMenu {
    * @param   {Object}  node  D3 selection of the button to be BAM-effected.
    */
   triggerButtonBamEffect (button) {
-    button.classed('active', true);
+    button.classed('trigger', true);
     setTimeout(() => {
-      button.classed('active', false);
+      button.classed('trigger', false);
     }, BUTTON_BAM_EFFECT_ANIMATION_TIME);
   }
 
