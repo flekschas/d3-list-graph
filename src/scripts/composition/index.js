@@ -13,11 +13,11 @@ import Links from './links';
 import Nodes from './nodes';
 import Scrollbars from './scrollbars';
 import Events from './events';
-import NodeContextMenu from './nodeContextMenu';
+import NodeContextMenu from './node-context-menu';
 import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 import { allTransitionsEnded } from '../commons/d3-utils';
 import { dropShadow } from '../commons/filters';
-import { requestNextAnimationFrame } from '../commons/animationFrame';
+import { requestNextAnimationFrame } from '../commons/animation-frame';
 import { setOption } from '../commons/utils';
 
 // Private Variables

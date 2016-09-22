@@ -5,7 +5,7 @@ import debounce from '../../../node_modules/lodash-es/debounce';
 
 // Internal
 import { dropMenu } from '../commons/charts';
-import { requestNextAnimationFrame } from '../commons/animationFrame';
+import { requestNextAnimationFrame } from '../commons/animation-frame';
 import { allTransitionsEnded } from '../commons/d3-utils';
 
 /**
