@@ -777,7 +777,7 @@ var ROW_REL_PADDING = 0.05;
  *
  * @type  {Number}
  */
-var CELL_REL_INNER_PADDING = 0.05;
+var NODE_REL_INNER_PADDING = 0.05;
 
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
@@ -827,9 +827,20 @@ var possibleConstructorReturn = function (self, call) {
   return call && (typeof call === "object" || typeof call === "function") ? call : self;
 };
 
+/**
+ * Base error class.
+ */
 var ExtendableError = function (_Error) {
   inherits(ExtendableError, _Error);
 
+  /**
+   * Constructor.
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {String}  message  Custom error message.
+   */
   function ExtendableError(message) {
     classCallCheck(this, ExtendableError);
 
@@ -844,9 +855,20 @@ var ExtendableError = function (_Error) {
   return ExtendableError;
 }(Error);
 
+/**
+ * D3 version 4 not found error.
+ */
 var D3VersionFourRequired = function (_ExtendableError) {
   inherits(D3VersionFourRequired, _ExtendableError);
 
+  /**
+   * Constructor
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {String}  versionFound  D3 version string.
+   */
   function D3VersionFourRequired(versionFound) {
     classCallCheck(this, D3VersionFourRequired);
     return possibleConstructorReturn(this, (D3VersionFourRequired.__proto__ || Object.getPrototypeOf(D3VersionFourRequired)).call(this, 'D3 version 4 is required to run the code. Found version ' + versionFound));
@@ -855,6 +877,32 @@ var D3VersionFourRequired = function (_ExtendableError) {
   return D3VersionFourRequired;
 }(ExtendableError);
 
+/**
+ * When varible is no object
+ */
+var NoObject = function (_ExtendableError2) {
+  inherits(NoObject, _ExtendableError2);
+
+  /**
+   * Constructor
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {String}  variableName  Name of the variable that ought to be an
+   *   object.
+   */
+  function NoObject(variableName) {
+    classCallCheck(this, NoObject);
+    return possibleConstructorReturn(this, (NoObject.__proto__ || Object.getPrototypeOf(NoObject)).call(this, 'The "' + variableName + '" must be an object.'));
+  }
+
+  return NoObject;
+}(ExtendableError);
+
+/**
+ * Error class when no root ID is given.
+ */
 var NoRootNodes = function (_ExtendableError) {
   inherits(NoRootNodes, _ExtendableError);
 
@@ -1173,12 +1221,32 @@ function traverseGraph(graph, starts, columnCache, nodeOrder, scale, links) {
   addSiblings();
 }
 
+/**
+ * Helper method to set a value if available and otherwise fall back to a
+ * default value
+ *
+ * @method  setOption
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {*}        value  Value to be set if available.
+ * @param   {*}        defaultValue  Default value to be set when `value` is
+ *   not available.
+ * @param   {Boolean}  noFalsyValue  No falsy values are allowed. E.g., an empty
+ *   string or the number zero are regarded as falsy.
+ */
+function setOption(value, defaultValue, noFalsyValue) {
+  if (noFalsyValue) {
+    return value || defaultValue;
+  }
+
+  return typeof value !== 'undefined' ? value : defaultValue;
+}
+
 // External
 // eslint-disable-line import/no-unresolved
 // Internal
 // Private variables
-var _d3 = d3;
-var _cellRelInnerPadding = CELL_REL_INNER_PADDING;
+
 var _grid = {
   columns: GRID.columns,
   rows: GRID.rows
@@ -1189,35 +1257,144 @@ var _size = {
 };
 var _links = {};
 
-var _colRelPadding = COL_REL_PADDING;
-var _rowRelPadding = ROW_REL_PADDING;
+/**
+ * Holds the global or specified version of D3.js
+ *
+ * @type  {Object}
+ */
+var _d3 = d3;
+
+/**
+ * Relative inner node padding.
+ *
+ * @type  {Float}
+ */
+var _nodeRelInnerPadding = void 0;
+
+/**
+ * Relative inner column padding.
+ *
+ * @type  {Float}
+ */
+var _colRelPadding = void 0;
+
+/**
+ * Relative inner row padding.
+ *
+ * @type  {Float}
+ */
+var _rowRelPadding = void 0;
+
+/**
+ * Absolute column width.
+ *
+ * @type  {Float}
+ */
 var _columnWidth = void 0;
+
+/**
+ * Absolute row height.
+ *
+ * @type  {Float}
+ */
 var _rowHeight = void 0;
+
+/**
+ * Absolute column padding.
+ *
+ * @type  {Float}
+ */
 var _colAbsPadding = void 0;
+
+/**
+ * Absolute width of a columns.
+ *
+ * @type  {Float}
+ */
 var _colAbsContentWidth = void 0;
+
+/**
+ * Absolute row padding.
+ *
+ * @type  {Float}
+ */
 var _rowAbsPadding = void 0;
+
+/**
+ * Absolute height of a row.
+ *
+ * @type  {Float}
+ */
 var _rowAbsContentHeight = void 0;
+
+/**
+ * Absolute inner node padding .
+ *
+ * @type  {Float}
+ */
 var _cellAbsInnerPadding = void 0;
 
 var ListGraphLayout = function () {
   /**
    * ListGraph class constructor.
    *
+   * @example
+   * ```
+   * new d3.listGraph({
+   *   size: [
+   *     this.width,
+   *     this.height
+   *   ],
+   *   grid: [
+   *     this.columns,
+   *     this.rows
+   *   ],
+   *   d3: _d3,
+   *   nodeInnerPadding: 0,
+   *   rowPadding: 0,
+   *   columnPadding: 0.1
+   * });
+   * ```
+   *
+   * @description
+   * `option.size` can either be an Array, e.g., `[200,20]`, or an Object like
+   * `{width: 200, height: 20}`.
+   * `option.grid` Can either be an Array, e.g., `[5,3]`, or an Object like
+   * `{columns: 5, rows: 3}`.
+   * `options.d3` provides a specific version of D3.js or defaults back to the
+   * globally available version of d3.
+   * `options.innerNodePadding` specifies the relative inner padding of a node.
+   * `options.columnPadding` is the relative amount of the columns width to be
+   *   used as padding. E.g., `0.1` uses 10% as padding on the left and right
+   *   side of nodes.
+   * `options.rowPadding` specifies the relative padding per row. The ratio has
+   *   to related to at least 2 pixel.
+   *
    * @author  Fritz Lekschas
    * @date  2015-11-10
    *
    * @constructor
+   * @param  {Object}  options  Object holding all adjustable parameters.
+   *
    * @param  {Array|Object}  size  New size. Can either be an Array, e.g.
    *   `[200,20]` or an Object, e.g. `{width: 200, height: 20}`.
    * @param  {Array|Object}  grid  New grid configuration. Can either be an
    *   Array, e.g. `[5,3]` or an Object, e.g. `{columns: 5, rows: 3}`.
    * @param  {Object}  specificD3  Provide a specific version of D3.js.
    */
-  function ListGraphLayout(size, grid, specificD3) {
+  function ListGraphLayout(options) {
     classCallCheck(this, ListGraphLayout);
 
-    if (specificD3) {
-      _d3 = specificD3;
+    if (!isObject(options)) {
+      throw new NoObject('options');
+    }
+
+    if (options.specificD3) {
+      if (isObject(options.specificD3)) {
+        _d3 = options.specificD3;
+      } else {
+        throw new NoObject('d3');
+      }
     }
 
     if (_d3.version[0] !== '4') {
@@ -1230,8 +1407,14 @@ var ListGraphLayout = function () {
       linkPosition: {}
     };
 
-    this.grid(grid);
-    this.size(size);
+    _nodeRelInnerPadding = setOption(options.innerNodePadding, NODE_REL_INNER_PADDING);
+
+    _colRelPadding = setOption(options.columnPadding, COL_REL_PADDING);
+
+    _rowRelPadding = setOption(options.rowPadding, ROW_REL_PADDING);
+
+    this.grid(options.grid);
+    this.size(options.size);
 
     this.columnCache = {};
     this.columns = {};
@@ -1677,7 +1860,7 @@ var ListGraphLayout = function () {
       _rowAbsPadding = Math.max(_rowHeight * _rowRelPadding, 2);
       _rowAbsContentHeight = _rowHeight - 2 * _rowAbsPadding;
 
-      _cellAbsInnerPadding = _cellRelInnerPadding * Math.min(_colAbsContentWidth, _rowAbsContentHeight, 1);
+      _cellAbsInnerPadding = _nodeRelInnerPadding * Math.min(_colAbsContentWidth, _rowAbsContentHeight, 1);
 
       return this;
     }

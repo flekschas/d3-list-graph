@@ -78,9 +78,20 @@ var possibleConstructorReturn = function (self, call) {
   return call && (typeof call === "object" || typeof call === "function") ? call : self;
 };
 
+/**
+ * Base error class.
+ */
 var ExtendableError = function (_Error) {
   inherits(ExtendableError, _Error);
 
+  /**
+   * Constructor.
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {String}  message  Custom error message.
+   */
   function ExtendableError(message) {
     classCallCheck(this, ExtendableError);
 
@@ -95,15 +106,49 @@ var ExtendableError = function (_Error) {
   return ExtendableError;
 }(Error);
 
+/**
+ * D3 version 4 not found error.
+ */
 var D3VersionFourRequired = function (_ExtendableError) {
   inherits(D3VersionFourRequired, _ExtendableError);
 
+  /**
+   * Constructor
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {String}  versionFound  D3 version string.
+   */
   function D3VersionFourRequired(versionFound) {
     classCallCheck(this, D3VersionFourRequired);
     return possibleConstructorReturn(this, (D3VersionFourRequired.__proto__ || Object.getPrototypeOf(D3VersionFourRequired)).call(this, 'D3 version 4 is required to run the code. Found version ' + versionFound));
   }
 
   return D3VersionFourRequired;
+}(ExtendableError);
+
+/**
+ * When varible is no object
+ */
+var NoObject = function (_ExtendableError2) {
+  inherits(NoObject, _ExtendableError2);
+
+  /**
+   * Constructor
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {String}  variableName  Name of the variable that ought to be an
+   *   object.
+   */
+  function NoObject(variableName) {
+    classCallCheck(this, NoObject);
+    return possibleConstructorReturn(this, (NoObject.__proto__ || Object.getPrototypeOf(NoObject)).call(this, 'The "' + variableName + '" must be an object.'));
+  }
+
+  return NoObject;
 }(ExtendableError);
 
 // Internal
@@ -131,27 +176,113 @@ var EventDispatcherNoFunction = function (_ExtendableError2) {
 
 var CLASSNAME = 'list-graph';
 
+/**
+ * Width of the scrollbar in pixel.
+ *
+ * @type  {Number}
+ */
 var SCROLLBAR_WIDTH = 6;
+
+/**
+ * Default number of columns
+ *
+ * @type  {Number}
+ */
 var COLUMNS = 5;
+
+/**
+ * Default number of rows.
+ *
+ * @type  {Number}
+ */
 var ROWS = 5;
 
-// An empty path is equal to inline SVG.
+/**
+ * Path to the icon file. An empty path is equal to inline SVG.
+ *
+ * @type  {String}
+ */
 var ICON_PATH = '';
 
-// -1 = desc, 1 = asc
+/**
+ * Default sort order.
+ *
+ * @description
+ * -1 = desc, 1 = asc
+ *
+ * @type  {Number}
+ */
 var DEFAULT_SORT_ORDER = -1;
 
+/**
+ * Default bar display mode.
+ *
+ * @type  {String}
+ */
 var DEFAULT_BAR_MODE = 'one';
 
+/**
+ * Default highlighting of the active level.
+ *
+ * @type  {Boolean}
+ */
 var HIGHLIGHT_ACTIVE_LEVEL = true;
+
+/**
+ * Default active level.
+ *
+ * @type  {Number}
+ */
 var ACTIVE_LEVEL = 0;
+
+/**
+ * Default difference when no custom root is queried for.
+ *
+ * @type  {Number}
+ */
 var NO_ROOT_ACTIVE_LEVEL_DIFF = 0;
+
+/**
+ * Default querying.
+ *
+ * @type  {Boolean}
+ */
 var QUERYING = false;
+
+/**
+ * Default value for hiding links pointing to nodes outside the visible area.
+ *
+ * @type  {Boolean}
+ */
 var HIDE_OUTWARDS_LINKS = false;
+
+/**
+ * Default value for showing the link indicator bar when links to hidden nodes
+ * are hidden.
+ *
+ * @type  {Boolean}
+ */
 var SHOW_LINK_LOCATION = false;
+
+/**
+ * Default for disabling debouncing of the node context menu.
+ *
+ * @type  {Boolean}
+ */
 var DISABLE_DEBOUNCED_CONTEXT_MENU = false;
 
+/**
+ * Default transition speed in milliseconds for super fast transition.
+ *
+ * @type  {Number}
+ */
 var TRANSITION_LIGHTNING_FAST = 150;
+
+/**
+ * Default transition speed in milliseconds for semi-fast transition.
+ *
+ * @type  {Number}
+ */
 var TRANSITION_SEMI_FAST = 250;
 
 // External
@@ -170,7 +301,7 @@ var Topbar = function () {
 
     classCallCheck(this, Topbar);
 
-    var that = this;
+    var self = this;
 
     this.vis = vis;
     this.visData = visData;
@@ -189,15 +320,15 @@ var Topbar = function () {
 
     // Add button for sorting by precision
     this.globalPrecision = this.globalControls.append('li').attr('class', 'control-btn sort-precision').classed('active', function () {
-      if (that.vis.currentSorting.global.type === 'precision') {
+      if (self.vis.currentSorting.global.type === 'precision') {
         // Save currently active element. Needed when when re-sorting for the
         // first time, to be able to de-highlight this element.
-        that.vis.currentSorting.global.el = d3.select(this);
+        self.vis.currentSorting.global.el = d3.select(this);
         return true;
       }
       return false;
     }).on('click', function () {
-      that.sortAllColumns(this, 'precision');
+      self.sortAllColumns(this, 'precision');
     }).on('mouseenter', function () {
       _this.vis.interactionWrapper.call(_this.vis, function () {
         _this.highlightBars(undefined, 'precision');
@@ -220,14 +351,14 @@ var Topbar = function () {
 
     // Add button for sorting by recall
     this.globalRecall = this.globalControls.append('li').attr('class', 'control-btn sort-recall').classed('active', function () {
-      if (that.vis.currentSorting.global.type === 'recall') {
+      if (self.vis.currentSorting.global.type === 'recall') {
         // See precision
-        that.vis.currentSorting.global.el = d3.select(this);
+        self.vis.currentSorting.global.el = d3.select(this);
         return true;
       }
       return false;
     }).on('click', function () {
-      that.sortAllColumns(this, 'recall');
+      self.sortAllColumns(this, 'recall');
     }).on('mouseenter', function () {
       _this.vis.interactionWrapper.call(_this.vis, function () {
         _this.highlightBars(undefined, 'recall');
@@ -250,14 +381,14 @@ var Topbar = function () {
 
     // Add button for sorting by name
     this.globalName = this.globalControls.append('li').attr('class', 'control-btn sort-name').classed('active', function () {
-      if (that.vis.currentSorting.global.type === 'name') {
+      if (self.vis.currentSorting.global.type === 'name') {
         // See precision
-        that.vis.currentSorting.global.el = d3.select(this);
+        self.vis.currentSorting.global.el = d3.select(this);
         return true;
       }
       return false;
     }).on('click', function () {
-      that.sortAllColumns(this, 'name');
+      self.sortAllColumns(this, 'name');
     }).on('mouseenter', function () {
       _this.vis.interactionWrapper.call(_this.vis, function () {
         _this.highlightLabels();
@@ -280,7 +411,7 @@ var Topbar = function () {
 
     // Add button for switching to 'one bar'
     this.globalOneBar = this.globalControls.append('li').attr('class', 'control-btn one-bar').classed('active', this.vis.barMode === 'one').on('click', function () {
-      that.switchBarMode(this, 'one');
+      self.switchBarMode(this, 'one');
     });
 
     this.globalOneBarWrapper = this.globalOneBar.append('div').attr('class', 'wrapper').text('One bar');
@@ -289,7 +420,7 @@ var Topbar = function () {
 
     // Add button for switching to 'two bars'
     this.globalTwoBars = this.globalControls.append('li').attr('class', 'control-btn two-bars').classed('active', this.vis.barMode === 'two').on('click', function () {
-      that.switchBarMode(this, 'two');
+      self.switchBarMode(this, 'two');
     });
 
     this.globalTwoBarsWrapper = this.globalTwoBars.append('div').attr('class', 'wrapper').text('Two bars');
@@ -306,8 +437,8 @@ var Topbar = function () {
         _this.vis.zoomedView.call(_this.vis);
       }, []);
     }).on('click', function () {
-      that.vis.toggleView.call(that.vis);
-      d3.select(this).classed('active', that.vis.zoomedOut);
+      self.vis.toggleView.call(self.vis);
+      d3.select(this).classed('active', self.vis.zoomedOut);
     });
 
     this.globalZoomOutWrapper = this.globalZoomOut.append('div').attr('class', 'wrapper').text('Zoom Out');
@@ -327,58 +458,58 @@ var Topbar = function () {
        * 1 = asc
        * -1 = desc
        */
-      that.vis.currentSorting.local[index] = {
+      self.vis.currentSorting.local[index] = {
         type: data.sortBy,
         order: data.sortOrder,
         el: undefined
       };
 
-      control.append('li').attr('class', 'control-btn toggle').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleColumn);
+      control.append('li').attr('class', 'control-btn toggle').style('width', self.visData.global.column.padding + 'px').on('click', self.toggleColumn);
 
       control.append('li').attr('class', 'control-btn sort-precision ease-all').classed('active', function () {
-        if (that.vis.currentSorting.local[index].type === 'precision') {
+        if (self.vis.currentSorting.local[index].type === 'precision') {
           // See precision
-          that.vis.currentSorting.local[index].el = d3.select(this);
+          self.vis.currentSorting.local[index].el = d3.select(this);
           return true;
         }
         return false;
-      }).style('width', that.visData.global.column.contentWidth / 2 + 'px').style('left', that.visData.global.column.padding + 'px').on('click', function (controlData) {
-        that.sortColumn(this, controlData.level, 'precision');
+      }).style('width', self.visData.global.column.contentWidth / 2 + 'px').style('left', self.visData.global.column.padding + 'px').on('click', function (controlData) {
+        self.sortColumn(this, controlData.level, 'precision');
       }).on('mouseenter', function () {
-        that.highlightBars(this.parentNode, 'precision');
-        d3.select(this).style('width', that.visData.global.column.contentWidth - 16 + 'px');
+        self.highlightBars(this.parentNode, 'precision');
+        d3.select(this).style('width', self.visData.global.column.contentWidth - 16 + 'px');
       }).on('mouseleave', function () {
-        that.highlightBars(this.parentNode, 'precision', true);
-        d3.select(this).style('width', that.visData.global.column.contentWidth / 2 + 'px');
-      }).html('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'precision' ? 'visible' : '') + '">' + // eslint-disable-line
-      '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + // eslint-disable-line
-      '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'precision' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
-      '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
+        self.highlightBars(this.parentNode, 'precision', true);
+        d3.select(this).style('width', self.visData.global.column.contentWidth / 2 + 'px');
+      }).html('<div class="expandable-label">' + '  <span class="letter abbr">P</span>' + '  <span class="letter abbr">r</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">i</span>' + '  <span class="letter">s</span>' + '  <span class="letter">i</span>' + '  <span class="letter">o</span>' + '  <span class="letter">n</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (self.vis.currentSorting.local[index].type !== 'precision' ? 'visible' : '') + '">' + // eslint-disable-line
+      '  <use xlink:href="' + self.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (self.vis.currentSorting.local[index].type === 'precision' && self.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + // eslint-disable-line
+      '  <use xlink:href="' + self.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (self.vis.currentSorting.local[index].type === 'precision' && self.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
+      '  <use xlink:href="' + self.vis.iconPath + '#sort-desc"></use>' + '</svg>');
 
       control.append('li').attr('class', 'control-btn sort-recall ease-all').classed('active', function () {
-        if (that.vis.currentSorting.local[index].type === 'recall') {
+        if (self.vis.currentSorting.local[index].type === 'recall') {
           // See recall
-          that.vis.currentSorting.local[index].el = d3.select(this);
+          self.vis.currentSorting.local[index].el = d3.select(this);
           return true;
         }
         return false;
-      }).style('width', that.visData.global.column.contentWidth / 2 + 'px').style('left', that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px').on('click', function (controlData) {
-        that.sortColumn(this, controlData.level, 'recall');
+      }).style('width', self.visData.global.column.contentWidth / 2 + 'px').style('left', self.visData.global.column.contentWidth / 2 + self.visData.global.column.padding + 'px').on('click', function (controlData) {
+        self.sortColumn(this, controlData.level, 'recall');
       }).on('mouseenter', function () {
-        that.highlightBars(this.parentNode, 'recall');
-        d3.select(this).style('width', that.visData.global.column.contentWidth - 16 + 'px').style('left', that.visData.global.column.padding + 16 + 'px');
+        self.highlightBars(this.parentNode, 'recall');
+        d3.select(this).style('width', self.visData.global.column.contentWidth - 16 + 'px').style('left', self.visData.global.column.padding + 16 + 'px');
       }).on('mouseleave', function () {
-        that.highlightBars(this.parentNode, 'recall', true);
-        d3.select(this).style('width', that.visData.global.column.contentWidth / 2 + 'px').style('left', that.visData.global.column.contentWidth / 2 + that.visData.global.column.padding + 'px');
-      }).html('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (that.vis.currentSorting.local[index].type !== 'recall' ? 'visible' : '') + '">' + // eslint-disable-line
-      '  <use xlink:href="' + that.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + // eslint-disable-line
-      '  <use xlink:href="' + that.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (that.vis.currentSorting.local[index].type === 'recall' && that.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
-      '  <use xlink:href="' + that.vis.iconPath + '#sort-desc"></use>' + '</svg>');
+        self.highlightBars(this.parentNode, 'recall', true);
+        d3.select(this).style('width', self.visData.global.column.contentWidth / 2 + 'px').style('left', self.visData.global.column.contentWidth / 2 + self.visData.global.column.padding + 'px');
+      }).html('<div class="expandable-label">' + '  <span class="letter abbr">R</span>' + '  <span class="letter">e</span>' + '  <span class="letter abbr">c</span>' + '  <span class="letter">a</span>' + '  <span class="letter abbr">l</span>' + '  <span class="letter">l</span>' + '</div>' + '<svg class="icon-unsort invisible-default ' + (self.vis.currentSorting.local[index].type !== 'recall' ? 'visible' : '') + '">' + // eslint-disable-line
+      '  <use xlink:href="' + self.vis.iconPath + '#unsort"></use>' + '</svg>' + '<svg class="icon-sort-asc invisible-default ' + (self.vis.currentSorting.local[index].type === 'recall' && self.vis.currentSorting.local[index].order === 1 ? 'visible' : '') + '">' + // eslint-disable-line
+      '  <use xlink:href="' + self.vis.iconPath + '#sort-asc"></use>' + '</svg>' + '<svg class="icon-sort-desc invisible-default ' + (self.vis.currentSorting.local[index].type === 'recall' && self.vis.currentSorting.local[index].order !== 1 ? 'visible' : '') + '">' + // eslint-disable-line
+      '  <use xlink:href="' + self.vis.iconPath + '#sort-desc"></use>' + '</svg>');
 
-      control.append('li').attr('class', 'control-btn options').style('width', that.visData.global.column.padding + 'px').on('click', that.toggleOptions).html('<svg class="icon-gear">' + '  <use xlink:href="' + that.vis.iconPath + '#gear"></use>' + '</svg>');
+      control.append('li').attr('class', 'control-btn options').style('width', self.visData.global.column.padding + 'px').on('click', self.toggleOptions).html('<svg class="icon-gear">' + '  <use xlink:href="' + self.vis.iconPath + '#gear"></use>' + '</svg>');
 
-      if (that.vis.currentSorting.local[index].type) {
-        that.vis.currentSorting.local[index].el = control.select('.sort-' + that.vis.currentSorting.local[index].type);
+      if (self.vis.currentSorting.local[index].type) {
+        self.vis.currentSorting.local[index].el = control.select('.sort-' + self.vis.currentSorting.local[index].type);
       }
     });
   }
@@ -530,10 +661,32 @@ var Topbar = function () {
 // External
 // eslint-disable-line import/no-unresolved
 
+/**
+ * Class name of columns.
+ *
+ * @type  {String}
+ */
 var COLUMN_CLASS = 'column';
+
+/**
+ * Class name of scroll containers.
+ *
+ * @type  {String}
+ */
 var SCROLL_CONTAINER_CLASS = 'scroll-container';
 
 var Levels = function () {
+  /**
+   * Level / column constructor.
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  selection  D3 selection of element the levels should be
+   *   appended to.
+   * @param   {Object}  vis        List Graph App.
+   * @param   {Object}  visData    List Graph App data.
+   */
   function Levels(selection, vis, visData) {
     var _this = this;
 
@@ -563,9 +716,19 @@ var Levels = function () {
     }).attr('width', this.visData.global.column.width + 1).attr('height', this.visData.global.column.height);
   }
 
+  /**
+   * Prepare column for scrolling.
+   *
+   * @method  scrollPreparation
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Number}  scrollbarWidth  Width of the scrollbar in pixel.
+   */
+
+
   createClass(Levels, [{
     key: 'scrollPreparation',
-    value: function scrollPreparation(vis, scrollbarWidth) {
+    value: function scrollPreparation(scrollbarWidth) {
       var _this2 = this;
 
       this.groups.each(function (data, index) {
@@ -575,8 +738,8 @@ var Levels = function () {
 
         data.height = contentHeight;
         data.linkSelections = {
-          incoming: index > 0 ? vis.selectByLevel(index - 1, '.link') : null,
-          outgoing: vis.selectByLevel(index, '.link')
+          incoming: index > 0 ? _this2.vis.selectByLevel(index - 1, '.link') : null,
+          outgoing: _this2.vis.selectByLevel(index, '.link')
         };
         data.scrollHeight = scrollHeight;
         data.scrollTop = 0;
@@ -593,6 +756,15 @@ var Levels = function () {
         data.invertedHeightScale = data.scrollbar.heightScale.invert;
       });
     }
+
+    /**
+     * Update the properties for column scrolling.
+     *
+     * @method  updateScrollProperties
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     */
+
   }, {
     key: 'updateScrollProperties',
     value: function updateScrollProperties() {
@@ -613,6 +785,15 @@ var Levels = function () {
         data.scrollbar.heightScale = d3.scaleLinear().domain([0, scrollHeight]).range([0, _this3.visData.global.column.height - scrollbarHeight]);
       });
     }
+
+    /**
+     * Check if column should be hidden when it's not in the visible area.
+     *
+     * @method  updateVisibility
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     */
+
   }, {
     key: 'updateVisibility',
     value: function updateVisibility() {
@@ -624,8 +805,28 @@ var Levels = function () {
         }).empty());
       });
     }
+
+    /**
+     * Get the column's class name.
+     *
+     * @method  className
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @return  {String}  Class name of the column.
+     */
+
   }, {
     key: 'focus',
+
+
+    /**
+     * Focus a level.
+     *
+     * @method  focus
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Number}  level  ID of the column.
+     */
     value: function focus(level) {
       if (this.vis.highlightActiveLevel) {
         this.groups.filter(function (data) {
@@ -633,6 +834,16 @@ var Levels = function () {
         }).classed('active', true);
       }
     }
+
+    /**
+     * Blur a level.
+     *
+     * @method  blur
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Number}  level  ID of the column.
+     */
+
   }, {
     key: 'blur',
     value: function blur(level) {
@@ -651,6 +862,16 @@ var Levels = function () {
     get: function get() {
       return COLUMN_CLASS;
     }
+
+    /**
+     * Get the column's height.
+     *
+     * @method  height
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @return  {Number}  Column height in pixel.
+     */
+
   }, {
     key: 'height',
     get: function get() {
@@ -664,10 +885,32 @@ var Levels = function () {
 // eslint-disable-line import/no-unresolved
 
 // Internal
+/**
+ * Class name of the group of link container.
+ *
+ * @type  {String}
+ */
 var LINKS_CLASS = 'links';
+
+/**
+ * Class name of a link element.
+ *
+ * @type  {String}
+ */
 var LINK_CLASS = 'link';
 
 var Links = function () {
+  /**
+   * [constructor description]
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}   vis      List Graph App.
+   * @param   {Object}   levels   List Graph App's levels.
+   * @param   {Object}   visData  List Graph App's data.
+   * @param   {Object}   layout   List Graph Layout.
+   */
   function Links(vis, levels, visData, layout) {
     var _this = this;
 
@@ -692,13 +935,45 @@ var Links = function () {
     this.links.append('path').attr('class', LINK_CLASS + '-direct').attr('d', this.diagonal.bind(this));
   }
 
+  /**
+   * Get a SVG path string for links.
+   *
+   * @method  diagonal
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @return  {String}  SVG path string.
+   */
+
+
   createClass(Links, [{
     key: 'linkVisibility',
+
+
+    /**
+     * Assess link visibility
+     *
+     * @method  linkVisibility
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Object}  data  D3 selection data object of links.
+     */
     value: function linkVisibility(data) {
       // Cache visibility.
       data.hidden = this.vis.pointsOutside.call(this.vis, data);
       return data.hidden === 0;
     }
+
+    /**
+     * [highlight description]
+     *
+     * @method  highlight
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Array}    nodeIds    Array of Node IDs.
+     * @param   {Boolean}  highlight  If `true` highlights links.
+     * @param   {String}   className  Class name added for CSS-based highlighting.
+     */
+
   }, {
     key: 'highlight',
     value: function highlight(nodeIds, _highlight, className) {
@@ -706,6 +981,18 @@ var Links = function () {
         return nodeIds[data.id];
       }).classed(className, _highlight);
     }
+
+    /**
+     * Scroll links when the container is scrolled.
+     *
+     * @method  scroll
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Object}  selection  D3 selection of links.
+     * @param   {Object}  data       Updated link data depending on scroll
+     *   position.
+     */
+
   }, {
     key: 'scroll',
     value: function scroll(selection, data) {
@@ -720,6 +1007,17 @@ var Links = function () {
       // Next, update all paths according to the new data.
       selection.selectAll('path').attr('d', this.diagonal);
     }
+
+    /**
+     * Sort links by applying updated data and transitioning to the new position.
+     *
+     * @method  sort
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {[type]}    update  [description]
+     * @return  {[type]}            [description]
+     */
+
   }, {
     key: 'sort',
     value: function sort(update) {
@@ -738,6 +1036,15 @@ var Links = function () {
       // Next update all paths according to the new data.
       this.links.selectAll('path').transition().duration(TRANSITION_SEMI_FAST).attr('d', this.diagonal).on('start', start).on('end', end);
     }
+
+    /**
+     * Update the visual state of the link according to the current state of data.
+     *
+     * @method  updateVisibility
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     */
+
   }, {
     key: 'updateVisibility',
     value: function updateVisibility() {
@@ -945,9 +1252,23 @@ function _up(node, callback, depth, includeClones, child, visitedNodes) {
   }
 }
 
-function up(node, callback, depth, includeClones, child) {
+/**
+ * Traverse the graph upwards from a given node until a certain depth.
+ *
+ * @method  up
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}    node           D3 data object of a selected DOM element.
+ * @param   {Function}  callback       Method to be called on every traversed
+ *   node.
+ * @param   {Number}    depth          Max steps to traverse upwards. If
+ *   `undefined` will traverse till the root node.
+ * @param   {Boolean}   includeClones  If `true` cloned nodes will be traversed
+ *   as well.
+ */
+function up(node, callback, depth, includeClones) {
   var visitedNodes = {};
-  _up(node, callback, depth, includeClones, child, visitedNodes);
+  _up(node, callback, depth, includeClones, undefined, visitedNodes);
 }
 
 function _down(node, callback, depth, includeClones, visitedNodes) {
@@ -973,11 +1294,41 @@ function _down(node, callback, depth, includeClones, visitedNodes) {
   }
 }
 
+/**
+ * Traverse the graph downwards from a given node until a certain depth.
+ *
+ * @method  down
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}    node           D3 data object of a selected DOM element.
+ * @param   {Function}  callback       Method to be called on every traversed
+ *   node.
+ * @param   {Number}    depth          Max steps to traverse downwards. If
+ *   `undefined` will traverse till leaf nodes.
+ * @param   {Boolean}   includeClones  If `true` cloned nodes will be traversed
+ *   as well.
+ */
 function down(node, callback, depth, includeClones) {
   var visitedNodes = {};
   _down(node, callback, depth, includeClones, visitedNodes);
 }
 
+/**
+ * Traverse the graph up- and downwards from a given node until a certain depth.
+ *
+ * @method  upAndDown
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}    node           D3 data object of a selected DOM element.
+ * @param   {Function}  callback       Method to be called on every upwards
+ *   traversed node.
+ * @param   {Function}  callback       Method to be called on every downwards
+ *   traversed node.
+ * @param   {Number}    depth          Max steps to traverse downwards. If
+ *   `undefined` will traverse till leaf nodes.
+ * @param   {Boolean}   includeClones  If `true` cloned nodes will be traversed
+ *   as well.
+ */
 function upAndDown(node, callbackUp, callbackDown, depth, includeClones) {
   if (callbackDown) {
     up(node, callbackUp, depth, includeClones);
@@ -989,6 +1340,15 @@ function upAndDown(node, callbackUp, callbackDown, depth, includeClones) {
   }
 }
 
+/**
+ * Traverse siblings from a given nodes.
+ *
+ * @method  siblings
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}    node      D3 data object of a selected DOM element.
+ * @param   {Function}  callback   Method to be called on every visited node.
+ */
 function siblings(node, callback) {
   var parentsId = Object.keys(node.parents);
   for (var i = parentsId.length; i--;) {
@@ -1007,7 +1367,21 @@ function siblings(node, callback) {
 
 var BAR_CLASS = 'bar';
 
-var Bar = function Bar(barGroup, barData, nodeData, visData, bars) {
+var Bar =
+/**
+ * Bar constructor
+ *
+ * @method  constructor
+ * @author  Fritz Lekschas
+ * @date    2016-09-14
+ * @param   {Object}  baseEl    D3 selection of the base element where bars
+ *   should be appended to.
+ * @param   {Object}  barData   Object with the bar properties.
+ * @param   {Object}  nodeData  Object with the node properties.
+ * @param   {Object}  visData   Object with the list graph app properties.
+ * @param   {Object}  bars      Bars class.
+ */
+function Bar(baseEl, barData, nodeData, visData, bars) {
   var _this = this;
 
   classCallCheck(this, Bar);
@@ -1026,7 +1400,7 @@ var Bar = function Bar(barGroup, barData, nodeData, visData, bars) {
 
   this.inactiveheight = this.visData.global.cell.padding * 2 - 1;
 
-  this.selection = barGroup.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
+  this.selection = baseEl.selectAll(BAR_CLASS).data(this.data).enter().append('g').attr('class', function (data) {
     return BAR_CLASS + ' ' + data.id;
   }).classed('active', function (data) {
     return data.id === _this.visData.nodes[_this.nodeData.depth].sortBy;
@@ -1047,24 +1421,26 @@ var Bar = function Bar(barGroup, barData, nodeData, visData, bars) {
     selection.attr('x', 0).attr('y', this.visData.global.row.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
   }
 
-  function setupIndicator(selection) {
-    selection.attr({
-      class: 'bar-indicator',
-      x: 0,
-      y: this.visData.global.row.padding,
-      width: 2,
-      height: this.visData.global.row.contentHeight
-    });
-  }
-
   this.selection.append('rect').call(setupBorder.bind(this));
 
   this.selection.append('path').call(setupMagnitude.bind(this));
-
-  this.selection.append('rect').call(setupIndicator.bind(this));
 };
 
-// Credits go to Mike Bostock: http://bl.ocks.org/mbostock/3468167
+/**
+ * Returns the path for a rounded rectangle
+ *
+ * Credits go to Mike Bostock: http://bl.ocks.org/mbostock/3468167
+ *
+ * @method  roundRect
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Number}    x       X coordinate.
+ * @param   {Number}    y       Y coordinate.
+ * @param   {Number}    width   Width of the rectangle.
+ * @param   {Number}    height  Height of the rectangle.
+ * @param   {Number}    radius  Radius.
+ * @return  {String}            Path string of the rounded rectangle.
+ */
 function roundRect(x, y, width, height, radius) {
   var topLeft = radius.topLeft || 0;
   var topRight = radius.topRight || 0;
@@ -1108,35 +1484,67 @@ function dropMenu(c) {
 var BARS_CLASS = 'bars';
 
 var Bars = function () {
-  function Bars(vis, selection, mode, visData) {
+  /**
+   * [constructor description]
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  baseEl   D3 selection where the group of bars should be
+   *   appended to.
+   * @param   {String}  mode     Display more. Can be either `one` or `two`.
+   * @param   {Object}  visData  Object with the list graph app data.
+   */
+  function Bars(baseEl, mode, visData) {
     classCallCheck(this, Bars);
 
-    var that = this;
+    var self = this;
 
-    this.vis = vis;
     this.mode = mode;
     this.visData = visData;
 
-    this.indicatorX = d3.scaleLinear().domain([0, 1]).range([1, this.visData.global.column.contentWidth - 3]);
+    this.xScale = d3.scaleLinear().domain([0, 1]).range([1, this.visData.global.column.contentWidth - 3]);
 
-    this.selection = selection.append('g').attr('class', BARS_CLASS);
+    this.baseEl = baseEl.append('g').attr('class', BARS_CLASS);
 
-    this.selection.each(function (datum) {
-      new Bar(d3.select(this), datum.data.bars, datum, that.visData, that);
+    this.baseEl.each(function (datum) {
+      new Bar(d3.select(this), datum.data.bars, datum, self.visData, self);
     });
   }
+
+  /**
+   * Updates all bar magnitude elements.
+   *
+   * @method  updateAll
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  update  Object with the current data.
+   * @param   {String}  sortBy  Name of the poperty to be sorted by.
+   */
+
 
   createClass(Bars, [{
     key: 'updateAll',
     value: function updateAll(update, sortBy) {
       var _this = this;
 
-      this.selection.selectAll('.bar-magnitude').data(update, function (data) {
+      this.baseEl.selectAll('.bar-magnitude').data(update, function (data) {
         return data.barId;
       }).transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-        return _this.generatePath(data, _this.mode, sortBy, _this.visData);
+        return _this.generatePath(data, sortBy);
       });
     }
+
+    /**
+     * Update bars when switching the bar mode.
+     *
+     * @method  update
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Object}  selection  D3 selection
+     * @param   {String}  sortBy     Name of the poperty to be sorted by.
+     */
+
   }, {
     key: 'update',
     value: function update(selection, sortBy) {
@@ -1161,11 +1569,19 @@ var Bars = function () {
         return _this2.generatePath(data, sortBy);
       });
     }
-  }, {
-    key: 'updateIndicator',
-    value: function updateIndicator(selection, referenceValue) {
-      selection.attr('x', this.indicatorX(referenceValue)).attr('width', 2);
-    }
+
+    /**
+     * Switch one and two-bar display mode.
+     *
+     * @method  switchMode
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {String}  mode            Name of the display mode. Can either be
+     *   `one` or `two`.
+     * @param   {String}  currentSorting  Name if the property currently sorted
+     *   by.
+     */
+
   }, {
     key: 'switchMode',
     value: function switchMode(mode, currentSorting) {
@@ -1174,7 +1590,7 @@ var Bars = function () {
       if (this.mode !== mode) {
         if (mode === 'one') {
           if (currentSorting.global.type) {
-            this.selection.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+            this.baseEl.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
               return _this3.generateOneBarPath(data, currentSorting.global.type);
             });
           } else {
@@ -1186,11 +1602,11 @@ var Bars = function () {
         }
 
         if (mode === 'two') {
-          this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+          this.baseEl.selectAll('.bar.precision').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
             return _this3.generateTwoBarsPath(data);
           });
 
-          this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
+          this.baseEl.selectAll('.bar.recall').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
             return _this3.generateTwoBarsPath(data, true);
           });
         }
@@ -1198,20 +1614,42 @@ var Bars = function () {
         this.mode = mode;
       }
     }
+
+    /**
+     * Helper method to generate path used as a bar.
+     *
+     * @method  generatePath
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Object}   data             Data object.
+     * @param   {String}   sortBy           Name of the property currently sorted
+     *   by.
+     */
+
   }, {
     key: 'generatePath',
-    value: function generatePath(data, currentSorting, indicator, adjustWidth, bottom) {
+    value: function generatePath(data, sortBy) {
       if (this.mode === 'two') {
-        return this.generateTwoBarsPath(data, bottom);
+        return this.generateTwoBarsPath(data);
       }
-      return this.generateOneBarPath(data, currentSorting, indicator, adjustWidth);
+      return this.generateOneBarPath(data, sortBy);
     }
+
+    /**
+     * Generates a bar when one-bar display mode is active.
+     *
+     * @method  generateOneBarPath
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Object}   data    Data object.
+     * @param   {String}   sortBy  Name of the property currently sorted by.
+     */
+
   }, {
     key: 'generateOneBarPath',
-    value: function generateOneBarPath(data, currentSorting, indicator, adjustWidth) {
+    value: function generateOneBarPath(data, sortBy) {
       var height = this.visData.global.row.contentHeight;
       var normValue = Math.min(data.value, 1) || 0;
-      var normIndicator = Math.min(indicator, 1) || 0;
 
       var x = 0;
       var width = 2;
@@ -1221,21 +1659,9 @@ var Bars = function () {
         bottomLeft: 2
       };
 
-      if (indicator) {
+      if (data.id !== sortBy) {
+        x = this.xScale(normValue);
         radius = {};
-      }
-
-      if (data.id !== currentSorting && typeof indicator === 'undefined') {
-        x = this.indicatorX(normValue);
-        radius = {};
-      } else if (indicator) {
-        x = normIndicator * this.visData.global.column.contentWidth;
-        if (adjustWidth) {
-          if (normValue < normIndicator) {
-            x = normValue * this.visData.global.column.contentWidth;
-          }
-          width = Math.max(Math.abs(normIndicator - normValue) * this.visData.global.column.contentWidth, 2);
-        }
       } else {
         width = this.visData.global.column.contentWidth * normValue;
       }
@@ -1244,9 +1670,21 @@ var Bars = function () {
 
       return roundRect(x, this.visData.global.row.padding, width, height, radius);
     }
+
+    /**
+     * Generates a bar when two-bar display mode is active.
+     *
+     * @method  generateTwoBarsPath
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Object}   data      Data object.
+     * @param   {Boolean}  isBottom  If `true` then the bottom bar should be
+     *   generated.
+     */
+
   }, {
     key: 'generateTwoBarsPath',
-    value: function generateTwoBarsPath(data, bottom) {
+    value: function generateTwoBarsPath(data, isBottom) {
       var normValue = Math.min(data.value, 1);
       var height = this.visData.global.row.contentHeight / 2;
       var width = this.visData.global.column.contentWidth * normValue;
@@ -1254,7 +1692,7 @@ var Bars = function () {
       var y = this.visData.global.row.padding;
       var radius = { topLeft: 2 };
 
-      if (bottom) {
+      if (isBottom) {
         radius = { bottomLeft: 2 };
         y += height;
       }
@@ -1266,6 +1704,19 @@ var Bars = function () {
 }();
 
 // External
+/**
+ * Merges multiple distinct D3 selection objects.
+ *
+ * @description
+ * First an empty selection is created by querying for a non-existing element.
+ *
+ * @method  mergeSelections
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Array}   selections  Array of multiple D3 selection objects.
+ * @return  {Object}              Single D3 selection object containing all the
+ *   selected elements from `selections`.
+ */
 function mergeSelections(selections) {
   // Create a new empty selection
   var mergedSelection = d3.selectAll('.d3-list-graph-not-existent');
@@ -1277,6 +1728,16 @@ function mergeSelections(selections) {
   return mergedSelection;
 }
 
+/**
+ * Detects when an array of transitions has ended.
+ *
+ * @method  allTransitionsEnded
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}    transition  D3 transition object.
+ * @param   {Function}  callback    Callback function to be triggered when all
+ *   transitions have ended.
+ */
 function allTransitionsEnded(transition, callback) {
   if (transition.size() === 0) {
     callback();
@@ -1319,7 +1780,7 @@ var Nodes = function () {
 
     classCallCheck(this, Nodes);
 
-    var that = this;
+    var self = this;
 
     this.vis = vis;
     this.visData = visData;
@@ -1342,7 +1803,7 @@ var Nodes = function () {
         return linkDensityBg(data.links[direction].refs.length);
       }).classed('visible', function (data) {
         return data.links[direction].refs.length > 0;
-      });
+      }).style('transform-origin', (incoming ? 0 : this.visData.global.column.contentWidth) + 'px ' + this.visData.global.row.height / 2 + 'px');
     }
 
     function drawLinkLocationIndicator(selection, direction, position) {
@@ -1362,11 +1823,11 @@ var Nodes = function () {
     function drawFullSizeRect(selection, className, shrinking, noRoundBorder) {
       var shrinkingAmount = shrinking || 0;
 
-      selection.attr('x', shrinkingAmount).attr('y', that.visData.global.row.padding + shrinkingAmount).attr('width', that.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', that.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
+      selection.attr('x', shrinkingAmount).attr('y', self.visData.global.row.padding + shrinkingAmount).attr('width', self.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', self.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
     }
 
     function drawMaxSizedRect(selection) {
-      selection.attr('x', 0).attr('y', 0).attr('width', that.visData.global.column.contentWidth).attr('height', that.visData.global.row.height).attr('class', 'invisible-container');
+      selection.attr('x', 0).attr('y', 0).attr('width', self.visData.global.column.contentWidth).attr('height', self.visData.global.row.height).attr('class', 'invisible-container');
     }
 
     this.groups = baseSelection.append('g').attr('class', CLASS_NODES).call(function (selection) {
@@ -1426,7 +1887,7 @@ var Nodes = function () {
       nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
     }
 
-    this.bars = new Bars(this.vis, this.visNodes, this.vis.barMode, this.visData);
+    this.bars = new Bars(this.visNodes, this.vis.barMode, this.visData);
 
     this.visNodes.append('rect').call(drawFullSizeRect, 'border');
 
@@ -1751,7 +2212,7 @@ var Nodes = function () {
   }, {
     key: 'eventHelper',
     value: function eventHelper(nodeIds, callback, optionalParams, subSelectionClass) {
-      var that = this;
+      var self = this;
 
       this.nodes
       // Filter by node ID
@@ -1764,7 +2225,7 @@ var Nodes = function () {
           d3El = d3El.select(subSelectionClass);
         }
 
-        callback.apply(that, [d3El].concat(optionalParams || []));
+        callback.apply(self, [d3El].concat(optionalParams || []));
       });
     }
   }, {
@@ -1802,26 +2263,26 @@ var Nodes = function () {
   }, {
     key: 'lockNode',
     value: function lockNode(id) {
-      var that = this;
+      var self = this;
       var els = this.nodes.filter(function (data) {
         return data.id === id;
       });
 
       els.each(function (data) {
-        that.highlightNodes(d3.select(this), 'lock', undefined);
+        self.highlightNodes(d3.select(this), 'lock', undefined);
         data.data.state.lock = true;
       });
     }
   }, {
     key: 'unlockNode',
     value: function unlockNode(id) {
-      var that = this;
+      var self = this;
       var els = this.nodes.filter(function (data) {
         return data.id === id;
       });
 
       els.each(function (data) {
-        that.unhighlightNodes(d3.select(this), 'lock', undefined);
+        self.unhighlightNodes(d3.select(this), 'lock', undefined);
         data.data.state.lock = undefined;
       });
     }
@@ -2020,7 +2481,6 @@ var Nodes = function () {
 
       if (!data.data.state.query || data.data.state.query === 'not') {
         data.data.queryBeforeRooting = false;
-        // this.queryHandler(d3El, 'query', 'or');
         return {
           query: true
         };
@@ -2042,7 +2502,6 @@ var Nodes = function () {
       this.showNodes();
 
       if (!data.data.queryBeforeRooting) {
-        // this.queryHandler(d3El, 'unquery');
         return {
           unquery: true
         };
@@ -2143,6 +2602,19 @@ var Nodes = function () {
       }
       this.updateVisibility();
     }
+
+    /**
+     * Marks nodes as being invisible via assigning a class depending on the
+     * custom scroll top position or the columns scroll top position.
+     *
+     * @method  isInvisible
+     * @author  Fritz Lekschas
+     * @date    2016-09-12
+     * @param   {Object}  selection        D3 selection of nodes to be checked.
+     * @param   {Number}  customScrollTop  Custom scroll top position. Used when
+     *   column is actively scrolled.
+     */
+
   }, {
     key: 'isInvisible',
     value: function isInvisible(selection, customScrollTop) {
@@ -2192,7 +2664,7 @@ var Nodes = function () {
     value: function highlightNodes(d3El, className, restriction, excludeClones, noVisibilityCheck) {
       var _this3 = this;
 
-      var that = this;
+      var self = this;
       var data = d3El.datum();
       var nodeId = data.id;
       var currentNodeData = data.clone ? data.originalNode : data;
@@ -2262,7 +2734,7 @@ var Nodes = function () {
        * @return  {Boolean}        If `true` element is hidden.
        */
       function checkNodeVisibility(_el, _data) {
-        return noVisibilityCheck || !_data.hidden && !that.vis.isHidden.call(that.vis, _el);
+        return noVisibilityCheck || !_data.hidden && !self.vis.isHidden.call(self.vis, _el);
       }
 
       /**
@@ -2291,39 +2763,8 @@ var Nodes = function () {
         return nodeData.hovering === 2 && checkNodeVisibility(this, nodeData);
       }
 
-      /**
-       * Helper method to update bar indicators of the directly hovered node and
-       * clones.
-       *
-       * @method  updateDirectBarIndicator
-       * @author  Fritz Lekschas
-       * @date    2016-02-25
-       * @param   {Object}  selection  D3 node selection.
-       */
-      function updateDirectBarIndicator(selection) {
-        that.bars.updateIndicator(selection, currentlyActiveBar.value, true);
-      }
-
-      /**
-       * Helper method to update bar indicators of the indirectly hovered nodes.
-       *
-       * @method  updateDirectBarIndicator
-       * @author  Fritz Lekschas
-       * @date    2016-02-25
-       * @param   {Object}  selection  D3 node selection.
-       */
-      function updateIndirectBarIndicator(selection) {
-        that.bars.updateIndicator(selection, currentlyActiveBar.value);
-      }
-
-      var barIndicatorClass = currentlyActiveBar ? '.bar.' + currentlyActiveBar.id + ' .bar-indicator' : '';
-      var directNodes = this.nodes.filter(checkNodeDirect).classed(appliedClassName + '-directly', true);
-      var indirectNodes = this.nodes.filter(checkNodeIndirect).classed(appliedClassName + '-indirectly', true);
-
-      if (currentlyActiveBar) {
-        directNodes.select(barIndicatorClass).call(updateDirectBarIndicator);
-        indirectNodes.select(barIndicatorClass).call(updateIndirectBarIndicator);
-      }
+      this.nodes.filter(checkNodeDirect).classed(appliedClassName + '-directly', true);
+      this.nodes.filter(checkNodeIndirect).classed(appliedClassName + '-indirectly', true);
 
       this.links.highlight(this.currentLinks[appliedClassName][data.id], true, appliedClassName);
     }
@@ -2477,17 +2918,33 @@ var Nodes = function () {
 // eslint-disable-line import/no-unresolved
 
 // Internal
+/**
+ * Class name of scrollbar elements.
+ *
+ * @type  {String}
+ */
 var SCROLLBAR_CLASS = 'scrollbar';
 
 var Scrollbars = function () {
-  function Scrollbars(baseSelection, visData, width) {
+  /**
+   * [constructor description]
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  baseEl   D3 selection of the element where the
+   *   scrollbars should be appended to.
+   * @param   {Object}  visData  List Graph App's data.
+   * @param   {Number}  width    Width of the scrollbar in pixels.
+   */
+  function Scrollbars(baseEl, visData, width) {
     classCallCheck(this, Scrollbars);
 
     this.visData = visData;
     this.width = width;
 
     // Add empty scrollbar element
-    this.all = baseSelection.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
+    this.all = baseEl.append('rect').attr('class', SCROLLBAR_CLASS).call(function (selection) {
       selection.each(function setScrollBarDomElement() {
         d3.select(this.parentNode).datum().scrollbar.el = this;
       });
@@ -2500,16 +2957,22 @@ var Scrollbars = function () {
     }).attr('rx', this.width / 2).attr('ry', this.width / 2).classed('ready', true);
   }
 
+  /**
+   * Update the viisual state of the scrollbar given the current data.
+   *
+   * @method  updateVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   */
+
+
   createClass(Scrollbars, [{
     key: 'updateVisibility',
     value: function updateVisibility() {
-      this.all.transition().duration(TRANSITION_LIGHTNING_FAST).attr({
-        x: function x(data) {
-          return data.scrollbar.x;
-        },
-        height: function height(data) {
-          return data.scrollbar.height;
-        }
+      this.all.transition().duration(TRANSITION_LIGHTNING_FAST).attr('x', function (data) {
+        return data.scrollbar.x;
+      }).attr('height', function (data) {
+        return data.scrollbar.height;
       });
     }
   }]);
@@ -4048,6 +4511,16 @@ function debounce(func, wait, options) {
   return debounced;
 }
 
+/**
+ * Polyfill-safe method for requesting an animation frame
+ *
+ * @method  requestAnimationFrame
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Function}  callback  Function to be called after a animation frame
+ *   has been delivered.
+ * @return  {Integer}             ID of the request.
+ */
 var requestAnimationFrame = function () {
   var lastTime = 0;
 
@@ -4062,12 +4535,29 @@ var requestAnimationFrame = function () {
   };
 }();
 
+/**
+ * Polyfill-safe method for canceling a requested animation frame
+ *
+ * @method  cancelAnimationFrame
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Integer}  id  ID of the animation frame request to be canceled.
+ */
 var cancelAnimationFrame = function () {
   return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function (id) {
     window.clearTimeout(id);
   };
 }();
 
+/**
+ * Requests the next animation frame.
+ *
+ * @method  nextAnimationFrame
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @return  {Object}  Object holding the _request_ and _cancel_ method for
+ *   requesting the next animation frame.
+ */
 var nextAnimationFrame = function () {
   var ids = {};
 
@@ -4106,35 +4596,129 @@ var requestNextAnimationFrame = nextAnimationFrame.request;
 // External
 // eslint-disable-line import/no-unresolved
 // Internal
+/**
+ * Class name assigned to the context menu's root element
+ *
+ * @type  {String}
+ */
 var CLASS_NAME = 'context-menu';
+
+/**
+ * Class name assigned to checkboxes.
+ *
+ * @type  {String}
+ */
 var CLASS_CHECKBOX = 'checkbox';
+
+/**
+ * Size of the dialog arrow in pixel.
+ *
+ * @type  {Number}
+ */
 var ARROW_SIZE = 6;
+
+/**
+ * General transition speed.
+ *
+ * @type  {Number}
+ */
 var TRANSITION_SPEED = 125;
+
+/**
+ * Time in milliseconds before the query button click actially triggers its
+ * action.
+ *
+ * The time is resetted every time the user clicks on the button again within
+ * the time interval.
+ *
+ * @type  {Number}
+ */
 var BUTTON_QUERY_DEBOUNCE = 666;
+
+/**
+ * Time in milliseconds before the root button click actially triggers its
+ * action.
+ *
+ * The time is resetted every time the user clicks on the button again within
+ * the time interval.
+ *
+ * @type  {Number}
+ */
 var BUTTON_ROOT_DEBOUNCE = 500;
+
+/**
+ * Default time in milliseconds before a button click actially triggers its
+ * action.
+ *
+ * The time is resetted every time the user clicks on the button again within
+ * the time interval.
+ *
+ * @type  {Number}
+ */
 var BUTTON_DEFAULT_DEBOUNCE = 150;
+
+/**
+ * [BUTTON_BAM_EFFECT_ANIMATION_TIME description]
+ *
+ * @type  {Number}
+ */
 var BUTTON_BAM_EFFECT_ANIMATION_TIME = 700;
 
 var NodeContextMenu = function () {
-  function NodeContextMenu(vis, visData, baseEl, events, querying, infoFields) {
+  /**
+   * Node context menu constructor
+   *
+   * @description
+   * The `init` object must contain the follow properties:
+   *  - visData: the List Graph App's data. [Object]
+   *  - baseEl: D3 selection of the base element. [Object]
+   *  - events: the List Graph App's event library. [Object]
+   *  - nodes: the List Graph App's nodes. [Object]
+   *  - infoFields: the List Graph App's info field definition. [Object]
+   *  - iconPath: the List Graph App's `iconPath`. [String]
+   *  - isQueryable: If `true` the query button will be shown. [Boolean]
+   *  - isDebounced: If `true` the menu will be debounced. [Boolean]
+   *
+   * @example
+   * ```
+   *  const nodeContextMenu = new NodeContextMenu({
+   *   visData: {...},
+   *   baseEl: {...},
+   *   events: {...},
+   *   nodes: {...},
+   *   infoFields: {...},
+   *   iconPath: '...',
+   *   isQueryable: true,
+   *   isDebounced: true
+   * });
+   * ```
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @param   {Object}   init  Initialization object. See example.
+   */
+  function NodeContextMenu(init) {
     classCallCheck(this, NodeContextMenu);
 
-    var that = this;
+    var self = this;
 
     this._x = 0;
     this._y = 0;
     this._yOffset = 0;
     this._scale = 0;
 
-    this.vis = vis;
-    this.visData = visData;
-    this.baseEl = baseEl;
-    this.events = events;
-    this.querying = querying;
-    this.infoFields = infoFields;
+    this.visData = init.visData;
+    this.baseEl = init.baseEl;
+    this.events = init.events;
+    this.nodes = init.nodes;
+    this.isQueryable = init.isQueryable;
+    this.infoFields = init.infoFields;
+    this.isDebounced = init.isDebounced;
+    this.iconPath = init.iconPath;
 
     this.numButtonRows = 1;
-    this.numButtonRows = this.querying ? ++this.numButtonRows : this.numButtonRows;
+    this.numButtonRows = this.isQueryable ? ++this.numButtonRows : this.numButtonRows;
     this.numButtonRows = this.infoFields && this.infoFields.length ? ++this.numButtonRows : this.numButtonRows;
 
     this.height = this.visData.global.row.height * this.numButtonRows;
@@ -4146,36 +4730,38 @@ var NodeContextMenu = function () {
 
     this.updateAppearance();
 
-    this.bgBorder = this.wrapper.append('path').attr('class', 'bgBorder').attr('d', dropMenu({
+    this.bgWrapper = this.wrapper.append('g').classed('bgOuterWrapper', true).attr('transform', 'translate(' + this.visData.global.column.width / 2 + ' ' + this.height / 2 + ')').append('g').classed('bgInnerWrapper', true);
+
+    this.bgBorder = this.bgWrapper.append('path').attr('class', 'bgBorder').attr('d', dropMenu({
       x: -1,
       y: -1,
       width: this.visData.global.column.width + 2,
       height: this.height + 2,
       radius: ARROW_SIZE - 2,
       arrowSize: ARROW_SIZE
-    }));
+    })).attr('transform', 'translate(' + -this.visData.global.column.width / 2 + ' ' + -this.height / 2 + ')');
 
-    this.bg = this.wrapper.append('path').attr('class', 'bg').attr('d', dropMenu({
+    this.bg = this.bgWrapper.append('path').attr('class', 'bg').attr('d', dropMenu({
       x: 0,
       y: 0,
       width: this.visData.global.column.width,
       height: this.height,
       radius: ARROW_SIZE - 1,
       arrowSize: ARROW_SIZE
-    })).style('filter', 'url(#drop-shadow-context-menu)');
+    })).style('filter', 'url(#drop-shadow-context-menu)').attr('transform', 'translate(' + -this.visData.global.column.width / 2 + ' ' + -this.height / 2 + ')');
 
     if (this.infoFields && this.infoFields.length) {
       this.textNodeInfo = this.wrapper.append('g').call(this.createTextField.bind(this), {
         alignRight: false,
         classNames: [],
-        distanceFromCenter: this.querying ? 2 : 1,
+        distanceFromCenter: this.isQueryable ? 2 : 1,
         fullWidth: true,
         labels: this.infoFields
-      });
+      }, this.infoFields.length > 1);
 
       if (this.infoFields.length > 1) {
         var toggler = this.textNodeInfo.append('g').attr('class', 'toggler').on('click', function () {
-          that.clickNodeInfo.call(that, this);
+          self.clickNodeInfo.call(self, this);
         });
 
         var togglerX = this.visData.global.column.width - this.visData.global.row.contentHeight - this.visData.global.row.padding + this.visData.global.cell.padding;
@@ -4184,11 +4770,11 @@ var NodeContextMenu = function () {
 
         toggler.append('rect').attr('class', 'bg').attr('x', togglerX).attr('y', togglerY).attr('width', this.visData.global.row.contentHeight).attr('height', this.visData.global.row.contentHeight);
 
-        toggler.append('use').attr('x', togglerX + (this.visData.global.row.contentHeight - 10) / 2).attr('y', togglerY + (this.visData.global.row.contentHeight - 10) / 2).attr('width', 10).attr('height', 10).attr('xlink:href', this.vis.iconPath + '#arrow-right');
+        toggler.append('use').attr('x', togglerX + (this.visData.global.row.contentHeight - 10) / 2).attr('y', togglerY + (this.visData.global.row.contentHeight - 10) / 2).attr('width', 10).attr('height', 10).attr('xlink:href', this.iconPath + '#arrow-right');
       }
     }
 
-    if (this.querying) {
+    if (this.isQueryable) {
       this.buttonQuery = this.wrapper.append('g').call(this.createButton.bind(this), {
         alignRight: false,
         classNames: [],
@@ -4198,7 +4784,7 @@ var NodeContextMenu = function () {
         labelTwo: true,
         bamEffect: true
       }).on('click', function () {
-        that.clickQueryHandler.call(that, this);
+        self.clickQueryHandler.call(self, this);
       });
       this.buttonQueryFill = this.buttonQuery.select('.bg-fill-effect');
       this.buttonQueryBamEffect = this.buttonQuery.select('.bg-bam-effect');
@@ -4211,7 +4797,7 @@ var NodeContextMenu = function () {
       fullWidth: false,
       label: 'Root'
     }).on('click', function () {
-      that.clickRootHandler.call(that, this);
+      self.clickRootHandler.call(self, this);
     });
     this.buttonRootFill = this.buttonRoot.select('.bg-fill-effect');
     this.checkboxRoot = this.createCheckbox(this.buttonRoot);
@@ -4224,7 +4810,7 @@ var NodeContextMenu = function () {
       label: 'Lock',
       bamEffect: true
     }).on('click', function () {
-      that.clickLockHandler.call(that, this);
+      self.clickLockHandler.call(self, this);
     });
     this.buttonLockFill = this.buttonLock.select('.bg-fill-effect');
     this.buttonLockBamEffect = this.buttonLock.select('.bg-bam-effect');
@@ -4240,6 +4826,16 @@ var NodeContextMenu = function () {
    * Getter / Setter
    * ------------------------------------------------------------------------ */
 
+  /**
+   * Generates CSS string for scaling.
+   *
+   * @method  scale
+   * @author  Fritz Lekschas
+   * @date    2016-09-13
+   * @return  {String}  CSS formatted string containing the scale.
+   */
+
+
   createClass(NodeContextMenu, [{
     key: 'addLabel',
 
@@ -4250,8 +4846,27 @@ var NodeContextMenu = function () {
 
     /* ---------------------------------- A ----------------------------------- */
 
-    value: function addLabel(selection, fullWidth, label, labelTwo) {
-      var width = this.visData.global.column.width * (fullWidth ? 1 : 0.5) - this.visData.global.row.padding * 4;
+    /**
+     * Adds a XHTML-based text elements for labelling.
+     *
+     * @method  addLabel
+     * @author  Fritz Lekschas
+     * @date    2016-09-15
+     * @param   {Object}   selection   D3 selection where the label should be
+     *   added to.
+     * @param   {Boolean}  fullWidth   If `true` the label is drawn over the full
+     *   width.
+     * @param   {String}   label       First label text.
+     * @param   {String}   labelTwo    Second label text.
+     * @param   {Boolean}  isToggable  If `true` substracts the toggler width.
+     *   This is only needed because the because Firefox's layering system seems
+     *   to be buggy when it comes to `foreignObject`s. For whatever reason the
+     *   `foreignObject` is drawn on top of the following `g` even though in SVG
+     *   it should be the other way around.
+     */
+    value: function addLabel(selection, fullWidth, label, labelTwo, isToggable) {
+      var width = this.visData.global.column.width * (fullWidth ? 1 : 0.5) - this.visData.global.row.padding * 4 - (isToggable ? this.visData.global.row.contentHeight : 0);
+
       var height = this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2;
 
       var div = selection.append('foreignObject').attr('x', this.visData.global.row.padding * 2).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', width).attr('height', height).attr('class', 'label-wrapper').append('xhtml:div').style('line-height', height - 2 + 'px').style('width', width + 'px');
@@ -4266,6 +4881,15 @@ var NodeContextMenu = function () {
 
     /* ---------------------------------- C ----------------------------------- */
 
+    /**
+     * Check the state of the lock button and alter its appearance accordingly.
+     *
+     * @method  checkLock
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @return  {Boolean}  If `true` the lock button is active.
+     */
+
   }, {
     key: 'checkLock',
     value: function checkLock() {
@@ -4279,6 +4903,15 @@ var NodeContextMenu = function () {
       }
       return checked;
     }
+
+    /**
+     * Check how the menu needs to be oriented, i.e., above or below the node.
+     *
+     * @method  checkOrientation
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     */
+
   }, {
     key: 'checkOrientation',
     value: function checkOrientation() {
@@ -4288,9 +4921,26 @@ var NodeContextMenu = function () {
         this.toBottom = true;
       }
       this.components.call(this.positionComponent.bind(this));
-      this.bgBorder.classed('is-mirrored-horizontally', this.toBottom);
-      this.bg.classed('is-mirrored-horizontally', this.toBottom).style('filter', 'url(#drop-shadow-context-menu' + (this.toBottom ? '-inverted' : '') + ')');
+      this.bgWrapper.classed('is-mirrored-horizontally', this.toBottom);
+
+      var translate = 'translate(' + -this.visData.global.column.width / 2 + ' ' + -(this.height / 2 + (this.toBottom ? ARROW_SIZE : 0)) + ')';
+
+      this.bg.attr('transform', translate).style('filter', 'url(#drop-shadow-context-menu' + (this.toBottom ? '-inverted' : '') + ')');
+
+      this.bgBorder.attr('transform', translate);
     }
+
+    /**
+     * Check state of the root button and alter appearance accordingly.
+     *
+     * @method  checkRoot
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Boolean}  debounced  If `true` the root button will be debounced
+     *   by `time`.
+     * @param   {Number}   time       Debounce time in milliseconds.
+     */
+
   }, {
     key: 'checkRoot',
     value: function checkRoot(debounced, time) {
@@ -4313,7 +4963,7 @@ var NodeContextMenu = function () {
           if (checked) {
             this.fillButton(this.buttonRootFill, time);
           } else {
-            this.hideFillButton(this.buttonRootFill);
+            this.hideElement(this.buttonRootFill);
           }
         } else {
           this.emptyButton(this.buttonRootFill, time);
@@ -4323,7 +4973,7 @@ var NodeContextMenu = function () {
           if (!checked) {
             this.emptyButton(this.buttonRootFill, time);
           } else {
-            this.showFillButton(this.buttonRootFill);
+            this.showElement(this.buttonRootFill);
           }
         } else {
           this.fillButton(this.buttonRootFill, time);
@@ -4333,13 +4983,22 @@ var NodeContextMenu = function () {
       this.buttonRoot.classed('semi-active', checked);
       this.checkboxRoot.style('transform', 'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)');
     }
+
+    /**
+     * Click handler of the lock button.
+     *
+     * @method  clickLockHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     */
+
   }, {
     key: 'clickLockHandler',
     value: function clickLockHandler() {
       var _this = this;
 
       this.buttonLock.classed('fill-effect', true);
-      this.vis.nodes.lockHandler(this.node);
+      this.nodes.lockHandler(this.node);
       var checked = this.checkLock();
       if (checked) {
         this.buttonLock.classed('active', true);
@@ -4353,6 +5012,15 @@ var NodeContextMenu = function () {
         _this.buttonLock.classed('fill-effect', false);
       }, BUTTON_DEFAULT_DEBOUNCE);
     }
+
+    /**
+     * Click handler of the info button.
+     *
+     * @method  clickNodeInfo
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     */
+
   }, {
     key: 'clickNodeInfo',
     value: function clickNodeInfo() {
@@ -4362,28 +5030,56 @@ var NodeContextMenu = function () {
 
       this.textNodeInfo.select('.label-two').text(this.getNodeProperty(this.infoFields[this.nodeInfoId].property));
     }
+
+    /**
+     * Click handler of the query button.
+     *
+     * @method  clickQueryHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     */
+
   }, {
     key: 'clickQueryHandler',
     value: function clickQueryHandler() {
       this.buttonQuery.classed('fill-effect', true);
       this.updateQuery(true, BUTTON_QUERY_DEBOUNCE);
-      if (!this.vis.disableDebouncedContextMenu) {
+      if (this.isDebounced) {
         this.debouncedQueryHandler(true);
       } else {
         this.queryHandler();
       }
     }
+
+    /**
+     * Click handler of the root button.
+     *
+     * @method  clickRootHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     */
+
   }, {
     key: 'clickRootHandler',
     value: function clickRootHandler() {
       this.buttonRoot.classed('fill-effect', true);
       this.checkRoot(true, BUTTON_ROOT_DEBOUNCE);
-      if (!this.vis.disableDebouncedContextMenu) {
+      if (this.isDebounced) {
         this.debouncedRootHandler(true);
       } else {
         this.rootHandler();
       }
     }
+
+    /**
+     * Closes the menu.
+     *
+     * @method  close
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @return  {Object}  Promise resolving to `true` when the menu is closed.
+     */
+
   }, {
     key: 'close',
     value: function close() {
@@ -4404,6 +5100,25 @@ var NodeContextMenu = function () {
       }
       return this.closing;
     }
+
+    /**
+     * Helper method to create and append a button.
+     *
+     * @description
+     * The `properties` variable needs to contain the following properties:
+     *  - fullWidth: If `true` draws the button over the full width. [Boolean]
+     *  - label: The first label. Considered the main label if `labelTwo` is
+     *    `undefined`. [String]
+     *  - labelTwo: Second label. Considered the main label when given.
+     *
+     * @method  createButton
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  selection   D3 selection where the button should be
+     *   appended to.
+     * @param   {Object}  properties  The button's properties.
+     */
+
   }, {
     key: 'createButton',
     value: function createButton(selection, properties) {
@@ -4418,15 +5133,32 @@ var NodeContextMenu = function () {
         fullWidth: properties.fullWidth
       }).call(this.addLabel.bind(this), properties.fullWidth, properties.label, properties.labelTwo).call(this.positionComponent.bind(this), properties.distanceFromCenter, properties.alignRight);
     }
+
+    /**
+     * Helper method to create and append a button background.
+     *
+     * @description
+     * The `properties` variable needs to contain the following properties:
+     *  - fullWidth: If `true` draws the button over the full width. [Boolean]
+     *  - bamEffect: If `true` adds an extra element for the click-bam-effect.
+     *
+     * @method  createButtonBg
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  selection   D3 selection where the background element
+     *   should be appended to.
+     * @param   {Object}  properties  The background element's properties.
+     */
+
   }, {
     key: 'createButtonBg',
-    value: function createButtonBg(selection, params) {
+    value: function createButtonBg(selection, properties) {
       var _this3 = this;
 
       selection.datum(function (data) {
         data.x = _this3.visData.global.row.padding;
         data.y = _this3.visData.global.row.padding;
-        data.width = _this3.visData.global.column.width * (params.fullWidth ? 1 : 0.5) - _this3.visData.global.row.padding * 2;
+        data.width = _this3.visData.global.column.width * (properties.fullWidth ? 1 : 0.5) - _this3.visData.global.row.padding * 2;
         data.height = _this3.visData.global.row.contentHeight;
         data.rx = 2;
         data.ry = 2;
@@ -4458,8 +5190,10 @@ var NodeContextMenu = function () {
         return data.ry;
       });
 
-      if (params.bamEffect) {
-        selection.append('rect').attr('class', 'bg-bam-effect').attr('x', function (data) {
+      if (properties.bamEffect) {
+        selection.append('g').attr('transform', function (data) {
+          return 'translate(' + data.width / 2 + ' ' + data.height / 2 + ')';
+        }).append('g').attr('class', 'bam-effect').append('rect').attr('class', 'bam-effect-bg').attr('x', function (data) {
           return data.x;
         }).attr('y', function (data) {
           return data.y;
@@ -4471,9 +5205,22 @@ var NodeContextMenu = function () {
           return data.rx;
         }).attr('ry', function (data) {
           return data.ry;
+        }).attr('transform', function (data) {
+          return 'translate(' + -data.width / 2 + ' ' + -data.height / 2 + ')';
         });
       }
     }
+
+    /**
+     * Helper method to create and append a checkbox-like button.
+     *
+     * @method  createCheckbox
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  selection  D3 selection where the checkbox element
+     *   should be appended to.
+     */
+
   }, {
     key: 'createCheckbox',
     value: function createCheckbox(selection) {
@@ -4492,19 +5239,47 @@ var NodeContextMenu = function () {
         return data.width + x + 1;
       }).attr('y', height / 2 + this.visData.global.row.padding + 1).attr('width', height - 2).attr('height', height - 2).attr('rx', height - 2);
     }
+
+    /**
+     * Helper method to create and append a text field.
+     *
+     * @method  createTextField
+     * @author  Fritz Lekschas
+     * @date    2016-09-15
+     * @param   {Object}  selection   D3 selection where the text field should be
+     *   appended to.
+     * @param   {Object}  properties  The text field's properties.
+     * @param   {Boolean}  isToggable  If `true` substracts the toggler width.
+     *   This is only needed because the because Firefox's layering system seems
+     *   to be buggy when it comes to `foreignObject`s. For whatever reason the
+     *   `foreignObject` is drawn on top of the following `g` even though in SVG
+     *   it should be the other way around.
+     */
+
   }, {
     key: 'createTextField',
-    value: function createTextField(selection, properties) {
+    value: function createTextField(selection, properties, isToggable) {
       var classNames = 'component text-field';
       if (properties.classNames && properties.classNames.length) {
         classNames += ' ' + properties.classNames.join(' ');
       }
       selection.attr('class', classNames);
 
-      selection.datum(properties).call(this.addLabel.bind(this), true, properties.labels[this.nodeInfoId].label, true).call(this.positionComponent.bind(this), properties.distanceFromCenter, properties.alignRight);
+      selection.datum(properties).call(this.addLabel.bind(this), true, properties.labels[this.nodeInfoId].label, true, isToggable).call(this.positionComponent.bind(this), properties.distanceFromCenter, properties.alignRight);
     }
 
     /* ---------------------------------- E ----------------------------------- */
+
+    /**
+     * Transitions out an element top down.
+     *
+     * @method  emptyButton
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  selection   D3 selection of the element to be
+     *   transitioned.
+     * @param   {Number}  time       Transition time in milliseconds.
+     */
 
   }, {
     key: 'emptyButton',
@@ -4522,6 +5297,17 @@ var NodeContextMenu = function () {
 
     /* ---------------------------------- F ----------------------------------- */
 
+    /**
+     * Transitions in an element top down.
+     *
+     * @method  fillButton
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  selection   D3 selection of the element to be
+     *   transitioned.
+     * @param   {Number}  time       Transition time in milliseconds.
+     */
+
   }, {
     key: 'fillButton',
     value: function fillButton(selection, time) {
@@ -4536,11 +5322,21 @@ var NodeContextMenu = function () {
 
     /* ---------------------------------- G ----------------------------------- */
 
+    /**
+     * Helper method to access a node property.
+     *
+     * @method  getNodeProperty
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Function}  callback  Callback returning a property of the node.
+     * @return  {*}                   The value returned by the callback.
+     */
+
   }, {
     key: 'getNodeProperty',
-    value: function getNodeProperty(property) {
+    value: function getNodeProperty(callback) {
       try {
-        return property(this.node.datum());
+        return callback(this.node.datum());
       } catch (e) {
         return undefined;
       }
@@ -4548,13 +5344,33 @@ var NodeContextMenu = function () {
 
     /* ---------------------------------- H ----------------------------------- */
 
+    /**
+     * Hide an element by setting the height to zero.
+     *
+     * @method  hideElement
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  selection  D3 selection of element to be hidden.
+     */
+
   }, {
-    key: 'hideFillButton',
-    value: function hideFillButton(selection) {
+    key: 'hideElement',
+    value: function hideElement(selection) {
       selection.transition().duration(0).attr('height', 0);
     }
 
     /* ---------------------------------- I ----------------------------------- */
+
+    /**
+     * Check if menu is opened in the same column already.
+     *
+     * @method  isOpenSameColumn
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Number}   columnNum  Column number.
+     * @return  {Boolean}             If `true` menu is opened and in the same
+     *   column.
+     */
 
   }, {
     key: 'isOpenSameColumn',
@@ -4563,6 +5379,15 @@ var NodeContextMenu = function () {
     }
 
     /* ---------------------------------- O ----------------------------------- */
+
+    /**
+     * Opens the menu.
+     *
+     * @method  open
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  node  D3 selection of the node the menu relates to.
+     */
 
   }, {
     key: 'open',
@@ -4597,13 +5422,28 @@ var NodeContextMenu = function () {
 
     /* ---------------------------------- P ----------------------------------- */
 
+    /**
+     * Positions component.
+     *
+     * @method  positionComponent
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}   selection           D3 selection of the element to be
+     *   positioned.
+     * @param   {Boolean}  distanceFromCenter  If `true` positions component from
+     *   the center.
+     * @param   {Boolean}  alignRight          If `true` aligns component to the
+     *   right.
+     * @return  {String}                       CSS-formatted translation string.
+     */
+
   }, {
     key: 'positionComponent',
     value: function positionComponent(selection, distanceFromCenter, alignRight) {
       var _this5 = this;
 
       selection.datum(function (data) {
-        // Lets cache some values to make our lifes easier when checking the
+        // Lets cache some values to make our lives easier when checking the
         // position again in `checkOrientation`.
         if (distanceFromCenter) {
           data.distanceFromCenter = distanceFromCenter;
@@ -4614,7 +5454,7 @@ var NodeContextMenu = function () {
         return data;
       }).attr('transform', function (data) {
         var x = data.alignRight ? _this5.visData.global.column.width / 2 : 0;
-        // When the buttons are created I assume that the menu is positioned
+        // When the buttons are created I assume self the menu is positioned
         // above the node; i.e. `distanceFromCenter` needs to be inverted.
         var y = _this5.visData.global.row.height * (_this5.toBottom ? data.distanceFromCenter : _this5.numButtonRows - data.distanceFromCenter - 1) + (_this5.toBottom ? ARROW_SIZE : 0);
 
@@ -4624,22 +5464,31 @@ var NodeContextMenu = function () {
 
     /* ---------------------------------- Q ----------------------------------- */
 
+    /**
+     * Handle the four different query states: none, or, and, and not.
+     *
+     * @method  queryHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Boolean}  debounced  If `true` the handler will debounce.
+     */
+
   }, {
     key: 'queryHandler',
     value: function queryHandler(debounced) {
       if (debounced) {
         if (this.tempQueryMode !== this.currentQueryMode) {
           if (this.tempQueryMode) {
-            this.vis.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
+            this.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
             this.triggerButtonBamEffect(this.buttonQueryBamEffect);
             this.buttonQuery.classed('active', true);
           } else {
-            this.vis.nodes.queryHandler(this.node, 'unquery');
+            this.nodes.queryHandler(this.node, 'unquery');
             this.buttonQuery.classed('active', false);
           }
         }
       } else {
-        this.vis.nodes.queryHandler(this.node);
+        this.nodes.queryHandler(this.node);
       }
 
       // Reset temporary query modes.
@@ -4650,12 +5499,21 @@ var NodeContextMenu = function () {
 
     /* ---------------------------------- R ----------------------------------- */
 
+    /**
+     * Handle re-rooting of the graph.
+     *
+     * @method  rootHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Boolean}  debounced  If `true` the handler will debounce.
+     */
+
   }, {
     key: 'rootHandler',
     value: function rootHandler(debounced) {
       if (!debounced || this.tempRoot !== this.currentRootState) {
         this.close();
-        this.vis.nodes.rootHandler(this.node);
+        this.nodes.rootHandler(this.node);
       }
 
       // Reset temporary root values.
@@ -4668,15 +5526,34 @@ var NodeContextMenu = function () {
 
     /* ---------------------------------- S ----------------------------------- */
 
+    /**
+     * Scrolls the menu vertically.
+     *
+     * @method  scrollY
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Number}  offset  Scroll related offset.
+     */
+
   }, {
     key: 'scrollY',
     value: function scrollY(offset) {
       this._yOffset = offset;
       this.updateAppearance();
     }
+
+    /**
+     * Transition element in by resetting its original height.
+     *
+     * @method  showElement
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  selection  D3 selection to be transitioned in.
+     */
+
   }, {
-    key: 'showFillButton',
-    value: function showFillButton(selection) {
+    key: 'showElement',
+    value: function showElement(selection) {
       selection.transition().duration(0).attr('y', function (data) {
         return data.y;
       }).attr('height', function (data) {
@@ -4685,6 +5562,15 @@ var NodeContextMenu = function () {
     }
 
     /* ---------------------------------- T ----------------------------------- */
+
+    /**
+     * Toggle menu visibility
+     *
+     * @method  toggle
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  node  D3 selection of the related node.
+     */
 
   }, {
     key: 'toggle',
@@ -4710,6 +5596,16 @@ var NodeContextMenu = function () {
         });
       });
     }
+
+    /**
+     * Call button BAM effect.
+     *
+     * @method  triggerButtonBamEffect
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  node  D3 selection of the button to be BAM-effected.
+     */
+
   }, {
     key: 'triggerButtonBamEffect',
     value: function triggerButtonBamEffect(button) {
@@ -4721,6 +5617,14 @@ var NodeContextMenu = function () {
 
     /* ---------------------------------- U ----------------------------------- */
 
+    /**
+     * Update appearance of the menu.
+     *
+     * @method  updateAppearance
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     */
+
   }, {
     key: 'updateAppearance',
     value: function updateAppearance() {
@@ -4728,6 +5632,15 @@ var NodeContextMenu = function () {
 
       this.wrapper.classed('transitionable', this.visible).classed('open', this.opened).style('transform', this.translate + ' ' + this.scale).style('transform-origin', this.visData.global.column.width / 2 + 'px ' + centerY + 'px');
     }
+
+    /**
+     * Toggle through the info text fields.
+     *
+     * @method  updateInfoText
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     */
+
   }, {
     key: 'updateInfoText',
     value: function updateInfoText() {
@@ -4739,6 +5652,18 @@ var NodeContextMenu = function () {
 
       this.textNodeInfo.select('.label-two').text(this.getNodeProperty(this.infoFields[this.nodeInfoId].property));
     }
+
+    /**
+     * Open menu on another node.
+     *
+     * @description
+     * Updates the position of the menu and its content.
+     *
+     * @method  updatePosition
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     */
+
   }, {
     key: 'updatePosition',
     value: function updatePosition() {
@@ -4746,10 +5671,21 @@ var NodeContextMenu = function () {
         this.open(this.node);
       }
     }
+
+    /**
+     * Update querying when toggling through different query options.
+     *
+     * @method  updateQuery
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Boolean}  debounced  If `true` debounces querying.
+     * @param   {Number}   time       Debounce time in milliseconds.
+     */
+
   }, {
     key: 'updateQuery',
     value: function updateQuery(debounced, time) {
-      if (!this.querying) {
+      if (!this.isQueryable) {
         return;
       }
 
@@ -4783,7 +5719,7 @@ var NodeContextMenu = function () {
       if (debounced) {
         if (queryMode) {
           if (queryMode === state) {
-            this.showFillButton(this.buttonQueryFill);
+            this.showElement(this.buttonQueryFill);
           } else {
             this.fillButton(this.buttonQueryFill, time);
           }
@@ -4791,7 +5727,7 @@ var NodeContextMenu = function () {
           if (state) {
             this.emptyButton(this.buttonQueryFill, time);
           } else {
-            this.hideFillButton(this.buttonQueryFill);
+            this.hideElement(this.buttonQueryFill);
           }
         }
       } else {
@@ -4800,6 +5736,15 @@ var NodeContextMenu = function () {
 
       this.buttonQuery.classed('semi-active', !!queryMode).classed('active', !!state).select('.label-two').text(queryMode || 'not queried').classed('inactive', !queryMode);
     }
+
+    /**
+     * Helper method to trigger a check of all buttons and text fields.
+     *
+     * @method  updateStates
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     */
+
   }, {
     key: 'updateStates',
     value: function updateStates() {
@@ -4815,13 +5760,33 @@ var NodeContextMenu = function () {
     get: function get() {
       return 'scale(' + (this.opened ? 1 : 0.5) + ')';
     }
+
+    /**
+     * Generates a CSS string for translation
+     *
+     * @method  translate
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @return  {String}  CSS formatted string containing the translate.
+     */
+
   }, {
     key: 'translate',
     get: function get() {
       var y = this.toBottom ? this._y + this.height + this.visData.global.row.height - ARROW_SIZE : this._y;
 
       return 'translate(' + this._x + 'px,' + (y + this._yOffset) + 'px)';
-    },
+    }
+
+    /**
+     * Set x and y values.
+     *
+     * @method  translate
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  position  Object containing x and y coordinates.
+     */
+    ,
     set: function set(position) {
       this._x = position.x;
       this._y = position.y;
@@ -4850,7 +5815,7 @@ var LimitsUnsupportedFormat = function (_ExtendableError) {
  *
  * @method  onDragDrop
  * @author  Fritz Lekschas
- * @date    2016-04-04
+ * @date    2016-09-12
  * @param   {Object}  selection        D3 selection to listen for the drag
  *   event.
  * @param   {Object}           dragMoveHandler         Handler for drag-move.
@@ -4866,8 +5831,12 @@ var LimitsUnsupportedFormat = function (_ExtendableError) {
  * @param   {Array}             noDraggingWhenTrue     List if function
  *   returning a Boolean value which should prevent the dragMoveHandler from
  *   working.
+ * @param   {String}           clickTolerance          Specify the number of
+ *   pixel that are allowed to move but still trigger a click event. Sometimes
+ *   it is useful to allow the user to move 1 or 2 pixel, especially in high
+ *   res environments. [Default is 0]
  */
-function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, noDraggingWhenTrue, dragData) {
+function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, noDraggingWhenTrue, dragData, clickTolerance) {
   var drag = d3.drag();
   var checkWhenDragging = isFunction(noDraggingWhenTrue);
 
@@ -4879,7 +5848,10 @@ function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, e
 
   drag.filter(filter);
 
+  var d2 = void 0;
+
   drag.on('start', function () {
+    d2 = 0;
     if (typeof limits === 'function') {
       appliedLimits = limits();
     }
@@ -4893,11 +5865,20 @@ function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, e
       d3.event.sourceEvent.preventDefault();
       dragStartHandler();
       dragMoveHandler.call(this, data, elsToBeDragged, orientation, appliedLimits);
+
+      d2 += d3.event.dx * d3.event.dx + d3.event.dy * d3.event.dy;
     });
   }
 
   if (dropHandler) {
-    drag.on('end', dropHandler);
+    drag.on('end', function () {
+      dropHandler.call(this);
+
+      if (d2 <= (clickTolerance || 0)) {
+        // Don't supress the click event for minor mouse movements.
+        d3.select(window).on('click.drag', null);
+      }
+    });
   }
 
   selection.each(function (data) {
@@ -4914,6 +5895,19 @@ function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, e
   });
 }
 
+/**
+ * Custom drag-move handler used by the custom drag-drop handler.
+ *
+ * @method  dragMoveHandler
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}           data            D3's drag event object.
+ * @param   {Array}            elsToBeDragged  Array of D3 selections.
+ * @param   {String}           orientation     Can either be "horizontal",
+ *   "vertical" or `undefined`, i.e. both directions.
+ * @param   {Object|Function}  limits          X and Y drag limits. E.g.
+ *   `{ x: { min: 0, max: 10 } }`.
+ */
 function dragMoveHandler(data, elsToBeDragged, orientation, limits) {
   var els = d3.select(this);
 
@@ -4952,7 +5946,22 @@ function dragMoveHandler(data, elsToBeDragged, orientation, limits) {
   }
 }
 
-// Adapted from: http://bl.ocks.org/cpbotha/5200394
+/**
+ * Creates SVG filter element for simulating drop shadow.
+ *
+ * @description
+ * Adapted from: http://bl.ocks.org/cpbotha/5200394
+ *
+ * @method  dropShadow
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}  el       D3 selection.
+ * @param   {String}  name     Filter name.
+ * @param   {Number}  dx       Shadow x-distance.
+ * @param   {Number}  dy       Shadow y-distance.
+ * @param   {Number}  blur     Blurness.
+ * @param   {Number}  opacity  Opacity of the shadow with in [0,1].
+ */
 function dropShadow(el, name, dx, dy, blur, opacity) {
   var defs = el.select('defs');
 
@@ -4983,13 +5992,19 @@ function dropShadow(el, name, dx, dy, blur, opacity) {
   feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
 }
 
-// External
-// eslint-disable-line import/no-unresolved
-// eslint-disable-line import/no-unresolved
-// Internal
-// Private Variables
-var _d3 = d3;
-
+/**
+ * Helper method to set a value if available and otherwise fall back to a
+ * default value
+ *
+ * @method  setOption
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {*}        value  Value to be set if available.
+ * @param   {*}        defaultValue  Default value to be set when `value` is
+ *   not available.
+ * @param   {Boolean}  noFalsyValue  No falsy values are allowed. E.g., an empty
+ *   string or the number zero are regarded as falsy.
+ */
 function setOption(value, defaultValue, noFalsyValue) {
   if (noFalsyValue) {
     return value || defaultValue;
@@ -4997,6 +6012,13 @@ function setOption(value, defaultValue, noFalsyValue) {
 
   return typeof value !== 'undefined' ? value : defaultValue;
 }
+
+// External
+// eslint-disable-line import/no-unresolved
+// eslint-disable-line import/no-unresolved
+// Internal
+// Private Variables
+var _d3 = d3;
 
 var ListGraph = function () {
   function ListGraph(init) {
@@ -5016,7 +6038,7 @@ var ListGraph = function () {
       throw new LayoutNotAvailable();
     }
 
-    var that = this;
+    var self = this;
 
     this.baseEl = init.element;
     this.baseEl.__d3ListGraphBase__ = true;
@@ -5121,8 +6143,11 @@ var ListGraph = function () {
       this.baseElJq.width(this.width);
     }
 
-    this.layout = new _d3.listGraph( // eslint-disable-line new-cap
-    [this.width, this.height], [this.columns, this.rows], _d3);
+    this.layout = new _d3.listGraph({ // eslint-disable-line new-cap
+      size: [this.width, this.height],
+      grid: [this.columns, this.rows],
+      d3: _d3
+    });
 
     this.data = init.data;
     this.visData = this.layout.process(this.data, this.rootNodes, {
@@ -5158,10 +6183,19 @@ var ListGraph = function () {
 
     this.links = new Links(this, this.levels.groups, this.visData, this.layout);
     this.nodes = new Nodes(this, this.levels.groups, this.visData, this.links, this.events);
-    this.levels.scrollPreparation(this, this.scrollbarWidth);
+    this.levels.scrollPreparation(this.scrollbarWidth);
     this.scrollbars = new Scrollbars(this.levels.groups, this.visData, this.scrollbarWidth);
 
-    this.nodeContextMenu = new NodeContextMenu(this, this.visData, this.container, this.events, this.querying, this.nodeInfoContextMenu);
+    this.nodeContextMenu = new NodeContextMenu({
+      visData: this.visData,
+      baseEl: this.container,
+      events: this.events,
+      nodes: this.nodes,
+      iconPath: this.iconPath,
+      infoFields: this.nodeInfoContextMenu,
+      isQueryable: this.querying,
+      isDebounced: !this.disableDebouncedContextMenu
+    });
 
     this.nodeContextMenu.wrapper.on('mousedown', function () {
       _this.mouseDownOnContextMenu = true;
@@ -5173,13 +6207,13 @@ var ListGraph = function () {
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
     // We are using delegated event listeners to provide better scaling
     this.svgJq.on('mousewheel', '.' + this.levels.className, function (event) {
-      if (!that.zoomedOut) {
-        that.mousewheelColumn(this, event);
+      if (!self.zoomedOut) {
+        self.mousewheelColumn(this, event);
       }
     });
 
     this.svgJq.on('click', function (event) {
-      that.checkGlobalClick.call(that, event.target);
+      self.checkGlobalClick.call(self, event.target);
     });
 
     // Add jQuery delegated event listeners instead of direct listeners of D3.
@@ -5187,53 +6221,53 @@ var ListGraph = function () {
       // Add a new global outside click listener using this node and the
       // node context menu as the related elements.
       requestNextAnimationFrame(function () {
-        that.registerOutSideClickHandler('nodeContextMenu', [that.nodeContextMenu.wrapper.node()], ['visible-node'], function () {
+        self.registerOutSideClickHandler('nodeContextMenu', [self.nodeContextMenu.wrapper.node()], ['visible-node'], function () {
           // The context of this method is the context of the outer click
           // handler.
-          that.nodeContextMenu.close();
-          that.unregisterOutSideClickHandler.call(that, 'nodeContextMenu');
+          self.nodeContextMenu.close();
+          self.unregisterOutSideClickHandler.call(self, 'nodeContextMenu');
         });
       });
 
-      that.nodeContextMenu.toggle.call(that.nodeContextMenu, _d3.select(this.parentNode));
+      self.nodeContextMenu.toggle.call(self.nodeContextMenu, _d3.select(this.parentNode));
     });
 
     this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classRoot, function () {
-      that.nodes.rootHandler.call(that.nodes, _d3.select(this), true);
+      self.nodes.rootHandler.call(self.nodes, _d3.select(this), true);
     });
 
     if (this.querying) {
       this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classQuery, function () {
-        that.nodes.queryHandler.call(that.nodes, _d3.select(this.parentNode), 'unquery');
-        that.nodeContextMenu.updateStates();
+        self.nodes.queryHandler.call(self.nodes, _d3.select(this.parentNode), 'unquery');
+        self.nodeContextMenu.updateStates();
       });
     }
 
     this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classLock, function () {
-      that.nodes.lockHandler.call(that.nodes, this, _d3.select(this).datum());
+      self.nodes.lockHandler.call(self.nodes, this, _d3.select(this).datum());
     });
 
     this.svgJq.on('mouseenter', '.' + this.nodes.classNodeVisible, function () {
-      that.interactionWrapper.call(that, function (domEl, data) {
+      self.interactionWrapper.call(self, function (domEl, data) {
         if (!this.vis.activeScrollbar) {
           this.enterHandler.call(this, domEl, data);
         }
-      }.bind(that.nodes), [this, _d3.select(this).datum()]);
+      }.bind(self.nodes), [this, _d3.select(this).datum()]);
     });
 
     this.svgJq.on('mouseleave', '.' + this.nodes.classNodeVisible, function () {
-      that.interactionWrapper.call(that, function (domEl, data) {
+      self.interactionWrapper.call(self, function (domEl, data) {
         if (!this.vis.activeScrollbar) {
           this.leaveHandler.call(this, domEl, data);
         }
-      }.bind(that.nodes), [this, _d3.select(this).datum()]);
+      }.bind(self.nodes), [this, _d3.select(this).datum()]);
     });
 
     // Normally we would reference a named methods but since we need to access
     // the class' `this` property instead of the DOM element we need to use an
     // arrow function.
     this.scrollbars.all.on('mousedown', function () {
-      that.scrollbarMouseDown(this, _d3.event);
+      self.scrollbarMouseDown(this, _d3.event);
     });
 
     // We need to listen to `mouseup` and `mousemove` globally otherwise
@@ -5241,12 +6275,10 @@ var ListGraph = function () {
     // scrollbar, which is super annoying.
     _d3.select(document).on('mouseup', function () {
       _this.globalMouseUp(_d3.event);
-    }).on('mousemove', function () {
-      _this.globalMouseMove(_d3.event);
     });
 
     // Enable dragging of the whole graph.
-    this.svgD3.call(onDragDrop, this.dragStartHandler.bind(this), this.dragMoveHandler.bind(this), this.dragEndHandler.bind(this), [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), this.noDragging.bind(this), this.dragged);
+    this.svgD3.call(onDragDrop, this.dragStartHandler.bind(this), this.dragMoveHandler.bind(this), this.dragEndHandler.bind(this), [this.container, this.topbar.localControlWrapper], 'horizontal', this.getDragLimits.bind(this), this.noDragging.bind(this), this.dragged, 2);
 
     this.events.on('d3ListGraphLevelFocus', function (levelId) {
       return _this.levels.focus(levelId);
@@ -5446,44 +6478,68 @@ var ListGraph = function () {
         this.activeScrollbar.classed('active', false);
 
         this.activeScrollbar = undefined;
+
+        this.stopScrollBarMouseMove();
       }
     }
   }, {
-    key: 'globalMouseMove',
-    value: function globalMouseMove(event) {
-      if (this.activeScrollbar) {
-        event.preventDefault();
-        var data = this.activeScrollbar.datum();
-        var deltaY = data.scrollbar.clientY - event.clientY;
+    key: 'startScrollBarMouseMove',
+    value: function startScrollBarMouseMove() {
+      var _this2 = this;
 
-        // Scroll scrollbar
-        ListGraph.scrollElVertically(this.activeScrollbar.node(), Math.min(Math.max(data.scrollbar.scrollTop - deltaY, 0), data.scrollbar.scrollHeight));
+      _d3.select(document).on('mousemove', function () {
+        _this2.dragScrollbar(_d3.event);
+      });
+    }
+  }, {
+    key: 'stopScrollBarMouseMove',
+    value: function stopScrollBarMouseMove() {
+      _d3.select(document).on('mousemove', null);
+    }
 
-        // Scroll content
-        var contentScrollTop = Math.max(Math.min(data.scrollTop + data.invertedHeightScale(deltaY), 0), -data.scrollHeight);
+    /**
+     * Method for scrolling a column of nodes when the scrollbar is dragged.
+     *
+     * @method  dragScrollbar
+     * @author  Fritz Lekschas
+     * @date    2016-09-12
+     * @param   {Object}  event  D3's _mousemove_ event object.
+     */
 
-        // Check if nodes are visible.
-        this.checkNodeVisibility(data.level, contentScrollTop);
+  }, {
+    key: 'dragScrollbar',
+    value: function dragScrollbar(event) {
+      event.preventDefault();
+      var data = this.activeScrollbar.datum();
+      var deltaY = data.scrollbar.clientY - event.clientY;
 
-        ListGraph.scrollElVertically(data.nodes, contentScrollTop);
+      // Scroll scrollbar
+      ListGraph.scrollElVertically(this.activeScrollbar.node(), Math.min(Math.max(data.scrollbar.scrollTop - deltaY, 0), data.scrollbar.scrollHeight));
 
-        // Scroll Links
-        if (data.level !== this.visData.nodes.length) {
-          this.links.scroll(data.linkSelections.outgoing, this.layout.offsetLinks(data.level, contentScrollTop, 'source'));
-        }
+      // Scroll content
+      var contentScrollTop = Math.max(Math.min(data.scrollTop + data.invertedHeightScale(deltaY), 0), -data.scrollHeight);
 
-        if (data.level > 0) {
-          this.links.scroll(data.linkSelections.incoming, this.layout.offsetLinks(data.level - 1, contentScrollTop, 'target'));
-        }
+      ListGraph.scrollElVertically(data.nodes, contentScrollTop);
 
-        if (this.showLinkLocation) {
-          this.nodes.updateLinkLocationIndicators(data.level - 1, data.level + 1);
-        }
-
-        if (this.nodeContextMenu.opened) {
-          this.nodeContextMenu.scrollY(contentScrollTop);
-        }
+      // Scroll Links
+      if (data.level !== this.visData.nodes.length) {
+        this.links.scroll(data.linkSelections.outgoing, this.layout.offsetLinks(data.level, contentScrollTop, 'source'));
       }
+
+      if (data.level > 0) {
+        this.links.scroll(data.linkSelections.incoming, this.layout.offsetLinks(data.level - 1, contentScrollTop, 'target'));
+      }
+
+      if (this.showLinkLocation) {
+        this.nodes.updateLinkLocationIndicators(data.level - 1, data.level + 1);
+      }
+
+      if (this.nodeContextMenu.opened) {
+        this.nodeContextMenu.scrollY(contentScrollTop);
+      }
+
+      // Check if nodes are visible.
+      this.checkNodeVisibility(data.level, contentScrollTop);
     }
   }, {
     key: 'scrollbarMouseDown',
@@ -5491,6 +6547,7 @@ var ListGraph = function () {
       this.noInteractions = true;
       this.activeScrollbar = _d3.select(el).classed('active', true);
       this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
+      this.startScrollBarMouseMove();
     }
   }, {
     key: 'mousewheelColumn',
@@ -5499,14 +6556,15 @@ var ListGraph = function () {
 
       var data = _d3.select(el).datum();
 
-      this.checkNodeVisibility(data.level);
-
       if (data.scrollHeight > 0) {
         // Scroll nodes
         data.scrollTop = Math.max(Math.min(data.scrollTop + event.deltaY, 0), -data.scrollHeight);
 
         this.scrollY(data);
       }
+
+      // Check if nodes are visible.
+      this.checkNodeVisibility(data.level);
     }
   }, {
     key: 'scrollY',
@@ -5540,13 +6598,13 @@ var ListGraph = function () {
   }, {
     key: 'scrollYTo',
     value: function scrollYTo(selection, positionY) {
-      var _this2 = this;
+      var _this3 = this;
 
       return selection.transition().duration(TRANSITION_SEMI_FAST).tween('scrollY', function (data) {
         var scrollPositionY = _d3.interpolateNumber(data.scrollTop, positionY);
         return function (time) {
           data.scrollTop = scrollPositionY(time);
-          _this2.scrollY(data);
+          _this3.scrollY(data);
         };
       });
     }
@@ -5614,11 +6672,11 @@ var ListGraph = function () {
   }, {
     key: 'updateScrolling',
     value: function updateScrolling() {
-      var _this3 = this;
+      var _this4 = this;
 
       this.resetAllScrollPositions().call(allTransitionsEnded, function () {
-        _this3.levels.updateScrollProperties();
-        _this3.scrollbars.updateVisibility();
+        _this4.levels.updateScrollProperties();
+        _this4.scrollbars.updateVisibility();
       });
     }
   }, {
@@ -5629,7 +6687,7 @@ var ListGraph = function () {
   }, {
     key: 'globalView',
     value: function globalView(selectionInterst) {
-      var _this4 = this;
+      var _this5 = this;
 
       if (!this.zoomedOut) {
         (function () {
@@ -5638,9 +6696,9 @@ var ListGraph = function () {
           var width = 0;
           var height = 0;
           var cRect = void 0;
-          var contBBox = _this4.container.node().getBBox();
+          var contBBox = _this5.container.node().getBBox();
 
-          var globalCRect = _this4.svgD3.node().getBoundingClientRect();
+          var globalCRect = _this5.svgD3.node().getBoundingClientRect();
 
           if (selectionInterst && !selectionInterst.empty()) {
             selectionInterst.each(function () {
@@ -5648,19 +6706,19 @@ var ListGraph = function () {
               width = Math.max(width, cRect.left - (globalCRect.left + cRect.width));
               height = Math.max(height, cRect.top - (globalCRect.top + cRect.height));
             });
-            width = _this4.width > width ? _this4.width : width;
-            height = _this4.height > height ? _this4.height : height;
+            width = _this5.width > width ? _this5.width : width;
+            height = _this5.height > height ? _this5.height : height;
           } else {
-            width = _this4.width > contBBox.width ? _this4.width : contBBox.width;
-            height = _this4.height > contBBox.height ? _this4.height : contBBox.height;
+            width = _this5.width > contBBox.width ? _this5.width : contBBox.width;
+            height = _this5.height > contBBox.height ? _this5.height : contBBox.height;
           }
 
-          x = contBBox.x + _this4.dragged.x;
+          x = contBBox.x + _this5.dragged.x;
           y = contBBox.y;
 
-          _this4.nodes.makeAllTempVisible();
+          _this5.nodes.makeAllTempVisible();
 
-          _this4.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
+          _this5.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
         })();
       }
     }
@@ -5707,9 +6765,9 @@ var ListGraph = function () {
      * Assesses any of the two ends of a link points outwards.
      *
      * @description
-     * In order to be able to determine where a link points to the output of
+     * In order to be able to determine where a link points to, the output of
      * `linkPointsOutside` for the source and target location is shifted bitwise
-     * in such a way that this method return 9 unique numbers.
+     * in such a way that this method return 11 unique numbers.
      * - 0: link is completely inwards
      * - 1: source is outwards to the top
      * - 2: source is outwards to the bottom
@@ -5719,8 +6777,10 @@ var ListGraph = function () {
      * - 6: source is outwards to the bottom and target is outwards to the top
      * - 9: source is outwards to the top and target is outwards to the bottom
      * - 10: source and target are outwards to the bottom
+     * - 16: source is invisible
+     * - 64: target is invisible
      *
-     * If you're asking yourself: "WAT?!?!!" Think of a 4x4 matrix:
+     * If you're asking yourself: "WAT?!?!!" Think of a 4x4 binary matrix:
      * |    target    |    source    |
      * | bottom | top | bottom | top |
      * |    0   |  0  |    0   |  0  | (=0)
@@ -5733,14 +6793,18 @@ var ListGraph = function () {
      * |    1   |  0  |    0   |  1  | (=9)
      * |    1   |  0  |    1   |  0  | (=10)
      *
-     * Checker whether the source or target location is above, below or within the
-     * global SVG container is very simple. For example, to find out if the target
-     * location is above, all we need to do is `<VALUE> & 4 > 0`. This performs a
-     * bit-wise AND operation with only two possible outcomes: 4 and 0.
+     * *Note: 16 and 64 are two special values when the source or target node is
+     * hidden. The numbers are so hight just because that the bitwise-and with 4
+     * and 8 results to 0.
+     *
+     * To check whether the source or target location is above, below or within
+     * the global SVG container is very simple. For example, to find out if the
+     * target location is above, all we need to do is `<VALUE> & 4 > 0`. This
+     * performs a bit-wise AND operation with only two possible outcomes: 4 and 0.
      *
      * @method  pointsOutside
      * @author  Fritz Lekschas
-     * @date    2016-02-29
+     * @date    2016-09-14
      * @param   {Object}  data  Link data.
      * @return  {Number}  Numberical represenation of the links constallation. See
      *   description for details.
@@ -5759,16 +6823,20 @@ var ListGraph = function () {
      *
      * @method  linkPointsOutside
      * @author  Fritz Lekschas
-     * @date    2016-02-29
+     * @date    2016-09-14
      * @param   {Object}  data  Link data.
      * @return  {Number}  If link ends inwards returns `0`, if it points outwards
-     *   to the top returns `1` otherwise `2`.
+     *   to the top returns `1` or `2` when it points to the bottom. If the node
+     *   pointed to is hidden return `16`.
      */
 
   }, {
     key: 'linkPointsOutside',
     value: function linkPointsOutside(data) {
       var y = data.node.y + data.offsetY;
+      if (data.node.hidden) {
+        return 16;
+      }
       if (y + this.visData.global.row.height - this.visData.global.row.padding <= 0) {
         return 1;
       }
