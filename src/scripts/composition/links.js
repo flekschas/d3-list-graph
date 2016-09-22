@@ -231,13 +231,18 @@ class Links {
   /**
    * Update the visual state of the link according to the current state of data.
    *
+   * @description
+   * This method differs from checking whether a source or target node is
+   * visible as it purely depends on the `hidden` property of the node data. It
+   * is primarily used to hide links of hidden nodes, e.g., when nodes are
+   * hidden manually.
+   *
    * @method  updateVisibility
    * @author  Fritz Lekschas
-   * @date    2016-09-14
+   * @date    2016-09-22
    */
   updateVisibility () {
-    console.log('updateVisibility');
-    this.links.selectAll('path')
+    this.links
       .classed(
         'hidden', data => data.target.node.hidden || data.source.node.hidden
       )
