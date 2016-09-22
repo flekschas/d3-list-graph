@@ -697,13 +697,12 @@ class Nodes {
 
   queryByNode (d3El, mode) {
     d3El.datum().data.state.query = mode;
-    d3El.classed({
-      active: true,
-      inactive: false,
-      'query-and': mode === 'and',
-      'query-or': mode === 'or',
-      'query-not': mode === 'not'
-    });
+    d3El
+      .classed('active', true)
+      .classed('inactive', false)
+      .classed('query-and', mode === 'and')
+      .classed('query-or', mode === 'or')
+      .classed('query-not', mode === 'not');
   }
 
   unqueryByNode (d3El) {
@@ -712,13 +711,12 @@ class Nodes {
     data.data.state.query = undefined;
     data.data.queryBeforeRooting = undefined;
 
-    d3El.classed({
-      active: false,
-      inactive: true,
-      'query-and': false,
-      'query-or': false,
-      'query-not': false
-    });
+    d3El
+      .classed('active', true)
+      .classed('inactive', false)
+      .classed('query-and', false)
+      .classed('query-or', false)
+      .classed('query-not', false);
 
     if (this.rootedNode) {
       this.updateVisibility();
@@ -826,7 +824,10 @@ class Nodes {
 
     if (this.rootedNode) {
       // Reset current root node
-      this.rootedNode.classed({ active: false, inactive: true });
+      this.rootedNode
+        .classed('active', false)
+        .classed('inactive', true);
+
       events.unrooted = this.rootedNode.datum();
       if (this.unrootNode(this.rootedNode).unquery) {
         queries.push({
@@ -837,7 +838,10 @@ class Nodes {
 
       // Activate new root
       if (this.rootedNode.datum().id !== data.id && !setFalse) {
-        d3El.classed({ active: true, inactive: false });
+        d3El
+          .classed('active', true)
+          .classed('inactive', false);
+
         this.rootedNode = d3El;
         events.rooted = d3El.datum();
         if (this.rootNode(d3El).query) {
@@ -856,7 +860,10 @@ class Nodes {
       }
     } else {
       if (!setFalse) {
-        d3El.classed({ active: true, inactive: false });
+        d3El
+          .classed('active', true)
+          .classed('inactive', false);
+
         this.rootedNode = d3El;
         events.rooted = d3El.datum();
         if (this.rootNode(d3El).query) {
