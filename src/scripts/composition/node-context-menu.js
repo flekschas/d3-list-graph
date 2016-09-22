@@ -998,7 +998,6 @@ class NodeContextMenu {
       if (this.tempQueryMode !== this.currentQueryMode) {
         if (this.tempQueryMode) {
           this.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
-          console.log('BAM');
           this.triggerButtonBamEffect(this.buttonQueryBamEffect);
           this.buttonQuery.classed('active', true);
         } else {
