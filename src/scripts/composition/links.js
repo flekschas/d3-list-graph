@@ -245,6 +245,11 @@ class Links {
     this.links.classed(
       'hidden', data => data.target.node.hidden || data.source.node.hidden
     );
+
+    this.links.selectAll('path')
+      .transition()
+      .duration(config.TRANSITION_SEMI_FAST)
+      .attr('d', this.diagonal);
   }
 }
 
