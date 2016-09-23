@@ -719,7 +719,7 @@ class Nodes {
       .classed('query-not', false);
 
     if (this.rootedNode) {
-      this.updateVisibility();
+      this.hideNodes(this.rootedNode.datum());
     }
   }
 
@@ -991,13 +991,13 @@ class Nodes {
   }
 
   /**
-   * Sets the nodes' visibility
+   * Only show the subtree and siblings of the node `data`.
    *
    * @method  nodesVisibility
    * @author  Fritz Lekschas
-   * @date    2016-02-21
+   * @date    2016-09-22
    * @param   {Object}   data  Node data object.
-   * @param   {Boolean}  show  If `true` nodes will be shown.
+   * @param   {Boolean}  show  If `true` nodes will be shown again.
    */
   nodesVisibility (data, show) {
     if (show) {
