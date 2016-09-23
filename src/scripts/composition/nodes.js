@@ -972,8 +972,8 @@ class Nodes {
    *
    * @method  hideNodes
    * @author  Fritz Lekschas
-   * @date    2016-02-21
-   * @param   {Object}   data        Node data object.
+   * @date    2016-09-22
+   * @param   {Object}   data  Node data object.
    */
   hideNodes (data) {
     this.nodesVisibility(data);
@@ -984,8 +984,7 @@ class Nodes {
    *
    * @method  showNodes
    * @author  Fritz Lekschas
-   * @date    2016-02-21
-   * @param   {Object}  data       Node data object.
+   * @date    2016-09-22
    */
   showNodes () {
     this.nodesVisibility(undefined, true);
@@ -997,8 +996,8 @@ class Nodes {
    * @method  nodesVisibility
    * @author  Fritz Lekschas
    * @date    2016-02-21
-   * @param   {Object}   data        Node data object.
-   * @param   {Boolean}  show        If `true` nodes will be shown.
+   * @param   {Object}   data  Node data object.
+   * @param   {Boolean}  show  If `true` nodes will be shown.
    */
   nodesVisibility (data, show) {
     if (show) {
@@ -1006,8 +1005,11 @@ class Nodes {
         .classed('hidden', false)
         .each(nodeData => { nodeData.hidden = false; });
     } else {
-      // First we set all nodes to `hidden`.
-      this.nodes.each(nodeData => { nodeData.hidden = true; });
+      // First we set all nodes to `hidden` except those that are currently
+      // queried for.
+      this.nodes.each(nodeData => {
+        nodeData.hidden = !nodeData.data.state.query;
+      });
 
       // Then we set direct child and parent nodes of the current node visible.
       traverse.upAndDown(data, nodeData => { nodeData.hidden = false; });
@@ -1015,9 +1017,10 @@ class Nodes {
       // We also show sibling nodes.
       traverse.siblings(data, nodeData => { nodeData.hidden = false; });
 
+      // Assign CSS class to actually hide the nodes.
       this.nodes.classed(
         'hidden',
-        nodeData => nodeData.hidden && !nodeData.data.state.query
+        nodeData => nodeData.hidden
       );
     }
     this.updateVisibility();
