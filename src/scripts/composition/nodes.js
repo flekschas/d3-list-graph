@@ -9,23 +9,121 @@ import Bars from './bars';
 import { allTransitionsEnded } from '../commons/d3-utils';
 import { roundRect } from '../commons/charts';
 
+/**
+ * CSS class name of grou of nodes.
+ *
+ * @type  {String}
+ */
 const CLASS_NODES = 'nodes';
+
+/**
+ * CSS class name of node group.
+ *
+ * @type  {String}
+ */
 const CLASS_NODE = 'node';
+
+/**
+ * CSS class name of visible nodes.
+ *
+ * @type  {String}
+ */
 const CLASS_NODE_VISIBLE = 'visible-node';
+
+/**
+ * CSS class name of cloned nodes.
+ *
+ * @type  {String}
+ */
 const CLASS_CLONE = 'clone';
+
+/**
+ * CSS class name of label wrappers of nodes.
+ *
+ * @type  {String}
+ */
 const CLASS_LABEL_WRAPPER = 'label-wrapper';
+
+/**
+ * CSS class name of focus controls that appear to the left and right of a node
+ * when being active.
+ *
+ * @type  {String}
+ */
 const CLASS_FOCUS_CONTROLS = 'focus-controls';
+
+/**
+ * CSS class name of the root focus button.
+ *
+ * @type  {String}
+ */
 const CLASS_ROOT = 'root';
+
+/**
+ * CSS class name of the query focus button.
+ *
+ * @type  {String}
+ */
 const CLASS_QUERY = 'query';
+
+/**
+ * CSS class name of the link indicator.
+ *
+ * @type  {String}
+ */
 const CLASS_INDICATOR_BAR = 'link-indicator';
+
+/**
+ * CSS class name of the link location indicator.
+ *
+ * @type  {String}
+ */
 const CLASS_INDICATOR_LOCATION = 'link-location-indicator';
+
+/**
+ * CSS class name for identifing incoming link location indicators.
+ *
+ * @type  {String}
+ */
 const CLASS_INDICATOR_INCOMING = 'incoming';
+
+/**
+ * CSS class name for identifing outgoing link location indicators.
+ *
+ * @type  {String}
+ */
 const CLASS_INDICATOR_OUTGOING = 'outgoing';
+
+/**
+ * CSS class name for identifing link location indicators above the visible
+ * container.
+ *
+ * @type  {String}
+ */
 const CLASS_INDICATOR_ABOVE = 'above';
+
+/**
+ * CSS class name for identifing link location indicators below the visible
+ * container.
+ *
+ * @type  {String}
+ */
 const CLASS_INDICATOR_BELOW = 'below';
 
 class Nodes {
-  constructor (vis, baseSelection, visData, links, events) {
+  /**
+   * Nodes constructor
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}  vis      List Graph App.
+   * @param   {Object}  baseEl   D3 base selection.
+   * @param   {Object}  visData  List Graph App data.
+   * @param   {Object}  links    Links class.
+   * @param   {Object}  events   Event class.
+   */
+  constructor (vis, baseEl, visData, links, events) {
     const self = this;
 
     this.vis = vis;
@@ -132,7 +230,7 @@ class Nodes {
         .attr('class', 'invisible-container');
     }
 
-    this.groups = baseSelection.append('g')
+    this.groups = baseEl.append('g')
       .attr('class', CLASS_NODES)
       .call(selection => {
         selection.each(function storeLinkToGroupNode () {
@@ -314,38 +412,98 @@ class Nodes {
     this.nodes.call(this.isInvisible.bind(this));
   }
 
+  /**
+   * Get the CSS class of the group of nodes.
+   *
+   * @method  classNnodes
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  CSS name.
+   */
   get classNnodes () { return CLASS_NODES; }
+
+  /**
+   * Get the CSS class of the group of nodes.
+   *
+   * @method  classNode
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  CSS name.
+   */
   get classNode () { return CLASS_NODE; }
+
+  /**
+   * Get the CSS class of the node group.
+   *
+   * @method  classNodeVisible
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  CSS name.
+   */
   get classNodeVisible () { return CLASS_NODE_VISIBLE; }
-  get classClone () { return CLASS_CLONE; }
-  get classLabelWrapper () { return CLASS_LABEL_WRAPPER; }
+
+  /**
+   * Get the CSS class of focus controls.
+   *
+   * @method  classFocusControls
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  CSS name.
+   */
   get classFocusControls () { return CLASS_FOCUS_CONTROLS; }
+
+  /**
+   * Get the CSS class of root elements.
+   *
+   * @method  classRoot
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  CSS name.
+   */
   get classRoot () { return CLASS_ROOT; }
+
+  /**
+   * Get the CSS class of query button..
+   *
+   * @method  classQuery
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  CSS name.
+   */
   get classQuery () { return CLASS_QUERY; }
 
+  /**
+   * Update the link location indicators.
+   *
+   * @description
+   * Updates the link location indicators of level / column `right` - `left`.
+   *
+   * @method  updateLinkLocationIndicators
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Number}  left   Index of the column to the left.
+   * @param   {Number}  right  Index of the right column.
+   */
   updateLinkLocationIndicators (left, right) {
-    this.calcHeightLinkLocationIndicator(left, false, true);
-    this.calcHeightLinkLocationIndicator(right, true, false);
+    this.calcHeightLinkLocationIndicator(left, true);
+    this.calcHeightLinkLocationIndicator(right);
   }
 
-  calcHeightLinkLocationIndicator (level, incoming, outgoing) {
+  /**
+   * Calculates the height of all incoming or outgoing link location indicators
+   * for a given level.
+   *
+   * @method  calcHeightLinkLocationIndicator
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Number}   level     Index of the level / column.
+   * @param   {Boolean}  outgoing  If `true` outgoing link location indicator
+   *   heights are calculated. Otherwise incoming link location indicator
+   *   heights are calculated.
+   */
+  calcHeightLinkLocationIndicator (level, outgoing) {
     const nodes = this.nodes.filter(data => data.depth === level);
     nodes.each(data => {
-      if (incoming) {
-        data.links.incoming.above = 0;
-        data.links.incoming.below = 0;
-        for (let i = data.links.incoming.total; i--;) {
-          // We are checking the source location of the incoming link. The
-          // source location is the location of the node of the column being
-          // scrolled.
-          if ((data.links.incoming.refs[i].hidden & 1) > 0) {
-            data.links.incoming.above++;
-          }
-          if ((data.links.incoming.refs[i].hidden & 2) > 0) {
-            data.links.incoming.below++;
-          }
-        }
-      }
       if (outgoing) {
         data.links.outgoing.above = 0;
         data.links.outgoing.below = 0;
@@ -360,18 +518,41 @@ class Nodes {
             data.links.outgoing.below++;
           }
         }
+      } else {
+        data.links.incoming.above = 0;
+        data.links.incoming.below = 0;
+        for (let i = data.links.incoming.total; i--;) {
+          // We are checking the source location of the incoming link. The
+          // source location is the location of the node of the column being
+          // scrolled.
+          if ((data.links.incoming.refs[i].hidden & 1) > 0) {
+            data.links.incoming.above++;
+          }
+          if ((data.links.incoming.refs[i].hidden & 2) > 0) {
+            data.links.incoming.below++;
+          }
+        }
       }
     });
 
-    if (incoming) {
-      this.updateHeightLinkLocationIndicatorBars(nodes);
-    }
-
     if (outgoing) {
       this.updateHeightLinkLocationIndicatorBars(nodes, true);
+    } else {
+      this.updateHeightLinkLocationIndicatorBars(nodes);
     }
   }
 
+  /**
+   * Updates the visual appearance of the link location indicators.
+   *
+   * @method  updateHeightLinkLocationIndicatorBars
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}   selection  D3 selection of the corresponding nodes.
+   * @param   {Boolean}  outgoing   If `true` outgoing link location indicator
+   *   heights are updated. Otherwise incoming link location indicator
+   *   heights are updated.
+   */
   updateHeightLinkLocationIndicatorBars (selection, outgoing) {
     const barRefHeight = (this.visData.global.row.contentHeight / 2) - 1;
     const barAboveRefTop = (this.visData.global.row.height / 2) - 1;
@@ -403,6 +584,15 @@ class Nodes {
     );
   }
 
+  /**
+   * Node _mouse enter_ handler.
+   *
+   * @method  enterHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}  el    DOM element.
+   * @param   {Object}  data  D3 data object of the DOM element.
+   */
   enterHandler (el, data) {
     this.highlightNodes(d3.select(el));
 
@@ -420,6 +610,15 @@ class Nodes {
     this.events.broadcast('d3ListGraphNodeEnter', eventData);
   }
 
+  /**
+   * Node _mouse leave handler.
+   *
+   * @method  leaveHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}  el    DOM element.
+   * @param   {Object}  data  D3 data object of the DOM element.
+   */
   leaveHandler (el, data) {
     this.unhighlightNodes(d3.select(el));
 
@@ -437,6 +636,14 @@ class Nodes {
     this.events.broadcast('d3ListGraphNodeLeave', eventData);
   }
 
+  /**
+   * Handler managing visual _lock_ events.
+   *
+   * @method  lockHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}  d3El  D3 selection of the element to be visually locked.
+   */
   lockHandler (d3El) {
     const events = this.toggleLock(d3El);
 
@@ -476,6 +683,15 @@ class Nodes {
     }
   }
 
+  /**
+   * Handler managing _root_ events.
+   *
+   * @method  rootHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}   d3El    D3 selection of the node to be rooted.
+   * @param   {Boolean}  unroot  If `true` the rooting is resolved.
+   */
   rootHandler (d3El, unroot) {
     if (!d3El.datum().data.state.root && unroot) {
       // The node is not rooted so there's no point in unrooting.
@@ -519,16 +735,24 @@ class Nodes {
     }
   }
 
+  /**
+   * Visually focus a node.
+   *
+   * @method  focusNodes
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}  event  Event object.
+   */
   focusNodes (event) {
-    const same = this.checkNodeFocusEventSame(event.nodeIds);
-    if (this.nodeFocusId && !same) {
+    const same = this.checkNodeFocusSameEvent(event.nodeIds);
+    if (this.nodeFocusIds && !same) {
       // Show unrelated nodes first before we hide them again.
       this.blurNodes({
-        nodeIds: this.nodeFocusId
+        nodeIds: this.nodeFocusIds
       });
     }
 
-    this.nodeFocusId = event.nodeIds;
+    this.nodeFocusIds = event.nodeIds;
 
     this.eventHelper(
       event.nodeIds,
@@ -552,10 +776,19 @@ class Nodes {
         this.hideUnrelatedNodes(event.nodeIds);
       }
     } else if (this.tempHidingUnrelatedNodes) {
-      this.showUnrelatedNodes();
+      this.hideUnrelatedNodes(undefined, true);
     }
   }
 
+
+  /**
+   * Visually blur a node.
+   *
+   * @method  blurNodes
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}  event  Event object.
+   */
   blurNodes (event) {
     this.eventHelper(
       event.nodeIds,
@@ -568,58 +801,81 @@ class Nodes {
     }
 
     if (this.tempHidingUnrelatedNodes) {
-      this.showUnrelatedNodes();
+      this.hideUnrelatedNodes(undefined, true);
     }
   }
 
-  checkNodeFocusEventSame (nodeIds) {
-    if (!this.nodeFocusId) {
+  /**
+   * Tests if the event-related node list is identical.
+   *
+   * @method  checkNodeFocusSameEvent
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Array}  nodeIds  Array of node IDs.
+   * @return  {Boolean}         If `true` the event node ID list is identical to
+   *   the current focus node ID list.
+   */
+  checkNodeFocusSameEvent (nodeIds) {
+    if (!this.nodeFocusIds) {
       return false;
     }
-    if (nodeIds.length !== this.nodeFocusId.length) {
+    if (nodeIds.length !== this.nodeFocusIds.length) {
       return false;
     }
     for (let i = nodeIds.length; i--;) {
-      if (nodeIds[i] !== this.nodeFocusId[i]) {
+      if (nodeIds[i] !== this.nodeFocusIds[i]) {
         return false;
       }
     }
     return true;
   }
 
-  hideUnrelatedNodes (nodeIds) {
-    this.tempHidingUnrelatedNodes = nodeIds;
+  /**
+   * Hide unrelated nodes temporarily.
+   *
+   * @method  hideUnrelatedNodes
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Array}    nodeIds    Array of node IDs.
+   * @param   {Boolean}  showAgain  If `true` displays hidden nows again.
+   */
+  hideUnrelatedNodes (nodeIds, showAgain) {
+    this.tempHidingUnrelatedNodes = showAgain ? undefined : nodeIds;
 
     this.nodes
       .filter(data => !data.hovering)
       .classed(
-        'hidden', true
+        'hidden', data => (showAgain ? data._hidden : true)
       )
       .each(data => {
-        // Store old value for `hidden` temporarily
-        data._hidden = data.hidden;
-        data.hidden = true;
+        if (showAgain) {
+          // Reset old hiding state
+          data.hidden = data._hidden;
+          data._hidden = undefined;
+        } else {
+          // Store old value for `hidden` temporarily
+          data._hidden = data.hidden;
+          data.hidden = true;
+        }
       });
 
     this.updateVisibility();
   }
 
-  showUnrelatedNodes () {
-    this.tempHidingUnrelatedNodes = undefined;
-
-    this.nodes
-      .filter(data => !data.hovering)
-      .classed(
-        'hidden', data => data._hidden
-      )
-      .each(data => {
-        data.hidden = data._hidden;
-        data._hidden = undefined;
-      });
-
-    this.updateVisibility();
-  }
-
+  /**
+   * Event helper.
+   *
+   * @method  eventHelper
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Array}     nodeIds            Array of node IDs.
+   * @param   {Function}  callback           Call back function of the actual
+   *   event.
+   * @param   {Array}     optionalParams     Array of optional parameters to be
+   *   passed to the callback.
+   * @param   {String}    subSelectionClass  Subselection of certain elements
+   *   based on a CSS class. The selection will be passed to the callback.
+   */
   eventHelper (nodeIds, callback, optionalParams, subSelectionClass) {
     const self = this;
 
@@ -640,6 +896,14 @@ class Nodes {
       });
   }
 
+  /**
+   * Get the current bar mode.
+   *
+   * @method  barMode
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  Bar mode string.
+   */
   get barMode () {
     return this.bars.mode;
   }
