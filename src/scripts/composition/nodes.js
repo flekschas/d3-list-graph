@@ -81,21 +81,21 @@ const CLASS_INDICATOR_BAR = 'link-indicator';
 const CLASS_INDICATOR_LOCATION = 'link-location-indicator';
 
 /**
- * CSS class name for identifing incoming link location indicators.
+ * CSS class name for identifying incoming link location indicators.
  *
  * @type  {String}
  */
 const CLASS_INDICATOR_INCOMING = 'incoming';
 
 /**
- * CSS class name for identifing outgoing link location indicators.
+ * CSS class name for identifying outgoing link location indicators.
  *
  * @type  {String}
  */
 const CLASS_INDICATOR_OUTGOING = 'outgoing';
 
 /**
- * CSS class name for identifing link location indicators above the visible
+ * CSS class name for identifying link location indicators above the visible
  * container.
  *
  * @type  {String}
@@ -103,7 +103,7 @@ const CLASS_INDICATOR_OUTGOING = 'outgoing';
 const CLASS_INDICATOR_ABOVE = 'above';
 
 /**
- * CSS class name for identifing link location indicators below the visible
+ * CSS class name for identifying link location indicators below the visible
  * container.
  *
  * @type  {String}
@@ -873,7 +873,7 @@ class Nodes {
    *   event.
    * @param   {Array}     optionalParams     Array of optional parameters to be
    *   passed to the callback.
-   * @param   {String}    subSelectionClass  Subselection of certain elements
+   * @param   {String}    subSelectionClass  Sub-selection of certain elements
    *   based on a CSS class. The selection will be passed to the callback.
    */
   eventHelper (nodeIds, callback, optionalParams, subSelectionClass) {
@@ -908,7 +908,16 @@ class Nodes {
     return this.bars.mode;
   }
 
-  toggleLock (d3El, setFalse) {
+  /**
+   * Toggle through the lock state of a node
+   *
+   * @method  toggleLock
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}   d3El         D3 selection of the node to be locked.
+   * @param   {Boolean}  forceUnlock  If `true` forces an unlock.
+   */
+  toggleLock (d3El, forceUnlock) {
     const data = d3El.datum();
     const events = { locked: false, unlocked: false };
 
@@ -922,14 +931,14 @@ class Nodes {
         this.unlockNode(this.lockedNode.datum().id);
         events.unlocked = this.lockedNode.datum();
 
-        if (!setFalse) {
+        if (!forceUnlock) {
           this.lockNode(data.id);
           events.locked = data;
           this.lockedNode = d3El;
         }
       }
     } else {
-      if (!setFalse) {
+      if (!forceUnlock) {
         this.lockNode(data.id);
         events.locked = data;
         this.lockedNode = d3El;
@@ -939,6 +948,19 @@ class Nodes {
     return events;
   }
 
+  /**
+   * Lock a node(s) by ID.
+   *
+   * @description
+   * The reason for not just passing the selected node element in the DOM is
+   * because the node might have been cloned. Hence, multiple copies of the same
+   * node exist.
+   *
+   * @method  lockNode
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Number}  id  ID of node(s) to be locked.
+   */
   lockNode (id) {
     const self = this;
     const els = this.nodes.filter(data => data.id === id);
@@ -949,6 +971,14 @@ class Nodes {
     });
   }
 
+  /**
+   * Unlock node.
+   *
+   * @method  unlockNode
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Number}  id  ID of node(s) to be locked.
+   */
   unlockNode (id) {
     const self = this;
     const els = this.nodes.filter(data => data.id === id);
@@ -959,7 +989,16 @@ class Nodes {
     });
   }
 
-  queryByNode (d3El, mode) {
+  /**
+   * Set the query state of the node by assign the corresponding CSS class.
+   *
+   * @method  setNodeQueryState
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  d3El  D3 selection of the node to be inspected.
+   * @param   {String}  mode  Name of the query mode.
+   */
+  setNodeQueryState (d3El, mode) {
     d3El.datum().data.state.query = mode;
     d3El
       .classed('active', true)
@@ -969,7 +1008,15 @@ class Nodes {
       .classed('query-not', mode === 'not');
   }
 
-  unqueryByNode (d3El) {
+  /**
+   * Unset the query state of a node.
+   *
+   * @method  unsetNodeQueryState
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  d3El  D3 selection of the node to be inspected.
+   */
+  unsetNodeQueryState (d3El) {
     const data = d3El.datum();
 
     data.data.state.query = undefined;
@@ -987,39 +1034,63 @@ class Nodes {
     }
   }
 
-  toggleQueryByNode (d3El) {
+  /**
+   * Toggle through node query states.
+   *
+   * @method  toggleNodeQueryStates
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  d3El  D3 selection of the node to be inspected.
+   */
+  toggleNodeQueryStates (d3El) {
     const data = d3El.datum();
     const previousMode = data.data.state.query;
 
     if (data.data.state.root) {
       if (previousMode !== 'or') {
-        this.queryByNode(d3El, 'or');
+        this.setNodeQueryState(d3El, 'or');
       } else {
-        this.queryByNode(d3El, 'and');
+        this.setNodeQueryState(d3El, 'and');
       }
     } else {
       switch (previousMode) {
         case 'or':
-          this.queryByNode(d3El, 'and');
+          this.setNodeQueryState(d3El, 'and');
           break;
         case 'and':
-          this.queryByNode(d3El, 'not');
+          this.setNodeQueryState(d3El, 'not');
           break;
         case 'not':
-          this.unqueryByNode(d3El);
+          this.unsetNodeQueryState(d3El);
           break;
         default:
-          this.queryByNode(d3El, 'or');
+          this.setNodeQueryState(d3El, 'or');
           break;
       }
     }
   }
 
+  /**
+   * Handle multiple queries as once.
+   *
+   * @description
+   * Useful when the custom root node is changed as this involves "un-querying"
+   * and querying.
+   *
+   * @method  batchQueryHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Array}    els             Array of D3 selections of nodes to be
+   *   queried.
+   * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
+   */
   batchQueryHandler (els, noNotification) {
     const actions = [];
     for (let i = els.length; i--;) {
-      actions.push(this.queryHandler(
-        els[i].d3El, els[i].action, els[i].mode, true)
+      actions.push(
+        this.queryHandler(
+          els[i].d3El, els[i].action, els[i].mode, true
+        )
       );
     }
 
@@ -1028,25 +1099,38 @@ class Nodes {
     }
   }
 
-  queryHandler (d3El, action, mode, returnNoNotification) {
+  /**
+   * Query handler.
+   *
+   * @method  queryHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}   d3El            D3 selection of the node to be inspected.
+   * @param   {String}   action          Specific query action. Can be ['query',
+   *   'unquery', undefined].
+   * @param   {String}   mode            If `action == 'query'`, string name of
+   *   the query mode. Can be [or, and, not].
+   * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
+   */
+  queryHandler (d3El, action, mode, noNotification) {
     const data = d3El.datum();
     const previousMode = data.data.state.query;
     const event = {};
 
     if (!previousMode && action === 'unquery') {
-      // We haven't queried anything so there's nothing to unquery.
+      // We haven't queried anything so there's nothing to "un-query".
       return undefined;
     }
 
     switch (action) {
       case 'query':
-        this.queryByNode(d3El, mode);
+        this.setNodeQueryState(d3El, mode);
         break;
       case 'unquery':
-        this.unqueryByNode(d3El);
+        this.unsetNodeQueryState(d3El);
         break;
       default:
-        this.toggleQueryByNode(d3El);
+        this.toggleNodeQueryStates(d3El);
         break;
     }
 
@@ -1071,14 +1155,25 @@ class Nodes {
       };
     }
 
-    if (event.name && !returnNoNotification) {
+    if (event.name && !noNotification) {
       this.events.broadcast(event.name, event.data);
     }
 
     return event.name ? event : undefined;
   }
 
-  toggleRoot (d3El, setFalse, noNotification) {
+  /**
+   * Toggle root node.
+   *
+   * @method  toggleRoot
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}   d3El            D3 selection of the node to be
+   *   inspected.
+   * @param   {Boolean}  forceUnroot     If `true` the node will be "un-rooted".
+   * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
+   */
+  toggleRoot (d3El, forceUnroot, noNotification) {
     const data = d3El.datum();
     const events = { rooted: false, unrooted: false };
     const queries = [];
@@ -1101,7 +1196,7 @@ class Nodes {
       }
 
       // Activate new root
-      if (this.rootedNode.datum().id !== data.id && !setFalse) {
+      if (this.rootedNode.datum().id !== data.id && !forceUnroot) {
         d3El
           .classed('active', true)
           .classed('inactive', false);
@@ -1123,7 +1218,7 @@ class Nodes {
         );
       }
     } else {
-      if (!setFalse) {
+      if (!forceUnroot) {
         d3El
           .classed('active', true)
           .classed('inactive', false);
@@ -1147,6 +1242,14 @@ class Nodes {
     return events;
   }
 
+  /**
+   * Set the given node as the root.
+   *
+   * @method  rootNode
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  d3El  D3 selection of the node to be rooted.
+   */
   rootNode (d3El) {
     const data = d3El.datum();
 
@@ -1171,6 +1274,14 @@ class Nodes {
     };
   }
 
+  /**
+   * Stop rooting by the given node.
+   *
+   * @method  unrootNode
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  d3El  D3 selection of the node to be "un-rooted".
+   */
   unrootNode (d3El) {
     const data = d3El.datum();
 
@@ -1189,6 +1300,22 @@ class Nodes {
     };
   }
 
+  /**
+   * Helper method to create focus controls.
+   *
+   * @method  setUpFocusControls
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  selection  D3 selection of the node to which the focus
+   *   controls should be added.
+   * @param   {String}  location   Can either be "left" or "right"
+   * @param   {Number}  position   Amount the focus control is pushed away from
+   *   the node.
+   * @param   {String}  mode       Specifies a helper element like "bg" or
+   *   "hover-helper".
+   * @param   {String}  className  Class name to be assigned to to the focus
+   *   control.
+   */
   setUpFocusControls (selection, location, position, mode, className) {
     const paddedDim = this.iconDimension + 4;
 
@@ -1331,6 +1458,15 @@ class Nodes {
     });
   }
 
+  /**
+   * Temporarily make all nodes visible.
+   *
+   * @method  makeAllTempVisible
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Boolean}  unset  If `true` reverts back to the old state of
+   *   visibility.
+   */
   makeAllTempVisible (unset) {
     if (unset) {
       this.nodes.classed(
@@ -1352,6 +1488,22 @@ class Nodes {
     }
   }
 
+  /**
+   * Visually highlight nodes.
+   *
+   * @method  highlightNodes
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}   d3El               D3 selection of the node where to
+   *   start highlighting from.
+   * @param   {String}   className          CSS class name to be assigned to the
+   *   highlighted nodes.
+   * @param   {String}   restriction        Specify a restriction. Currently
+   *   only "directParentsOnly" is supported.
+   * @param   {Boolean}  excludeClones      If `true` exclude cloned nodes.
+   * @param   {Boolean}  noVisibilityCheck  If `true` don't check the nodes'
+   *   visibility states.
+   */
   highlightNodes (
     d3El, className, restriction, excludeClones, noVisibilityCheck
   ) {
