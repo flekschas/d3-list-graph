@@ -74,7 +74,7 @@ const nextAnimationFrame = (function () {
       const id = requestId();
 
       ids[id] = requestAnimationFrame(() => {
-        ids[id] = requestAnimationFrame(ts => {
+        ids[id] = requestAnimationFrame((ts) => {
           delete ids[id];
           callback(ts);
         }, element);

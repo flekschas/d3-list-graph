@@ -37,7 +37,7 @@ class Links {
 
     this.groups = levels.append('g')
       .attr('class', LINKS_CLASS)
-      .call(selection => {
+      .call((selection) => {
         selection.each(function () {
           d3.select(this.parentNode).datum().links = this;
         });
@@ -94,7 +94,7 @@ class Links {
       .y(data => data.y)
       .curve(d3.curveBundle.beta(config.LINK_BUNDLING_STRENGTH));
 
-    return data => {
+    return (data) => {
       const points = [];
 
       const sourceX = getSourceX.call(this, data.source);

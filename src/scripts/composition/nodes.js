@@ -232,7 +232,7 @@ class Nodes {
 
     this.groups = baseEl.append('g')
       .attr('class', CLASS_NODES)
-      .call(selection => {
+      .call((selection) => {
         selection.each(function storeLinkToGroupNode () {
           d3.select(this.parentNode).datum().nodes = this;
         });
@@ -413,26 +413,6 @@ class Nodes {
   }
 
   /**
-   * Get the CSS class of the group of nodes.
-   *
-   * @method  classNnodes
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @return  {String}  CSS name.
-   */
-  get classNnodes () { return CLASS_NODES; }
-
-  /**
-   * Get the CSS class of the group of nodes.
-   *
-   * @method  classNode
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @return  {String}  CSS name.
-   */
-  get classNode () { return CLASS_NODE; }
-
-  /**
    * Get the CSS class of the node group.
    *
    * @method  classNodeVisible
@@ -440,7 +420,7 @@ class Nodes {
    * @date    2016-09-22
    * @return  {String}  CSS name.
    */
-  get classNodeVisible () { return CLASS_NODE_VISIBLE; }
+  static get classNodeVisible () { return CLASS_NODE_VISIBLE; }
 
   /**
    * Get the CSS class of focus controls.
@@ -450,7 +430,7 @@ class Nodes {
    * @date    2016-09-22
    * @return  {String}  CSS name.
    */
-  get classFocusControls () { return CLASS_FOCUS_CONTROLS; }
+  static get classFocusControls () { return CLASS_FOCUS_CONTROLS; }
 
   /**
    * Get the CSS class of root elements.
@@ -460,7 +440,7 @@ class Nodes {
    * @date    2016-09-22
    * @return  {String}  CSS name.
    */
-  get classRoot () { return CLASS_ROOT; }
+  static get classRoot () { return CLASS_ROOT; }
 
   /**
    * Get the CSS class of query button..
@@ -470,7 +450,7 @@ class Nodes {
    * @date    2016-09-22
    * @return  {String}  CSS name.
    */
-  get classQuery () { return CLASS_QUERY; }
+  static get classQuery () { return CLASS_QUERY; }
 
   /**
    * Update the link location indicators.
@@ -503,7 +483,7 @@ class Nodes {
    */
   calcHeightLinkLocationIndicator (level, outgoing) {
     const nodes = this.nodes.filter(data => data.depth === level);
-    nodes.each(data => {
+    nodes.each((data) => {
       if (outgoing) {
         data.links.outgoing.above = 0;
         data.links.outgoing.below = 0;
@@ -847,7 +827,7 @@ class Nodes {
       .classed(
         'hidden', data => (showAgain ? data._hidden : true)
       )
-      .each(data => {
+      .each((data) => {
         if (showAgain) {
           // Reset old hiding state
           data.hidden = data._hidden;
@@ -998,7 +978,7 @@ class Nodes {
    * @param   {Object}  d3El  D3 selection of the node to be inspected.
    * @param   {String}  mode  Name of the query mode.
    */
-  setNodeQueryState (d3El, mode) {
+  static setNodeQueryState (d3El, mode) {
     d3El.datum().data.state.query = mode;
     d3El
       .classed('active', true)
@@ -1048,23 +1028,23 @@ class Nodes {
 
     if (data.data.state.root) {
       if (previousMode !== 'or') {
-        this.setNodeQueryState(d3El, 'or');
+        Nodes.setNodeQueryState(d3El, 'or');
       } else {
-        this.setNodeQueryState(d3El, 'and');
+        Nodes.setNodeQueryState(d3El, 'and');
       }
     } else {
       switch (previousMode) {
         case 'or':
-          this.setNodeQueryState(d3El, 'and');
+          Nodes.setNodeQueryState(d3El, 'and');
           break;
         case 'and':
-          this.setNodeQueryState(d3El, 'not');
+          Nodes.setNodeQueryState(d3El, 'not');
           break;
         case 'not':
           this.unsetNodeQueryState(d3El);
           break;
         default:
-          this.setNodeQueryState(d3El, 'or');
+          Nodes.setNodeQueryState(d3El, 'or');
           break;
       }
     }
@@ -1124,7 +1104,7 @@ class Nodes {
 
     switch (action) {
       case 'query':
-        this.setNodeQueryState(d3El, mode);
+        Nodes.setNodeQueryState(d3El, mode);
         break;
       case 'unquery':
         this.unsetNodeQueryState(d3El);
@@ -1394,19 +1374,19 @@ class Nodes {
     if (show) {
       this.nodes
         .classed('hidden', false)
-        .each(nodeData => { nodeData.hidden = false; });
+        .each((nodeData) => { nodeData.hidden = false; });
     } else {
       // First we set all nodes to `hidden` except those that are currently
       // queried for.
-      this.nodes.each(nodeData => {
+      this.nodes.each((nodeData) => {
         nodeData.hidden = !nodeData.data.state.query;
       });
 
       // Then we set direct child and parent nodes of the current node visible.
-      traverse.upAndDown(data, nodeData => { nodeData.hidden = false; });
+      traverse.upAndDown(data, (nodeData) => { nodeData.hidden = false; });
 
       // We also show sibling nodes.
-      traverse.siblings(data, nodeData => { nodeData.hidden = false; });
+      traverse.siblings(data, (nodeData) => { nodeData.hidden = false; });
 
       // Assign CSS class to actually hide the nodes.
       this.nodes.classed(
@@ -1429,7 +1409,7 @@ class Nodes {
    *   column is actively scrolled.
    */
   isInvisible (selection, customScrollTop) {
-    selection.classed('invisible', data => {
+    selection.classed('invisible', (data) => {
       const scrollTop = customScrollTop ||
         this.visData.nodes[data.depth].scrollTop;
 
@@ -1470,7 +1450,7 @@ class Nodes {
   makeAllTempVisible (unset) {
     if (unset) {
       this.nodes.classed(
-        'invisible', data => {
+        'invisible', (data) => {
           const prevInvisible = data._invisible;
           data._invisible = undefined;
 
@@ -1480,7 +1460,7 @@ class Nodes {
     } else {
       this.nodes
         .classed(
-          'invisible', data => {
+          'invisible', (data) => {
             data._invisible = data.invisible;
             return false;
           }
@@ -1545,7 +1525,7 @@ class Nodes {
       }
     };
 
-    const traverseCallbackDown = nodeData => {
+    const traverseCallbackDown = (nodeData) => {
       nodeData.hovering = 2;
       for (let i = nodeData.links.outgoing.refs.length; i--;) {
         this.currentLinks[appliedClassName][nodeId][
@@ -1640,7 +1620,7 @@ class Nodes {
 
   unhighlightNodes (d3El, className, restriction, excludeClones) {
     const data = d3El.datum();
-    const traverseCallback = nodeData => { nodeData.hovering = 0; };
+    const traverseCallback = (nodeData) => { nodeData.hovering = 0; };
     const includeParents = true;
     const appliedClassName = className || 'hovering';
     const includeClones = !excludeClones;

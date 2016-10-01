@@ -294,7 +294,7 @@ class ListGraphLayout {
     }
 
     return {
-      global: this.compileGlobalProps(),
+      global: ListGraphLayout.compileGlobalProps(),
       nodes: this.nodesToMatrix()
     };
   }
@@ -386,7 +386,7 @@ class ListGraphLayout {
    * @category  Data
    * @return  {Object}  Object with global properties.
    */
-  compileGlobalProps () {
+  static compileGlobalProps () {
     return {
       column: {
         width: _columnWidth,
@@ -541,7 +541,7 @@ class ListGraphLayout {
     return this;
   }
 
-  updateBars (graph) {
+  static updateBars (graph) {
     const nodesId = Object.keys(graph);
     const barsData = [];
 

@@ -1,5 +1,5 @@
 // External
-import * as $ from '$';  // eslint-disable-line import/no-unresolved
+import $ from '$';  // eslint-disable-line
 import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 import isArray from '../../../node_modules/lodash-es/isArray';
 
@@ -239,20 +239,20 @@ class ListGraph {
 
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
     // We are using delegated event listeners to provide better scaling
-    this.svgJq.on('mousewheel', '.' + this.levels.className, function (event) {
+    this.svgJq.on('mousewheel', '.' + Levels.className, function (event) {
       if (!self.zoomedOut) {
         self.mousewheelColumn(this, event);
       }
     });
 
-    this.svgJq.on('click', event => {
+    this.svgJq.on('click', (event) => {
       self.checkGlobalClick.call(self, event.target);
     });
 
     // Add jQuery delegated event listeners instead of direct listeners of D3.
     this.svgJq.on(
       'click',
-      `.${this.nodes.classNodeVisible}`,
+      `.${Nodes.classNodeVisible}`,
       function () {
         // Add a new global outside click listener using this node and the
         // node context menu as the related elements.
@@ -281,7 +281,7 @@ class ListGraph {
 
     this.svgJq.on(
       'click',
-      `.${this.nodes.classFocusControls}.${this.nodes.classRoot}`,
+      `.${Nodes.classFocusControls}.${Nodes.classRoot}`,
       function () {
         self.nodes.rootHandler.call(self.nodes, _d3.select(this), true);
       }
@@ -290,7 +290,7 @@ class ListGraph {
     if (this.querying) {
       this.svgJq.on(
         'click',
-        `.${this.nodes.classFocusControls}.${this.nodes.classQuery}`,
+        `.${Nodes.classFocusControls}.${Nodes.classQuery}`,
         function () {
           self.nodes.queryHandler.call(
             self.nodes,
@@ -304,7 +304,7 @@ class ListGraph {
 
     this.svgJq.on(
       'mouseenter',
-      `.${this.nodes.classNodeVisible}`,
+      `.${Nodes.classNodeVisible}`,
       function () {
         self.interactionWrapper.call(self, function (domEl, data) {
           if (!this.vis.activeScrollbar) {
@@ -316,7 +316,7 @@ class ListGraph {
 
     this.svgJq.on(
       'mouseleave',
-      `.${this.nodes.classNodeVisible}`,
+      `.${Nodes.classNodeVisible}`,
       function () {
         self.interactionWrapper.call(self, function (domEl, data) {
           if (!this.vis.activeScrollbar) {
@@ -365,7 +365,7 @@ class ListGraph {
       'd3ListGraphNodeRoot',
       () => {
         this.nodes.bars.updateAll(
-          this.layout.updateBars(this.data), this.currentSorting.global.type
+          _d3.listGraph.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
       }
@@ -375,7 +375,7 @@ class ListGraph {
       'd3ListGraphNodeUnroot',
       () => {
         this.nodes.bars.updateAll(
-          this.layout.updateBars(this.data), this.currentSorting.global.type
+          _d3.listGraph.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
       }
@@ -385,7 +385,7 @@ class ListGraph {
       'd3ListGraphUpdateBars',
       () => {
         this.nodes.bars.updateAll(
-          this.layout.updateBars(this.data), this.currentSorting.global.type
+          _d3.listGraph.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
       }
@@ -393,7 +393,7 @@ class ListGraph {
 
     this.events.on(
       'd3ListGraphActiveLevel',
-      nextLevel => {
+      (nextLevel) => {
         const oldLevel = this.activeLevel;
         this.activeLevel = Math.max(nextLevel, 0);
         if (this.nodes.rootedNode) {
@@ -589,7 +589,7 @@ class ListGraph {
 
       this.activeScrollbar = undefined;
 
-      this.stopScrollBarMouseMove();
+      ListGraph.stopScrollBarMouseMove();
     }
   }
 
@@ -598,7 +598,7 @@ class ListGraph {
       .on('mousemove', () => { this.dragScrollbar(_d3.event); });
   }
 
-  stopScrollBarMouseMove () {
+  static stopScrollBarMouseMove () {
     _d3.select(document).on('mousemove', null);
   }
 
@@ -772,9 +772,9 @@ class ListGraph {
     return selection
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
-      .tween('scrollY', data => {
+      .tween('scrollY', (data) => {
         const scrollPositionY = _d3.interpolateNumber(data.scrollTop, positionY);
-        return time => {
+        return (time) => {
           data.scrollTop = scrollPositionY(time);
           this.scrollY(data);
         };

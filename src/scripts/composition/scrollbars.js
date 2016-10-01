@@ -31,7 +31,7 @@ class Scrollbars {
     this.all = baseEl
       .append('rect')
         .attr('class', SCROLLBAR_CLASS)
-        .call(selection => {
+        .call((selection) => {
           selection.each(function setScrollBarDomElement () {
             d3.select(this.parentNode).datum().scrollbar.el = this;
           });

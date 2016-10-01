@@ -49,7 +49,7 @@ class Levels {
             return false;
           }
         )
-        .each(data => { data.scrollTop = 0; });
+        .each((data) => { data.scrollTop = 0; });
 
     // We need to add an empty rectangle that fills up the whole column to ensure
     // that the `g`'s size is at a maximum, otherwise scrolling will be halted
@@ -119,7 +119,7 @@ class Levels {
    * @date    2016-09-14
    */
   updateScrollProperties () {
-    this.groups.each(data => {
+    this.groups.each((data) => {
       const contentHeight = data.nodes.getBoundingClientRect().height +
         (2 * this.visData.global.row.padding);
       const scrollHeight = contentHeight - this.visData.global.column.height;
@@ -172,7 +172,7 @@ class Levels {
    * @date    2016-09-14
    * @return  {String}  Class name of the column.
    */
-  get className () {
+  static get className () {
     return COLUMN_CLASS;
   }
 

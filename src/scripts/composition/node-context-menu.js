@@ -416,9 +416,9 @@ class NodeContextMenu {
       'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
     );
     if (checked) {
-      this.fillButton(this.buttonLockFill);
+      NodeContextMenu.fillButton(this.buttonLockFill);
     } else {
-      this.emptyButton(this.buttonLockFill);
+      NodeContextMenu.emptyButton(this.buttonLockFill);
     }
     return checked;
   }
@@ -484,22 +484,22 @@ class NodeContextMenu {
     if (!state) {
       if (debounced) {
         if (checked) {
-          this.fillButton(this.buttonRootFill, time);
+          NodeContextMenu.fillButton(this.buttonRootFill, time);
         } else {
-          this.hideElement(this.buttonRootFill);
+          NodeContextMenu.hideElement(this.buttonRootFill);
         }
       } else {
-        this.emptyButton(this.buttonRootFill, time);
+        NodeContextMenu.emptyButton(this.buttonRootFill, time);
       }
     } else {
       if (debounced) {
         if (!checked) {
-          this.emptyButton(this.buttonRootFill, time);
+          NodeContextMenu.emptyButton(this.buttonRootFill, time);
         } else {
-          this.showElement(this.buttonRootFill);
+          NodeContextMenu.showElement(this.buttonRootFill);
         }
       } else {
-        this.fillButton(this.buttonRootFill, time);
+        NodeContextMenu.fillButton(this.buttonRootFill, time);
       }
     }
 
@@ -528,7 +528,7 @@ class NodeContextMenu {
     }
     setTimeout(() => {
       if (checked) {
-        this.triggerButtonBamEffect(this.buttonLockBamEffect);
+        NodeContextMenu.triggerButtonBamEffect(this.buttonLockBamEffect);
       }
       this.buttonLock.classed('fill-effect', false);
     }, BUTTON_DEFAULT_DEBOUNCE);
@@ -597,7 +597,7 @@ class NodeContextMenu {
    */
   close () {
     if (!this.closing) {
-      this.closing = new Promise(resolve => {
+      this.closing = new Promise((resolve) => {
         this.opened = false;
         this.updateAppearance();
 
@@ -675,7 +675,7 @@ class NodeContextMenu {
    * @param   {Object}  properties  The background element's properties.
    */
   createButtonBg (selection, properties) {
-    selection.datum(data => {
+    selection.datum((data) => {
       data.x = this.visData.global.row.padding;
       data.y = this.visData.global.row.padding;
       data.width = (
@@ -814,7 +814,7 @@ class NodeContextMenu {
    *   transitioned.
    * @param   {Number}  time       Transition time in milliseconds.
    */
-  emptyButton (selection, time) {
+  static emptyButton (selection, time) {
     selection
       .transition()
       .duration(0)
@@ -842,7 +842,7 @@ class NodeContextMenu {
    *   transitioned.
    * @param   {Number}  time       Transition time in milliseconds.
    */
-  fillButton (selection, time) {
+  static fillButton (selection, time) {
     selection
       .transition()
       .duration(0)
@@ -886,7 +886,7 @@ class NodeContextMenu {
    * @date    2016-09-13
    * @param   {Object}  selection  D3 selection of element to be hidden.
    */
-  hideElement (selection) {
+  static hideElement (selection) {
     selection.transition().duration(0).attr('height', 0);
   }
 
@@ -917,7 +917,7 @@ class NodeContextMenu {
    * @param   {Object}  node  D3 selection of the node the menu relates to.
    */
   open (node) {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       this.node = node;
       this.closing = undefined;
 
@@ -958,7 +958,7 @@ class NodeContextMenu {
    * @return  {String}                       CSS-formatted translation string.
    */
   positionComponent (selection, distanceFromCenter, alignRight) {
-    selection.datum(data => {
+    selection.datum((data) => {
       // Lets cache some values to make our lives easier when checking the
       // position again in `checkOrientation`.
       if (distanceFromCenter) {
@@ -968,7 +968,7 @@ class NodeContextMenu {
         data.alignRight = alignRight;
       }
       return data;
-    }).attr('transform', data => {
+    }).attr('transform', (data) => {
       const x = data.alignRight ? this.visData.global.column.width / 2 : 0;
       // When the buttons are created I assume self the menu is positioned
       // above the node; i.e. `distanceFromCenter` needs to be inverted.
@@ -998,7 +998,7 @@ class NodeContextMenu {
       if (this.tempQueryMode !== this.currentQueryMode) {
         if (this.tempQueryMode) {
           this.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
-          this.triggerButtonBamEffect(this.buttonQueryBamEffect);
+          NodeContextMenu.triggerButtonBamEffect(this.buttonQueryBamEffect);
           this.buttonQuery.classed('active', true);
         } else {
           this.nodes.queryHandler(this.node, 'unquery');
@@ -1062,7 +1062,7 @@ class NodeContextMenu {
    * @date    2016-09-13
    * @param   {Object}  selection  D3 selection to be transitioned in.
    */
-  showElement (selection) {
+  static showElement (selection) {
     selection.transition().duration(0)
       .attr('y', data => data.y)
       .attr('height', data => data.height);
@@ -1079,7 +1079,7 @@ class NodeContextMenu {
    * @param   {Object}  node  D3 selection of the related node.
    */
   toggle (node) {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const nodeId = node.datum().id;
       let closed = Promise.resolve();
 
@@ -1105,7 +1105,7 @@ class NodeContextMenu {
    * @date    2016-09-13
    * @param   {Object}  node  D3 selection of the button to be BAM-effected.
    */
-  triggerButtonBamEffect (button) {
+  static triggerButtonBamEffect (button) {
     button.classed('trigger', true);
     setTimeout(() => {
       button.classed('trigger', false);
@@ -1216,19 +1216,19 @@ class NodeContextMenu {
     if (debounced) {
       if (queryMode) {
         if (queryMode === state) {
-          this.showElement(this.buttonQueryFill);
+          NodeContextMenu.showElement(this.buttonQueryFill);
         } else {
-          this.fillButton(this.buttonQueryFill, time);
+          NodeContextMenu.fillButton(this.buttonQueryFill, time);
         }
       } else {
         if (state) {
-          this.emptyButton(this.buttonQueryFill, time);
+          NodeContextMenu.emptyButton(this.buttonQueryFill, time);
         } else {
-          this.hideElement(this.buttonQueryFill);
+          NodeContextMenu.hideElement(this.buttonQueryFill);
         }
       }
     } else {
-      this.emptyButton(this.buttonQueryFill, time);
+      NodeContextMenu.emptyButton(this.buttonQueryFill, time);
     }
 
     this.buttonQuery
