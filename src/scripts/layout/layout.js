@@ -1,5 +1,5 @@
 // External
-import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
+import * as d3 from 'd3';  // eslint-disable-line
 import isArray from '../../../node_modules/lodash-es/isArray';
 import isFinite from '../../../node_modules/lodash-es/isFinite';
 import isObject from '../../../node_modules/lodash-es/isObject';

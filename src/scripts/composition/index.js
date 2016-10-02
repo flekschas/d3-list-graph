@@ -1,6 +1,6 @@
 // External
-import $ from '$';  // eslint-disable-line
-import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
+import '$';  // eslint-disable-line
+import * as d3 from 'd3';  // eslint-disable-line
 import isArray from '../../../node_modules/lodash-es/isArray';
 
 // Internal
