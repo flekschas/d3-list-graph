@@ -9,16 +9,26 @@ const TOPBAR_CONTROL_CLASS = 'controls';
 const TOPBAR_GLOBAL_CONTROL_CLASS = 'global-controls';
 
 class Topbar {
-  constructor (vis, selection, visData) {
+  /**
+   * Topbar constructor
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  vis      List Graph App.
+   * @param   {Object}  baseEl   D3 base selection.
+   * @param   {Object}  visData  List Graph App data.
+   */
+  constructor (vis, baseEl, visData) {
     const self = this;
 
     this.vis = vis;
     this.visData = visData;
     // Add base topbar element
-    this.el = selection.select('.' + TOPBAR_CLASS);
+    this.el = baseEl.select('.' + TOPBAR_CLASS);
 
     if (this.el.empty()) {
-      this.el = selection.insert(TOPBAR_EL, ':first-child')
+      this.el = baseEl.insert(TOPBAR_EL, ':first-child')
         .attr('class', TOPBAR_CLASS);
     }
 
@@ -427,19 +437,42 @@ class Topbar {
     });
   }
 
-  // toggleColumn () {
-  //   console.log('Toggle column');
-  // }
-
+  /**
+   * Select nodes by level by button.
+   *
+   * @method  selectNodesLevel
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el  DOM element.
+   * @return  {Object}      D3 selection of nodes.
+   */
   selectNodesLevel (el) {
     return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
   }
 
+  /**
+   * Highlight node labels
+   *
+   * @method  highlightLabels
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Boolean}  deHighlight  If `true` the highlighting will be reset.
+   */
   highlightLabels (deHighlight) {
     this.vis.baseElD3.selectAll('.node')
       .classed('highlight-label', !deHighlight);
   }
 
+  /**
+   * Highlight bars.
+   *
+   * @method  highlightBars
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}   el           DOM element.
+   * @param   {String}   type         Name of the nodes to be highlighted.
+   * @param   {Boolean}  deHighlight  If `true` the highlighting will be reset.
+   */
   highlightBars (el, type, deHighlight) {
     const nodes = el ?
       this.selectNodesLevel(el) : this.vis.baseElD3.selectAll('.node');
@@ -449,6 +482,15 @@ class Topbar {
       .classed('highlight', !deHighlight);
   }
 
+  /**
+   * Sort all columns
+   *
+   * @method  sortAllColumns
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el    DOM element.
+   * @param   {String}  type  Property to be sorted by.
+   */
   sortAllColumns (el, type) {
     const newSortType = this.vis.currentSorting.global.type !== type;
 
@@ -476,6 +518,17 @@ class Topbar {
     this.vis.sortAllColumns(type, newSortType);
   }
 
+  /**
+   * Sort a column of nodes.
+   *
+   * @method  sortColumn
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}   el      DOM element.
+   * @param   {Number}   index   Index of the column.
+   * @param   {String}   type    Property to be sorted by.
+   * @param   {Boolean}  global  If `true` its global sorting.
+   */
   sortColumn (el, index, type, global) {
     // Reset global sorting
     if (!global) {
@@ -535,6 +588,15 @@ class Topbar {
     }
   }
 
+  /**
+   * Reset the visual status of the sort button
+   *
+   * @method  resetSortEl
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}   el       DOM element.
+   * @param   {String}   newType  New sort type.
+   */
   resetSortEl (el, newType) {
     el.classed('active', false);
     el.select('.icon-sort-desc').classed('visible', false);
@@ -546,14 +608,37 @@ class Topbar {
     }
   }
 
+  /**
+   * Reset semi-active sort button
+   *
+   * @method  resetSemiActiveSortingEls
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   resetSemiActiveSortingEls () {
     this.el.selectAll('.semi-active').classed('semi-active', false);
   }
 
+  /**
+   * Toggle between the global topbar buttons and the local sort buttons.
+   *
+   * @method  switch
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   switch () {
     this.el.classed('details', !this.el.classed('details'));
   }
 
+  /**
+   * Switch bar mode.
+   *
+   * @method  switchBarMode
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el    DOM element.
+   * @param   {String}  mode  Bar mode to be switched to. Can be ['one', 'two'].
+   */
   switchBarMode (el, mode) {
     if (this.vis.nodes.barMode !== mode) {
       if (mode === 'one') {
