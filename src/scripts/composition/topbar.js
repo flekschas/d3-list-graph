@@ -438,32 +438,6 @@ class Topbar {
   }
 
   /**
-   * Select nodes by level by button.
-   *
-   * @method  selectNodesLevel
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @param   {Object}  el  DOM element.
-   * @return  {Object}      D3 selection of nodes.
-   */
-  selectNodesLevel (el) {
-    return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
-  }
-
-  /**
-   * Highlight node labels
-   *
-   * @method  highlightLabels
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @param   {Boolean}  deHighlight  If `true` the highlighting will be reset.
-   */
-  highlightLabels (deHighlight) {
-    this.vis.baseElD3.selectAll('.node')
-      .classed('highlight-label', !deHighlight);
-  }
-
-  /**
    * Highlight bars.
    *
    * @method  highlightBars
@@ -480,6 +454,63 @@ class Topbar {
     nodes.classed('highlight-bar', !deHighlight)
       .selectAll('.bar.' + type)
       .classed('highlight', !deHighlight);
+  }
+
+  /**
+   * Highlight node labels
+   *
+   * @method  highlightLabels
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Boolean}  deHighlight  If `true` the highlighting will be reset.
+   */
+  highlightLabels (deHighlight) {
+    this.vis.baseElD3.selectAll('.node')
+      .classed('highlight-label', !deHighlight);
+  }
+
+  /**
+   * Reset semi-active sort button
+   *
+   * @method  resetSemiActiveSortingEls
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  resetSemiActiveSortingEls () {
+    this.el.selectAll('.semi-active').classed('semi-active', false);
+  }
+
+  /**
+   * Reset the visual status of the sort button
+   *
+   * @method  resetSortEl
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}   el       DOM element.
+   * @param   {String}   newType  New sort type.
+   */
+  resetSortEl (el, newType) {
+    el.classed('active', false);
+    el.select('.icon-sort-desc').classed('visible', false);
+    el.select('.icon-sort-asc').classed('visible', false);
+    el.select('.icon-unsort').classed('visible', true);
+    if (newType === 'name') {
+      el.classed('semi-active', true);
+      this.semiActiveSortingEls = true;
+    }
+  }
+
+  /**
+   * Select nodes by level by button.
+   *
+   * @method  selectNodesLevel
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el  DOM element.
+   * @return  {Object}      D3 selection of nodes.
+   */
+  selectNodesLevel (el) {
+    return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
   }
 
   /**
@@ -586,37 +617,6 @@ class Topbar {
         newSortType
       );
     }
-  }
-
-  /**
-   * Reset the visual status of the sort button
-   *
-   * @method  resetSortEl
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @param   {Object}   el       DOM element.
-   * @param   {String}   newType  New sort type.
-   */
-  resetSortEl (el, newType) {
-    el.classed('active', false);
-    el.select('.icon-sort-desc').classed('visible', false);
-    el.select('.icon-sort-asc').classed('visible', false);
-    el.select('.icon-unsort').classed('visible', true);
-    if (newType === 'name') {
-      el.classed('semi-active', true);
-      this.semiActiveSortingEls = true;
-    }
-  }
-
-  /**
-   * Reset semi-active sort button
-   *
-   * @method  resetSemiActiveSortingEls
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   */
-  resetSemiActiveSortingEls () {
-    this.el.selectAll('.semi-active').classed('semi-active', false);
   }
 
   /**
