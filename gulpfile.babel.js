@@ -10,11 +10,11 @@ import gulpIf from 'gulp-if';
 import gulpUtil from 'gulp-util';
 import ignore from 'gulp-ignore';
 import notify from 'gulp-notify';
+import optimize from 'gulp-optimize-js';
 import opn from 'opn';
 import path from 'path';
 import plumber from 'gulp-plumber';
 import rename from 'gulp-rename';
-import rollup from './scripts/gulp-rollup.js';
 import runSequence from 'run-sequence';
 import sass from 'gulp-sass';
 import semver from 'semver';
@@ -22,6 +22,8 @@ import sourcemaps from 'gulp-sourcemaps';
 import svgmin from 'gulp-svgmin';
 import uglify from 'gulp-uglify';
 import webserver from 'gulp-webserver';
+
+import rollup from './scripts/gulp-rollup';
 
 import * as config from './config.json';
 import * as packageJson from './package.json';
@@ -100,6 +102,10 @@ gulp.task('bundle', () => gulp
       path.dirname(path.relative(file.base, file.path))
     ].banner + ' */',
     format: 'umd',
+    globals: {
+      $: '$',
+      d3: 'd3'
+    },
     moduleName: config.js.bundles[
         path.dirname(path.relative(file.base, file.path))
       ].name,
@@ -112,7 +118,7 @@ gulp.task('bundle', () => gulp
     ],
     sourceMap: !production
   })))
-  .pipe(rename(bundlePath => {
+  .pipe(rename((bundlePath) => {
     bundlePath.basename = config.js.bundles[bundlePath.dirname].output;
     return bundlePath;
   }))
@@ -132,11 +138,20 @@ gulp.task('bundle', () => gulp
   .pipe(sourcemaps.init())
   // Unglify JavaScript if we start Gulp in production mode. Otherwise
   // concat files only.
-  .pipe(uglify({
-    preserveComments: 'license'
-  }))
+  .pipe(
+    uglify({
+      preserveComments: 'license'
+    })
+  )
   // Append hash to file name in production mode for better cache control
   .pipe(sourcemaps.write('.'))
+  .pipe(gulp.dest(config.globalPaths.dist))
+  // Include only JavaScript files
+  .pipe(ignore.include('*.js'))
+  // Rename file
+  .pipe(rename({ suffix: '.optimized' }))
+  // Optimize code for speed
+  .pipe(optimize({ sourceMaps: true }))
   .pipe(gulp.dest(config.globalPaths.dist))
 );
 
@@ -237,7 +252,7 @@ gulp.task('open', () => {
  * -----------------------------------------------------------------------------
  */
 
-gulp.task('build', callback => {
+gulp.task('build', (callback) => {
   runSequence(
     'lint',
     'clean',
@@ -248,7 +263,7 @@ gulp.task('build', callback => {
   );
 });
 
-gulp.task('dev', callback => {
+gulp.task('dev', (callback) => {
   runSequence(
     [
       'build', 'webserver', 'watch'
