@@ -1618,6 +1618,20 @@ class Nodes {
     );
   }
 
+  /**
+   * Visually remove the highlighting of nodes.
+   *
+   * @method  unhighlightNodes
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}   d3El           D3 selection of the starting node which
+   *   highlighting should be undone.
+   * @param   {String}   className      CSS class name to be assigned to the
+   *   highlighted nodes.
+   * @param   {String}   restriction    Specify a restriction. Currently
+   *   only "directParentsOnly" is supported.
+   * @param   {Boolean}  excludeClones  If `true` exclude cloned nodes.
+   */
   unhighlightNodes (d3El, className, restriction, excludeClones) {
     const data = d3El.datum();
     const traverseCallback = (nodeData) => { nodeData.hovering = 0; };
@@ -1664,6 +1678,15 @@ class Nodes {
     }
   }
 
+  /**
+   * Visually update the nodes' positions after sorting.
+   *
+   * @method  sort
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}   update       Updated node data object.
+   * @param   {Boolean}  newSortType  If `true` the sort type has changed.
+   */
   sort (update, newSortType) {
     for (let i = update.length; i--;) {
       const selection = this.nodes.data(update[i].rows, data => data.id);
