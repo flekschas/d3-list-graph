@@ -413,60 +413,68 @@ class Nodes {
   }
 
   /**
-   * Get the CSS class of the node group.
+   * Get the current bar mode.
    *
-   * @method  classNodeVisible
+   * @method  barMode
    * @author  Fritz Lekschas
    * @date    2016-09-22
-   * @return  {String}  CSS name.
+   * @return  {String}  Bar mode string.
    */
-  static get classNodeVisible () { return CLASS_NODE_VISIBLE; }
+  get barMode () {
+    return this.bars.mode;
+  }
 
   /**
-   * Get the CSS class of focus controls.
-   *
-   * @method  classFocusControls
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @return  {String}  CSS name.
-   */
-  static get classFocusControls () { return CLASS_FOCUS_CONTROLS; }
-
-  /**
-   * Get the CSS class of root elements.
-   *
-   * @method  classRoot
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @return  {String}  CSS name.
-   */
-  static get classRoot () { return CLASS_ROOT; }
-
-  /**
-   * Get the CSS class of query button..
-   *
-   * @method  classQuery
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @return  {String}  CSS name.
-   */
-  static get classQuery () { return CLASS_QUERY; }
-
-  /**
-   * Update the link location indicators.
+   * Handle multiple queries as once.
    *
    * @description
-   * Updates the link location indicators of level / column `right` - `left`.
+   * Useful when the custom root node is changed as this involves "un-querying"
+   * and querying.
    *
-   * @method  updateLinkLocationIndicators
+   * @method  batchQueryHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Array}    els             Array of D3 selections of nodes to be
+   *   queried.
+   * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
+   */
+  batchQueryHandler (els, noNotification) {
+    const actions = [];
+    for (let i = els.length; i--;) {
+      actions.push(
+        this.queryHandler(
+          els[i].d3El, els[i].action, els[i].mode, true
+        )
+      );
+    }
+
+    if (!noNotification) {
+      this.events.broadcast('d3ListGraphBatchQuery', actions);
+    }
+  }
+
+  /**
+   * Visually blur a node.
+   *
+   * @method  blurNodes
    * @author  Fritz Lekschas
    * @date    2016-09-22
-   * @param   {Number}  left   Index of the column to the left.
-   * @param   {Number}  right  Index of the right column.
+   * @param   {Object}  event  Event object.
    */
-  updateLinkLocationIndicators (left, right) {
-    this.calcHeightLinkLocationIndicator(left, true);
-    this.calcHeightLinkLocationIndicator(right);
+  blurNodes (event) {
+    this.eventHelper(
+      event.nodeIds,
+      this.unhighlightNodes,
+      ['focus', 'directParentsOnly', !!event.excludeClones]
+    );
+
+    if (event.zoomIn) {
+      this.vis.zoomedView();
+    }
+
+    if (this.tempHidingUnrelatedNodes) {
+      this.hideUnrelatedNodes(undefined, true);
+    }
   }
 
   /**
@@ -523,46 +531,69 @@ class Nodes {
   }
 
   /**
-   * Updates the visual appearance of the link location indicators.
+   * Tests if the event-related node list is identical.
    *
-   * @method  updateHeightLinkLocationIndicatorBars
+   * @method  checkNodeFocusSameEvent
    * @author  Fritz Lekschas
    * @date    2016-09-22
-   * @param   {Object}   selection  D3 selection of the corresponding nodes.
-   * @param   {Boolean}  outgoing   If `true` outgoing link location indicator
-   *   heights are updated. Otherwise incoming link location indicator
-   *   heights are updated.
+   * @param   {Array}  nodeIds  Array of node IDs.
+   * @return  {Boolean}         If `true` the event node ID list is identical to
+   *   the current focus node ID list.
    */
-  updateHeightLinkLocationIndicatorBars (selection, outgoing) {
-    const barRefHeight = (this.visData.global.row.contentHeight / 2) - 1;
-    const barAboveRefTop = (this.visData.global.row.height / 2) - 1;
-
-    const baseClassName = '.' + CLASS_INDICATOR_LOCATION +
-      '.' + (
-        outgoing ? CLASS_INDICATOR_OUTGOING : CLASS_INDICATOR_INCOMING
-      );
-
-    selection.selectAll(
-      baseClassName +
-      '.' + CLASS_INDICATOR_ABOVE
-    ).attr(
-      'y',
-      data => (data.total ?
-        barAboveRefTop - (data.above / data.total * barRefHeight) :
-        barAboveRefTop)
-    ).attr(
-      'height',
-      data => (data.total ? data.above / data.total * barRefHeight : 0)
-    );
-
-    selection.selectAll(
-      baseClassName +
-      '.' + CLASS_INDICATOR_BELOW
-    ).attr(
-      'height',
-      data => (data.total ? data.below / data.total * barRefHeight : 0)
-    );
+  checkNodeFocusSameEvent (nodeIds) {
+    if (!this.nodeFocusIds) {
+      return false;
+    }
+    if (nodeIds.length !== this.nodeFocusIds.length) {
+      return false;
+    }
+    for (let i = nodeIds.length; i--;) {
+      if (nodeIds[i] !== this.nodeFocusIds[i]) {
+        return false;
+      }
+    }
+    return true;
   }
+
+  /**
+   * Get the CSS class of the node group.
+   *
+   * @method  classNodeVisible
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  CSS name.
+   */
+  static get classNodeVisible () { return CLASS_NODE_VISIBLE; }
+
+  /**
+   * Get the CSS class of focus controls.
+   *
+   * @method  classFocusControls
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  CSS name.
+   */
+  static get classFocusControls () { return CLASS_FOCUS_CONTROLS; }
+
+  /**
+   * Get the CSS class of root elements.
+   *
+   * @method  classRoot
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  CSS name.
+   */
+  static get classRoot () { return CLASS_ROOT; }
+
+  /**
+   * Get the CSS class of query button..
+   *
+   * @method  classQuery
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  CSS name.
+   */
+  static get classQuery () { return CLASS_QUERY; }
 
   /**
    * Node _mouse enter_ handler.
@@ -591,128 +622,37 @@ class Nodes {
   }
 
   /**
-   * Node _mouse leave handler.
+   * Event helper.
    *
-   * @method  leaveHandler
+   * @method  eventHelper
    * @author  Fritz Lekschas
    * @date    2016-09-22
-   * @param   {Object}  el    DOM element.
-   * @param   {Object}  data  D3 data object of the DOM element.
+   * @param   {Array}     nodeIds            Array of node IDs.
+   * @param   {Function}  callback           Call back function of the actual
+   *   event.
+   * @param   {Array}     optionalParams     Array of optional parameters to be
+   *   passed to the callback.
+   * @param   {String}    subSelectionClass  Sub-selection of certain elements
+   *   based on a CSS class. The selection will be passed to the callback.
    */
-  leaveHandler (el, data) {
-    this.unhighlightNodes(d3.select(el));
+  eventHelper (nodeIds, callback, optionalParams, subSelectionClass) {
+    const self = this;
 
-    const eventData = {
-      id: data.id,
-      clone: false,
-      clonedFromId: undefined
-    };
+    this.nodes
+      // Filter by node ID
+      .filter(data => !!~nodeIds.indexOf(data.id))
+      .each(function triggerCallback () {
+        let d3El = d3.select(this);
 
-    if (data.clone) {
-      eventData.clone = true;
-      eventData.clonedFromId = data.originalNode.id;
-    }
-
-    this.events.broadcast('d3ListGraphNodeLeave', eventData);
-  }
-
-  /**
-   * Handler managing visual _lock_ events.
-   *
-   * @method  lockHandler
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @param   {Object}  d3El  D3 selection of the element to be visually locked.
-   */
-  lockHandler (d3El) {
-    const events = this.toggleLock(d3El);
-
-    if (events.locked && events.unlocked) {
-      this.events.broadcast('d3ListGraphNodeLockChange', {
-        lock: {
-          id: events.locked.id,
-          clone: events.locked.clone,
-          clonedFromId: events.locked.clone ?
-            events.locked.originalNode.id : undefined
-        },
-        unlock: {
-          id: events.unlocked.id,
-          clone: events.unlocked.clone,
-          clonedFromId: events.unlocked.clone ?
-            events.unlocked.originalNode.id : undefined
+        if (subSelectionClass) {
+          d3El = d3El.select(subSelectionClass);
         }
+
+        callback.apply(
+          self,
+          [d3El].concat(optionalParams || [])
+        );
       });
-    } else {
-      if (events.locked) {
-        this.events.broadcast('d3ListGraphNodeLock', {
-          id: events.locked.id,
-          clone: events.locked.clone,
-          clonedFromId: events.locked.clone ?
-            events.locked.originalNode.id : undefined
-        });
-      }
-
-      if (events.unlocked) {
-        this.events.broadcast('d3ListGraphNodeUnlock', {
-          id: events.unlocked.id,
-          clone: events.unlocked.clone,
-          clonedFromId: events.unlocked.clone ?
-            events.unlocked.originalNode.id : undefined
-        });
-      }
-    }
-  }
-
-  /**
-   * Handler managing _root_ events.
-   *
-   * @method  rootHandler
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @param   {Object}   d3El    D3 selection of the node to be rooted.
-   * @param   {Boolean}  unroot  If `true` the rooting is resolved.
-   */
-  rootHandler (d3El, unroot) {
-    if (!d3El.datum().data.state.root && unroot) {
-      // The node is not rooted so there's no point in unrooting.
-      return;
-    }
-    const events = this.toggleRoot(d3El, unroot);
-
-    if (events.rooted && events.unrooted) {
-      this.events.broadcast('d3ListGraphNodeReroot', {
-        rooted: {
-          id: events.rooted.id,
-          clone: events.rooted.clone,
-          clonedFromId: events.rooted.clone ?
-            events.rooted.originalNode.id : undefined
-        },
-        unrooted: {
-          id: events.unrooted.id,
-          clone: events.unrooted.clone,
-          clonedFromId: events.unrooted.clone ?
-            events.unrooted.originalNode.id : undefined
-        }
-      });
-    } else {
-      if (events.rooted) {
-        this.events.broadcast('d3ListGraphNodeRoot', {
-          id: events.rooted.id,
-          clone: events.rooted.clone,
-          clonedFromId: events.rooted.clone ?
-            events.rooted.originalNode.id : undefined
-        });
-      }
-
-      if (events.unrooted) {
-        this.events.broadcast('d3ListGraphNodeUnroot', {
-          id: events.unrooted.id,
-          clone: events.unrooted.clone,
-          clonedFromId: events.unrooted.clone ?
-            events.unrooted.originalNode.id : undefined
-        });
-      }
-    }
   }
 
   /**
@@ -760,54 +700,16 @@ class Nodes {
     }
   }
 
-
   /**
-   * Visually blur a node.
+   * Helper method to hide nodes.
    *
-   * @method  blurNodes
+   * @method  hideNodes
    * @author  Fritz Lekschas
    * @date    2016-09-22
-   * @param   {Object}  event  Event object.
+   * @param   {Object}   data  Node data object.
    */
-  blurNodes (event) {
-    this.eventHelper(
-      event.nodeIds,
-      this.unhighlightNodes,
-      ['focus', 'directParentsOnly', !!event.excludeClones]
-    );
-
-    if (event.zoomIn) {
-      this.vis.zoomedView();
-    }
-
-    if (this.tempHidingUnrelatedNodes) {
-      this.hideUnrelatedNodes(undefined, true);
-    }
-  }
-
-  /**
-   * Tests if the event-related node list is identical.
-   *
-   * @method  checkNodeFocusSameEvent
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @param   {Array}  nodeIds  Array of node IDs.
-   * @return  {Boolean}         If `true` the event node ID list is identical to
-   *   the current focus node ID list.
-   */
-  checkNodeFocusSameEvent (nodeIds) {
-    if (!this.nodeFocusIds) {
-      return false;
-    }
-    if (nodeIds.length !== this.nodeFocusIds.length) {
-      return false;
-    }
-    for (let i = nodeIds.length; i--;) {
-      if (nodeIds[i] !== this.nodeFocusIds[i]) {
-        return false;
-      }
-    }
-    return true;
+  hideNodes (data) {
+    this.nodesVisibility(data);
   }
 
   /**
@@ -840,632 +742,6 @@ class Nodes {
       });
 
     this.updateVisibility();
-  }
-
-  /**
-   * Event helper.
-   *
-   * @method  eventHelper
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @param   {Array}     nodeIds            Array of node IDs.
-   * @param   {Function}  callback           Call back function of the actual
-   *   event.
-   * @param   {Array}     optionalParams     Array of optional parameters to be
-   *   passed to the callback.
-   * @param   {String}    subSelectionClass  Sub-selection of certain elements
-   *   based on a CSS class. The selection will be passed to the callback.
-   */
-  eventHelper (nodeIds, callback, optionalParams, subSelectionClass) {
-    const self = this;
-
-    this.nodes
-      // Filter by node ID
-      .filter(data => !!~nodeIds.indexOf(data.id))
-      .each(function triggerCallback () {
-        let d3El = d3.select(this);
-
-        if (subSelectionClass) {
-          d3El = d3El.select(subSelectionClass);
-        }
-
-        callback.apply(
-          self,
-          [d3El].concat(optionalParams || [])
-        );
-      });
-  }
-
-  /**
-   * Get the current bar mode.
-   *
-   * @method  barMode
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @return  {String}  Bar mode string.
-   */
-  get barMode () {
-    return this.bars.mode;
-  }
-
-  /**
-   * Toggle through the lock state of a node
-   *
-   * @method  toggleLock
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Object}   d3El         D3 selection of the node to be locked.
-   * @param   {Boolean}  forceUnlock  If `true` forces an unlock.
-   */
-  toggleLock (d3El, forceUnlock) {
-    const data = d3El.datum();
-    const events = { locked: false, unlocked: false };
-
-    if (this.lockedNode) {
-      if (this.lockedNode.datum().id === data.id) {
-        this.unlockNode(this.lockedNode.datum().id);
-        events.unlocked = this.lockedNode.datum();
-        this.lockedNode = undefined;
-      } else {
-        // Reset previously locked node;
-        this.unlockNode(this.lockedNode.datum().id);
-        events.unlocked = this.lockedNode.datum();
-
-        if (!forceUnlock) {
-          this.lockNode(data.id);
-          events.locked = data;
-          this.lockedNode = d3El;
-        }
-      }
-    } else {
-      if (!forceUnlock) {
-        this.lockNode(data.id);
-        events.locked = data;
-        this.lockedNode = d3El;
-      }
-    }
-
-    return events;
-  }
-
-  /**
-   * Lock a node(s) by ID.
-   *
-   * @description
-   * The reason for not just passing the selected node element in the DOM is
-   * because the node might have been cloned. Hence, multiple copies of the same
-   * node exist.
-   *
-   * @method  lockNode
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Number}  id  ID of node(s) to be locked.
-   */
-  lockNode (id) {
-    const self = this;
-    const els = this.nodes.filter(data => data.id === id);
-
-    els.each(function (data) {
-      self.highlightNodes(d3.select(this), 'lock', undefined);
-      data.data.state.lock = true;
-    });
-  }
-
-  /**
-   * Unlock node.
-   *
-   * @method  unlockNode
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Number}  id  ID of node(s) to be locked.
-   */
-  unlockNode (id) {
-    const self = this;
-    const els = this.nodes.filter(data => data.id === id);
-
-    els.each(function (data) {
-      self.unhighlightNodes(d3.select(this), 'lock', undefined);
-      data.data.state.lock = undefined;
-    });
-  }
-
-  /**
-   * Set the query state of the node by assign the corresponding CSS class.
-   *
-   * @method  setNodeQueryState
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Object}  d3El  D3 selection of the node to be inspected.
-   * @param   {String}  mode  Name of the query mode.
-   */
-  static setNodeQueryState (d3El, mode) {
-    d3El.datum().data.state.query = mode;
-    d3El
-      .classed('active', true)
-      .classed('inactive', false)
-      .classed('query-and', mode === 'and')
-      .classed('query-or', mode === 'or')
-      .classed('query-not', mode === 'not');
-  }
-
-  /**
-   * Unset the query state of a node.
-   *
-   * @method  unsetNodeQueryState
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Object}  d3El  D3 selection of the node to be inspected.
-   */
-  unsetNodeQueryState (d3El) {
-    const data = d3El.datum();
-
-    data.data.state.query = undefined;
-    data.data.queryBeforeRooting = undefined;
-
-    d3El
-      .classed('active', true)
-      .classed('inactive', false)
-      .classed('query-and', false)
-      .classed('query-or', false)
-      .classed('query-not', false);
-
-    if (this.rootedNode) {
-      this.hideNodes(this.rootedNode.datum());
-    }
-  }
-
-  /**
-   * Toggle through node query states.
-   *
-   * @method  toggleNodeQueryStates
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Object}  d3El  D3 selection of the node to be inspected.
-   */
-  toggleNodeQueryStates (d3El) {
-    const data = d3El.datum();
-    const previousMode = data.data.state.query;
-
-    if (data.data.state.root) {
-      if (previousMode !== 'or') {
-        Nodes.setNodeQueryState(d3El, 'or');
-      } else {
-        Nodes.setNodeQueryState(d3El, 'and');
-      }
-    } else {
-      switch (previousMode) {
-        case 'or':
-          Nodes.setNodeQueryState(d3El, 'and');
-          break;
-        case 'and':
-          Nodes.setNodeQueryState(d3El, 'not');
-          break;
-        case 'not':
-          this.unsetNodeQueryState(d3El);
-          break;
-        default:
-          Nodes.setNodeQueryState(d3El, 'or');
-          break;
-      }
-    }
-  }
-
-  /**
-   * Handle multiple queries as once.
-   *
-   * @description
-   * Useful when the custom root node is changed as this involves "un-querying"
-   * and querying.
-   *
-   * @method  batchQueryHandler
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Array}    els             Array of D3 selections of nodes to be
-   *   queried.
-   * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
-   */
-  batchQueryHandler (els, noNotification) {
-    const actions = [];
-    for (let i = els.length; i--;) {
-      actions.push(
-        this.queryHandler(
-          els[i].d3El, els[i].action, els[i].mode, true
-        )
-      );
-    }
-
-    if (!noNotification) {
-      this.events.broadcast('d3ListGraphBatchQuery', actions);
-    }
-  }
-
-  /**
-   * Query handler.
-   *
-   * @method  queryHandler
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Object}   d3El            D3 selection of the node to be inspected.
-   * @param   {String}   action          Specific query action. Can be ['query',
-   *   'unquery', undefined].
-   * @param   {String}   mode            If `action == 'query'`, string name of
-   *   the query mode. Can be [or, and, not].
-   * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
-   */
-  queryHandler (d3El, action, mode, noNotification) {
-    const data = d3El.datum();
-    const previousMode = data.data.state.query;
-    const event = {};
-
-    if (!previousMode && action === 'unquery') {
-      // We haven't queried anything so there's nothing to "un-query".
-      return undefined;
-    }
-
-    switch (action) {
-      case 'query':
-        Nodes.setNodeQueryState(d3El, mode);
-        break;
-      case 'unquery':
-        this.unsetNodeQueryState(d3El);
-        break;
-      default:
-        this.toggleNodeQueryStates(d3El);
-        break;
-    }
-
-    if (data.data.state.query) {
-      if (data.data.state.query !== previousMode) {
-        event.name = 'd3ListGraphNodeQuery';
-        event.data = {
-          id: data.id,
-          clone: data.clone,
-          clonedFromId: data.clone ?
-            data.originalNode.id : undefined,
-          mode: data.data.state.query
-        };
-      }
-    } else {
-      event.name = 'd3ListGraphNodeUnquery';
-      event.data = {
-        id: data.id,
-        clone: data.clone,
-        clonedFromId: data.clone ?
-          data.originalNode.id : undefined
-      };
-    }
-
-    if (event.name && !noNotification) {
-      this.events.broadcast(event.name, event.data);
-    }
-
-    return event.name ? event : undefined;
-  }
-
-  /**
-   * Toggle root node.
-   *
-   * @method  toggleRoot
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Object}   d3El            D3 selection of the node to be
-   *   inspected.
-   * @param   {Boolean}  forceUnroot     If `true` the node will be "un-rooted".
-   * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
-   */
-  toggleRoot (d3El, forceUnroot, noNotification) {
-    const data = d3El.datum();
-    const events = { rooted: false, unrooted: false };
-    const queries = [];
-
-    // Blur current levels
-    this.vis.levels.blur();
-
-    if (this.rootedNode) {
-      // Reset current root node
-      this.rootedNode
-        .classed('active', false)
-        .classed('inactive', true);
-
-      events.unrooted = this.rootedNode.datum();
-      if (this.unrootNode(this.rootedNode).unquery) {
-        queries.push({
-          d3El: this.rootedNode,
-          action: 'unquery'
-        });
-      }
-
-      // Activate new root
-      if (this.rootedNode.datum().id !== data.id && !forceUnroot) {
-        d3El
-          .classed('active', true)
-          .classed('inactive', false);
-
-        this.rootedNode = d3El;
-        events.rooted = d3El.datum();
-        if (this.rootNode(d3El).query) {
-          queries.push({
-            d3El,
-            action: 'query',
-            mode: 'or'
-          });
-        }
-      } else {
-        this.rootedNode = undefined;
-        // Highlight first level
-        this.vis.levels.focus(
-          this.vis.activeLevel - this.vis.noRootActiveLevelDiff
-        );
-      }
-    } else {
-      if (!forceUnroot) {
-        d3El
-          .classed('active', true)
-          .classed('inactive', false);
-
-        this.rootedNode = d3El;
-        events.rooted = d3El.datum();
-        if (this.rootNode(d3El).query) {
-          queries.push({
-            d3El,
-            action: 'query',
-            mode: 'or'
-          });
-        }
-      }
-    }
-
-    if (queries.length) {
-      this.batchQueryHandler(queries, noNotification);
-    }
-
-    return events;
-  }
-
-  /**
-   * Set the given node as the root.
-   *
-   * @method  rootNode
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Object}  d3El  D3 selection of the node to be rooted.
-   */
-  rootNode (d3El) {
-    const data = d3El.datum();
-
-    data.data.state.root = true;
-    d3El.classed('rooted', true);
-    this.hideNodes(data);
-
-    // Highlight level
-    this.vis.levels.focus(data.depth + this.vis.activeLevel);
-
-    if (!data.data.state.query || data.data.state.query === 'not') {
-      data.data.queryBeforeRooting = false;
-      return {
-        query: true
-      };
-    }
-
-    data.data.queryBeforeRooting = true;
-
-    return {
-      query: false
-    };
-  }
-
-  /**
-   * Stop rooting by the given node.
-   *
-   * @method  unrootNode
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Object}  d3El  D3 selection of the node to be "un-rooted".
-   */
-  unrootNode (d3El) {
-    const data = d3El.datum();
-
-    data.data.state.root = false;
-    d3El.classed('rooted', false);
-    this.showNodes();
-
-    if (!data.data.queryBeforeRooting) {
-      return {
-        unquery: true
-      };
-    }
-
-    return {
-      unquery: false
-    };
-  }
-
-  /**
-   * Helper method to create focus controls.
-   *
-   * @method  setUpFocusControls
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Object}  selection  D3 selection of the node to which the focus
-   *   controls should be added.
-   * @param   {String}  location   Can either be "left" or "right"
-   * @param   {Number}  position   Amount the focus control is pushed away from
-   *   the node.
-   * @param   {String}  mode       Specifies a helper element like "bg" or
-   *   "hover-helper".
-   * @param   {String}  className  Class name to be assigned to to the focus
-   *   control.
-   */
-  setUpFocusControls (selection, location, position, mode, className) {
-    const paddedDim = this.iconDimension + 4;
-
-    let x = 0 - (paddedDim * (position + 1));
-
-    if (location === 'right') {
-      x = this.visData.global.column.contentWidth + 2 + (paddedDim * position);
-    }
-
-    const y = this.visData.global.row.padding +
-      (
-        (
-          this.visData.global.row.contentHeight -
-          (2 * this.visData.global.cell.padding)
-        ) / 4
-      );
-
-    if (mode === 'bg') {
-      selection
-        .attr('class', className)
-        .attr('cx', x + (this.iconDimension / 2))
-        .attr('cy', y + (this.iconDimension / 2))
-        .attr('r', this.iconDimension * 3 / 4);
-    } else if (mode === 'hover-helper') {
-      selection
-        .attr('class', className)
-        .attr('x', x - 4)
-        .attr('y', y - 4)
-        .attr('width', this.iconDimension + 8)
-        .attr('height', this.iconDimension + 8)
-        .attr('rx', this.iconDimension)
-        .attr('ry', this.iconDimension);
-    } else {
-      selection
-        .attr('class', className)
-        .attr('x', x)
-        .attr('y', y)
-        .attr('width', this.iconDimension)
-        .attr('height', this.iconDimension);
-    }
-  }
-
-  /**
-   * Helper method to hide nodes.
-   *
-   * @method  hideNodes
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @param   {Object}   data  Node data object.
-   */
-  hideNodes (data) {
-    this.nodesVisibility(data);
-  }
-
-  /**
-   * Helper method to show nodes.
-   *
-   * @method  showNodes
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   */
-  showNodes () {
-    this.nodesVisibility(undefined, true);
-  }
-
-  /**
-   * Only show the subtree and siblings of the node `data`.
-   *
-   * @method  nodesVisibility
-   * @author  Fritz Lekschas
-   * @date    2016-09-22
-   * @param   {Object}   data  Node data object.
-   * @param   {Boolean}  show  If `true` nodes will be shown again.
-   */
-  nodesVisibility (data, show) {
-    if (show) {
-      this.nodes
-        .classed('hidden', false)
-        .each((nodeData) => { nodeData.hidden = false; });
-    } else {
-      // First we set all nodes to `hidden` except those that are currently
-      // queried for.
-      this.nodes.each((nodeData) => {
-        nodeData.hidden = !nodeData.data.state.query;
-      });
-
-      // Then we set direct child and parent nodes of the current node visible.
-      traverse.upAndDown(data, (nodeData) => { nodeData.hidden = false; });
-
-      // We also show sibling nodes.
-      traverse.siblings(data, (nodeData) => { nodeData.hidden = false; });
-
-      // Assign CSS class to actually hide the nodes.
-      this.nodes.classed(
-        'hidden',
-        nodeData => nodeData.hidden
-      );
-    }
-    this.updateVisibility();
-  }
-
-  /**
-   * Marks nodes as being invisible via assigning a class depending on the
-   * custom scroll top position or the columns scroll top position.
-   *
-   * @method  isInvisible
-   * @author  Fritz Lekschas
-   * @date    2016-09-12
-   * @param   {Object}  selection        D3 selection of nodes to be checked.
-   * @param   {Number}  customScrollTop  Custom scroll top position. Used when
-   *   column is actively scrolled.
-   */
-  isInvisible (selection, customScrollTop) {
-    selection.classed('invisible', (data) => {
-      const scrollTop = customScrollTop ||
-        this.visData.nodes[data.depth].scrollTop;
-
-      // Node is right to the visible container
-      if (data.x + this.vis.dragged.x >= this.vis.width) {
-        return (data.invisible = true);
-      }
-      // Node is below the visible container
-      if (
-        data.y + scrollTop >= this.vis.height
-      ) {
-        return (data.invisible = true);
-      }
-      // Node is above the visible container
-      if (
-        data.y + this.visData.global.row.height +
-        scrollTop <= 0
-      ) {
-        return (data.invisible = true);
-      }
-      // Node is left to the visible container
-      if (data.x + this.vis.dragged.x + this.visData.global.column.width <= 0) {
-        return (data.invisible = true);
-      }
-      return (data.invisible = false);
-    });
-  }
-
-  /**
-   * Temporarily make all nodes visible.
-   *
-   * @method  makeAllTempVisible
-   * @author  Fritz Lekschas
-   * @date    2016-09-23
-   * @param   {Boolean}  unset  If `true` reverts back to the old state of
-   *   visibility.
-   */
-  makeAllTempVisible (unset) {
-    if (unset) {
-      this.nodes.classed(
-        'invisible', (data) => {
-          const prevInvisible = data._invisible;
-          data._invisible = undefined;
-
-          return prevInvisible;
-        }
-      );
-    } else {
-      this.nodes
-        .classed(
-          'invisible', (data) => {
-            data._invisible = data.invisible;
-            return false;
-          }
-        );
-    }
   }
 
   /**
@@ -1619,6 +895,634 @@ class Nodes {
   }
 
   /**
+   * Marks nodes as being invisible via assigning a class depending on the
+   * custom scroll top position or the columns scroll top position.
+   *
+   * @method  isInvisible
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {Object}  selection        D3 selection of nodes to be checked.
+   * @param   {Number}  customScrollTop  Custom scroll top position. Used when
+   *   column is actively scrolled.
+   */
+  isInvisible (selection, customScrollTop) {
+    selection.classed('invisible', (data) => {
+      const scrollTop = customScrollTop ||
+        this.visData.nodes[data.depth].scrollTop;
+
+      // Node is right to the visible container
+      if (data.x + this.vis.dragged.x >= this.vis.width) {
+        return (data.invisible = true);
+      }
+      // Node is below the visible container
+      if (
+        data.y + scrollTop >= this.vis.height
+      ) {
+        return (data.invisible = true);
+      }
+      // Node is above the visible container
+      if (
+        data.y + this.visData.global.row.height +
+        scrollTop <= 0
+      ) {
+        return (data.invisible = true);
+      }
+      // Node is left to the visible container
+      if (data.x + this.vis.dragged.x + this.visData.global.column.width <= 0) {
+        return (data.invisible = true);
+      }
+      return (data.invisible = false);
+    });
+  }
+
+  /**
+   * Node _mouse leave handler.
+   *
+   * @method  leaveHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}  el    DOM element.
+   * @param   {Object}  data  D3 data object of the DOM element.
+   */
+  leaveHandler (el, data) {
+    this.unhighlightNodes(d3.select(el));
+
+    const eventData = {
+      id: data.id,
+      clone: false,
+      clonedFromId: undefined
+    };
+
+    if (data.clone) {
+      eventData.clone = true;
+      eventData.clonedFromId = data.originalNode.id;
+    }
+
+    this.events.broadcast('d3ListGraphNodeLeave', eventData);
+  }
+
+  /**
+   * Handler managing visual _lock_ events.
+   *
+   * @method  lockHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}  d3El  D3 selection of the element to be visually locked.
+   */
+  lockHandler (d3El) {
+    const events = this.toggleLock(d3El);
+
+    if (events.locked && events.unlocked) {
+      this.events.broadcast('d3ListGraphNodeLockChange', {
+        lock: {
+          id: events.locked.id,
+          clone: events.locked.clone,
+          clonedFromId: events.locked.clone ?
+            events.locked.originalNode.id : undefined
+        },
+        unlock: {
+          id: events.unlocked.id,
+          clone: events.unlocked.clone,
+          clonedFromId: events.unlocked.clone ?
+            events.unlocked.originalNode.id : undefined
+        }
+      });
+    } else {
+      if (events.locked) {
+        this.events.broadcast('d3ListGraphNodeLock', {
+          id: events.locked.id,
+          clone: events.locked.clone,
+          clonedFromId: events.locked.clone ?
+            events.locked.originalNode.id : undefined
+        });
+      }
+
+      if (events.unlocked) {
+        this.events.broadcast('d3ListGraphNodeUnlock', {
+          id: events.unlocked.id,
+          clone: events.unlocked.clone,
+          clonedFromId: events.unlocked.clone ?
+            events.unlocked.originalNode.id : undefined
+        });
+      }
+    }
+  }
+
+  /**
+   * Lock a node(s) by ID.
+   *
+   * @description
+   * The reason for not just passing the selected node element in the DOM is
+   * because the node might have been cloned. Hence, multiple copies of the same
+   * node exist.
+   *
+   * @method  lockNode
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Number}  id  ID of node(s) to be locked.
+   */
+  lockNode (id) {
+    const self = this;
+    const els = this.nodes.filter(data => data.id === id);
+
+    els.each(function (data) {
+      self.highlightNodes(d3.select(this), 'lock', undefined);
+      data.data.state.lock = true;
+    });
+  }
+
+  /**
+   * Temporarily make all nodes visible.
+   *
+   * @method  makeAllTempVisible
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Boolean}  unset  If `true` reverts back to the old state of
+   *   visibility.
+   */
+  makeAllTempVisible (unset) {
+    if (unset) {
+      this.nodes.classed(
+        'invisible', (data) => {
+          const prevInvisible = data._invisible;
+          data._invisible = undefined;
+
+          return prevInvisible;
+        }
+      );
+    } else {
+      this.nodes
+        .classed(
+          'invisible', (data) => {
+            data._invisible = data.invisible;
+            return false;
+          }
+        );
+    }
+  }
+
+  /**
+   * Only show the subtree and siblings of the node `data`.
+   *
+   * @method  nodesVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}   data  Node data object.
+   * @param   {Boolean}  show  If `true` nodes will be shown again.
+   */
+  nodesVisibility (data, show) {
+    if (show) {
+      this.nodes
+        .classed('hidden', false)
+        .each((nodeData) => { nodeData.hidden = false; });
+    } else {
+      // First we set all nodes to `hidden` except those that are currently
+      // queried for.
+      this.nodes.each((nodeData) => {
+        nodeData.hidden = !nodeData.data.state.query;
+      });
+
+      // Then we set direct child and parent nodes of the current node visible.
+      traverse.upAndDown(data, (nodeData) => { nodeData.hidden = false; });
+
+      // We also show sibling nodes.
+      traverse.siblings(data, (nodeData) => { nodeData.hidden = false; });
+
+      // Assign CSS class to actually hide the nodes.
+      this.nodes.classed(
+        'hidden',
+        nodeData => nodeData.hidden
+      );
+    }
+    this.updateVisibility();
+  }
+
+  /**
+   * Query handler.
+   *
+   * @method  queryHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}   d3El            D3 selection of the node to be inspected.
+   * @param   {String}   action          Specific query action. Can be ['query',
+   *   'unquery', undefined].
+   * @param   {String}   mode            If `action == 'query'`, string name of
+   *   the query mode. Can be [or, and, not].
+   * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
+   */
+  queryHandler (d3El, action, mode, noNotification) {
+    const data = d3El.datum();
+    const previousMode = data.data.state.query;
+    const event = {};
+
+    if (!previousMode && action === 'unquery') {
+      // We haven't queried anything so there's nothing to "un-query".
+      return undefined;
+    }
+
+    switch (action) {
+      case 'query':
+        Nodes.setNodeQueryState(d3El, mode);
+        break;
+      case 'unquery':
+        this.unsetNodeQueryState(d3El);
+        break;
+      default:
+        this.toggleNodeQueryStates(d3El);
+        break;
+    }
+
+    if (data.data.state.query) {
+      if (data.data.state.query !== previousMode) {
+        event.name = 'd3ListGraphNodeQuery';
+        event.data = {
+          id: data.id,
+          clone: data.clone,
+          clonedFromId: data.clone ?
+            data.originalNode.id : undefined,
+          mode: data.data.state.query
+        };
+      }
+    } else {
+      event.name = 'd3ListGraphNodeUnquery';
+      event.data = {
+        id: data.id,
+        clone: data.clone,
+        clonedFromId: data.clone ?
+          data.originalNode.id : undefined
+      };
+    }
+
+    if (event.name && !noNotification) {
+      this.events.broadcast(event.name, event.data);
+    }
+
+    return event.name ? event : undefined;
+  }
+
+  /**
+   * Handler managing _root_ events.
+   *
+   * @method  rootHandler
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}   d3El    D3 selection of the node to be rooted.
+   * @param   {Boolean}  unroot  If `true` the rooting is resolved.
+   */
+  rootHandler (d3El, unroot) {
+    if (!d3El.datum().data.state.root && unroot) {
+      // The node is not rooted so there's no point in unrooting.
+      return;
+    }
+    const events = this.toggleRoot(d3El, unroot);
+
+    if (events.rooted && events.unrooted) {
+      this.events.broadcast('d3ListGraphNodeReroot', {
+        rooted: {
+          id: events.rooted.id,
+          clone: events.rooted.clone,
+          clonedFromId: events.rooted.clone ?
+            events.rooted.originalNode.id : undefined
+        },
+        unrooted: {
+          id: events.unrooted.id,
+          clone: events.unrooted.clone,
+          clonedFromId: events.unrooted.clone ?
+            events.unrooted.originalNode.id : undefined
+        }
+      });
+    } else {
+      if (events.rooted) {
+        this.events.broadcast('d3ListGraphNodeRoot', {
+          id: events.rooted.id,
+          clone: events.rooted.clone,
+          clonedFromId: events.rooted.clone ?
+            events.rooted.originalNode.id : undefined
+        });
+      }
+
+      if (events.unrooted) {
+        this.events.broadcast('d3ListGraphNodeUnroot', {
+          id: events.unrooted.id,
+          clone: events.unrooted.clone,
+          clonedFromId: events.unrooted.clone ?
+            events.unrooted.originalNode.id : undefined
+        });
+      }
+    }
+  }
+
+  /**
+   * Set the given node as the root.
+   *
+   * @method  rootNode
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  d3El  D3 selection of the node to be rooted.
+   */
+  rootNode (d3El) {
+    const data = d3El.datum();
+
+    data.data.state.root = true;
+    d3El.classed('rooted', true);
+    this.hideNodes(data);
+
+    // Highlight level
+    this.vis.levels.focus(data.depth + this.vis.activeLevel);
+
+    if (!data.data.state.query || data.data.state.query === 'not') {
+      data.data.queryBeforeRooting = false;
+      return {
+        query: true
+      };
+    }
+
+    data.data.queryBeforeRooting = true;
+
+    return {
+      query: false
+    };
+  }
+
+  /**
+   * Set the query state of the node by assign the corresponding CSS class.
+   *
+   * @method  setNodeQueryState
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  d3El  D3 selection of the node to be inspected.
+   * @param   {String}  mode  Name of the query mode.
+   */
+  static setNodeQueryState (d3El, mode) {
+    d3El.datum().data.state.query = mode;
+    d3El
+      .classed('active', true)
+      .classed('inactive', false)
+      .classed('query-and', mode === 'and')
+      .classed('query-or', mode === 'or')
+      .classed('query-not', mode === 'not');
+  }
+
+  /**
+   * Helper method to create focus controls.
+   *
+   * @method  setUpFocusControls
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  selection  D3 selection of the node to which the focus
+   *   controls should be added.
+   * @param   {String}  location   Can either be "left" or "right"
+   * @param   {Number}  position   Amount the focus control is pushed away from
+   *   the node.
+   * @param   {String}  mode       Specifies a helper element like "bg" or
+   *   "hover-helper".
+   * @param   {String}  className  Class name to be assigned to to the focus
+   *   control.
+   */
+  setUpFocusControls (selection, location, position, mode, className) {
+    const paddedDim = this.iconDimension + 4;
+
+    let x = 0 - (paddedDim * (position + 1));
+
+    if (location === 'right') {
+      x = this.visData.global.column.contentWidth + 2 + (paddedDim * position);
+    }
+
+    const y = this.visData.global.row.padding +
+      (
+        (
+          this.visData.global.row.contentHeight -
+          (2 * this.visData.global.cell.padding)
+        ) / 4
+      );
+
+    if (mode === 'bg') {
+      selection
+        .attr('class', className)
+        .attr('cx', x + (this.iconDimension / 2))
+        .attr('cy', y + (this.iconDimension / 2))
+        .attr('r', this.iconDimension * 3 / 4);
+    } else if (mode === 'hover-helper') {
+      selection
+        .attr('class', className)
+        .attr('x', x - 4)
+        .attr('y', y - 4)
+        .attr('width', this.iconDimension + 8)
+        .attr('height', this.iconDimension + 8)
+        .attr('rx', this.iconDimension)
+        .attr('ry', this.iconDimension);
+    } else {
+      selection
+        .attr('class', className)
+        .attr('x', x)
+        .attr('y', y)
+        .attr('width', this.iconDimension)
+        .attr('height', this.iconDimension);
+    }
+  }
+
+  /**
+   * Helper method to show nodes.
+   *
+   * @method  showNodes
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   */
+  showNodes () {
+    this.nodesVisibility(undefined, true);
+  }
+
+  /**
+   * Visually update the nodes' positions after sorting.
+   *
+   * @method  sort
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}   update       Updated node data object.
+   * @param   {Boolean}  newSortType  If `true` the sort type has changed.
+   */
+  sort (update, newSortType) {
+    for (let i = update.length; i--;) {
+      const selection = this.nodes.data(update[i].rows, data => data.id);
+
+      this.vis.svgD3.classed('sorting', true);
+      selection
+        .transition()
+        .duration(config.TRANSITION_SEMI_FAST)
+        .attr('transform', data => 'translate(' +
+          (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
+        .call(allTransitionsEnded, () => {
+          this.vis.svgD3.classed('sorting', false);
+          this.vis.updateLevelsVisibility();
+          this.vis.updateScrolling();
+        });
+
+      if (
+        newSortType &&
+        this.vis.currentSorting.local[update[i].level].type !== 'name'
+      ) {
+        this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
+      }
+    }
+  }
+
+  /**
+   * Toggle through the lock state of a node
+   *
+   * @method  toggleLock
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}   d3El         D3 selection of the node to be locked.
+   * @param   {Boolean}  forceUnlock  If `true` forces an unlock.
+   */
+  toggleLock (d3El, forceUnlock) {
+    const data = d3El.datum();
+    const events = { locked: false, unlocked: false };
+
+    if (this.lockedNode) {
+      if (this.lockedNode.datum().id === data.id) {
+        this.unlockNode(this.lockedNode.datum().id);
+        events.unlocked = this.lockedNode.datum();
+        this.lockedNode = undefined;
+      } else {
+        // Reset previously locked node;
+        this.unlockNode(this.lockedNode.datum().id);
+        events.unlocked = this.lockedNode.datum();
+
+        if (!forceUnlock) {
+          this.lockNode(data.id);
+          events.locked = data;
+          this.lockedNode = d3El;
+        }
+      }
+    } else {
+      if (!forceUnlock) {
+        this.lockNode(data.id);
+        events.locked = data;
+        this.lockedNode = d3El;
+      }
+    }
+
+    return events;
+  }
+
+  /**
+   * Toggle through node query states.
+   *
+   * @method  toggleNodeQueryStates
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  d3El  D3 selection of the node to be inspected.
+   */
+  toggleNodeQueryStates (d3El) {
+    const data = d3El.datum();
+    const previousMode = data.data.state.query;
+
+    if (data.data.state.root) {
+      if (previousMode !== 'or') {
+        Nodes.setNodeQueryState(d3El, 'or');
+      } else {
+        Nodes.setNodeQueryState(d3El, 'and');
+      }
+    } else {
+      switch (previousMode) {
+        case 'or':
+          Nodes.setNodeQueryState(d3El, 'and');
+          break;
+        case 'and':
+          Nodes.setNodeQueryState(d3El, 'not');
+          break;
+        case 'not':
+          this.unsetNodeQueryState(d3El);
+          break;
+        default:
+          Nodes.setNodeQueryState(d3El, 'or');
+          break;
+      }
+    }
+  }
+
+  /**
+   * Toggle root node.
+   *
+   * @method  toggleRoot
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}   d3El            D3 selection of the node to be
+   *   inspected.
+   * @param   {Boolean}  forceUnroot     If `true` the node will be "un-rooted".
+   * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
+   */
+  toggleRoot (d3El, forceUnroot, noNotification) {
+    const data = d3El.datum();
+    const events = { rooted: false, unrooted: false };
+    const queries = [];
+
+    // Blur current levels
+    this.vis.levels.blur();
+
+    if (this.rootedNode) {
+      // Reset current root node
+      this.rootedNode
+        .classed('active', false)
+        .classed('inactive', true);
+
+      events.unrooted = this.rootedNode.datum();
+      if (this.unrootNode(this.rootedNode).unquery) {
+        queries.push({
+          d3El: this.rootedNode,
+          action: 'unquery'
+        });
+      }
+
+      // Activate new root
+      if (this.rootedNode.datum().id !== data.id && !forceUnroot) {
+        d3El
+          .classed('active', true)
+          .classed('inactive', false);
+
+        this.rootedNode = d3El;
+        events.rooted = d3El.datum();
+        if (this.rootNode(d3El).query) {
+          queries.push({
+            d3El,
+            action: 'query',
+            mode: 'or'
+          });
+        }
+      } else {
+        this.rootedNode = undefined;
+        // Highlight first level
+        this.vis.levels.focus(
+          this.vis.activeLevel - this.vis.noRootActiveLevelDiff
+        );
+      }
+    } else {
+      if (!forceUnroot) {
+        d3El
+          .classed('active', true)
+          .classed('inactive', false);
+
+        this.rootedNode = d3El;
+        events.rooted = d3El.datum();
+        if (this.rootNode(d3El).query) {
+          queries.push({
+            d3El,
+            action: 'query',
+            mode: 'or'
+          });
+        }
+      }
+    }
+
+    if (queries.length) {
+      this.batchQueryHandler(queries, noNotification);
+    }
+
+    return events;
+  }
+
+  /**
    * Visually remove the highlighting of nodes.
    *
    * @method  unhighlightNodes
@@ -1679,37 +1583,132 @@ class Nodes {
   }
 
   /**
-   * Visually update the nodes' positions after sorting.
+   * Unlock node.
    *
-   * @method  sort
+   * @method  unlockNode
    * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @param   {Object}   update       Updated node data object.
-   * @param   {Boolean}  newSortType  If `true` the sort type has changed.
+   * @date    2016-09-23
+   * @param   {Number}  id  ID of node(s) to be locked.
    */
-  sort (update, newSortType) {
-    for (let i = update.length; i--;) {
-      const selection = this.nodes.data(update[i].rows, data => data.id);
+  unlockNode (id) {
+    const self = this;
+    const els = this.nodes.filter(data => data.id === id);
 
-      this.vis.svgD3.classed('sorting', true);
-      selection
-        .transition()
-        .duration(config.TRANSITION_SEMI_FAST)
-        .attr('transform', data => 'translate(' +
-          (data.x + this.visData.global.column.padding) + ', ' + data.y + ')')
-        .call(allTransitionsEnded, () => {
-          this.vis.svgD3.classed('sorting', false);
-          this.vis.updateLevelsVisibility();
-          this.vis.updateScrolling();
-        });
+    els.each(function (data) {
+      self.unhighlightNodes(d3.select(this), 'lock', undefined);
+      data.data.state.lock = undefined;
+    });
+  }
 
-      if (
-        newSortType &&
-        this.vis.currentSorting.local[update[i].level].type !== 'name'
-      ) {
-        this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
-      }
+  /**
+   * Stop rooting by the given node.
+   *
+   * @method  unrootNode
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  d3El  D3 selection of the node to be "un-rooted".
+   */
+  unrootNode (d3El) {
+    const data = d3El.datum();
+
+    data.data.state.root = false;
+    d3El.classed('rooted', false);
+    this.showNodes();
+
+    if (!data.data.queryBeforeRooting) {
+      return {
+        unquery: true
+      };
     }
+
+    return {
+      unquery: false
+    };
+  }
+
+  /**
+   * Unset the query state of a node.
+   *
+   * @method  unsetNodeQueryState
+   * @author  Fritz Lekschas
+   * @date    2016-09-23
+   * @param   {Object}  d3El  D3 selection of the node to be inspected.
+   */
+  unsetNodeQueryState (d3El) {
+    const data = d3El.datum();
+
+    data.data.state.query = undefined;
+    data.data.queryBeforeRooting = undefined;
+
+    d3El
+      .classed('active', true)
+      .classed('inactive', false)
+      .classed('query-and', false)
+      .classed('query-or', false)
+      .classed('query-not', false);
+
+    if (this.rootedNode) {
+      this.hideNodes(this.rootedNode.datum());
+    }
+  }
+
+  /**
+   * Updates the visual appearance of the link location indicators.
+   *
+   * @method  updateHeightLinkLocationIndicatorBars
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}   selection  D3 selection of the corresponding nodes.
+   * @param   {Boolean}  outgoing   If `true` outgoing link location indicator
+   *   heights are updated. Otherwise incoming link location indicator
+   *   heights are updated.
+   */
+  updateHeightLinkLocationIndicatorBars (selection, outgoing) {
+    const barRefHeight = (this.visData.global.row.contentHeight / 2) - 1;
+    const barAboveRefTop = (this.visData.global.row.height / 2) - 1;
+
+    const baseClassName = '.' + CLASS_INDICATOR_LOCATION +
+      '.' + (
+        outgoing ? CLASS_INDICATOR_OUTGOING : CLASS_INDICATOR_INCOMING
+      );
+
+    selection.selectAll(
+      baseClassName +
+      '.' + CLASS_INDICATOR_ABOVE
+    ).attr(
+      'y',
+      data => (data.total ?
+        barAboveRefTop - (data.above / data.total * barRefHeight) :
+        barAboveRefTop)
+    ).attr(
+      'height',
+      data => (data.total ? data.above / data.total * barRefHeight : 0)
+    );
+
+    selection.selectAll(
+      baseClassName +
+      '.' + CLASS_INDICATOR_BELOW
+    ).attr(
+      'height',
+      data => (data.total ? data.below / data.total * barRefHeight : 0)
+    );
+  }
+
+  /**
+   * Update the link location indicators.
+   *
+   * @description
+   * Updates the link location indicators of level / column `right` - `left`.
+   *
+   * @method  updateLinkLocationIndicators
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Number}  left   Index of the column to the left.
+   * @param   {Number}  right  Index of the right column.
+   */
+  updateLinkLocationIndicators (left, right) {
+    this.calcHeightLinkLocationIndicator(left, true);
+    this.calcHeightLinkLocationIndicator(right);
   }
 
   /**
