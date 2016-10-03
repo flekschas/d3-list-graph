@@ -362,7 +362,7 @@ class ListGraph {
         this.topbar.localControlWrapper
       ],
       'horizontal',
-      this.dragLimits.bind(this),
+      this.getDragLimits.bind(this),
       this.noDragging.bind(this),
       this.dragged,
       2
@@ -538,23 +538,6 @@ class ListGraph {
   }
 
   /**
-   * Get drag limits
-   *
-   * @method  dragLimits
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @return  {Object}  Min and max drag limits.
-   */
-  get dragLimits () {
-    return {
-      x: {
-        min: this.dragMinX,
-        max: 0
-      }
-    };
-  }
-
-  /**
    * Get the minimal drag X value
    *
    * @method  dragMinX
@@ -691,6 +674,23 @@ class ListGraph {
   getBoundingRect () {
     this.left = this.svgEl.getBoundingClientRect().left;
     this.top = this.svgEl.getBoundingClientRect().top;
+  }
+
+  /**
+   * Get drag limits
+   *
+   * @method  dragLimits
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Object}  Min and max drag limits.
+   */
+  getDragLimits () {
+    return {
+      x: {
+        min: this.dragMinX,
+        max: 0
+      }
+    };
   }
 
   /**
