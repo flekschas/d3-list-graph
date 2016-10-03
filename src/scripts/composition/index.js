@@ -426,94 +426,45 @@ class ListGraph {
   }
 
   /**
-   * Drag-move handler instance.
+   * Get visually used area of the container
    *
-   * @method  dragMoveHandler
+   * @method  area
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @param   {Object}           data            D3's drag event object.
-   * @param   {Array}            elsToBeDragged  Array of D3 selections.
-   * @param   {String}           orientation     Can either be "horizontal",
-   *   "vertical" or `undefined`, i.e. both directions.
-   * @param   {Object|Function}  limits          X and Y drag limits. E.g.
-   *   `{ x: { min: 0, max: 10 } }`.
+   * @return  {Object}  Bounding client rectangle.
    */
-  dragMoveHandler (data, elsToBeDragged, orientation, limits) {
-    dragMoveHandler(
-      data, elsToBeDragged, orientation, limits
-    );
-    this.checkNodeVisibility();
+  get area () {
+    return this.container.node().getBoundingClientRect();
   }
 
   /**
-   * Check which nodes of a level are visible.
+   * Get current bar mode.
    *
-   * @method  checkNodeVisibility
+   * @method  barMode
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @param   {Number}  level            Index of the level or column.
-   * @param   {[type]}             customScrollTop  [description]
+   * @return  {String}  Bar mode. Either "one" or "two".
    */
-  checkNodeVisibility (level, customScrollTop) {
-    const nodes = level ?
-      this.nodes.nodes.filter(data => data.depth === level) : this.nodes.nodes;
-
-    nodes.call(this.nodes.isInvisible.bind(this.nodes), customScrollTop);
+  get barMode () {
+    if (this.bars) {
+      return this.nodes.bars.mode;
+    }
+    return this._barMode;
   }
 
   /**
-   * Register an outside mouse click handler
+   * Set bar mode.
    *
-   * @method  registerOutSideClickHandler
+   * @method  barMode
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @param   {String}     id            ID of the handler to be removed.
-   * @param   {Array}      els           Array of elements to be registered.
-   * @param   {[type]}     elClassNames  Element class names.
-   * @param   {Function}   callback      Callback function
-   * @return  {Number}                   Return number of outside click
-   *   handlers.
+   * @param   {String}  mode  Bar mode. Either "one" or "two".
    */
-  registerOutSideClickHandler (id, els, elClassNames, callback) {
-    // We need to register a unique property to be able to efficiently identify
-    // the element later.
-    for (let i = els.length; i--;) {
-      if (els[i].__id__) {
-        els[i].__id__.push(id);
-      } else {
-        els[i].__id__ = [id];
-      }
+  set barMode (mode) {
+    if (this.bars) {
+      this.nodes.bars.mode = mode;
     }
-    const newLength = this.outsideClickHandler[id] = {
-      id, els, elClassNames, callback
-    };
-    for (let i = elClassNames.length; i--;) {
-      this.outsideClickClassHandler[elClassNames[i]] =
-        this.outsideClickHandler[id];
-    }
-    return newLength;
-  }
-
-  /**
-   * Remove outside mouse click handler
-   *
-   * @method  unregisterOutSideClickHandler
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @param   {String}  id  ID of the handler to be removed.
-   */
-  unregisterOutSideClickHandler (id) {
-    const handler = this.outsideClickHandler[id];
-
-    // Remove element `__id__` property.
-    for (let i = handler.els.length; i--;) {
-      handler.els[i].__id__ = undefined;
-      delete handler.els[i].__id__;
-    }
-
-    // Remove handler.
-    this.outsideClickHandler[id] = undefined;
-    delete this.outsideClickHandler[id];
+    this._barMode = mode;
   }
 
   /**
@@ -558,27 +509,32 @@ class ListGraph {
   }
 
   /**
-   * Get visually used area of the container
+   * Check which nodes of a level are visible.
    *
-   * @method  area
+   * @method  checkNodeVisibility
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @return  {Object}  Bounding client rectangle.
+   * @param   {Number}  level            Index of the level or column.
+   * @param   {[type]}             customScrollTop  [description]
    */
-  get area () {
-    return this.container.node().getBoundingClientRect();
+  checkNodeVisibility (level, customScrollTop) {
+    const nodes = level ?
+      this.nodes.nodes.filter(data => data.depth === level) : this.nodes.nodes;
+
+    nodes.call(this.nodes.isInvisible.bind(this.nodes), customScrollTop);
   }
 
   /**
-   * Get the minimal drag X value
+   * Drag end handler
    *
-   * @method  dragMinX
+   * @method  dragEndHandler
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @return  {Number}  Minimal drag x value.
    */
-  get dragMinX () {
-    return Math.min(0, this.width - this.area.width);
+  dragEndHandler () {
+    if (this.dragging) {
+      this.noInteractions = (this.dragging = false);
+    }
   }
 
   /**
@@ -599,164 +555,35 @@ class ListGraph {
   }
 
   /**
-   * Helper method to get the top and left position of the base `svg`.
+   * Get the minimal drag X value
    *
-   * @Description
-   * Calling `getBoundingClientRect()` right at the beginning leads to errornous
-   * values, probably because the function is called because HTML has been fully
-   * rendered.
-   *
-   * @method  getBoundingRect
+   * @method  dragMinX
    * @author  Fritz Lekschas
-   * @date    2016-02-24
+   * @date    2016-10-02
+   * @return  {Number}  Minimal drag x value.
    */
-  getBoundingRect () {
-    this.left = this.svgEl.getBoundingClientRect().left;
-    this.top = this.svgEl.getBoundingClientRect().top;
+  get dragMinX () {
+    return Math.min(0, this.width - this.area.width);
   }
 
   /**
-   * Interaction wrapper
+   * Drag-move handler instance.
    *
-   * @description
-   * Cheks if interacctions are allowed first.
-   *
-   * @method  interactionWrapper
+   * @method  dragMoveHandler
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @param   {Function}  callback  Callback function.
-   * @param   {Object}    params    Parameters of the callback function.
+   * @param   {Object}           data            D3's drag event object.
+   * @param   {Array}            elsToBeDragged  Array of D3 selections.
+   * @param   {String}           orientation     Can either be "horizontal",
+   *   "vertical" or `undefined`, i.e. both directions.
+   * @param   {Object|Function}  limits          X and Y drag limits. E.g.
+   *   `{ x: { min: 0, max: 10 } }`.
    */
-  interactionWrapper (callback, params) {
-    if (!this.noInteractions) {
-      callback.apply(this, params);
-    }
-  }
-
-  /**
-   * Drag start handler
-   *
-   * @method  dragStartHandler
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   */
-  dragStartHandler () {
-    if (!this.dragging) {
-      this.noInteractions = (this.dragging = true);
-    }
-  }
-
-  /**
-   * Drag end handler
-   *
-   * @method  dragEndHandler
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   */
-  dragEndHandler () {
-    if (this.dragging) {
-      this.noInteractions = (this.dragging = false);
-    }
-  }
-
-  /**
-   * Scroll an element vertically
-   *
-   * @method  scrollElVertically
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @param   {Object}  el      DOM element to be scrolled.
-   * @param   {Number}  offset  Number of pixel to be scrolled.
-   */
-  static scrollElVertically (el, offset) {
-    _d3.select(el).attr(
-      'transform',
-      'translate(0, ' + offset + ')'
+  dragMoveHandler (data, elsToBeDragged, orientation, limits) {
+    dragMoveHandler(
+      data, elsToBeDragged, orientation, limits
     );
-  }
-
-  /**
-   * Check if dragging should be disabled.
-   *
-   * @description
-   * When the scrollbar or context menu is clicked the graph shouldn#t be
-   * draggable.
-   *
-   * @method  noDragging
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @return  {Boolean}  If `true` the graph shouldn't be draggable.
-   */
-  noDragging () {
-    return !!this.activeScrollbar || this.mouseDownOnContextMenu;
-  }
-
-  /**
-   * Global _mouseUp_ event handler
-   *
-   * @method  globalMouseUp
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @param   {[type]}       event  [description]
-   * @return  {[type]}              [description]
-   */
-  globalMouseUp (event) {
-    this.noInteractions = false;
-    this.mouseDownOnContextMenu = false;
-
-    if (this.activeScrollbar) {
-      const data = this.activeScrollbar.datum();
-      const deltaY = data.scrollbar.clientY - event.clientY;
-
-      // Save final vertical position
-      // Scrollbar
-      data.scrollbar.scrollTop = Math.min(
-        Math.max(
-          data.scrollbar.scrollTop - deltaY,
-          0
-        ),
-        data.scrollbar.scrollHeight
-      );
-
-      // Content
-      data.scrollTop = Math.max(
-        Math.min(
-          data.scrollTop +
-          data.invertedHeightScale(deltaY),
-          0
-        ),
-        -data.scrollHeight
-      );
-
-      this.activeScrollbar.classed('active', false);
-
-      this.activeScrollbar = undefined;
-
-      ListGraph.stopScrollBarMouseMove();
-    }
-  }
-
-  /**
-   * Start listening to the _mouseMove_ event when the scroll drag is started
-   *
-   * @method  startScrollBarMouseMove
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   */
-  startScrollBarMouseMove () {
-    _d3.select(document)
-      .on('mousemove', () => { this.dragScrollbar(_d3.event); });
-  }
-
-  /**
-   * Stop listening to the _mouseMove_ event when the scroll bar drag is over
-   *
-   * @method  stopScrollBarMouseMove
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   */
-  static stopScrollBarMouseMove () {
-    _d3.select(document).on('mousemove', null);
+    this.checkNodeVisibility();
   }
 
   /**
@@ -837,49 +664,197 @@ class ListGraph {
   }
 
   /**
-   * Get current bar mode.
+   * Drag start handler
    *
-   * @method  barMode
+   * @method  dragStartHandler
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @return  {String}  Bar mode. Either "one" or "two".
    */
-  get barMode () {
-    if (this.bars) {
-      return this.nodes.bars.mode;
+  dragStartHandler () {
+    if (!this.dragging) {
+      this.noInteractions = (this.dragging = true);
     }
-    return this._barMode;
   }
 
   /**
-   * Set bar mode.
+   * Helper method to get the top and left position of the base `svg`.
    *
-   * @method  barMode
+   * @Description
+   * Calling `getBoundingClientRect()` right at the beginning leads to errornous
+   * values, probably because the function is called because HTML has been fully
+   * rendered.
+   *
+   * @method  getBoundingRect
    * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @param   {String}  mode  Bar mode. Either "one" or "two".
+   * @date    2016-02-24
    */
-  set barMode (mode) {
-    if (this.bars) {
-      this.nodes.bars.mode = mode;
-    }
-    this._barMode = mode;
+  getBoundingRect () {
+    this.left = this.svgEl.getBoundingClientRect().left;
+    this.top = this.svgEl.getBoundingClientRect().top;
   }
 
   /**
-   * Scrollbar _mouseDown_ handler
+   * Global _mouseUp_ event handler
    *
-   * @method  scrollbarMouseDown
+   * @method  globalMouseUp
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @param   {Object}  el     DOM element.
-   * @param   {Object}  event  D3 _mouseDown_ event object.
+   * @param   {[type]}       event  [description]
+   * @return  {[type]}              [description]
    */
-  scrollbarMouseDown (el, event) {
-    this.noInteractions = true;
-    this.activeScrollbar = _d3.select(el).classed('active', true);
-    this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
-    this.startScrollBarMouseMove();
+  globalMouseUp (event) {
+    this.noInteractions = false;
+    this.mouseDownOnContextMenu = false;
+
+    if (this.activeScrollbar) {
+      const data = this.activeScrollbar.datum();
+      const deltaY = data.scrollbar.clientY - event.clientY;
+
+      // Save final vertical position
+      // Scrollbar
+      data.scrollbar.scrollTop = Math.min(
+        Math.max(
+          data.scrollbar.scrollTop - deltaY,
+          0
+        ),
+        data.scrollbar.scrollHeight
+      );
+
+      // Content
+      data.scrollTop = Math.max(
+        Math.min(
+          data.scrollTop +
+          data.invertedHeightScale(deltaY),
+          0
+        ),
+        -data.scrollHeight
+      );
+
+      this.activeScrollbar.classed('active', false);
+
+      this.activeScrollbar = undefined;
+
+      ListGraph.stopScrollBarMouseMove();
+    }
+  }
+
+  /**
+   * Show the complete graph by zooming out
+   *
+   * @method  globalView
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  selectionInterst  D3 selection of nodes of interest,
+   *   which restrict the amount of zoom-out. If `undefined` the whole graph
+   *   will be shown.
+   */
+  globalView (selectionInterst) {
+    if (!this.zoomedOut) {
+      let x = 0;
+      let y = 0;
+      let width = 0;
+      let height = 0;
+      let cRect;
+      const contBBox = this.container.node().getBBox();
+
+      const globalCRect = this.svgD3.node().getBoundingClientRect();
+
+      if (selectionInterst && !selectionInterst.empty()) {
+        selectionInterst.each(function () {
+          cRect = this.getBoundingClientRect();
+          width = Math.max(
+            width,
+            cRect.left - (globalCRect.left + cRect.width)
+          );
+          height = Math.max(
+            height,
+            cRect.top - (globalCRect.top + cRect.height)
+          );
+        });
+        width = this.width > width ? this.width : width;
+        height = this.height > height ? this.height : height;
+      } else {
+        width = this.width > contBBox.width ? this.width : contBBox.width;
+        height = this.height > contBBox.height ? this.height : contBBox.height;
+      }
+
+      x = contBBox.x + this.dragged.x;
+      y = contBBox.y;
+
+      this.nodes.makeAllTempVisible();
+      this.links.makeAllTempVisible();
+
+      this.svgD3
+        .classed('zoomedOut', true)
+        .transition()
+        .duration(config.TRANSITION_SEMI_FAST)
+        .attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
+    }
+  }
+
+  /**
+   * Interaction wrapper
+   *
+   * @description
+   * Cheks if interacctions are allowed first.
+   *
+   * @method  interactionWrapper
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Function}  callback  Callback function.
+   * @param   {Object}    params    Parameters of the callback function.
+   */
+  interactionWrapper (callback, params) {
+    if (!this.noInteractions) {
+      callback.apply(this, params);
+    }
+  }
+
+  /**
+   * Check if an element is actually visible, i.e. within the boundaries of the
+   * SVG element.
+   *
+   * @method  isHidden
+   * @author  Fritz Lekschas
+   * @date    2016-02-24
+   * @param   {Object}    el  DOM element to be checked.
+   * @return  {Boolean}       If `true` element is not visible.
+   */
+  isHidden (el) {
+    const boundingRect = el.getBoundingClientRect();
+    return (
+      boundingRect.top + boundingRect.height <= this.top ||
+      boundingRect.left + boundingRect.width <= this.left ||
+      boundingRect.top >= this.top + this.height ||
+      boundingRect.left >= this.left + this.width
+    );
+  }
+
+  /**
+   * Assesses whether a link's end points outwards
+   *
+   * @method  linkPointsOutside
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  data  Link data.
+   * @return  {Number}  If link ends inwards returns `0`, if it points outwards
+   *   to the top returns `1` or `2` when it points to the bottom. If the node
+   *   pointed to is hidden return `16`.
+   */
+  linkPointsOutside (data) {
+    const y = data.node.y + data.offsetY;
+    if (data.node.hidden) {
+      return 16;
+    }
+    if (
+      y + this.visData.global.row.height - this.visData.global.row.padding <= 0
+    ) {
+      return 1;
+    }
+    if (y + this.visData.global.row.padding >= this.height) {
+      return 2;
+    }
+    return 0;
   }
 
   /**
@@ -908,6 +883,152 @@ class ListGraph {
 
     // Check if nodes are visible.
     this.checkNodeVisibility(data.level);
+  }
+
+  /**
+   * Check if dragging should be disabled.
+   *
+   * @description
+   * When the scrollbar or context menu is clicked the graph shouldn#t be
+   * draggable.
+   *
+   * @method  noDragging
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Boolean}  If `true` the graph shouldn't be draggable.
+   */
+  noDragging () {
+    return !!this.activeScrollbar || this.mouseDownOnContextMenu;
+  }
+
+  /**
+   * Assesses any of the two ends of a link points outwards.
+   *
+   * @description
+   * In order to be able to determine where a link points to, the output of
+   * `linkPointsOutside` for the source and target location is shifted bitwise
+   * in such a way that this method return 11 unique numbers.
+   * - 0: link is completely inwards
+   * - 1: source is outwards to the top
+   * - 2: source is outwards to the bottom
+   * - 4: target is outwards to the top
+   * - 8: target is outwards to the bottom
+   * - 5: source and target are outwards to the top
+   * - 6: source is outwards to the bottom and target is outwards to the top
+   * - 9: source is outwards to the top and target is outwards to the bottom
+   * - 10: source and target are outwards to the bottom
+   * - 16: source is invisible
+   * - 64: target is invisible
+   *
+   * If you're asking yourself: "WAT?!?!!" Think of a 4x4 binary matrix:
+   * |    target    |    source    |
+   * | bottom | top | bottom | top |
+   * |    0   |  0  |    0   |  0  | (=0)
+   * |    0   |  0  |    0   |  1  | (=1)
+   * |    0   |  0  |    1   |  0  | (=2)
+   * |    0   |  1  |    0   |  0  | (=4)
+   * |    1   |  0  |    0   |  0  | (=8)
+   * |    0   |  1  |    0   |  1  | (=5)
+   * |    0   |  1  |    1   |  0  | (=6)
+   * |    1   |  0  |    0   |  1  | (=9)
+   * |    1   |  0  |    1   |  0  | (=10)
+   *
+   * *Note: 16 and 64 are two special values when the source or target node is
+   * hidden. The numbers are so hight just because that the bitwise-and with 4
+   * and 8 results to 0.
+   *
+   * To check whether the source or target location is above, below or within
+   * the global SVG container is very simple. For example, to find out if the
+   * target location is above, all we need to do is `<VALUE> & 4 > 0`. This
+   * performs a bit-wise AND operation with only two possible outcomes: 4 and 0.
+   *
+   * @method  pointsOutside
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  data  Link data.
+   * @return  {Number}  Numberical represenation of the links constallation. See
+   *   description for details.
+   */
+  pointsOutside (data) {
+    const source = this.linkPointsOutside(data.source);
+    const target = this.linkPointsOutside(data.target) << 2;
+    return source | target;
+  }
+
+  /**
+   * Register an outside mouse click handler
+   *
+   * @method  registerOutSideClickHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}     id            ID of the handler to be removed.
+   * @param   {Array}      els           Array of elements to be registered.
+   * @param   {[type]}     elClassNames  Element class names.
+   * @param   {Function}   callback      Callback function
+   * @return  {Number}                   Return number of outside click
+   *   handlers.
+   */
+  registerOutSideClickHandler (id, els, elClassNames, callback) {
+    // We need to register a unique property to be able to efficiently identify
+    // the element later.
+    for (let i = els.length; i--;) {
+      if (els[i].__id__) {
+        els[i].__id__.push(id);
+      } else {
+        els[i].__id__ = [id];
+      }
+    }
+    const newLength = this.outsideClickHandler[id] = {
+      id, els, elClassNames, callback
+    };
+    for (let i = elClassNames.length; i--;) {
+      this.outsideClickClassHandler[elClassNames[i]] =
+        this.outsideClickHandler[id];
+    }
+    return newLength;
+  }
+
+  /**
+   * Helper method to scroll all columns to the top.
+   *
+   * @method  resetAllScrollPositions
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  resetAllScrollPositions () {
+    return this.scrollYTo(this.levels.groups, 0);
+  }
+
+  /**
+   * Scrollbar _mouseDown_ handler
+   *
+   * @method  scrollbarMouseDown
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el     DOM element.
+   * @param   {Object}  event  D3 _mouseDown_ event object.
+   */
+  scrollbarMouseDown (el, event) {
+    this.noInteractions = true;
+    this.activeScrollbar = _d3.select(el).classed('active', true);
+    this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
+    this.startScrollBarMouseMove();
+  }
+
+  /**
+   * Scroll an element vertically
+   *
+   * @method  scrollElVertically
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el      DOM element to be scrolled.
+   * @param   {Number}  offset  Number of pixel to be scrolled.
+   */
+  static scrollElVertically (el, offset) {
+    _d3.select(el).attr(
+      'transform',
+      'translate(0, ' + offset + ')'
+    );
   }
 
   /**
@@ -992,17 +1113,6 @@ class ListGraph {
   }
 
   /**
-   * Helper method to scroll all columns to the top.
-   *
-   * @method  resetAllScrollPositions
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   */
-  resetAllScrollPositions () {
-    return this.scrollYTo(this.levels.groups, 0);
-  }
-
-  /**
    * Select elements by column
    *
    * @method  selectByLevel
@@ -1017,22 +1127,29 @@ class ListGraph {
   }
 
   /**
-   * Update column sorting given the current sort settings.
+   * Sort all columns or levels
    *
-   * @method  updateSorting
+   * @method  sortAllColumns
    * @author  Fritz Lekschas
    * @date    2016-10-02
+   * @param   {String}   property     Node property to be sorted by.
+   * @param   {Boolean}  newSortType  If `true` sorted by a new type.
    */
-  updateSorting () {
-    const levels = Object.keys(this.currentSorting.local);
-    for (let i = levels.length; i--;) {
-      this.sortColumn(
-        i,
-        this.currentSorting.local[levels[i]].type,
-        this.currentSorting.local[levels[i]].order,
-        this.currentSorting.local[levels[i]].type
-      );
-    }
+  sortAllColumns (property, newSortType) {
+    this.currentSorting.global.order =
+      this.currentSorting.global.order === -1 && !newSortType ? 1 : -1;
+
+    this.nodes.sort(
+      this.layout
+        .sort(undefined, property, this.currentSorting.global.order)
+        .updateNodesVisibility()
+        .nodes(),
+      newSortType
+    );
+
+    this.links.sort(this.layout.links());
+    this.nodeContextMenu.updatePosition();
+    this.checkNodeVisibility();
   }
 
   /**
@@ -1062,29 +1179,26 @@ class ListGraph {
   }
 
   /**
-   * Sort all columns or levels
+   * Start listening to the _mouseMove_ event when the scroll drag is started
    *
-   * @method  sortAllColumns
+   * @method  startScrollBarMouseMove
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @param   {String}   property     Node property to be sorted by.
-   * @param   {Boolean}  newSortType  If `true` sorted by a new type.
    */
-  sortAllColumns (property, newSortType) {
-    this.currentSorting.global.order =
-      this.currentSorting.global.order === -1 && !newSortType ? 1 : -1;
+  startScrollBarMouseMove () {
+    _d3.select(document)
+      .on('mousemove', () => { this.dragScrollbar(_d3.event); });
+  }
 
-    this.nodes.sort(
-      this.layout
-        .sort(undefined, property, this.currentSorting.global.order)
-        .updateNodesVisibility()
-        .nodes(),
-      newSortType
-    );
-
-    this.links.sort(this.layout.links());
-    this.nodeContextMenu.updatePosition();
-    this.checkNodeVisibility();
+  /**
+   * Stop listening to the _mouseMove_ event when the scroll bar drag is over
+   *
+   * @method  stopScrollBarMouseMove
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  static stopScrollBarMouseMove () {
+    _d3.select(document).on('mousemove', null);
   }
 
   /**
@@ -1116,6 +1230,56 @@ class ListGraph {
   }
 
   /**
+   * Toggle between the global and zoomed graph view.
+   *
+   * @method  toggleView
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  toggleView () {
+    if (this.zoomedOut) {
+      this.zoomedOut = false;
+      this.zoomedView();
+    } else {
+      this.globalView();
+      this.zoomedOut = true;
+    }
+  }
+
+  /**
+   * Remove outside mouse click handler
+   *
+   * @method  unregisterOutSideClickHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}  id  ID of the handler to be removed.
+   */
+  unregisterOutSideClickHandler (id) {
+    const handler = this.outsideClickHandler[id];
+
+    // Remove element `__id__` property.
+    for (let i = handler.els.length; i--;) {
+      handler.els[i].__id__ = undefined;
+      delete handler.els[i].__id__;
+    }
+
+    // Remove handler.
+    this.outsideClickHandler[id] = undefined;
+    delete this.outsideClickHandler[id];
+  }
+
+  /**
+   * Helper method to trigger an update of the columns' or levels' visibility
+   *
+   * @method  updateLevelsVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  updateLevelsVisibility () {
+    this.levels.updateVisibility();
+  }
+
+  /**
    * Update the scroll position and scroll-bar visibility.
    *
    * @description
@@ -1133,67 +1297,21 @@ class ListGraph {
   }
 
   /**
-   * Helper method to trigger an update of the columns' or levels' visibility
+   * Update column sorting given the current sort settings.
    *
-   * @method  updateLevelsVisibility
+   * @method  updateSorting
    * @author  Fritz Lekschas
    * @date    2016-10-02
    */
-  updateLevelsVisibility () {
-    this.levels.updateVisibility();
-  }
-
-  /**
-   * Show the complete graph by zooming out
-   *
-   * @method  globalView
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   * @param   {Object}  selectionInterst  D3 selection of nodes of interest,
-   *   which restrict the amount of zoom-out. If `undefined` the whole graph
-   *   will be shown.
-   */
-  globalView (selectionInterst) {
-    if (!this.zoomedOut) {
-      let x = 0;
-      let y = 0;
-      let width = 0;
-      let height = 0;
-      let cRect;
-      const contBBox = this.container.node().getBBox();
-
-      const globalCRect = this.svgD3.node().getBoundingClientRect();
-
-      if (selectionInterst && !selectionInterst.empty()) {
-        selectionInterst.each(function () {
-          cRect = this.getBoundingClientRect();
-          width = Math.max(
-            width,
-            cRect.left - (globalCRect.left + cRect.width)
-          );
-          height = Math.max(
-            height,
-            cRect.top - (globalCRect.top + cRect.height)
-          );
-        });
-        width = this.width > width ? this.width : width;
-        height = this.height > height ? this.height : height;
-      } else {
-        width = this.width > contBBox.width ? this.width : contBBox.width;
-        height = this.height > contBBox.height ? this.height : contBBox.height;
-      }
-
-      x = contBBox.x + this.dragged.x;
-      y = contBBox.y;
-
-      this.nodes.makeAllTempVisible();
-      this.links.makeAllTempVisible();
-
-      this.svgD3
-        .classed('zoomedOut', true)
-        .transition()
-        .duration(config.TRANSITION_SEMI_FAST)
-        .attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
+  updateSorting () {
+    const levels = Object.keys(this.currentSorting.local);
+    for (let i = levels.length; i--;) {
+      this.sortColumn(
+        i,
+        this.currentSorting.local[levels[i]].type,
+        this.currentSorting.local[levels[i]].order,
+        this.currentSorting.local[levels[i]].type
+      );
     }
   }
 
@@ -1215,124 +1333,6 @@ class ListGraph {
         .duration(config.TRANSITION_SEMI_FAST)
         .attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
     }
-  }
-
-  /**
-   * Toggle between the global and zoomed graph view.
-   *
-   * @method  toggleView
-   * @author  Fritz Lekschas
-   * @date    2016-10-02
-   */
-  toggleView () {
-    if (this.zoomedOut) {
-      this.zoomedOut = false;
-      this.zoomedView();
-    } else {
-      this.globalView();
-      this.zoomedOut = true;
-    }
-  }
-
-  /**
-   * Check if an element is actually visible, i.e. within the boundaries of the
-   * SVG element.
-   *
-   * @method  isHidden
-   * @author  Fritz Lekschas
-   * @date    2016-02-24
-   * @param   {Object}    el  DOM element to be checked.
-   * @return  {Boolean}       If `true` element is not visible.
-   */
-  isHidden (el) {
-    const boundingRect = el.getBoundingClientRect();
-    return (
-      boundingRect.top + boundingRect.height <= this.top ||
-      boundingRect.left + boundingRect.width <= this.left ||
-      boundingRect.top >= this.top + this.height ||
-      boundingRect.left >= this.left + this.width
-    );
-  }
-
-  /**
-   * Assesses any of the two ends of a link points outwards.
-   *
-   * @description
-   * In order to be able to determine where a link points to, the output of
-   * `linkPointsOutside` for the source and target location is shifted bitwise
-   * in such a way that this method return 11 unique numbers.
-   * - 0: link is completely inwards
-   * - 1: source is outwards to the top
-   * - 2: source is outwards to the bottom
-   * - 4: target is outwards to the top
-   * - 8: target is outwards to the bottom
-   * - 5: source and target are outwards to the top
-   * - 6: source is outwards to the bottom and target is outwards to the top
-   * - 9: source is outwards to the top and target is outwards to the bottom
-   * - 10: source and target are outwards to the bottom
-   * - 16: source is invisible
-   * - 64: target is invisible
-   *
-   * If you're asking yourself: "WAT?!?!!" Think of a 4x4 binary matrix:
-   * |    target    |    source    |
-   * | bottom | top | bottom | top |
-   * |    0   |  0  |    0   |  0  | (=0)
-   * |    0   |  0  |    0   |  1  | (=1)
-   * |    0   |  0  |    1   |  0  | (=2)
-   * |    0   |  1  |    0   |  0  | (=4)
-   * |    1   |  0  |    0   |  0  | (=8)
-   * |    0   |  1  |    0   |  1  | (=5)
-   * |    0   |  1  |    1   |  0  | (=6)
-   * |    1   |  0  |    0   |  1  | (=9)
-   * |    1   |  0  |    1   |  0  | (=10)
-   *
-   * *Note: 16 and 64 are two special values when the source or target node is
-   * hidden. The numbers are so hight just because that the bitwise-and with 4
-   * and 8 results to 0.
-   *
-   * To check whether the source or target location is above, below or within
-   * the global SVG container is very simple. For example, to find out if the
-   * target location is above, all we need to do is `<VALUE> & 4 > 0`. This
-   * performs a bit-wise AND operation with only two possible outcomes: 4 and 0.
-   *
-   * @method  pointsOutside
-   * @author  Fritz Lekschas
-   * @date    2016-09-14
-   * @param   {Object}  data  Link data.
-   * @return  {Number}  Numberical represenation of the links constallation. See
-   *   description for details.
-   */
-  pointsOutside (data) {
-    const source = this.linkPointsOutside(data.source);
-    const target = this.linkPointsOutside(data.target) << 2;
-    return source | target;
-  }
-
-  /**
-   * Assesses whether a link's end points outwards
-   *
-   * @method  linkPointsOutside
-   * @author  Fritz Lekschas
-   * @date    2016-09-14
-   * @param   {Object}  data  Link data.
-   * @return  {Number}  If link ends inwards returns `0`, if it points outwards
-   *   to the top returns `1` or `2` when it points to the bottom. If the node
-   *   pointed to is hidden return `16`.
-   */
-  linkPointsOutside (data) {
-    const y = data.node.y + data.offsetY;
-    if (data.node.hidden) {
-      return 16;
-    }
-    if (
-      y + this.visData.global.row.height - this.visData.global.row.padding <= 0
-    ) {
-      return 1;
-    }
-    if (y + this.visData.global.row.padding >= this.height) {
-      return 2;
-    }
-    return 0;
   }
 }
 
