@@ -3,7 +3,7 @@
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('$'), require('d3')) :
   typeof define === 'function' && define.amd ? define(['$', 'd3'], factory) :
   (global.ListGraph = factory(global.$,global.d3));
-}(this, (function ($,d3) { 'use strict';
+}(this, (function ($$1,d3) { 'use strict';
 
 /**
  * Checks if `value` is classified as an `Array` object.
@@ -30,6 +30,123 @@
  */
 var isArray = Array.isArray;
 
+var asyncGenerator = function () {
+  function AwaitValue(value) {
+    this.value = value;
+  }
+
+  function AsyncGenerator(gen) {
+    var front, back;
+
+    function send(key, arg) {
+      return new Promise(function (resolve, reject) {
+        var request = {
+          key: key,
+          arg: arg,
+          resolve: resolve,
+          reject: reject,
+          next: null
+        };
+
+        if (back) {
+          back = back.next = request;
+        } else {
+          front = back = request;
+          resume(key, arg);
+        }
+      });
+    }
+
+    function resume(key, arg) {
+      try {
+        var result = gen[key](arg);
+        var value = result.value;
+
+        if (value instanceof AwaitValue) {
+          Promise.resolve(value.value).then(function (arg) {
+            resume("next", arg);
+          }, function (arg) {
+            resume("throw", arg);
+          });
+        } else {
+          settle(result.done ? "return" : "normal", result.value);
+        }
+      } catch (err) {
+        settle("throw", err);
+      }
+    }
+
+    function settle(type, value) {
+      switch (type) {
+        case "return":
+          front.resolve({
+            value: value,
+            done: true
+          });
+          break;
+
+        case "throw":
+          front.reject(value);
+          break;
+
+        default:
+          front.resolve({
+            value: value,
+            done: false
+          });
+          break;
+      }
+
+      front = front.next;
+
+      if (front) {
+        resume(front.key, front.arg);
+      } else {
+        back = null;
+      }
+    }
+
+    this._invoke = send;
+
+    if (typeof gen.return !== "function") {
+      this.return = undefined;
+    }
+  }
+
+  if (typeof Symbol === "function" && Symbol.asyncIterator) {
+    AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
+      return this;
+    };
+  }
+
+  AsyncGenerator.prototype.next = function (arg) {
+    return this._invoke("next", arg);
+  };
+
+  AsyncGenerator.prototype.throw = function (arg) {
+    return this._invoke("throw", arg);
+  };
+
+  AsyncGenerator.prototype.return = function (arg) {
+    return this._invoke("return", arg);
+  };
+
+  return {
+    wrap: function (fn) {
+      return function () {
+        return new AsyncGenerator(fn.apply(this, arguments));
+      };
+    },
+    await: function (value) {
+      return new AwaitValue(value);
+    }
+  };
+}();
+
+
+
+
+
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -54,6 +171,37 @@ var createClass = function () {
   };
 }();
 
+
+
+
+
+
+
+var get$1 = function get$1(object, property, receiver) {
+  if (object === null) object = Function.prototype;
+  var desc = Object.getOwnPropertyDescriptor(object, property);
+
+  if (desc === undefined) {
+    var parent = Object.getPrototypeOf(object);
+
+    if (parent === null) {
+      return undefined;
+    } else {
+      return get$1(parent, property, receiver);
+    }
+  } else if ("value" in desc) {
+    return desc.value;
+  } else {
+    var getter = desc.get;
+
+    if (getter === undefined) {
+      return undefined;
+    }
+
+    return getter.call(receiver);
+  }
+};
+
 var inherits = function (subClass, superClass) {
   if (typeof superClass !== "function" && superClass !== null) {
     throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
@@ -70,12 +218,46 @@ var inherits = function (subClass, superClass) {
   if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
 };
 
+
+
+
+
+
+
+
+
+
+
 var possibleConstructorReturn = function (self, call) {
   if (!self) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
   }
 
   return call && (typeof call === "object" || typeof call === "function") ? call : self;
+};
+
+
+
+var set$1 = function set$1(object, property, value, receiver) {
+  var desc = Object.getOwnPropertyDescriptor(object, property);
+
+  if (desc === undefined) {
+    var parent = Object.getPrototypeOf(object);
+
+    if (parent !== null) {
+      set$1(parent, property, value, receiver);
+    }
+  } else if ("value" in desc && desc.writable) {
+    desc.value = value;
+  } else {
+    var setter = desc.set;
+
+    if (setter !== undefined) {
+      setter.call(receiver, value);
+    }
+  }
+
+  return value;
 };
 
 /**
@@ -279,11 +461,36 @@ var DISABLE_DEBOUNCED_CONTEXT_MENU = false;
 var TRANSITION_LIGHTNING_FAST = 150;
 
 /**
+ * Default transition speed in milliseconds for fast transition.
+ *
+ * @type  {Number}
+ */
+
+/**
  * Default transition speed in milliseconds for semi-fast transition.
  *
  * @type  {Number}
  */
 var TRANSITION_SEMI_FAST = 250;
+/**
+ * Default transition speed in milliseconds for normal transition.
+ *
+ * @type  {Number}
+ */
+
+/**
+ * Default transition speed in milliseconds for slow transition.
+ *
+ * @type  {Number}
+ */
+
+/**
+ * Default transition speed in milliseconds for slow transition.
+ *
+ * @type  {Number}
+ */
+
+
 /**
  * Strength of how much links should be bundled.
  *
@@ -295,9 +502,17 @@ var TRANSITION_SEMI_FAST = 250;
  */
 var LINK_BUNDLING_STRENGTH = 0.95;
 
-// External
-// eslint-disable-line import/no-unresolved
+/**
+ * Stretch out factor for link bundling.
+ *
+ * @description
+ * The value ranges from 0 (no stretch out at all) to 1 (which means the two
+ * middle control points defining the B-Spline are identical).
+ *
+ * @type  {Number}
+ */
 
+// External
 var TOPBAR_EL = 'div';
 var TOPBAR_CLASS = 'top-bar';
 
@@ -306,7 +521,17 @@ var TOPBAR_CONTROL_CLASS = 'controls';
 var TOPBAR_GLOBAL_CONTROL_CLASS = 'global-controls';
 
 var Topbar = function () {
-  function Topbar(vis, selection, visData) {
+  /**
+   * Topbar constructor
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  vis      List Graph App.
+   * @param   {Object}  baseEl   D3 base selection.
+   * @param   {Object}  visData  List Graph App data.
+   */
+  function Topbar(vis, baseEl, visData) {
     var _this = this;
 
     classCallCheck(this, Topbar);
@@ -316,10 +541,10 @@ var Topbar = function () {
     this.vis = vis;
     this.visData = visData;
     // Add base topbar element
-    this.el = selection.select('.' + TOPBAR_CLASS);
+    this.el = baseEl.select('.' + TOPBAR_CLASS);
 
     if (this.el.empty()) {
-      this.el = selection.insert(TOPBAR_EL, ':first-child').attr('class', TOPBAR_CLASS);
+      this.el = baseEl.insert(TOPBAR_EL, ':first-child').attr('class', TOPBAR_CLASS);
     }
 
     this.controlSwitch = this.el.append('div').attr('title', 'Toggle global / local topbar').style('width', this.visData.global.column.padding + 'px').classed('control-switch', true).on('click', this.switch.bind(this));
@@ -524,27 +749,104 @@ var Topbar = function () {
     });
   }
 
-  // toggleColumn () {
-  //   console.log('Toggle column');
-  // }
+  /**
+   * Highlight bars.
+   *
+   * @method  highlightBars
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}   el           DOM element.
+   * @param   {String}   type         Name of the nodes to be highlighted.
+   * @param   {Boolean}  deHighlight  If `true` the highlighting will be reset.
+   */
+
 
   createClass(Topbar, [{
-    key: 'selectNodesLevel',
-    value: function selectNodesLevel(el) {
-      return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
-    }
-  }, {
-    key: 'highlightLabels',
-    value: function highlightLabels(deHighlight) {
-      this.vis.baseElD3.selectAll('.node').classed('highlight-label', !deHighlight);
-    }
-  }, {
     key: 'highlightBars',
     value: function highlightBars(el, type, deHighlight) {
       var nodes = el ? this.selectNodesLevel(el) : this.vis.baseElD3.selectAll('.node');
 
       nodes.classed('highlight-bar', !deHighlight).selectAll('.bar.' + type).classed('highlight', !deHighlight);
     }
+
+    /**
+     * Highlight node labels
+     *
+     * @method  highlightLabels
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Boolean}  deHighlight  If `true` the highlighting will be reset.
+     */
+
+  }, {
+    key: 'highlightLabels',
+    value: function highlightLabels(deHighlight) {
+      this.vis.baseElD3.selectAll('.node').classed('highlight-label', !deHighlight);
+    }
+
+    /**
+     * Reset semi-active sort button
+     *
+     * @method  resetSemiActiveSortingEls
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     */
+
+  }, {
+    key: 'resetSemiActiveSortingEls',
+    value: function resetSemiActiveSortingEls() {
+      this.el.selectAll('.semi-active').classed('semi-active', false);
+    }
+
+    /**
+     * Reset the visual status of the sort button
+     *
+     * @method  resetSortEl
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}   el       DOM element.
+     * @param   {String}   newType  New sort type.
+     */
+
+  }, {
+    key: 'resetSortEl',
+    value: function resetSortEl(el, newType) {
+      el.classed('active', false);
+      el.select('.icon-sort-desc').classed('visible', false);
+      el.select('.icon-sort-asc').classed('visible', false);
+      el.select('.icon-unsort').classed('visible', true);
+      if (newType === 'name') {
+        el.classed('semi-active', true);
+        this.semiActiveSortingEls = true;
+      }
+    }
+
+    /**
+     * Select nodes by level by button.
+     *
+     * @method  selectNodesLevel
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}  el  DOM element.
+     * @return  {Object}      D3 selection of nodes.
+     */
+
+  }, {
+    key: 'selectNodesLevel',
+    value: function selectNodesLevel(el) {
+      return this.vis.selectByLevel(d3.select(el).datum().level, '.node');
+    }
+
+    /**
+     * Sort all columns
+     *
+     * @method  sortAllColumns
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}  el    DOM element.
+     * @param   {String}  type  Property to be sorted by.
+     */
+
   }, {
     key: 'sortAllColumns',
     value: function sortAllColumns(el, type) {
@@ -573,6 +875,19 @@ var Topbar = function () {
 
       this.vis.sortAllColumns(type, newSortType);
     }
+
+    /**
+     * Sort a column of nodes.
+     *
+     * @method  sortColumn
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}   el      DOM element.
+     * @param   {Number}   index   Index of the column.
+     * @param   {String}   type    Property to be sorted by.
+     * @param   {Boolean}  global  If `true` its global sorting.
+     */
+
   }, {
     key: 'sortColumn',
     value: function sortColumn(el, index, type, global) {
@@ -623,28 +938,31 @@ var Topbar = function () {
         this.vis.sortColumn(index, type, this.vis.currentSorting.local[index].order, newSortType);
       }
     }
-  }, {
-    key: 'resetSortEl',
-    value: function resetSortEl(el, newType) {
-      el.classed('active', false);
-      el.select('.icon-sort-desc').classed('visible', false);
-      el.select('.icon-sort-asc').classed('visible', false);
-      el.select('.icon-unsort').classed('visible', true);
-      if (newType === 'name') {
-        el.classed('semi-active', true);
-        this.semiActiveSortingEls = true;
-      }
-    }
-  }, {
-    key: 'resetSemiActiveSortingEls',
-    value: function resetSemiActiveSortingEls() {
-      this.el.selectAll('.semi-active').classed('semi-active', false);
-    }
+
+    /**
+     * Toggle between the global topbar buttons and the local sort buttons.
+     *
+     * @method  switch
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     */
+
   }, {
     key: 'switch',
     value: function _switch() {
       this.el.classed('details', !this.el.classed('details'));
     }
+
+    /**
+     * Switch bar mode.
+     *
+     * @method  switchBarMode
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}  el    DOM element.
+     * @param   {String}  mode  Bar mode to be switched to. Can be ['one', 'two'].
+     */
+
   }, {
     key: 'switchBarMode',
     value: function switchBarMode(el, mode) {
@@ -664,8 +982,6 @@ var Topbar = function () {
 }();
 
 // External
-// eslint-disable-line import/no-unresolved
-
 /**
  * Class name of columns.
  *
@@ -863,10 +1179,8 @@ var Levels = function () {
       }
     }
   }, {
-    key: 'className',
-    get: function get() {
-      return COLUMN_CLASS;
-    }
+    key: 'height',
+
 
     /**
      * Get the column's height.
@@ -876,19 +1190,19 @@ var Levels = function () {
      * @date    2016-09-14
      * @return  {Number}  Column height in pixel.
      */
-
-  }, {
-    key: 'height',
     get: function get() {
       return this.visData.global.column.height;
+    }
+  }], [{
+    key: 'className',
+    get: function get() {
+      return COLUMN_CLASS;
     }
   }]);
   return Levels;
 }();
 
 // External
-// eslint-disable-line import/no-unresolved
-
 // Internal
 /**
  * Class name of the group of link container.
@@ -1178,11 +1492,13 @@ var Links = function () {
  */
 function isObject(value) {
   var type = typeof value;
-  return !!value && (type == 'object' || type == 'function');
+  return value != null && (type == 'object' || type == 'function');
 }
 
+/** `Object#toString` result references. */
 var funcTag = '[object Function]';
 var genTag = '[object GeneratorFunction]';
+
 /** Used for built-in method references. */
 var objectProto = Object.prototype;
 
@@ -1544,8 +1860,6 @@ function dropMenu(c) {
 }
 
 // External
-// eslint-disable-line import/no-unresolved
-
 // Internal
 var BARS_CLASS = 'bars';
 
@@ -1821,25 +2135,122 @@ function allTransitionsEnded(transition, callback) {
 }
 
 // External
-// eslint-disable-line import/no-unresolved
 // Internal
+/**
+ * CSS class name of grou of nodes.
+ *
+ * @type  {String}
+ */
 var CLASS_NODES = 'nodes';
+
+/**
+ * CSS class name of node group.
+ *
+ * @type  {String}
+ */
 var CLASS_NODE = 'node';
+
+/**
+ * CSS class name of visible nodes.
+ *
+ * @type  {String}
+ */
 var CLASS_NODE_VISIBLE = 'visible-node';
+
+/**
+ * CSS class name of cloned nodes.
+ *
+ * @type  {String}
+ */
 var CLASS_CLONE = 'clone';
+
+/**
+ * CSS class name of label wrappers of nodes.
+ *
+ * @type  {String}
+ */
 var CLASS_LABEL_WRAPPER = 'label-wrapper';
+
+/**
+ * CSS class name of focus controls that appear to the left and right of a node
+ * when being active.
+ *
+ * @type  {String}
+ */
 var CLASS_FOCUS_CONTROLS = 'focus-controls';
+
+/**
+ * CSS class name of the root focus button.
+ *
+ * @type  {String}
+ */
 var CLASS_ROOT = 'root';
+
+/**
+ * CSS class name of the query focus button.
+ *
+ * @type  {String}
+ */
 var CLASS_QUERY = 'query';
+
+/**
+ * CSS class name of the link indicator.
+ *
+ * @type  {String}
+ */
 var CLASS_INDICATOR_BAR = 'link-indicator';
+
+/**
+ * CSS class name of the link location indicator.
+ *
+ * @type  {String}
+ */
 var CLASS_INDICATOR_LOCATION = 'link-location-indicator';
+
+/**
+ * CSS class name for identifying incoming link location indicators.
+ *
+ * @type  {String}
+ */
 var CLASS_INDICATOR_INCOMING = 'incoming';
+
+/**
+ * CSS class name for identifying outgoing link location indicators.
+ *
+ * @type  {String}
+ */
 var CLASS_INDICATOR_OUTGOING = 'outgoing';
+
+/**
+ * CSS class name for identifying link location indicators above the visible
+ * container.
+ *
+ * @type  {String}
+ */
 var CLASS_INDICATOR_ABOVE = 'above';
+
+/**
+ * CSS class name for identifying link location indicators below the visible
+ * container.
+ *
+ * @type  {String}
+ */
 var CLASS_INDICATOR_BELOW = 'below';
 
 var Nodes = function () {
-  function Nodes(vis, baseSelection, visData, links, events) {
+  /**
+   * Nodes constructor
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @param   {Object}  vis      List Graph App.
+   * @param   {Object}  baseEl   D3 base selection.
+   * @param   {Object}  visData  List Graph App data.
+   * @param   {Object}  links    Links class.
+   * @param   {Object}  events   Event class.
+   */
+  function Nodes(vis, baseEl, visData, links, events) {
     var _this = this;
 
     classCallCheck(this, Nodes);
@@ -1894,7 +2305,7 @@ var Nodes = function () {
       selection.attr('x', 0).attr('y', 0).attr('width', self.visData.global.column.contentWidth).attr('height', self.visData.global.row.height).attr('class', 'invisible-container');
     }
 
-    this.groups = baseSelection.append('g').attr('class', CLASS_NODES).call(function (selection) {
+    this.groups = baseEl.append('g').attr('class', CLASS_NODES).call(function (selection) {
       selection.each(function storeLinkToGroupNode() {
         d3.select(this.parentNode).datum().nodes = this;
       });
@@ -1961,12 +2372,12 @@ var Nodes = function () {
     });
 
     if (isFunction(this.events.on)) {
-      this.events.on('d3ListGraphFocusNodes', function (event) {
-        return _this.focusNodes(event);
+      this.events.on('d3ListGraphFocusNodes', function (event$$1) {
+        return _this.focusNodes(event$$1);
       });
 
-      this.events.on('d3ListGraphBlurNodes', function (event) {
-        return _this.blurNodes(event);
+      this.events.on('d3ListGraphBlurNodes', function (event$$1) {
+        return _this.blurNodes(event$$1);
       });
 
       this.events.on('d3ListGraphNodeEnter', function (nodeIds) {
@@ -1997,79 +2408,176 @@ var Nodes = function () {
     this.nodes.call(this.isInvisible.bind(this));
   }
 
+  /**
+   * Get the current bar mode.
+   *
+   * @method  barMode
+   * @author  Fritz Lekschas
+   * @date    2016-09-22
+   * @return  {String}  Bar mode string.
+   */
+
+
   createClass(Nodes, [{
-    key: 'updateLinkLocationIndicators',
-    value: function updateLinkLocationIndicators(left, right) {
-      this.calcHeightLinkLocationIndicator(left, false, true);
-      this.calcHeightLinkLocationIndicator(right, true, false);
+    key: 'batchQueryHandler',
+
+
+    /**
+     * Handle multiple queries as once.
+     *
+     * @description
+     * Useful when the custom root node is changed as this involves "un-querying"
+     * and querying.
+     *
+     * @method  batchQueryHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Array}    els             Array of D3 selections of nodes to be
+     *   queried.
+     * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
+     */
+    value: function batchQueryHandler(els, noNotification) {
+      var actions = [];
+      for (var i = els.length; i--;) {
+        actions.push(this.queryHandler(els[i].d3El, els[i].action, els[i].mode, true));
+      }
+
+      if (!noNotification) {
+        this.events.broadcast('d3ListGraphBatchQuery', actions);
+      }
     }
+
+    /**
+     * Visually blur a node.
+     *
+     * @method  blurNodes
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Object}  event  Event object.
+     */
+
+  }, {
+    key: 'blurNodes',
+    value: function blurNodes(event$$1) {
+      this.eventHelper(event$$1.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', !!event$$1.excludeClones]);
+
+      if (event$$1.zoomIn) {
+        this.vis.zoomedView();
+      }
+
+      if (this.tempHidingUnrelatedNodes) {
+        this.hideUnrelatedNodes(undefined, true);
+      }
+    }
+
+    /**
+     * Calculates the height of all incoming or outgoing link location indicators
+     * for a given level.
+     *
+     * @method  calcHeightLinkLocationIndicator
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Number}   level     Index of the level / column.
+     * @param   {Boolean}  outgoing  If `true` outgoing link location indicator
+     *   heights are calculated. Otherwise incoming link location indicator
+     *   heights are calculated.
+     */
+
   }, {
     key: 'calcHeightLinkLocationIndicator',
-    value: function calcHeightLinkLocationIndicator(level, incoming, outgoing) {
+    value: function calcHeightLinkLocationIndicator(level, outgoing) {
       var nodes = this.nodes.filter(function (data) {
         return data.depth === level;
       });
       nodes.each(function (data) {
-        if (incoming) {
+        if (outgoing) {
+          data.links.outgoing.above = 0;
+          data.links.outgoing.below = 0;
+          for (var i = data.links.outgoing.total; i--;) {
+            // We are checking the target location of the outgoing link. The
+            // source location is the location of the node of the column being
+            // scrolled.
+            if ((data.links.outgoing.refs[i].hidden & 4) > 0) {
+              data.links.outgoing.above++;
+            }
+            if ((data.links.outgoing.refs[i].hidden & 8) > 0) {
+              data.links.outgoing.below++;
+            }
+          }
+        } else {
           data.links.incoming.above = 0;
           data.links.incoming.below = 0;
-          for (var i = data.links.incoming.total; i--;) {
+          for (var _i = data.links.incoming.total; _i--;) {
             // We are checking the source location of the incoming link. The
             // source location is the location of the node of the column being
             // scrolled.
-            if ((data.links.incoming.refs[i].hidden & 1) > 0) {
+            if ((data.links.incoming.refs[_i].hidden & 1) > 0) {
               data.links.incoming.above++;
             }
-            if ((data.links.incoming.refs[i].hidden & 2) > 0) {
+            if ((data.links.incoming.refs[_i].hidden & 2) > 0) {
               data.links.incoming.below++;
             }
           }
         }
-        if (outgoing) {
-          data.links.outgoing.above = 0;
-          data.links.outgoing.below = 0;
-          for (var _i = data.links.outgoing.total; _i--;) {
-            // We are checking the target location of the outgoing link. The
-            // source location is the location of the node of the column being
-            // scrolled.
-            if ((data.links.outgoing.refs[_i].hidden & 4) > 0) {
-              data.links.outgoing.above++;
-            }
-            if ((data.links.outgoing.refs[_i].hidden & 8) > 0) {
-              data.links.outgoing.below++;
-            }
-          }
-        }
       });
-
-      if (incoming) {
-        this.updateHeightLinkLocationIndicatorBars(nodes);
-      }
 
       if (outgoing) {
         this.updateHeightLinkLocationIndicatorBars(nodes, true);
+      } else {
+        this.updateHeightLinkLocationIndicatorBars(nodes);
       }
     }
+
+    /**
+     * Tests if the event-related node list is identical.
+     *
+     * @method  checkNodeFocusSameEvent
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Array}  nodeIds  Array of node IDs.
+     * @return  {Boolean}         If `true` the event node ID list is identical to
+     *   the current focus node ID list.
+     */
+
   }, {
-    key: 'updateHeightLinkLocationIndicatorBars',
-    value: function updateHeightLinkLocationIndicatorBars(selection, outgoing) {
-      var barRefHeight = this.visData.global.row.contentHeight / 2 - 1;
-      var barAboveRefTop = this.visData.global.row.height / 2 - 1;
-
-      var baseClassName = '.' + CLASS_INDICATOR_LOCATION + '.' + (outgoing ? CLASS_INDICATOR_OUTGOING : CLASS_INDICATOR_INCOMING);
-
-      selection.selectAll(baseClassName + '.' + CLASS_INDICATOR_ABOVE).attr('y', function (data) {
-        return data.total ? barAboveRefTop - data.above / data.total * barRefHeight : barAboveRefTop;
-      }).attr('height', function (data) {
-        return data.total ? data.above / data.total * barRefHeight : 0;
-      });
-
-      selection.selectAll(baseClassName + '.' + CLASS_INDICATOR_BELOW).attr('height', function (data) {
-        return data.total ? data.below / data.total * barRefHeight : 0;
-      });
+    key: 'checkNodeFocusSameEvent',
+    value: function checkNodeFocusSameEvent(nodeIds) {
+      if (!this.nodeFocusIds) {
+        return false;
+      }
+      if (nodeIds.length !== this.nodeFocusIds.length) {
+        return false;
+      }
+      for (var i = nodeIds.length; i--;) {
+        if (nodeIds[i] !== this.nodeFocusIds[i]) {
+          return false;
+        }
+      }
+      return true;
     }
+
+    /**
+     * Get the CSS class of the node group.
+     *
+     * @method  classNodeVisible
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @return  {String}  CSS name.
+     */
+
   }, {
     key: 'enterHandler',
+
+
+    /**
+     * Node _mouse enter_ handler.
+     *
+     * @method  enterHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Object}  el    DOM element.
+     * @param   {Object}  data  D3 data object of the DOM element.
+     */
     value: function enterHandler(el, data) {
       this.highlightNodes(d3.select(el));
 
@@ -2086,191 +2594,22 @@ var Nodes = function () {
 
       this.events.broadcast('d3ListGraphNodeEnter', eventData);
     }
-  }, {
-    key: 'leaveHandler',
-    value: function leaveHandler(el, data) {
-      this.unhighlightNodes(d3.select(el));
 
-      var eventData = {
-        id: data.id,
-        clone: false,
-        clonedFromId: undefined
-      };
+    /**
+     * Event helper.
+     *
+     * @method  eventHelper
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Array}     nodeIds            Array of node IDs.
+     * @param   {Function}  callback           Call back function of the actual
+     *   event.
+     * @param   {Array}     optionalParams     Array of optional parameters to be
+     *   passed to the callback.
+     * @param   {String}    subSelectionClass  Sub-selection of certain elements
+     *   based on a CSS class. The selection will be passed to the callback.
+     */
 
-      if (data.clone) {
-        eventData.clone = true;
-        eventData.clonedFromId = data.originalNode.id;
-      }
-
-      this.events.broadcast('d3ListGraphNodeLeave', eventData);
-    }
-  }, {
-    key: 'lockHandler',
-    value: function lockHandler(d3El) {
-      var events = this.toggleLock(d3El);
-
-      if (events.locked && events.unlocked) {
-        this.events.broadcast('d3ListGraphNodeLockChange', {
-          lock: {
-            id: events.locked.id,
-            clone: events.locked.clone,
-            clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
-          },
-          unlock: {
-            id: events.unlocked.id,
-            clone: events.unlocked.clone,
-            clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
-          }
-        });
-      } else {
-        if (events.locked) {
-          this.events.broadcast('d3ListGraphNodeLock', {
-            id: events.locked.id,
-            clone: events.locked.clone,
-            clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
-          });
-        }
-
-        if (events.unlocked) {
-          this.events.broadcast('d3ListGraphNodeUnlock', {
-            id: events.unlocked.id,
-            clone: events.unlocked.clone,
-            clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
-          });
-        }
-      }
-    }
-  }, {
-    key: 'rootHandler',
-    value: function rootHandler(d3El, unroot) {
-      if (!d3El.datum().data.state.root && unroot) {
-        // The node is not rooted so there's no point in unrooting.
-        return;
-      }
-      var events = this.toggleRoot(d3El, unroot);
-
-      if (events.rooted && events.unrooted) {
-        this.events.broadcast('d3ListGraphNodeReroot', {
-          rooted: {
-            id: events.rooted.id,
-            clone: events.rooted.clone,
-            clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
-          },
-          unrooted: {
-            id: events.unrooted.id,
-            clone: events.unrooted.clone,
-            clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
-          }
-        });
-      } else {
-        if (events.rooted) {
-          this.events.broadcast('d3ListGraphNodeRoot', {
-            id: events.rooted.id,
-            clone: events.rooted.clone,
-            clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
-          });
-        }
-
-        if (events.unrooted) {
-          this.events.broadcast('d3ListGraphNodeUnroot', {
-            id: events.unrooted.id,
-            clone: events.unrooted.clone,
-            clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
-          });
-        }
-      }
-    }
-  }, {
-    key: 'focusNodes',
-    value: function focusNodes(event) {
-      var same = this.checkNodeFocusEventSame(event.nodeIds);
-      if (this.nodeFocusId && !same) {
-        // Show unrelated nodes first before we hide them again.
-        this.blurNodes({
-          nodeIds: this.nodeFocusId
-        });
-      }
-
-      this.nodeFocusId = event.nodeIds;
-
-      this.eventHelper(event.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones, event.zoomOut || event.hideUnrelatedNodes]);
-
-      if (event.zoomOut) {
-        this.vis.globalView(this.nodes.filter(function (data) {
-          return data.hovering > 0;
-        }));
-      } else {
-        this.vis.zoomedView();
-      }
-
-      if (event.hideUnrelatedNodes) {
-        if (!same || !this.tempHidingUnrelatedNodes) {
-          this.hideUnrelatedNodes(event.nodeIds);
-        }
-      } else if (this.tempHidingUnrelatedNodes) {
-        this.showUnrelatedNodes();
-      }
-    }
-  }, {
-    key: 'blurNodes',
-    value: function blurNodes(event) {
-      this.eventHelper(event.nodeIds, this.unhighlightNodes, ['focus', 'directParentsOnly', !!event.excludeClones]);
-
-      if (event.zoomIn) {
-        this.vis.zoomedView();
-      }
-
-      if (this.tempHidingUnrelatedNodes) {
-        this.showUnrelatedNodes();
-      }
-    }
-  }, {
-    key: 'checkNodeFocusEventSame',
-    value: function checkNodeFocusEventSame(nodeIds) {
-      if (!this.nodeFocusId) {
-        return false;
-      }
-      if (nodeIds.length !== this.nodeFocusId.length) {
-        return false;
-      }
-      for (var i = nodeIds.length; i--;) {
-        if (nodeIds[i] !== this.nodeFocusId[i]) {
-          return false;
-        }
-      }
-      return true;
-    }
-  }, {
-    key: 'hideUnrelatedNodes',
-    value: function hideUnrelatedNodes(nodeIds) {
-      this.tempHidingUnrelatedNodes = nodeIds;
-
-      this.nodes.filter(function (data) {
-        return !data.hovering;
-      }).classed('hidden', true).each(function (data) {
-        // Store old value for `hidden` temporarily
-        data._hidden = data.hidden;
-        data.hidden = true;
-      });
-
-      this.updateVisibility();
-    }
-  }, {
-    key: 'showUnrelatedNodes',
-    value: function showUnrelatedNodes() {
-      this.tempHidingUnrelatedNodes = undefined;
-
-      this.nodes.filter(function (data) {
-        return !data.hovering;
-      }).classed('hidden', function (data) {
-        return data._hidden;
-      }).each(function (data) {
-        data.hidden = data._hidden;
-        data._hidden = undefined;
-      });
-
-      this.updateVisibility();
-    }
   }, {
     key: 'eventHelper',
     value: function eventHelper(nodeIds, callback, optionalParams, subSelectionClass) {
@@ -2290,299 +2629,45 @@ var Nodes = function () {
         callback.apply(self, [d3El].concat(optionalParams || []));
       });
     }
+
+    /**
+     * Visually focus a node.
+     *
+     * @method  focusNodes
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Object}  event  Event object.
+     */
+
   }, {
-    key: 'toggleLock',
-    value: function toggleLock(d3El, setFalse) {
-      var data = d3El.datum();
-      var events = { locked: false, unlocked: false };
+    key: 'focusNodes',
+    value: function focusNodes(event$$1) {
+      var same = this.checkNodeFocusSameEvent(event$$1.nodeIds);
+      if (this.nodeFocusIds && !same) {
+        // Show unrelated nodes first before we hide them again.
+        this.blurNodes({
+          nodeIds: this.nodeFocusIds
+        });
+      }
 
-      if (this.lockedNode) {
-        if (this.lockedNode.datum().id === data.id) {
-          this.unlockNode(this.lockedNode.datum().id);
-          events.unlocked = this.lockedNode.datum();
-          this.lockedNode = undefined;
-        } else {
-          // Reset previously locked node;
-          this.unlockNode(this.lockedNode.datum().id);
-          events.unlocked = this.lockedNode.datum();
+      this.nodeFocusIds = event$$1.nodeIds;
 
-          if (!setFalse) {
-            this.lockNode(data.id);
-            events.locked = data;
-            this.lockedNode = d3El;
-          }
-        }
+      this.eventHelper(event$$1.nodeIds, this.highlightNodes, ['focus', 'directParentsOnly', !!event$$1.excludeClones, event$$1.zoomOut || event$$1.hideUnrelatedNodes]);
+
+      if (event$$1.zoomOut) {
+        this.vis.globalView(this.nodes.filter(function (data) {
+          return data.hovering > 0;
+        }));
       } else {
-        if (!setFalse) {
-          this.lockNode(data.id);
-          events.locked = data;
-          this.lockedNode = d3El;
+        this.vis.zoomedView();
+      }
+
+      if (event$$1.hideUnrelatedNodes) {
+        if (!same || !this.tempHidingUnrelatedNodes) {
+          this.hideUnrelatedNodes(event$$1.nodeIds);
         }
-      }
-
-      return events;
-    }
-  }, {
-    key: 'lockNode',
-    value: function lockNode(id) {
-      var self = this;
-      var els = this.nodes.filter(function (data) {
-        return data.id === id;
-      });
-
-      els.each(function (data) {
-        self.highlightNodes(d3.select(this), 'lock', undefined);
-        data.data.state.lock = true;
-      });
-    }
-  }, {
-    key: 'unlockNode',
-    value: function unlockNode(id) {
-      var self = this;
-      var els = this.nodes.filter(function (data) {
-        return data.id === id;
-      });
-
-      els.each(function (data) {
-        self.unhighlightNodes(d3.select(this), 'lock', undefined);
-        data.data.state.lock = undefined;
-      });
-    }
-  }, {
-    key: 'queryByNode',
-    value: function queryByNode(d3El, mode) {
-      d3El.datum().data.state.query = mode;
-      d3El.classed('active', true).classed('inactive', false).classed('query-and', mode === 'and').classed('query-or', mode === 'or').classed('query-not', mode === 'not');
-    }
-  }, {
-    key: 'unqueryByNode',
-    value: function unqueryByNode(d3El) {
-      var data = d3El.datum();
-
-      data.data.state.query = undefined;
-      data.data.queryBeforeRooting = undefined;
-
-      d3El.classed('active', true).classed('inactive', false).classed('query-and', false).classed('query-or', false).classed('query-not', false);
-
-      if (this.rootedNode) {
-        this.updateVisibility();
-      }
-    }
-  }, {
-    key: 'toggleQueryByNode',
-    value: function toggleQueryByNode(d3El) {
-      var data = d3El.datum();
-      var previousMode = data.data.state.query;
-
-      if (data.data.state.root) {
-        if (previousMode !== 'or') {
-          this.queryByNode(d3El, 'or');
-        } else {
-          this.queryByNode(d3El, 'and');
-        }
-      } else {
-        switch (previousMode) {
-          case 'or':
-            this.queryByNode(d3El, 'and');
-            break;
-          case 'and':
-            this.queryByNode(d3El, 'not');
-            break;
-          case 'not':
-            this.unqueryByNode(d3El);
-            break;
-          default:
-            this.queryByNode(d3El, 'or');
-            break;
-        }
-      }
-    }
-  }, {
-    key: 'batchQueryHandler',
-    value: function batchQueryHandler(els, noNotification) {
-      var actions = [];
-      for (var i = els.length; i--;) {
-        actions.push(this.queryHandler(els[i].d3El, els[i].action, els[i].mode, true));
-      }
-
-      if (!noNotification) {
-        this.events.broadcast('d3ListGraphBatchQuery', actions);
-      }
-    }
-  }, {
-    key: 'queryHandler',
-    value: function queryHandler(d3El, action, mode, returnNoNotification) {
-      var data = d3El.datum();
-      var previousMode = data.data.state.query;
-      var event = {};
-
-      if (!previousMode && action === 'unquery') {
-        // We haven't queried anything so there's nothing to unquery.
-        return undefined;
-      }
-
-      switch (action) {
-        case 'query':
-          this.queryByNode(d3El, mode);
-          break;
-        case 'unquery':
-          this.unqueryByNode(d3El);
-          break;
-        default:
-          this.toggleQueryByNode(d3El);
-          break;
-      }
-
-      if (data.data.state.query) {
-        if (data.data.state.query !== previousMode) {
-          event.name = 'd3ListGraphNodeQuery';
-          event.data = {
-            id: data.id,
-            clone: data.clone,
-            clonedFromId: data.clone ? data.originalNode.id : undefined,
-            mode: data.data.state.query
-          };
-        }
-      } else {
-        event.name = 'd3ListGraphNodeUnquery';
-        event.data = {
-          id: data.id,
-          clone: data.clone,
-          clonedFromId: data.clone ? data.originalNode.id : undefined
-        };
-      }
-
-      if (event.name && !returnNoNotification) {
-        this.events.broadcast(event.name, event.data);
-      }
-
-      return event.name ? event : undefined;
-    }
-  }, {
-    key: 'toggleRoot',
-    value: function toggleRoot(d3El, setFalse, noNotification) {
-      var data = d3El.datum();
-      var events = { rooted: false, unrooted: false };
-      var queries = [];
-
-      // Blur current levels
-      this.vis.levels.blur();
-
-      if (this.rootedNode) {
-        // Reset current root node
-        this.rootedNode.classed('active', false).classed('inactive', true);
-
-        events.unrooted = this.rootedNode.datum();
-        if (this.unrootNode(this.rootedNode).unquery) {
-          queries.push({
-            d3El: this.rootedNode,
-            action: 'unquery'
-          });
-        }
-
-        // Activate new root
-        if (this.rootedNode.datum().id !== data.id && !setFalse) {
-          d3El.classed('active', true).classed('inactive', false);
-
-          this.rootedNode = d3El;
-          events.rooted = d3El.datum();
-          if (this.rootNode(d3El).query) {
-            queries.push({
-              d3El: d3El,
-              action: 'query',
-              mode: 'or'
-            });
-          }
-        } else {
-          this.rootedNode = undefined;
-          // Highlight first level
-          this.vis.levels.focus(this.vis.activeLevel - this.vis.noRootActiveLevelDiff);
-        }
-      } else {
-        if (!setFalse) {
-          d3El.classed('active', true).classed('inactive', false);
-
-          this.rootedNode = d3El;
-          events.rooted = d3El.datum();
-          if (this.rootNode(d3El).query) {
-            queries.push({
-              d3El: d3El,
-              action: 'query',
-              mode: 'or'
-            });
-          }
-        }
-      }
-
-      if (queries.length) {
-        this.batchQueryHandler(queries, noNotification);
-      }
-
-      return events;
-    }
-  }, {
-    key: 'rootNode',
-    value: function rootNode(d3El) {
-      var data = d3El.datum();
-
-      data.data.state.root = true;
-      d3El.classed('rooted', true);
-      this.hideNodes(data);
-
-      // Highlight level
-      this.vis.levels.focus(data.depth + this.vis.activeLevel);
-
-      if (!data.data.state.query || data.data.state.query === 'not') {
-        data.data.queryBeforeRooting = false;
-        return {
-          query: true
-        };
-      }
-
-      data.data.queryBeforeRooting = true;
-
-      return {
-        query: false
-      };
-    }
-  }, {
-    key: 'unrootNode',
-    value: function unrootNode(d3El) {
-      var data = d3El.datum();
-
-      data.data.state.root = false;
-      d3El.classed('rooted', false);
-      this.showNodes();
-
-      if (!data.data.queryBeforeRooting) {
-        return {
-          unquery: true
-        };
-      }
-
-      return {
-        unquery: false
-      };
-    }
-  }, {
-    key: 'setUpFocusControls',
-    value: function setUpFocusControls(selection, location, position, mode, className) {
-      var paddedDim = this.iconDimension + 4;
-
-      var x = 0 - paddedDim * (position + 1);
-
-      if (location === 'right') {
-        x = this.visData.global.column.contentWidth + 2 + paddedDim * position;
-      }
-
-      var y = this.visData.global.row.padding + (this.visData.global.row.contentHeight - 2 * this.visData.global.cell.padding) / 4;
-
-      if (mode === 'bg') {
-        selection.attr('class', className).attr('cx', x + this.iconDimension / 2).attr('cy', y + this.iconDimension / 2).attr('r', this.iconDimension * 3 / 4);
-      } else if (mode === 'hover-helper') {
-        selection.attr('class', className).attr('x', x - 4).attr('y', y - 4).attr('width', this.iconDimension + 8).attr('height', this.iconDimension + 8).attr('rx', this.iconDimension).attr('ry', this.iconDimension);
-      } else {
-        selection.attr('class', className).attr('x', x).attr('y', y).attr('width', this.iconDimension).attr('height', this.iconDimension);
+      } else if (this.tempHidingUnrelatedNodes) {
+        this.hideUnrelatedNodes(undefined, true);
       }
     }
 
@@ -2591,8 +2676,8 @@ var Nodes = function () {
      *
      * @method  hideNodes
      * @author  Fritz Lekschas
-     * @date    2016-02-21
-     * @param   {Object}   data        Node data object.
+     * @date    2016-09-22
+     * @param   {Object}   data  Node data object.
      */
 
   }, {
@@ -2602,120 +2687,60 @@ var Nodes = function () {
     }
 
     /**
-     * Helper method to show nodes.
+     * Hide unrelated nodes temporarily.
      *
-     * @method  showNodes
+     * @method  hideUnrelatedNodes
      * @author  Fritz Lekschas
-     * @date    2016-02-21
-     * @param   {Object}  data       Node data object.
+     * @date    2016-09-22
+     * @param   {Array}    nodeIds    Array of node IDs.
+     * @param   {Boolean}  showAgain  If `true` displays hidden nows again.
      */
 
   }, {
-    key: 'showNodes',
-    value: function showNodes() {
-      this.nodesVisibility(undefined, true);
-    }
+    key: 'hideUnrelatedNodes',
+    value: function hideUnrelatedNodes(nodeIds, showAgain) {
+      this.tempHidingUnrelatedNodes = showAgain ? undefined : nodeIds;
 
-    /**
-     * Sets the nodes' visibility
-     *
-     * @method  nodesVisibility
-     * @author  Fritz Lekschas
-     * @date    2016-02-21
-     * @param   {Object}   data        Node data object.
-     * @param   {Boolean}  show        If `true` nodes will be shown.
-     */
+      this.nodes.filter(function (data) {
+        return !data.hovering;
+      }).classed('hidden', function (data) {
+        return showAgain ? data._hidden : true;
+      }).each(function (data) {
+        if (showAgain) {
+          // Reset old hiding state
+          data.hidden = data._hidden;
+          data._hidden = undefined;
+        } else {
+          // Store old value for `hidden` temporarily
+          data._hidden = data.hidden;
+          data.hidden = true;
+        }
+      });
 
-  }, {
-    key: 'nodesVisibility',
-    value: function nodesVisibility(data, show) {
-      if (show) {
-        this.nodes.classed('hidden', false).each(function (nodeData) {
-          nodeData.hidden = false;
-        });
-      } else {
-        // First we set all nodes to `hidden`.
-        this.nodes.each(function (nodeData) {
-          nodeData.hidden = true;
-        });
-
-        // Then we set direct child and parent nodes of the current node visible.
-        upAndDown(data, function (nodeData) {
-          nodeData.hidden = false;
-        });
-
-        // We also show sibling nodes.
-        siblings(data, function (nodeData) {
-          nodeData.hidden = false;
-        });
-
-        this.nodes.classed('hidden', function (nodeData) {
-          return nodeData.hidden && !nodeData.data.state.query;
-        });
-      }
       this.updateVisibility();
     }
 
     /**
-     * Marks nodes as being invisible via assigning a class depending on the
-     * custom scroll top position or the columns scroll top position.
+     * Visually highlight nodes.
      *
-     * @method  isInvisible
+     * @method  highlightNodes
      * @author  Fritz Lekschas
-     * @date    2016-09-12
-     * @param   {Object}  selection        D3 selection of nodes to be checked.
-     * @param   {Number}  customScrollTop  Custom scroll top position. Used when
-     *   column is actively scrolled.
+     * @date    2016-09-23
+     * @param   {Object}   d3El               D3 selection of the node where to
+     *   start highlighting from.
+     * @param   {String}   className          CSS class name to be assigned to the
+     *   highlighted nodes.
+     * @param   {String}   restriction        Specify a restriction. Currently
+     *   only "directParentsOnly" is supported.
+     * @param   {Boolean}  excludeClones      If `true` exclude cloned nodes.
+     * @param   {Boolean}  noVisibilityCheck  If `true` don't check the nodes'
+     *   visibility states.
      */
 
   }, {
-    key: 'isInvisible',
-    value: function isInvisible(selection, customScrollTop) {
-      var _this2 = this;
-
-      selection.classed('invisible', function (data) {
-        var scrollTop = customScrollTop || _this2.visData.nodes[data.depth].scrollTop;
-
-        // Node is right to the visible container
-        if (data.x + _this2.vis.dragged.x >= _this2.vis.width) {
-          return data.invisible = true;
-        }
-        // Node is below the visible container
-        if (data.y + scrollTop >= _this2.vis.height) {
-          return data.invisible = true;
-        }
-        // Node is above the visible container
-        if (data.y + _this2.visData.global.row.height + scrollTop <= 0) {
-          return data.invisible = true;
-        }
-        // Node is left to the visible container
-        if (data.x + _this2.vis.dragged.x + _this2.visData.global.column.width <= 0) {
-          return data.invisible = true;
-        }
-        return data.invisible = false;
-      });
-    }
-  }, {
-    key: 'makeAllTempVisible',
-    value: function makeAllTempVisible(unset) {
-      if (unset) {
-        this.nodes.classed('invisible', function (data) {
-          var prevInvisible = data._invisible;
-          data._invisible = undefined;
-
-          return prevInvisible;
-        });
-      } else {
-        this.nodes.classed('invisible', function (data) {
-          data._invisible = data.invisible;
-          return false;
-        });
-      }
-    }
-  }, {
     key: 'highlightNodes',
     value: function highlightNodes(d3El, className, restriction, excludeClones, noVisibilityCheck) {
-      var _this3 = this;
+      var _this2 = this;
 
       var self = this;
       var data = d3El.datum();
@@ -2746,7 +2771,7 @@ var Nodes = function () {
           // Store: (parent)->(child)
           // Ignore: (parent)->(siblings of child)
           if (nodeData.links.outgoing.refs[i].target.node.id === childData.id) {
-            _this3.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
+            _this2.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
           }
         }
       };
@@ -2754,7 +2779,7 @@ var Nodes = function () {
       var traverseCallbackDown = function traverseCallbackDown(nodeData) {
         nodeData.hovering = 2;
         for (var i = nodeData.links.outgoing.refs.length; i--;) {
-          _this3.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
+          _this2.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
         }
       };
 
@@ -2821,6 +2846,641 @@ var Nodes = function () {
 
       this.links.highlight(this.currentLinks[appliedClassName][data.id], true, appliedClassName);
     }
+
+    /**
+     * Marks nodes as being invisible via assigning a class depending on the
+     * custom scroll top position or the columns scroll top position.
+     *
+     * @method  isInvisible
+     * @author  Fritz Lekschas
+     * @date    2016-09-12
+     * @param   {Object}  selection        D3 selection of nodes to be checked.
+     * @param   {Number}  customScrollTop  Custom scroll top position. Used when
+     *   column is actively scrolled.
+     */
+
+  }, {
+    key: 'isInvisible',
+    value: function isInvisible(selection, customScrollTop) {
+      var _this3 = this;
+
+      selection.classed('invisible', function (data) {
+        var scrollTop = customScrollTop || _this3.visData.nodes[data.depth].scrollTop;
+
+        // Node is right to the visible container
+        if (data.x + _this3.vis.dragged.x >= _this3.vis.width) {
+          return data.invisible = true;
+        }
+        // Node is below the visible container
+        if (data.y + scrollTop >= _this3.vis.height) {
+          return data.invisible = true;
+        }
+        // Node is above the visible container
+        if (data.y + _this3.visData.global.row.height + scrollTop <= 0) {
+          return data.invisible = true;
+        }
+        // Node is left to the visible container
+        if (data.x + _this3.vis.dragged.x + _this3.visData.global.column.width <= 0) {
+          return data.invisible = true;
+        }
+        return data.invisible = false;
+      });
+    }
+
+    /**
+     * Node _mouse leave handler.
+     *
+     * @method  leaveHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Object}  el    DOM element.
+     * @param   {Object}  data  D3 data object of the DOM element.
+     */
+
+  }, {
+    key: 'leaveHandler',
+    value: function leaveHandler(el, data) {
+      this.unhighlightNodes(d3.select(el));
+
+      var eventData = {
+        id: data.id,
+        clone: false,
+        clonedFromId: undefined
+      };
+
+      if (data.clone) {
+        eventData.clone = true;
+        eventData.clonedFromId = data.originalNode.id;
+      }
+
+      this.events.broadcast('d3ListGraphNodeLeave', eventData);
+    }
+
+    /**
+     * Handler managing visual _lock_ events.
+     *
+     * @method  lockHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Object}  d3El  D3 selection of the element to be visually locked.
+     */
+
+  }, {
+    key: 'lockHandler',
+    value: function lockHandler(d3El) {
+      var events = this.toggleLock(d3El);
+
+      if (events.locked && events.unlocked) {
+        this.events.broadcast('d3ListGraphNodeLockChange', {
+          lock: {
+            id: events.locked.id,
+            clone: events.locked.clone,
+            clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+          },
+          unlock: {
+            id: events.unlocked.id,
+            clone: events.unlocked.clone,
+            clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+          }
+        });
+      } else {
+        if (events.locked) {
+          this.events.broadcast('d3ListGraphNodeLock', {
+            id: events.locked.id,
+            clone: events.locked.clone,
+            clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+          });
+        }
+
+        if (events.unlocked) {
+          this.events.broadcast('d3ListGraphNodeUnlock', {
+            id: events.unlocked.id,
+            clone: events.unlocked.clone,
+            clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+          });
+        }
+      }
+    }
+
+    /**
+     * Lock a node(s) by ID.
+     *
+     * @description
+     * The reason for not just passing the selected node element in the DOM is
+     * because the node might have been cloned. Hence, multiple copies of the same
+     * node exist.
+     *
+     * @method  lockNode
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Number}  id  ID of node(s) to be locked.
+     */
+
+  }, {
+    key: 'lockNode',
+    value: function lockNode(id) {
+      var self = this;
+      var els = this.nodes.filter(function (data) {
+        return data.id === id;
+      });
+
+      els.each(function (data) {
+        self.highlightNodes(d3.select(this), 'lock', undefined);
+        data.data.state.lock = true;
+      });
+    }
+
+    /**
+     * Temporarily make all nodes visible.
+     *
+     * @method  makeAllTempVisible
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Boolean}  unset  If `true` reverts back to the old state of
+     *   visibility.
+     */
+
+  }, {
+    key: 'makeAllTempVisible',
+    value: function makeAllTempVisible(unset) {
+      if (unset) {
+        this.nodes.classed('invisible', function (data) {
+          var prevInvisible = data._invisible;
+          data._invisible = undefined;
+
+          return prevInvisible;
+        });
+      } else {
+        this.nodes.classed('invisible', function (data) {
+          data._invisible = data.invisible;
+          return false;
+        });
+      }
+    }
+
+    /**
+     * Only show the subtree and siblings of the node `data`.
+     *
+     * @method  nodesVisibility
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Object}   data  Node data object.
+     * @param   {Boolean}  show  If `true` nodes will be shown again.
+     */
+
+  }, {
+    key: 'nodesVisibility',
+    value: function nodesVisibility(data, show) {
+      if (show) {
+        this.nodes.classed('hidden', false).each(function (nodeData) {
+          nodeData.hidden = false;
+        });
+      } else {
+        // First we set all nodes to `hidden` except those that are currently
+        // queried for.
+        this.nodes.each(function (nodeData) {
+          nodeData.hidden = !nodeData.data.state.query;
+        });
+
+        // Then we set direct child and parent nodes of the current node visible.
+        upAndDown(data, function (nodeData) {
+          nodeData.hidden = false;
+        });
+
+        // We also show sibling nodes.
+        siblings(data, function (nodeData) {
+          nodeData.hidden = false;
+        });
+
+        // Assign CSS class to actually hide the nodes.
+        this.nodes.classed('hidden', function (nodeData) {
+          return nodeData.hidden;
+        });
+      }
+      this.updateVisibility();
+    }
+
+    /**
+     * Query handler.
+     *
+     * @method  queryHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Object}   d3El            D3 selection of the node to be inspected.
+     * @param   {String}   action          Specific query action. Can be ['query',
+     *   'unquery', undefined].
+     * @param   {String}   mode            If `action == 'query'`, string name of
+     *   the query mode. Can be [or, and, not].
+     * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
+     */
+
+  }, {
+    key: 'queryHandler',
+    value: function queryHandler(d3El, action, mode, noNotification) {
+      var data = d3El.datum();
+      var previousMode = data.data.state.query;
+      var event$$1 = {};
+
+      if (!previousMode && action === 'unquery') {
+        // We haven't queried anything so there's nothing to "un-query".
+        return undefined;
+      }
+
+      switch (action) {
+        case 'query':
+          Nodes.setNodeQueryState(d3El, mode);
+          break;
+        case 'unquery':
+          this.unsetNodeQueryState(d3El);
+          break;
+        default:
+          this.toggleNodeQueryStates(d3El);
+          break;
+      }
+
+      if (data.data.state.query) {
+        if (data.data.state.query !== previousMode) {
+          event$$1.name = 'd3ListGraphNodeQuery';
+          event$$1.data = {
+            id: data.id,
+            clone: data.clone,
+            clonedFromId: data.clone ? data.originalNode.id : undefined,
+            mode: data.data.state.query
+          };
+        }
+      } else {
+        event$$1.name = 'd3ListGraphNodeUnquery';
+        event$$1.data = {
+          id: data.id,
+          clone: data.clone,
+          clonedFromId: data.clone ? data.originalNode.id : undefined
+        };
+      }
+
+      if (event$$1.name && !noNotification) {
+        this.events.broadcast(event$$1.name, event$$1.data);
+      }
+
+      return event$$1.name ? event$$1 : undefined;
+    }
+
+    /**
+     * Handler managing _root_ events.
+     *
+     * @method  rootHandler
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Object}   d3El    D3 selection of the node to be rooted.
+     * @param   {Boolean}  unroot  If `true` the rooting is resolved.
+     */
+
+  }, {
+    key: 'rootHandler',
+    value: function rootHandler(d3El, unroot) {
+      if (!d3El.datum().data.state.root && unroot) {
+        // The node is not rooted so there's no point in unrooting.
+        return;
+      }
+      var events = this.toggleRoot(d3El, unroot);
+
+      if (events.rooted && events.unrooted) {
+        this.events.broadcast('d3ListGraphNodeReroot', {
+          rooted: {
+            id: events.rooted.id,
+            clone: events.rooted.clone,
+            clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
+          },
+          unrooted: {
+            id: events.unrooted.id,
+            clone: events.unrooted.clone,
+            clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
+          }
+        });
+      } else {
+        if (events.rooted) {
+          this.events.broadcast('d3ListGraphNodeRoot', {
+            id: events.rooted.id,
+            clone: events.rooted.clone,
+            clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
+          });
+        }
+
+        if (events.unrooted) {
+          this.events.broadcast('d3ListGraphNodeUnroot', {
+            id: events.unrooted.id,
+            clone: events.unrooted.clone,
+            clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
+          });
+        }
+      }
+    }
+
+    /**
+     * Set the given node as the root.
+     *
+     * @method  rootNode
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Object}  d3El  D3 selection of the node to be rooted.
+     */
+
+  }, {
+    key: 'rootNode',
+    value: function rootNode(d3El) {
+      var data = d3El.datum();
+
+      data.data.state.root = true;
+      d3El.classed('rooted', true);
+      this.hideNodes(data);
+
+      // Highlight level
+      this.vis.levels.focus(data.depth + this.vis.activeLevel);
+
+      if (!data.data.state.query || data.data.state.query === 'not') {
+        data.data.queryBeforeRooting = false;
+        return {
+          query: true
+        };
+      }
+
+      data.data.queryBeforeRooting = true;
+
+      return {
+        query: false
+      };
+    }
+
+    /**
+     * Set the query state of the node by assign the corresponding CSS class.
+     *
+     * @method  setNodeQueryState
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Object}  d3El  D3 selection of the node to be inspected.
+     * @param   {String}  mode  Name of the query mode.
+     */
+
+  }, {
+    key: 'setUpFocusControls',
+
+
+    /**
+     * Helper method to create focus controls.
+     *
+     * @method  setUpFocusControls
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Object}  selection  D3 selection of the node to which the focus
+     *   controls should be added.
+     * @param   {String}  location   Can either be "left" or "right"
+     * @param   {Number}  position   Amount the focus control is pushed away from
+     *   the node.
+     * @param   {String}  mode       Specifies a helper element like "bg" or
+     *   "hover-helper".
+     * @param   {String}  className  Class name to be assigned to to the focus
+     *   control.
+     */
+    value: function setUpFocusControls(selection, location, position, mode, className) {
+      var paddedDim = this.iconDimension + 4;
+
+      var x = 0 - paddedDim * (position + 1);
+
+      if (location === 'right') {
+        x = this.visData.global.column.contentWidth + 2 + paddedDim * position;
+      }
+
+      var y = this.visData.global.row.padding + (this.visData.global.row.contentHeight - 2 * this.visData.global.cell.padding) / 4;
+
+      if (mode === 'bg') {
+        selection.attr('class', className).attr('cx', x + this.iconDimension / 2).attr('cy', y + this.iconDimension / 2).attr('r', this.iconDimension * 3 / 4);
+      } else if (mode === 'hover-helper') {
+        selection.attr('class', className).attr('x', x - 4).attr('y', y - 4).attr('width', this.iconDimension + 8).attr('height', this.iconDimension + 8).attr('rx', this.iconDimension).attr('ry', this.iconDimension);
+      } else {
+        selection.attr('class', className).attr('x', x).attr('y', y).attr('width', this.iconDimension).attr('height', this.iconDimension);
+      }
+    }
+
+    /**
+     * Helper method to show nodes.
+     *
+     * @method  showNodes
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     */
+
+  }, {
+    key: 'showNodes',
+    value: function showNodes() {
+      this.nodesVisibility(undefined, true);
+    }
+
+    /**
+     * Visually update the nodes' positions after sorting.
+     *
+     * @method  sort
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}   update       Updated node data object.
+     * @param   {Boolean}  newSortType  If `true` the sort type has changed.
+     */
+
+  }, {
+    key: 'sort',
+    value: function sort(update, newSortType) {
+      var _this4 = this;
+
+      for (var i = update.length; i--;) {
+        var selection = this.nodes.data(update[i].rows, function (data) {
+          return data.id;
+        });
+
+        this.vis.svgD3.classed('sorting', true);
+        selection.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
+          return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
+        }).call(allTransitionsEnded, function () {
+          _this4.vis.svgD3.classed('sorting', false);
+          _this4.vis.updateLevelsVisibility();
+          _this4.vis.updateScrolling();
+        });
+
+        if (newSortType && this.vis.currentSorting.local[update[i].level].type !== 'name') {
+          this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
+        }
+      }
+    }
+
+    /**
+     * Toggle through the lock state of a node
+     *
+     * @method  toggleLock
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Object}   d3El         D3 selection of the node to be locked.
+     * @param   {Boolean}  forceUnlock  If `true` forces an unlock.
+     */
+
+  }, {
+    key: 'toggleLock',
+    value: function toggleLock(d3El, forceUnlock) {
+      var data = d3El.datum();
+      var events = { locked: false, unlocked: false };
+
+      if (this.lockedNode) {
+        if (this.lockedNode.datum().id === data.id) {
+          this.unlockNode(this.lockedNode.datum().id);
+          events.unlocked = this.lockedNode.datum();
+          this.lockedNode = undefined;
+        } else {
+          // Reset previously locked node;
+          this.unlockNode(this.lockedNode.datum().id);
+          events.unlocked = this.lockedNode.datum();
+
+          if (!forceUnlock) {
+            this.lockNode(data.id);
+            events.locked = data;
+            this.lockedNode = d3El;
+          }
+        }
+      } else {
+        if (!forceUnlock) {
+          this.lockNode(data.id);
+          events.locked = data;
+          this.lockedNode = d3El;
+        }
+      }
+
+      return events;
+    }
+
+    /**
+     * Toggle through node query states.
+     *
+     * @method  toggleNodeQueryStates
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Object}  d3El  D3 selection of the node to be inspected.
+     */
+
+  }, {
+    key: 'toggleNodeQueryStates',
+    value: function toggleNodeQueryStates(d3El) {
+      var data = d3El.datum();
+      var previousMode = data.data.state.query;
+
+      if (data.data.state.root) {
+        if (previousMode !== 'or') {
+          Nodes.setNodeQueryState(d3El, 'or');
+        } else {
+          Nodes.setNodeQueryState(d3El, 'and');
+        }
+      } else {
+        switch (previousMode) {
+          case 'or':
+            Nodes.setNodeQueryState(d3El, 'and');
+            break;
+          case 'and':
+            Nodes.setNodeQueryState(d3El, 'not');
+            break;
+          case 'not':
+            this.unsetNodeQueryState(d3El);
+            break;
+          default:
+            Nodes.setNodeQueryState(d3El, 'or');
+            break;
+        }
+      }
+    }
+
+    /**
+     * Toggle root node.
+     *
+     * @method  toggleRoot
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Object}   d3El            D3 selection of the node to be
+     *   inspected.
+     * @param   {Boolean}  forceUnroot     If `true` the node will be "un-rooted".
+     * @param   {Boolean}  noNotification  If `true` notifications are suppressed.
+     */
+
+  }, {
+    key: 'toggleRoot',
+    value: function toggleRoot(d3El, forceUnroot, noNotification) {
+      var data = d3El.datum();
+      var events = { rooted: false, unrooted: false };
+      var queries = [];
+
+      // Blur current levels
+      this.vis.levels.blur();
+
+      if (this.rootedNode) {
+        // Reset current root node
+        this.rootedNode.classed('active', false).classed('inactive', true);
+
+        events.unrooted = this.rootedNode.datum();
+        if (this.unrootNode(this.rootedNode).unquery) {
+          queries.push({
+            d3El: this.rootedNode,
+            action: 'unquery'
+          });
+        }
+
+        // Activate new root
+        if (this.rootedNode.datum().id !== data.id && !forceUnroot) {
+          d3El.classed('active', true).classed('inactive', false);
+
+          this.rootedNode = d3El;
+          events.rooted = d3El.datum();
+          if (this.rootNode(d3El).query) {
+            queries.push({
+              d3El: d3El,
+              action: 'query',
+              mode: 'or'
+            });
+          }
+        } else {
+          this.rootedNode = undefined;
+          // Highlight first level
+          this.vis.levels.focus(this.vis.activeLevel - this.vis.noRootActiveLevelDiff);
+        }
+      } else {
+        if (!forceUnroot) {
+          d3El.classed('active', true).classed('inactive', false);
+
+          this.rootedNode = d3El;
+          events.rooted = d3El.datum();
+          if (this.rootNode(d3El).query) {
+            queries.push({
+              d3El: d3El,
+              action: 'query',
+              mode: 'or'
+            });
+          }
+        }
+      }
+
+      if (queries.length) {
+        this.batchQueryHandler(queries, noNotification);
+      }
+
+      return events;
+    }
+
+    /**
+     * Visually remove the highlighting of nodes.
+     *
+     * @method  unhighlightNodes
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}   d3El           D3 selection of the starting node which
+     *   highlighting should be undone.
+     * @param   {String}   className      CSS class name to be assigned to the
+     *   highlighted nodes.
+     * @param   {String}   restriction    Specify a restriction. Currently
+     *   only "directParentsOnly" is supported.
+     * @param   {Boolean}  excludeClones  If `true` exclude cloned nodes.
+     */
+
   }, {
     key: 'unhighlightNodes',
     value: function unhighlightNodes(d3El, className, restriction, excludeClones) {
@@ -2861,29 +3521,132 @@ var Nodes = function () {
         this.links.highlight(this.currentLinks[appliedClassName][data.id], false, appliedClassName);
       }
     }
+
+    /**
+     * Unlock node.
+     *
+     * @method  unlockNode
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Number}  id  ID of node(s) to be locked.
+     */
+
   }, {
-    key: 'sort',
-    value: function sort(update, newSortType) {
-      var _this4 = this;
+    key: 'unlockNode',
+    value: function unlockNode(id) {
+      var self = this;
+      var els = this.nodes.filter(function (data) {
+        return data.id === id;
+      });
 
-      for (var i = update.length; i--;) {
-        var selection = this.nodes.data(update[i].rows, function (data) {
-          return data.id;
-        });
+      els.each(function (data) {
+        self.unhighlightNodes(d3.select(this), 'lock', undefined);
+        data.data.state.lock = undefined;
+      });
+    }
 
-        this.vis.svgD3.classed('sorting', true);
-        selection.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-          return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
-        }).call(allTransitionsEnded, function () {
-          _this4.vis.svgD3.classed('sorting', false);
-          _this4.vis.updateLevelsVisibility();
-          _this4.vis.updateScrolling();
-        });
+    /**
+     * Stop rooting by the given node.
+     *
+     * @method  unrootNode
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Object}  d3El  D3 selection of the node to be "un-rooted".
+     */
 
-        if (newSortType && this.vis.currentSorting.local[update[i].level].type !== 'name') {
-          this.bars.update(selection.selectAll('.bar'), update[i].sortBy);
-        }
+  }, {
+    key: 'unrootNode',
+    value: function unrootNode(d3El) {
+      var data = d3El.datum();
+
+      data.data.state.root = false;
+      d3El.classed('rooted', false);
+      this.showNodes();
+
+      if (!data.data.queryBeforeRooting) {
+        return {
+          unquery: true
+        };
       }
+
+      return {
+        unquery: false
+      };
+    }
+
+    /**
+     * Unset the query state of a node.
+     *
+     * @method  unsetNodeQueryState
+     * @author  Fritz Lekschas
+     * @date    2016-09-23
+     * @param   {Object}  d3El  D3 selection of the node to be inspected.
+     */
+
+  }, {
+    key: 'unsetNodeQueryState',
+    value: function unsetNodeQueryState(d3El) {
+      var data = d3El.datum();
+
+      data.data.state.query = undefined;
+      data.data.queryBeforeRooting = undefined;
+
+      d3El.classed('active', true).classed('inactive', false).classed('query-and', false).classed('query-or', false).classed('query-not', false);
+
+      if (this.rootedNode) {
+        this.hideNodes(this.rootedNode.datum());
+      }
+    }
+
+    /**
+     * Updates the visual appearance of the link location indicators.
+     *
+     * @method  updateHeightLinkLocationIndicatorBars
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Object}   selection  D3 selection of the corresponding nodes.
+     * @param   {Boolean}  outgoing   If `true` outgoing link location indicator
+     *   heights are updated. Otherwise incoming link location indicator
+     *   heights are updated.
+     */
+
+  }, {
+    key: 'updateHeightLinkLocationIndicatorBars',
+    value: function updateHeightLinkLocationIndicatorBars(selection, outgoing) {
+      var barRefHeight = this.visData.global.row.contentHeight / 2 - 1;
+      var barAboveRefTop = this.visData.global.row.height / 2 - 1;
+
+      var baseClassName = '.' + CLASS_INDICATOR_LOCATION + '.' + (outgoing ? CLASS_INDICATOR_OUTGOING : CLASS_INDICATOR_INCOMING);
+
+      selection.selectAll(baseClassName + '.' + CLASS_INDICATOR_ABOVE).attr('y', function (data) {
+        return data.total ? barAboveRefTop - data.above / data.total * barRefHeight : barAboveRefTop;
+      }).attr('height', function (data) {
+        return data.total ? data.above / data.total * barRefHeight : 0;
+      });
+
+      selection.selectAll(baseClassName + '.' + CLASS_INDICATOR_BELOW).attr('height', function (data) {
+        return data.total ? data.below / data.total * barRefHeight : 0;
+      });
+    }
+
+    /**
+     * Update the link location indicators.
+     *
+     * @description
+     * Updates the link location indicators of level / column `right` - `left`.
+     *
+     * @method  updateLinkLocationIndicators
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @param   {Number}  left   Index of the column to the left.
+     * @param   {Number}  right  Index of the right column.
+     */
+
+  }, {
+    key: 'updateLinkLocationIndicators',
+    value: function updateLinkLocationIndicators(left, right) {
+      this.calcHeightLinkLocationIndicator(left, true);
+      this.calcHeightLinkLocationIndicator(right);
     }
 
     /**
@@ -2914,57 +3677,71 @@ var Nodes = function () {
       this.vis.links.updateVisibility();
     }
   }, {
-    key: 'classNnodes',
+    key: 'barMode',
     get: function get() {
-      return CLASS_NODES;
+      return this.bars.mode;
     }
-  }, {
-    key: 'classNode',
-    get: function get() {
-      return CLASS_NODE;
+  }], [{
+    key: 'setNodeQueryState',
+    value: function setNodeQueryState(d3El, mode) {
+      d3El.datum().data.state.query = mode;
+      d3El.classed('active', true).classed('inactive', false).classed('query-and', mode === 'and').classed('query-or', mode === 'or').classed('query-not', mode === 'not');
     }
   }, {
     key: 'classNodeVisible',
     get: function get() {
       return CLASS_NODE_VISIBLE;
     }
-  }, {
-    key: 'classClone',
-    get: function get() {
-      return CLASS_CLONE;
-    }
-  }, {
-    key: 'classLabelWrapper',
-    get: function get() {
-      return CLASS_LABEL_WRAPPER;
-    }
+
+    /**
+     * Get the CSS class of focus controls.
+     *
+     * @method  classFocusControls
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @return  {String}  CSS name.
+     */
+
   }, {
     key: 'classFocusControls',
     get: function get() {
       return CLASS_FOCUS_CONTROLS;
     }
+
+    /**
+     * Get the CSS class of root elements.
+     *
+     * @method  classRoot
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @return  {String}  CSS name.
+     */
+
   }, {
     key: 'classRoot',
     get: function get() {
       return CLASS_ROOT;
     }
+
+    /**
+     * Get the CSS class of query button..
+     *
+     * @method  classQuery
+     * @author  Fritz Lekschas
+     * @date    2016-09-22
+     * @return  {String}  CSS name.
+     */
+
   }, {
     key: 'classQuery',
     get: function get() {
       return CLASS_QUERY;
-    }
-  }, {
-    key: 'barMode',
-    get: function get() {
-      return this.bars.mode;
     }
   }]);
   return Nodes;
 }();
 
 // External
-// eslint-disable-line import/no-unresolved
-
 // Internal
 /**
  * Class name of scrollbar elements.
@@ -3045,14 +3822,14 @@ var Events = function () {
   createClass(Events, [{
     key: '_dispatchEvent',
     value: function _dispatchEvent(eventName, data) {
-      var event = document.createEvent('CustomEvent');
-      event.initCustomEvent(eventName, false, false, data);
-      this.el.dispatchEvent(event);
+      var event$$1 = document.createEvent('CustomEvent');
+      event$$1.initCustomEvent(eventName, false, false, data);
+      this.el.dispatchEvent(event$$1);
     }
   }, {
     key: 'broadcast',
-    value: function broadcast(event, data) {
-      this.dispatch(event, data);
+    value: function broadcast(event$$1, data) {
+      this.dispatch(event$$1, data);
     }
 
     /**
@@ -3074,17 +3851,17 @@ var Events = function () {
 
   }, {
     key: 'on',
-    value: function on(event, callback, times) {
+    value: function on(event$$1, callback, times) {
       if (!isFunction(callback)) {
         return false;
       }
 
       var normTimes = isFinite(times) ? parseInt(times, 10) : Infinity;
 
-      if (isArray(this.stack[event])) {
-        return this.stack[event].push({ callback: callback, times: normTimes }) - 1;
+      if (isArray(this.stack[event$$1])) {
+        return this.stack[event$$1].push({ callback: callback, times: normTimes }) - 1;
       }
-      this.stack[event] = [{ callback: callback, times: normTimes }];
+      this.stack[event$$1] = [{ callback: callback, times: normTimes }];
       return 0;
     }
 
@@ -3103,9 +3880,9 @@ var Events = function () {
 
   }, {
     key: 'off',
-    value: function off(event, index) {
+    value: function off(event$$1, index) {
       try {
-        this.stack[event].splice(index, 1);
+        this.stack[event$$1].splice(index, 1);
         return true;
       } catch (e) {
         return false;
@@ -3125,18 +3902,18 @@ var Events = function () {
 
   }, {
     key: 'trigger',
-    value: function trigger(event, data) {
-      if (isArray(this.stack[event])) {
+    value: function trigger(event$$1, data) {
+      if (isArray(this.stack[event$$1])) {
         // Traversing from the end to the start, which has the advantage that
         // deletion of events, i.e. calling `Event.off()` doesn't affect the index
         // of event listeners in the next step.
-        for (var i = this.stack[event].length; i--;) {
+        for (var i = this.stack[event$$1].length; i--;) {
           // Instead of checking whether `stack[event][i]` is a function here,
           // we do it just once when we add the function to the stack.
-          if (this.stack[event][i].times--) {
-            this.stack[event][i].callback(data);
+          if (this.stack[event$$1][i].times--) {
+            this.stack[event$$1][i].callback(data);
           } else {
-            this.off(event, i);
+            this.off(event$$1, i);
           }
         }
         return true;
@@ -3156,9 +3933,11 @@ function objectOrFunction(x) {
   return typeof x === 'function' || (typeof x === 'object' && x !== null);
 }
 
-function isFunction$1(x) {
+function isFunction$2(x) {
   return typeof x === 'function';
 }
+
+
 
 var _isArray;
 if (!Array.isArray) {
@@ -3169,7 +3948,7 @@ if (!Array.isArray) {
   _isArray = Array.isArray;
 }
 
-var isArray$1 = _isArray;
+var isArray$2 = _isArray;
 
 var len = 0;
 var vertxNext;
@@ -3345,7 +4124,7 @@ function then(onFulfillment, onRejection) {
   @return {Promise} a promise that will become fulfilled with the given
   `value`
 */
-function resolve(object) {
+function resolve$1(object) {
   /*jshint validthis:true */
   var Constructor = this;
 
@@ -3354,7 +4133,7 @@ function resolve(object) {
   }
 
   var promise = new Constructor(noop);
-  _resolve(promise, object);
+  resolve(promise, object);
   return promise;
 }
 
@@ -3385,22 +4164,22 @@ function getThen(promise) {
   }
 }
 
-function tryThen(then, value, fulfillmentHandler, rejectionHandler) {
+function tryThen(then$$1, value, fulfillmentHandler, rejectionHandler) {
   try {
-    then.call(value, fulfillmentHandler, rejectionHandler);
+    then$$1.call(value, fulfillmentHandler, rejectionHandler);
   } catch(e) {
     return e;
   }
 }
 
-function handleForeignThenable(promise, thenable, then) {
+function handleForeignThenable(promise, thenable, then$$1) {
    asap(function(promise) {
     var sealed = false;
-    var error = tryThen(then, thenable, function(value) {
+    var error = tryThen(then$$1, thenable, function(value) {
       if (sealed) { return; }
       sealed = true;
       if (thenable !== value) {
-        _resolve(promise, value);
+        resolve(promise, value);
       } else {
         fulfill(promise, value);
       }
@@ -3408,12 +4187,12 @@ function handleForeignThenable(promise, thenable, then) {
       if (sealed) { return; }
       sealed = true;
 
-      _reject(promise, reason);
+      reject(promise, reason);
     }, 'Settle: ' + (promise._label || ' unknown promise'));
 
     if (!sealed && error) {
       sealed = true;
-      _reject(promise, error);
+      reject(promise, error);
     }
   }, promise);
 }
@@ -3422,37 +4201,37 @@ function handleOwnThenable(promise, thenable) {
   if (thenable._state === FULFILLED) {
     fulfill(promise, thenable._result);
   } else if (thenable._state === REJECTED) {
-    _reject(promise, thenable._result);
+    reject(promise, thenable._result);
   } else {
     subscribe(thenable, undefined, function(value) {
-      _resolve(promise, value);
+      resolve(promise, value);
     }, function(reason) {
-      _reject(promise, reason);
+      reject(promise, reason);
     });
   }
 }
 
-function handleMaybeThenable(promise, maybeThenable, then$$) {
+function handleMaybeThenable(promise, maybeThenable, then$$1) {
   if (maybeThenable.constructor === promise.constructor &&
-      then$$ === then &&
-      constructor.resolve === resolve) {
+      then$$1 === then &&
+      constructor.resolve === resolve$1) {
     handleOwnThenable(promise, maybeThenable);
   } else {
-    if (then$$ === GET_THEN_ERROR) {
-      _reject(promise, GET_THEN_ERROR.error);
-    } else if (then$$ === undefined) {
+    if (then$$1 === GET_THEN_ERROR) {
+      reject(promise, GET_THEN_ERROR.error);
+    } else if (then$$1 === undefined) {
       fulfill(promise, maybeThenable);
-    } else if (isFunction$1(then$$)) {
-      handleForeignThenable(promise, maybeThenable, then$$);
+    } else if (isFunction$2(then$$1)) {
+      handleForeignThenable(promise, maybeThenable, then$$1);
     } else {
       fulfill(promise, maybeThenable);
     }
   }
 }
 
-function _resolve(promise, value) {
+function resolve(promise, value) {
   if (promise === value) {
-    _reject(promise, selfFulfillment());
+    reject(promise, selfFulfillment());
   } else if (objectOrFunction(value)) {
     handleMaybeThenable(promise, value, getThen(value));
   } else {
@@ -3479,7 +4258,7 @@ function fulfill(promise, value) {
   }
 }
 
-function _reject(promise, reason) {
+function reject(promise, reason) {
   if (promise._state !== PENDING) { return; }
   promise._state = REJECTED;
   promise._result = reason;
@@ -3540,7 +4319,7 @@ function tryCatch(callback, detail) {
 }
 
 function invokeCallback(settled, promise, callback, detail) {
-  var hasCallback = isFunction$1(callback),
+  var hasCallback = isFunction$2(callback),
       value, error, succeeded, failed;
 
   if (hasCallback) {
@@ -3555,7 +4334,7 @@ function invokeCallback(settled, promise, callback, detail) {
     }
 
     if (promise === value) {
-      _reject(promise, cannotReturnOwn());
+      reject(promise, cannotReturnOwn());
       return;
     }
 
@@ -3567,25 +4346,25 @@ function invokeCallback(settled, promise, callback, detail) {
   if (promise._state !== PENDING) {
     // noop
   } else if (hasCallback && succeeded) {
-    _resolve(promise, value);
+    resolve(promise, value);
   } else if (failed) {
-    _reject(promise, error);
+    reject(promise, error);
   } else if (settled === FULFILLED) {
     fulfill(promise, value);
   } else if (settled === REJECTED) {
-    _reject(promise, value);
+    reject(promise, value);
   }
 }
 
 function initializePromise(promise, resolver) {
   try {
     resolver(function resolvePromise(value){
-      _resolve(promise, value);
+      resolve(promise, value);
     }, function rejectPromise(reason) {
-      _reject(promise, reason);
+      reject(promise, reason);
     });
   } catch(e) {
-    _reject(promise, e);
+    reject(promise, e);
   }
 }
 
@@ -3601,7 +4380,7 @@ function makePromise(promise) {
   promise._subscribers = [];
 }
 
-function Enumerator(Constructor, input) {
+function Enumerator$1(Constructor, input) {
   this._instanceConstructor = Constructor;
   this.promise = new Constructor(noop);
 
@@ -3609,7 +4388,7 @@ function Enumerator(Constructor, input) {
     makePromise(this.promise);
   }
 
-  if (isArray$1(input)) {
+  if (isArray$2(input)) {
     this._input     = input;
     this.length     = input.length;
     this._remaining = input.length;
@@ -3626,15 +4405,15 @@ function Enumerator(Constructor, input) {
       }
     }
   } else {
-    _reject(this.promise, validationError());
+    reject(this.promise, validationError());
   }
 }
 
 function validationError() {
   return new Error('Array Methods must be provided an Array');
-};
+}
 
-Enumerator.prototype._enumerate = function() {
+Enumerator$1.prototype._enumerate = function() {
   var length  = this.length;
   var input   = this._input;
 
@@ -3643,39 +4422,39 @@ Enumerator.prototype._enumerate = function() {
   }
 };
 
-Enumerator.prototype._eachEntry = function(entry, i) {
+Enumerator$1.prototype._eachEntry = function(entry, i) {
   var c = this._instanceConstructor;
-  var resolve$$ = c.resolve;
+  var resolve$$1 = c.resolve;
 
-  if (resolve$$ === resolve) {
-    var then$$ = getThen(entry);
+  if (resolve$$1 === resolve$1) {
+    var then$$1 = getThen(entry);
 
-    if (then$$ === then &&
+    if (then$$1 === then &&
         entry._state !== PENDING) {
       this._settledAt(entry._state, i, entry._result);
-    } else if (typeof then$$ !== 'function') {
+    } else if (typeof then$$1 !== 'function') {
       this._remaining--;
       this._result[i] = entry;
-    } else if (c === Promise$1) {
+    } else if (c === Promise$2) {
       var promise = new c(noop);
-      handleMaybeThenable(promise, entry, then$$);
+      handleMaybeThenable(promise, entry, then$$1);
       this._willSettleAt(promise, i);
     } else {
-      this._willSettleAt(new c(function(resolve$$) { resolve$$(entry); }), i);
+      this._willSettleAt(new c(function(resolve$$1) { resolve$$1(entry); }), i);
     }
   } else {
-    this._willSettleAt(resolve$$(entry), i);
+    this._willSettleAt(resolve$$1(entry), i);
   }
 };
 
-Enumerator.prototype._settledAt = function(state, i, value) {
+Enumerator$1.prototype._settledAt = function(state, i, value) {
   var promise = this.promise;
 
   if (promise._state === PENDING) {
     this._remaining--;
 
     if (state === REJECTED) {
-      _reject(promise, value);
+      reject(promise, value);
     } else {
       this._result[i] = value;
     }
@@ -3686,7 +4465,7 @@ Enumerator.prototype._settledAt = function(state, i, value) {
   }
 };
 
-Enumerator.prototype._willSettleAt = function(promise, i) {
+Enumerator$1.prototype._willSettleAt = function(promise, i) {
   var enumerator = this;
 
   subscribe(promise, undefined, function(value) {
@@ -3744,7 +4523,7 @@ Enumerator.prototype._willSettleAt = function(promise, i) {
   @static
 */
 function all(entries) {
-  return new Enumerator(this, entries).promise;
+  return new Enumerator$1(this, entries).promise;
 }
 
 /**
@@ -3816,7 +4595,7 @@ function race(entries) {
   /*jshint validthis:true */
   var Constructor = this;
 
-  if (!isArray$1(entries)) {
+  if (!isArray$2(entries)) {
     return new Constructor(function(resolve, reject) {
       reject(new TypeError('You must pass an array to race.'));
     });
@@ -3864,11 +4643,11 @@ function race(entries) {
   Useful for tooling.
   @return {Promise} a promise rejected with the given `reason`.
 */
-function reject(reason) {
+function reject$1(reason) {
   /*jshint validthis:true */
   var Constructor = this;
   var promise = new Constructor(noop);
-  _reject(promise, reason);
+  reject(promise, reason);
   return promise;
 }
 
@@ -3983,27 +4762,27 @@ function needsNew() {
   Useful for tooling.
   @constructor
 */
-function Promise$1(resolver) {
+function Promise$2(resolver) {
   this[PROMISE_ID] = nextId();
   this._result = this._state = undefined;
   this._subscribers = [];
 
   if (noop !== resolver) {
     typeof resolver !== 'function' && needsResolver();
-    this instanceof Promise$1 ? initializePromise(this, resolver) : needsNew();
+    this instanceof Promise$2 ? initializePromise(this, resolver) : needsNew();
   }
 }
 
-Promise$1.all = all;
-Promise$1.race = race;
-Promise$1.resolve = resolve;
-Promise$1.reject = reject;
-Promise$1._setScheduler = setScheduler;
-Promise$1._setAsap = setAsap;
-Promise$1._asap = asap;
+Promise$2.all = all;
+Promise$2.race = race;
+Promise$2.resolve = resolve$1;
+Promise$2.reject = reject$1;
+Promise$2._setScheduler = setScheduler;
+Promise$2._setAsap = setAsap;
+Promise$2._asap = asap;
 
-Promise$1.prototype = {
-  constructor: Promise$1,
+Promise$2.prototype = {
+  constructor: Promise$2,
 
 /**
   The primary way of interacting with a promise is through its `then` method,
@@ -4277,7 +5056,7 @@ var now = function() {
  * // => false
  */
 function isObjectLike(value) {
-  return !!value && typeof value == 'object';
+  return value != null && typeof value == 'object';
 }
 
 /** `Object#toString` result references. */
@@ -4377,12 +5156,13 @@ function toNumber(value) {
     : (reIsBadHex.test(value) ? NAN : +value);
 }
 
-/** Used as the `TypeError` message for "Functions" methods. */
+/** Error message constants. */
 var FUNC_ERROR_TEXT = 'Expected a function';
 
 /* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeMax = Math.max;
 var nativeMin = Math.min;
+
 /**
  * Creates a debounced function that delays invoking `func` until after `wait`
  * milliseconds have elapsed since the last time the debounced function was
@@ -4642,7 +5422,6 @@ var nextAnimationFrame = function () {
 var requestNextAnimationFrame = nextAnimationFrame.request;
 
 // External
-// eslint-disable-line import/no-unresolved
 // Internal
 /**
  * Class name assigned to the context menu's root element
@@ -4950,9 +5729,9 @@ var NodeContextMenu = function () {
       this.buttonLock.classed('semi-active', checked);
       this.checkboxLock.style('transform', 'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)');
       if (checked) {
-        this.fillButton(this.buttonLockFill);
+        NodeContextMenu.fillButton(this.buttonLockFill);
       } else {
-        this.emptyButton(this.buttonLockFill);
+        NodeContextMenu.emptyButton(this.buttonLockFill);
       }
       return checked;
     }
@@ -5014,22 +5793,22 @@ var NodeContextMenu = function () {
       if (!state) {
         if (debounced) {
           if (checked) {
-            this.fillButton(this.buttonRootFill, time);
+            NodeContextMenu.fillButton(this.buttonRootFill, time);
           } else {
-            this.hideElement(this.buttonRootFill);
+            NodeContextMenu.hideElement(this.buttonRootFill);
           }
         } else {
-          this.emptyButton(this.buttonRootFill, time);
+          NodeContextMenu.emptyButton(this.buttonRootFill, time);
         }
       } else {
         if (debounced) {
           if (!checked) {
-            this.emptyButton(this.buttonRootFill, time);
+            NodeContextMenu.emptyButton(this.buttonRootFill, time);
           } else {
-            this.showElement(this.buttonRootFill);
+            NodeContextMenu.showElement(this.buttonRootFill);
           }
         } else {
-          this.fillButton(this.buttonRootFill, time);
+          NodeContextMenu.fillButton(this.buttonRootFill, time);
         }
       }
 
@@ -5060,7 +5839,7 @@ var NodeContextMenu = function () {
       }
       setTimeout(function () {
         if (checked) {
-          _this.triggerButtonBamEffect(_this.buttonLockBamEffect);
+          NodeContextMenu.triggerButtonBamEffect(_this.buttonLockBamEffect);
         }
         _this.buttonLock.classed('fill-effect', false);
       }, BUTTON_DEFAULT_DEBOUNCE);
@@ -5139,7 +5918,7 @@ var NodeContextMenu = function () {
       var _this2 = this;
 
       if (!this.closing) {
-        this.closing = new Promise$1(function (resolve) {
+        this.closing = new Promise$2(function (resolve) {
           _this2.opened = false;
           _this2.updateAppearance();
 
@@ -5335,43 +6114,8 @@ var NodeContextMenu = function () {
      */
 
   }, {
-    key: 'emptyButton',
-    value: function emptyButton(selection, time) {
-      selection.transition().duration(0).attr('y', function (data) {
-        return data.y;
-      }).attr('height', function (data) {
-        return data.height;
-      }).call(allTransitionsEnded, function () {
-        selection.transition().duration(time || BUTTON_DEFAULT_DEBOUNCE).ease(d3.easeLinear).attr('y', function (data) {
-          return data.height;
-        }).attr('height', 0);
-      });
-    }
+    key: 'getNodeProperty',
 
-    /* ---------------------------------- F ----------------------------------- */
-
-    /**
-     * Transitions in an element top down.
-     *
-     * @method  fillButton
-     * @author  Fritz Lekschas
-     * @date    2016-09-13
-     * @param   {Object}  selection   D3 selection of the element to be
-     *   transitioned.
-     * @param   {Number}  time       Transition time in milliseconds.
-     */
-
-  }, {
-    key: 'fillButton',
-    value: function fillButton(selection, time) {
-      selection.transition().duration(0).attr('y', function (data) {
-        return data.y;
-      }).attr('height', 0).call(allTransitionsEnded, function () {
-        selection.transition().duration(time || BUTTON_DEFAULT_DEBOUNCE).ease(d3.easeLinear).attr('height', function (data) {
-          return data.height;
-        });
-      });
-    }
 
     /* ---------------------------------- G ----------------------------------- */
 
@@ -5384,9 +6128,6 @@ var NodeContextMenu = function () {
      * @param   {Function}  callback  Callback returning a property of the node.
      * @return  {*}                   The value returned by the callback.
      */
-
-  }, {
-    key: 'getNodeProperty',
     value: function getNodeProperty(callback) {
       try {
         return callback(this.node.datum());
@@ -5407,10 +6148,8 @@ var NodeContextMenu = function () {
      */
 
   }, {
-    key: 'hideElement',
-    value: function hideElement(selection) {
-      selection.transition().duration(0).attr('height', 0);
-    }
+    key: 'isOpenSameColumn',
+
 
     /* ---------------------------------- I ----------------------------------- */
 
@@ -5424,9 +6163,6 @@ var NodeContextMenu = function () {
      * @return  {Boolean}             If `true` menu is opened and in the same
      *   column.
      */
-
-  }, {
-    key: 'isOpenSameColumn',
     value: function isOpenSameColumn(columnNum) {
       return this.opened && this.node.datum().depth === columnNum;
     }
@@ -5447,7 +6183,7 @@ var NodeContextMenu = function () {
     value: function open(node) {
       var _this4 = this;
 
-      return new Promise$1(function (resolve) {
+      return new Promise$2(function (resolve) {
         _this4.node = node;
         _this4.closing = undefined;
 
@@ -5533,7 +6269,7 @@ var NodeContextMenu = function () {
         if (this.tempQueryMode !== this.currentQueryMode) {
           if (this.tempQueryMode) {
             this.nodes.queryHandler(this.node, 'query', this.tempQueryMode);
-            this.triggerButtonBamEffect(this.buttonQueryBamEffect);
+            NodeContextMenu.triggerButtonBamEffect(this.buttonQueryBamEffect);
             this.buttonQuery.classed('active', true);
           } else {
             this.nodes.queryHandler(this.node, 'unquery');
@@ -5605,14 +6341,8 @@ var NodeContextMenu = function () {
      */
 
   }, {
-    key: 'showElement',
-    value: function showElement(selection) {
-      selection.transition().duration(0).attr('y', function (data) {
-        return data.y;
-      }).attr('height', function (data) {
-        return data.height;
-      });
-    }
+    key: 'toggle',
+
 
     /* ---------------------------------- T ----------------------------------- */
 
@@ -5624,15 +6354,12 @@ var NodeContextMenu = function () {
      * @date    2016-09-13
      * @param   {Object}  node  D3 selection of the related node.
      */
-
-  }, {
-    key: 'toggle',
     value: function toggle(node) {
       var _this6 = this;
 
-      return new Promise$1(function (resolve) {
+      return new Promise$2(function (resolve) {
         var nodeId = node.datum().id;
-        var closed = Promise$1.resolve();
+        var closed = Promise$2.resolve();
 
         if (_this6.visible) {
           closed = _this6.close();
@@ -5660,13 +6387,8 @@ var NodeContextMenu = function () {
      */
 
   }, {
-    key: 'triggerButtonBamEffect',
-    value: function triggerButtonBamEffect(button) {
-      button.classed('trigger', true);
-      setTimeout(function () {
-        button.classed('trigger', false);
-      }, BUTTON_BAM_EFFECT_ANIMATION_TIME);
-    }
+    key: 'updateAppearance',
+
 
     /* ---------------------------------- U ----------------------------------- */
 
@@ -5677,9 +6399,6 @@ var NodeContextMenu = function () {
      * @author  Fritz Lekschas
      * @date    2016-09-13
      */
-
-  }, {
-    key: 'updateAppearance',
     value: function updateAppearance() {
       var centerY = this.toBottom ? 0 : this.height + this.visData.global.row.height;
 
@@ -5772,19 +6491,19 @@ var NodeContextMenu = function () {
       if (debounced) {
         if (queryMode) {
           if (queryMode === state) {
-            this.showElement(this.buttonQueryFill);
+            NodeContextMenu.showElement(this.buttonQueryFill);
           } else {
-            this.fillButton(this.buttonQueryFill, time);
+            NodeContextMenu.fillButton(this.buttonQueryFill, time);
           }
         } else {
           if (state) {
-            this.emptyButton(this.buttonQueryFill, time);
+            NodeContextMenu.emptyButton(this.buttonQueryFill, time);
           } else {
-            this.hideElement(this.buttonQueryFill);
+            NodeContextMenu.hideElement(this.buttonQueryFill);
           }
         }
       } else {
-        this.emptyButton(this.buttonQueryFill, time);
+        NodeContextMenu.emptyButton(this.buttonQueryFill, time);
       }
 
       this.buttonQuery.classed('semi-active', !!queryMode).classed('active', !!state).select('.label-two').text(queryMode || 'not queried').classed('inactive', !queryMode);
@@ -5844,6 +6563,66 @@ var NodeContextMenu = function () {
       this._x = position.x;
       this._y = position.y;
     }
+  }], [{
+    key: 'emptyButton',
+    value: function emptyButton(selection, time) {
+      selection.transition().duration(0).attr('y', function (data) {
+        return data.y;
+      }).attr('height', function (data) {
+        return data.height;
+      }).call(allTransitionsEnded, function () {
+        selection.transition().duration(time || BUTTON_DEFAULT_DEBOUNCE).ease(d3.easeLinear).attr('y', function (data) {
+          return data.height;
+        }).attr('height', 0);
+      });
+    }
+
+    /* ---------------------------------- F ----------------------------------- */
+
+    /**
+     * Transitions in an element top down.
+     *
+     * @method  fillButton
+     * @author  Fritz Lekschas
+     * @date    2016-09-13
+     * @param   {Object}  selection   D3 selection of the element to be
+     *   transitioned.
+     * @param   {Number}  time       Transition time in milliseconds.
+     */
+
+  }, {
+    key: 'fillButton',
+    value: function fillButton(selection, time) {
+      selection.transition().duration(0).attr('y', function (data) {
+        return data.y;
+      }).attr('height', 0).call(allTransitionsEnded, function () {
+        selection.transition().duration(time || BUTTON_DEFAULT_DEBOUNCE).ease(d3.easeLinear).attr('height', function (data) {
+          return data.height;
+        });
+      });
+    }
+  }, {
+    key: 'hideElement',
+    value: function hideElement(selection) {
+      selection.transition().duration(0).attr('height', 0);
+    }
+  }, {
+    key: 'showElement',
+    value: function showElement(selection) {
+      selection.transition().duration(0).attr('y', function (data) {
+        return data.y;
+      }).attr('height', function (data) {
+        return data.height;
+      });
+    }
+  }, {
+    key: 'triggerButtonBamEffect',
+    value: function triggerButtonBamEffect(button) {
+      button.classed('trigger', true);
+      setTimeout(function () {
+        button.classed('trigger', false);
+      }, BUTTON_BAM_EFFECT_ANIMATION_TIME);
+    }
   }]);
   return NodeContextMenu;
 }();
@@ -5890,7 +6669,7 @@ var LimitsUnsupportedFormat = function (_ExtendableError) {
  *   res environments. [Default is 0]
  */
 function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged, orientation, limits, noDraggingWhenTrue, dragData, clickTolerance) {
-  var drag = d3.drag();
+  var drag$$1 = d3.drag();
   var checkWhenDragging = isFunction(noDraggingWhenTrue);
 
   var appliedLimits = limits || {}; // eslint-disable-line no-param-reassign
@@ -5899,11 +6678,11 @@ function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, e
     return !(checkWhenDragging && noDraggingWhenTrue());
   };
 
-  drag.filter(filter);
+  drag$$1.filter(filter);
 
   var d2 = void 0;
 
-  drag.on('start', function () {
+  drag$$1.on('start', function () {
     d2 = 0;
     if (typeof limits === 'function') {
       appliedLimits = limits();
@@ -5911,7 +6690,7 @@ function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, e
   });
 
   if (dragMoveHandler) {
-    drag.on('drag', function (data) {
+    drag$$1.on('drag', function (data) {
       if (checkWhenDragging && noDraggingWhenTrue()) {
         return;
       }
@@ -5924,7 +6703,7 @@ function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, e
   }
 
   if (dropHandler) {
-    drag.on('end', function () {
+    drag$$1.on('end', function () {
       dropHandler.call(this);
 
       if (d2 <= (clickTolerance || 0)) {
@@ -5944,7 +6723,7 @@ function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, e
     }
 
     // Add drag event handler
-    el.call(drag);
+    el.call(drag$$1);
   });
 }
 
@@ -5961,7 +6740,7 @@ function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, e
  * @param   {Object|Function}  limits          X and Y drag limits. E.g.
  *   `{ x: { min: 0, max: 10 } }`.
  */
-function dragMoveHandler(data, elsToBeDragged, orientation, limits) {
+function dragMoveHandler$1(data, elsToBeDragged, orientation, limits) {
   var els = d3.select(this);
 
   if (elsToBeDragged && elsToBeDragged.length) {
@@ -6067,13 +6846,23 @@ function setOption(value, defaultValue, noFalsyValue) {
 }
 
 // External
-// eslint-disable-line import/no-unresolved
-// eslint-disable-line import/no-unresolved
 // Internal
-// Private Variables
+/**
+ * Private d3 object. Needed to handle cases where D3.js v3 and v4 are used.
+ *
+ * @type  {Object}
+ */
 var _d3 = d3;
 
 var ListGraph = function () {
+  /**
+   * ListGraph App constructor.
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  init  Config object.
+   */
   function ListGraph(init) {
     var _this = this;
 
@@ -6259,18 +7048,18 @@ var ListGraph = function () {
 
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
     // We are using delegated event listeners to provide better scaling
-    this.svgJq.on('mousewheel', '.' + this.levels.className, function (event) {
+    this.svgJq.on('mousewheel', '.' + Levels.className, function (event$$1) {
       if (!self.zoomedOut) {
-        self.mousewheelColumn(this, event);
+        self.mousewheelColumn(this, event$$1);
       }
     });
 
-    this.svgJq.on('click', function (event) {
-      self.checkGlobalClick.call(self, event.target);
+    this.svgJq.on('click', function (event$$1) {
+      self.checkGlobalClick.call(self, event$$1.target);
     });
 
     // Add jQuery delegated event listeners instead of direct listeners of D3.
-    this.svgJq.on('click', '.' + this.nodes.classNodeVisible, function () {
+    this.svgJq.on('click', '.' + Nodes.classNodeVisible, function () {
       // Add a new global outside click listener using this node and the
       // node context menu as the related elements.
       requestNextAnimationFrame(function () {
@@ -6285,18 +7074,18 @@ var ListGraph = function () {
       self.nodeContextMenu.toggle.call(self.nodeContextMenu, _d3.select(this.parentNode));
     });
 
-    this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classRoot, function () {
+    this.svgJq.on('click', '.' + Nodes.classFocusControls + '.' + Nodes.classRoot, function () {
       self.nodes.rootHandler.call(self.nodes, _d3.select(this), true);
     });
 
     if (this.querying) {
-      this.svgJq.on('click', '.' + this.nodes.classFocusControls + '.' + this.nodes.classQuery, function () {
+      this.svgJq.on('click', '.' + Nodes.classFocusControls + '.' + Nodes.classQuery, function () {
         self.nodes.queryHandler.call(self.nodes, _d3.select(this.parentNode), 'unquery');
         self.nodeContextMenu.updateStates();
       });
     }
 
-    this.svgJq.on('mouseenter', '.' + this.nodes.classNodeVisible, function () {
+    this.svgJq.on('mouseenter', '.' + Nodes.classNodeVisible, function () {
       self.interactionWrapper.call(self, function (domEl, data) {
         if (!this.vis.activeScrollbar) {
           this.enterHandler.call(this, domEl, data);
@@ -6304,7 +7093,7 @@ var ListGraph = function () {
       }.bind(self.nodes), [this, _d3.select(this).datum()]);
     });
 
-    this.svgJq.on('mouseleave', '.' + this.nodes.classNodeVisible, function () {
+    this.svgJq.on('mouseleave', '.' + Nodes.classNodeVisible, function () {
       self.interactionWrapper.call(self, function (domEl, data) {
         if (!this.vis.activeScrollbar) {
           this.leaveHandler.call(this, domEl, data);
@@ -6334,17 +7123,17 @@ var ListGraph = function () {
     });
 
     this.events.on('d3ListGraphNodeRoot', function () {
-      _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+      _this.nodes.bars.updateAll(_d3.listGraph.updateBars(_this.data), _this.currentSorting.global.type);
       _this.updateSorting();
     });
 
     this.events.on('d3ListGraphNodeUnroot', function () {
-      _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+      _this.nodes.bars.updateAll(_d3.listGraph.updateBars(_this.data), _this.currentSorting.global.type);
       _this.updateSorting();
     });
 
     this.events.on('d3ListGraphUpdateBars', function () {
-      _this.nodes.bars.updateAll(_this.layout.updateBars(_this.data), _this.currentSorting.global.type);
+      _this.nodes.bars.updateAll(_d3.listGraph.updateBars(_this.data), _this.currentSorting.global.type);
       _this.updateSorting();
     });
 
@@ -6365,58 +7154,28 @@ var ListGraph = function () {
     this.getBoundingRect();
   }
 
+  /**
+   * Get visually used area of the container
+   *
+   * @method  area
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Object}  Bounding client rectangle.
+   */
+
+
   createClass(ListGraph, [{
-    key: 'dragMoveHandler',
-    value: function dragMoveHandler$$(data, elsToBeDragged, orientation, limits, notWhenTrue) {
-      dragMoveHandler(data, elsToBeDragged, orientation, limits, notWhenTrue);
-      this.checkNodeVisibility();
-    }
-  }, {
-    key: 'checkNodeVisibility',
-    value: function checkNodeVisibility(level, customScrollTop) {
-      var nodes = level ? this.nodes.nodes.filter(function (data) {
-        return data.depth === level;
-      }) : this.nodes.nodes;
-
-      nodes.call(this.nodes.isInvisible.bind(this.nodes), customScrollTop);
-    }
-  }, {
-    key: 'registerOutSideClickHandler',
-    value: function registerOutSideClickHandler(id, els, elClassNames, callback) {
-      // We need to register a unique property to be able to indentify that
-      // element later efficiently.
-      for (var i = els.length; i--;) {
-        if (els[i].__id__) {
-          els[i].__id__.push(id);
-        } else {
-          els[i].__id__ = [id];
-        }
-      }
-      var newLength = this.outsideClickHandler[id] = {
-        id: id, els: els, elClassNames: elClassNames, callback: callback
-      };
-      for (var _i = elClassNames.length; _i--;) {
-        this.outsideClickClassHandler[elClassNames[_i]] = this.outsideClickHandler[id];
-      }
-      return newLength;
-    }
-  }, {
-    key: 'unregisterOutSideClickHandler',
-    value: function unregisterOutSideClickHandler(id) {
-      var handler = this.outsideClickHandler[id];
-
-      // Remove element `__id__` property.
-      for (var i = handler.els.length; i--;) {
-        handler.els[i].__id__ = undefined;
-        delete handler.els[i].__id__;
-      }
-
-      // Remove handler.
-      this.outsideClickHandler[id] = undefined;
-      delete this.outsideClickHandler[id];
-    }
-  }, {
     key: 'checkGlobalClick',
+
+
+    /**
+     * Check global mouse click
+     *
+     * @method  checkGlobalClick
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}  target  DOM element
+     */
     value: function checkGlobalClick(target) {
       var found = {};
       var checkClass = Object.keys(this.outsideClickClassHandler).length;
@@ -6431,10 +7190,10 @@ var ListGraph = function () {
           }
           if (checkClass) {
             var classNames = Object.keys(this.outsideClickClassHandler);
-            for (var _i2 = classNames.length; _i2--;) {
+            for (var _i = classNames.length; _i--;) {
               var className = el.getAttribute('class');
-              if (className && className.indexOf(classNames[_i2]) >= 0) {
-                found[this.outsideClickClassHandler[classNames[_i2]].id] = true;
+              if (className && className.indexOf(classNames[_i]) >= 0) {
+                found[this.outsideClickClassHandler[classNames[_i]].id] = true;
               }
             }
           }
@@ -6445,56 +7204,41 @@ var ListGraph = function () {
       }
 
       var handlerIds = Object.keys(this.outsideClickHandler);
-      for (var _i3 = handlerIds.length; _i3--;) {
-        if (!found[handlerIds[_i3]]) {
-          this.outsideClickHandler[handlerIds[_i3]].callback.call(this);
+      for (var _i2 = handlerIds.length; _i2--;) {
+        if (!found[handlerIds[_i2]]) {
+          this.outsideClickHandler[handlerIds[_i2]].callback.call(this);
         }
       }
-    }
-  }, {
-    key: 'getDragLimits',
-    value: function getDragLimits() {
-      return {
-        x: {
-          min: this.dragMinX,
-          max: 0
-        }
-      };
     }
 
     /**
-     * Helper method to get the top and left position of the base `svg`.
+     * Check which nodes of a level are visible.
      *
-     * @Description
-     * Calling `getBoundingClientRect()` right at the beginning leads to errornous
-     * values, probably because the function is called because HTML has been fully
-     * rendered.
-     *
-     * @method  getBoundingRect
+     * @method  checkNodeVisibility
      * @author  Fritz Lekschas
-     * @date    2016-02-24
+     * @date    2016-10-02
+     * @param   {Number}  level            Index of the level or column.
+     * @param   {[type]}             customScrollTop  [description]
      */
 
   }, {
-    key: 'getBoundingRect',
-    value: function getBoundingRect() {
-      this.left = this.svgEl.getBoundingClientRect().left;
-      this.top = this.svgEl.getBoundingClientRect().top;
+    key: 'checkNodeVisibility',
+    value: function checkNodeVisibility(level, customScrollTop) {
+      var nodes = level ? this.nodes.nodes.filter(function (data) {
+        return data.depth === level;
+      }) : this.nodes.nodes;
+
+      nodes.call(this.nodes.isInvisible.bind(this.nodes), customScrollTop);
     }
-  }, {
-    key: 'interactionWrapper',
-    value: function interactionWrapper(callback, params) {
-      if (!this.noInteractions) {
-        callback.apply(this, params);
-      }
-    }
-  }, {
-    key: 'dragStartHandler',
-    value: function dragStartHandler() {
-      if (!this.dragging) {
-        this.noInteractions = this.dragging = true;
-      }
-    }
+
+    /**
+     * Drag end handler
+     *
+     * @method  dragEndHandler
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     */
+
   }, {
     key: 'dragEndHandler',
     value: function dragEndHandler() {
@@ -6502,48 +7246,36 @@ var ListGraph = function () {
         this.noInteractions = this.dragging = false;
       }
     }
+
+    /**
+     * Get the minimal drag X value
+     *
+     * @method  dragMinX
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @return  {Number}  Minimal drag x value.
+     */
+
   }, {
-    key: 'noDragging',
-    value: function noDragging() {
-      return !!this.activeScrollbar || this.mouseDownOnContextMenu;
-    }
-  }, {
-    key: 'globalMouseUp',
-    value: function globalMouseUp(event) {
-      this.noInteractions = false;
-      this.mouseDownOnContextMenu = false;
+    key: 'dragMoveHandler',
 
-      if (this.activeScrollbar) {
-        var data = this.activeScrollbar.datum();
-        var deltaY = data.scrollbar.clientY - event.clientY;
 
-        // Save final vertical position
-        // Scrollbar
-        data.scrollbar.scrollTop = Math.min(Math.max(data.scrollbar.scrollTop - deltaY, 0), data.scrollbar.scrollHeight);
-
-        // Content
-        data.scrollTop = Math.max(Math.min(data.scrollTop + data.invertedHeightScale(deltaY), 0), -data.scrollHeight);
-
-        this.activeScrollbar.classed('active', false);
-
-        this.activeScrollbar = undefined;
-
-        this.stopScrollBarMouseMove();
-      }
-    }
-  }, {
-    key: 'startScrollBarMouseMove',
-    value: function startScrollBarMouseMove() {
-      var _this2 = this;
-
-      _d3.select(document).on('mousemove', function () {
-        _this2.dragScrollbar(_d3.event);
-      });
-    }
-  }, {
-    key: 'stopScrollBarMouseMove',
-    value: function stopScrollBarMouseMove() {
-      _d3.select(document).on('mousemove', null);
+    /**
+     * Drag-move handler instance.
+     *
+     * @method  dragMoveHandler
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}           data            D3's drag event object.
+     * @param   {Array}            elsToBeDragged  Array of D3 selections.
+     * @param   {String}           orientation     Can either be "horizontal",
+     *   "vertical" or `undefined`, i.e. both directions.
+     * @param   {Object|Function}  limits          X and Y drag limits. E.g.
+     *   `{ x: { min: 0, max: 10 } }`.
+     */
+    value: function dragMoveHandler(data, elsToBeDragged, orientation, limits) {
+      dragMoveHandler$1(data, elsToBeDragged, orientation, limits);
+      this.checkNodeVisibility();
     }
 
     /**
@@ -6557,10 +7289,10 @@ var ListGraph = function () {
 
   }, {
     key: 'dragScrollbar',
-    value: function dragScrollbar(event) {
-      event.preventDefault();
+    value: function dragScrollbar(event$$1) {
+      event$$1.preventDefault();
       var data = this.activeScrollbar.datum();
-      var deltaY = data.scrollbar.clientY - event.clientY;
+      var deltaY = data.scrollbar.clientY - event$$1.clientY;
 
       // Scroll scrollbar
       ListGraph.scrollElVertically(this.activeScrollbar.node(), Math.min(Math.max(data.scrollbar.scrollTop - deltaY, 0), data.scrollbar.scrollHeight));
@@ -6590,153 +7322,113 @@ var ListGraph = function () {
       // Check if nodes are visible.
       this.checkNodeVisibility(data.level, contentScrollTop);
     }
-  }, {
-    key: 'scrollbarMouseDown',
-    value: function scrollbarMouseDown(el, event) {
-      this.noInteractions = true;
-      this.activeScrollbar = _d3.select(el).classed('active', true);
-      this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
-      this.startScrollBarMouseMove();
-    }
-  }, {
-    key: 'mousewheelColumn',
-    value: function mousewheelColumn(el, event) {
-      event.preventDefault();
-
-      var data = _d3.select(el).datum();
-
-      if (data.scrollHeight > 0) {
-        // Scroll nodes
-        data.scrollTop = Math.max(Math.min(data.scrollTop + event.deltaY, 0), -data.scrollHeight);
-
-        this.scrollY(data);
-      }
-
-      // Check if nodes are visible.
-      this.checkNodeVisibility(data.level);
-    }
-  }, {
-    key: 'scrollY',
-    value: function scrollY(columnData, scrollbarDragging) {
-      ListGraph.scrollElVertically(columnData.nodes, columnData.scrollTop);
-
-      if (!scrollbarDragging) {
-        // Scroll scrollbar
-        columnData.scrollbar.scrollTop = columnData.scrollbar.heightScale(-columnData.scrollTop);
-
-        ListGraph.scrollElVertically(columnData.scrollbar.el, columnData.scrollbar.scrollTop);
-      }
-
-      // Scroll Links
-      if (columnData.level !== this.visData.nodes.length) {
-        this.links.scroll(columnData.linkSelections.outgoing, this.layout.offsetLinks(columnData.level, columnData.scrollTop, 'source'));
-      }
-
-      if (columnData.level > 0) {
-        this.links.scroll(columnData.linkSelections.incoming, this.layout.offsetLinks(columnData.level - 1, columnData.scrollTop, 'target'));
-      }
-
-      if (this.showLinkLocation) {
-        this.nodes.updateLinkLocationIndicators(columnData.level - 1, columnData.level + 1);
-      }
-
-      if (this.nodeContextMenu.isOpenSameColumn(columnData.level)) {
-        this.nodeContextMenu.scrollY(columnData.scrollTop);
-      }
-    }
-  }, {
-    key: 'scrollYTo',
-    value: function scrollYTo(selection, positionY) {
-      var _this3 = this;
-
-      return selection.transition().duration(TRANSITION_SEMI_FAST).tween('scrollY', function (data) {
-        var scrollPositionY = _d3.interpolateNumber(data.scrollTop, positionY);
-        return function (time) {
-          data.scrollTop = scrollPositionY(time);
-          _this3.scrollY(data);
-        };
-      });
-    }
-  }, {
-    key: 'resetAllScrollPositions',
-    value: function resetAllScrollPositions() {
-      return this.scrollYTo(this.levels.groups, 0);
-    }
-  }, {
-    key: 'selectByLevel',
-    value: function selectByLevel(level, selector) {
-      return _d3.select(this.levels.groups._groups[0][level]).selectAll(selector);
-    }
-  }, {
-    key: 'updateSorting',
-    value: function updateSorting() {
-      var levels = Object.keys(this.currentSorting.local);
-      for (var i = levels.length; i--;) {
-        this.sortColumn(i, this.currentSorting.local[levels[i]].type, this.currentSorting.local[levels[i]].order, this.currentSorting.local[levels[i]].type);
-      }
-    }
-  }, {
-    key: 'sortColumn',
-    value: function sortColumn(level, property, sortOrder, newSortType) {
-      this.nodes.sort(this.layout.sort(level, property, sortOrder).updateNodesVisibility().nodes(level), newSortType);
-      this.links.sort(this.layout.links(level - 1, level + 1));
-      this.nodeContextMenu.updatePosition();
-      this.checkNodeVisibility();
-    }
-  }, {
-    key: 'sortAllColumns',
-    value: function sortAllColumns(property, newSortType) {
-      this.currentSorting.global.order = this.currentSorting.global.order === -1 && !newSortType ? 1 : -1;
-
-      this.nodes.sort(this.layout.sort(undefined, property, this.currentSorting.global.order).updateNodesVisibility().nodes(), newSortType);
-
-      this.links.sort(this.layout.links());
-      this.nodeContextMenu.updatePosition();
-      this.checkNodeVisibility();
-    }
-  }, {
-    key: 'switchBarMode',
-    value: function switchBarMode(mode) {
-      this.svgD3.classed('one-bar', mode === 'one');
-      this.svgD3.classed('two-bar', mode === 'two');
-      this.nodes.bars.switchMode(mode, this.currentSorting);
-    }
-  }, {
-    key: 'trigger',
-    value: function trigger(event, data) {
-      this.events.trigger(event, data);
-    }
 
     /**
-     * Update the scroll position and scroll-bar visibility.
+     * Drag start handler
      *
-     * @description
-     * This method needs to be called after hiding or showing nodes.
-     *
-     * @method  updateScrolling
+     * @method  dragStartHandler
      * @author  Fritz Lekschas
-     * @date    2016-02-21
+     * @date    2016-10-02
      */
 
   }, {
-    key: 'updateScrolling',
-    value: function updateScrolling() {
-      var _this4 = this;
+    key: 'dragStartHandler',
+    value: function dragStartHandler() {
+      if (!this.dragging) {
+        this.noInteractions = this.dragging = true;
+      }
+    }
 
-      this.resetAllScrollPositions().call(allTransitionsEnded, function () {
-        _this4.levels.updateScrollProperties();
-        _this4.scrollbars.updateVisibility();
-      });
-    }
+    /**
+     * Helper method to get the top and left position of the base `svg`.
+     *
+     * @Description
+     * Calling `getBoundingClientRect()` right at the beginning leads to errornous
+     * values, probably because the function is called because HTML has been fully
+     * rendered.
+     *
+     * @method  getBoundingRect
+     * @author  Fritz Lekschas
+     * @date    2016-02-24
+     */
+
   }, {
-    key: 'updateLevelsVisibility',
-    value: function updateLevelsVisibility() {
-      this.levels.updateVisibility();
+    key: 'getBoundingRect',
+    value: function getBoundingRect() {
+      this.left = this.svgEl.getBoundingClientRect().left;
+      this.top = this.svgEl.getBoundingClientRect().top;
     }
+
+    /**
+     * Get drag limits
+     *
+     * @method  dragLimits
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @return  {Object}  Min and max drag limits.
+     */
+
+  }, {
+    key: 'getDragLimits',
+    value: function getDragLimits() {
+      return {
+        x: {
+          min: this.dragMinX,
+          max: 0
+        }
+      };
+    }
+
+    /**
+     * Global _mouseUp_ event handler
+     *
+     * @method  globalMouseUp
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {[type]}       event  [description]
+     * @return  {[type]}              [description]
+     */
+
+  }, {
+    key: 'globalMouseUp',
+    value: function globalMouseUp(event$$1) {
+      this.noInteractions = false;
+      this.mouseDownOnContextMenu = false;
+
+      if (this.activeScrollbar) {
+        var data = this.activeScrollbar.datum();
+        var deltaY = data.scrollbar.clientY - event$$1.clientY;
+
+        // Save final vertical position
+        // Scrollbar
+        data.scrollbar.scrollTop = Math.min(Math.max(data.scrollbar.scrollTop - deltaY, 0), data.scrollbar.scrollHeight);
+
+        // Content
+        data.scrollTop = Math.max(Math.min(data.scrollTop + data.invertedHeightScale(deltaY), 0), -data.scrollHeight);
+
+        this.activeScrollbar.classed('active', false);
+
+        this.activeScrollbar = undefined;
+
+        ListGraph.stopScrollBarMouseMove();
+      }
+    }
+
+    /**
+     * Show the complete graph by zooming out
+     *
+     * @method  globalView
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}  selectionInterst  D3 selection of nodes of interest,
+     *   which restrict the amount of zoom-out. If `undefined` the whole graph
+     *   will be shown.
+     */
+
   }, {
     key: 'globalView',
     value: function globalView(selectionInterst) {
-      var _this5 = this;
+      var _this2 = this;
 
       if (!this.zoomedOut) {
         (function () {
@@ -6745,9 +7437,9 @@ var ListGraph = function () {
           var width = 0;
           var height = 0;
           var cRect = void 0;
-          var contBBox = _this5.container.node().getBBox();
+          var contBBox = _this2.container.node().getBBox();
 
-          var globalCRect = _this5.svgD3.node().getBoundingClientRect();
+          var globalCRect = _this2.svgD3.node().getBoundingClientRect();
 
           if (selectionInterst && !selectionInterst.empty()) {
             selectionInterst.each(function () {
@@ -6755,42 +7447,42 @@ var ListGraph = function () {
               width = Math.max(width, cRect.left - (globalCRect.left + cRect.width));
               height = Math.max(height, cRect.top - (globalCRect.top + cRect.height));
             });
-            width = _this5.width > width ? _this5.width : width;
-            height = _this5.height > height ? _this5.height : height;
+            width = _this2.width > width ? _this2.width : width;
+            height = _this2.height > height ? _this2.height : height;
           } else {
-            width = _this5.width > contBBox.width ? _this5.width : contBBox.width;
-            height = _this5.height > contBBox.height ? _this5.height : contBBox.height;
+            width = _this2.width > contBBox.width ? _this2.width : contBBox.width;
+            height = _this2.height > contBBox.height ? _this2.height : contBBox.height;
           }
 
-          x = contBBox.x + _this5.dragged.x;
+          x = contBBox.x + _this2.dragged.x;
           y = contBBox.y;
 
-          _this5.nodes.makeAllTempVisible();
-          _this5.links.makeAllTempVisible();
+          _this2.nodes.makeAllTempVisible();
+          _this2.links.makeAllTempVisible();
 
-          _this5.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
+          _this2.svgD3.classed('zoomedOut', true).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
         })();
       }
     }
-  }, {
-    key: 'zoomedView',
-    value: function zoomedView() {
-      if (!this.zoomedOut) {
-        this.nodes.makeAllTempVisible(true);
-        this.links.makeAllTempVisible(true);
 
-        this.svgD3.classed('zoomedOut', false).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
-      }
-    }
+    /**
+     * Interaction wrapper
+     *
+     * @description
+     * Cheks if interacctions are allowed first.
+     *
+     * @method  interactionWrapper
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Function}  callback  Callback function.
+     * @param   {Object}    params    Parameters of the callback function.
+     */
+
   }, {
-    key: 'toggleView',
-    value: function toggleView() {
-      if (this.zoomedOut) {
-        this.zoomedOut = false;
-        this.zoomedView();
-      } else {
-        this.globalView();
-        this.zoomedOut = true;
+    key: 'interactionWrapper',
+    value: function interactionWrapper(callback, params) {
+      if (!this.noInteractions) {
+        callback.apply(this, params);
       }
     }
 
@@ -6810,6 +7502,81 @@ var ListGraph = function () {
     value: function isHidden(el) {
       var boundingRect = el.getBoundingClientRect();
       return boundingRect.top + boundingRect.height <= this.top || boundingRect.left + boundingRect.width <= this.left || boundingRect.top >= this.top + this.height || boundingRect.left >= this.left + this.width;
+    }
+
+    /**
+     * Assesses whether a link's end points outwards
+     *
+     * @method  linkPointsOutside
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Object}  data  Link data.
+     * @return  {Number}  If link ends inwards returns `0`, if it points outwards
+     *   to the top returns `1` or `2` when it points to the bottom. If the node
+     *   pointed to is hidden return `16`.
+     */
+
+  }, {
+    key: 'linkPointsOutside',
+    value: function linkPointsOutside(data) {
+      var y = data.node.y + data.offsetY;
+      if (data.node.hidden) {
+        return 16;
+      }
+      if (y + this.visData.global.row.height - this.visData.global.row.padding <= 0) {
+        return 1;
+      }
+      if (y + this.visData.global.row.padding >= this.height) {
+        return 2;
+      }
+      return 0;
+    }
+
+    /**
+     * Scroll column by the mouseWheel action
+     *
+     * @method  mousewheelColumn
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}  el     DOM element
+     * @param   {Object}  event  jQuery event object.
+     */
+
+  }, {
+    key: 'mousewheelColumn',
+    value: function mousewheelColumn(el, event$$1) {
+      event$$1.preventDefault();
+
+      var data = _d3.select(el).datum();
+
+      if (data.scrollHeight > 0) {
+        // Scroll nodes
+        data.scrollTop = Math.max(Math.min(data.scrollTop + event$$1.deltaY, 0), -data.scrollHeight);
+
+        this.scrollY(data);
+      }
+
+      // Check if nodes are visible.
+      this.checkNodeVisibility(data.level);
+    }
+
+    /**
+     * Check if dragging should be disabled.
+     *
+     * @description
+     * When the scrollbar or context menu is clicked the graph shouldn#t be
+     * draggable.
+     *
+     * @method  noDragging
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @return  {Boolean}  If `true` the graph shouldn't be draggable.
+     */
+
+  }, {
+    key: 'noDragging',
+    value: function noDragging() {
+      return !!this.activeScrollbar || this.mouseDownOnContextMenu;
     }
 
     /**
@@ -6870,42 +7637,403 @@ var ListGraph = function () {
     }
 
     /**
-     * Assesses whether a link's end points outwards
+     * Register an outside mouse click handler
      *
-     * @method  linkPointsOutside
+     * @method  registerOutSideClickHandler
      * @author  Fritz Lekschas
-     * @date    2016-09-14
-     * @param   {Object}  data  Link data.
-     * @return  {Number}  If link ends inwards returns `0`, if it points outwards
-     *   to the top returns `1` or `2` when it points to the bottom. If the node
-     *   pointed to is hidden return `16`.
+     * @date    2016-10-02
+     * @param   {String}     id            ID of the handler to be removed.
+     * @param   {Array}      els           Array of elements to be registered.
+     * @param   {[type]}     elClassNames  Element class names.
+     * @param   {Function}   callback      Callback function
+     * @return  {Number}                   Return number of outside click
+     *   handlers.
      */
 
   }, {
-    key: 'linkPointsOutside',
-    value: function linkPointsOutside(data) {
-      var y = data.node.y + data.offsetY;
-      if (data.node.hidden) {
-        return 16;
+    key: 'registerOutSideClickHandler',
+    value: function registerOutSideClickHandler(id, els, elClassNames, callback) {
+      // We need to register a unique property to be able to efficiently identify
+      // the element later.
+      for (var i = els.length; i--;) {
+        if (els[i].__id__) {
+          els[i].__id__.push(id);
+        } else {
+          els[i].__id__ = [id];
+        }
       }
-      if (y + this.visData.global.row.height - this.visData.global.row.padding <= 0) {
-        return 1;
+      var newLength = this.outsideClickHandler[id] = {
+        id: id, els: els, elClassNames: elClassNames, callback: callback
+      };
+      for (var _i3 = elClassNames.length; _i3--;) {
+        this.outsideClickClassHandler[elClassNames[_i3]] = this.outsideClickHandler[id];
       }
-      if (y + this.visData.global.row.padding >= this.height) {
-        return 2;
+      return newLength;
+    }
+
+    /**
+     * Helper method to scroll all columns to the top.
+     *
+     * @method  resetAllScrollPositions
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     */
+
+  }, {
+    key: 'resetAllScrollPositions',
+    value: function resetAllScrollPositions() {
+      return this.scrollYTo(this.levels.groups, 0);
+    }
+
+    /**
+     * Scrollbar _mouseDown_ handler
+     *
+     * @method  scrollbarMouseDown
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}  el     DOM element.
+     * @param   {Object}  event  D3 _mouseDown_ event object.
+     */
+
+  }, {
+    key: 'scrollbarMouseDown',
+    value: function scrollbarMouseDown(el, event$$1) {
+      this.noInteractions = true;
+      this.activeScrollbar = _d3.select(el).classed('active', true);
+      this.activeScrollbar.datum().scrollbar.clientY = event$$1.clientY;
+      this.startScrollBarMouseMove();
+    }
+
+    /**
+     * Scroll an element vertically
+     *
+     * @method  scrollElVertically
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}  el      DOM element to be scrolled.
+     * @param   {Number}  offset  Number of pixel to be scrolled.
+     */
+
+  }, {
+    key: 'scrollY',
+
+
+    /**
+     * Scroll column of nodes.
+     *
+     * @method  scrollY
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}   columnData         D3 data object of the column.
+     * @param   {Boolean}  scrollbarDragging  If `true` column is scrolled by
+     *   dragging the scrollbar.
+     */
+    value: function scrollY(columnData, scrollbarDragging) {
+      ListGraph.scrollElVertically(columnData.nodes, columnData.scrollTop);
+
+      if (!scrollbarDragging) {
+        // Scroll scrollbar
+        columnData.scrollbar.scrollTop = columnData.scrollbar.heightScale(-columnData.scrollTop);
+
+        ListGraph.scrollElVertically(columnData.scrollbar.el, columnData.scrollbar.scrollTop);
       }
-      return 0;
+
+      // Scroll Links
+      if (columnData.level !== this.visData.nodes.length) {
+        this.links.scroll(columnData.linkSelections.outgoing, this.layout.offsetLinks(columnData.level, columnData.scrollTop, 'source'));
+      }
+
+      if (columnData.level > 0) {
+        this.links.scroll(columnData.linkSelections.incoming, this.layout.offsetLinks(columnData.level - 1, columnData.scrollTop, 'target'));
+      }
+
+      if (this.showLinkLocation) {
+        this.nodes.updateLinkLocationIndicators(columnData.level - 1, columnData.level + 1);
+      }
+
+      if (this.nodeContextMenu.isOpenSameColumn(columnData.level)) {
+        this.nodeContextMenu.scrollY(columnData.scrollTop);
+      }
+    }
+
+    /**
+     * Scroll to a certain vertical position in a column
+     *
+     * @method  scrollYTo
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Object}  selection  D3 selection of columns.
+     * @param   {Number}  positionY  Position in pixel to be scrolled to.
+     */
+
+  }, {
+    key: 'scrollYTo',
+    value: function scrollYTo(selection, positionY) {
+      var _this3 = this;
+
+      return selection.transition().duration(TRANSITION_SEMI_FAST).tween('scrollY', function (data) {
+        var scrollPositionY = _d3.interpolateNumber(data.scrollTop, positionY);
+        return function (time) {
+          data.scrollTop = scrollPositionY(time);
+          _this3.scrollY(data);
+        };
+      });
+    }
+
+    /**
+     * Select elements by column
+     *
+     * @method  selectByLevel
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Number}  level     Index of the column or level.
+     * @param   {String}  selector  Query selector string.
+     * @return  {Object}            D3 selection.
+     */
+
+  }, {
+    key: 'selectByLevel',
+    value: function selectByLevel(level, selector) {
+      return _d3.select(this.levels.groups._groups[0][level]).selectAll(selector);
+    }
+
+    /**
+     * Sort all columns or levels
+     *
+     * @method  sortAllColumns
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {String}   property     Node property to be sorted by.
+     * @param   {Boolean}  newSortType  If `true` sorted by a new type.
+     */
+
+  }, {
+    key: 'sortAllColumns',
+    value: function sortAllColumns(property, newSortType) {
+      this.currentSorting.global.order = this.currentSorting.global.order === -1 && !newSortType ? 1 : -1;
+
+      this.nodes.sort(this.layout.sort(undefined, property, this.currentSorting.global.order).updateNodesVisibility().nodes(), newSortType);
+
+      this.links.sort(this.layout.links());
+      this.nodeContextMenu.updatePosition();
+      this.checkNodeVisibility();
+    }
+
+    /**
+     * Sort a column or level
+     *
+     * @method  sortColumn
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {Integer}   level        Specifies the level which should be
+     *   sorted.
+     * @param   {String}    property     The property used for sorting. Can be one
+     *   of ['precision', 'recall', 'name'].
+     * @param   {Integer}   sortOrder    If `1` sort asc. If `-1` sort desc.
+     * @param   {String}    newSortType  Property to be sorted by.
+     */
+
+  }, {
+    key: 'sortColumn',
+    value: function sortColumn(level, property, sortOrder, newSortType) {
+      this.nodes.sort(this.layout.sort(level, property, sortOrder).updateNodesVisibility().nodes(level), newSortType);
+      this.links.sort(this.layout.links(level - 1, level + 1));
+      this.nodeContextMenu.updatePosition();
+      this.checkNodeVisibility();
+    }
+
+    /**
+     * Start listening to the _mouseMove_ event when the scroll drag is started
+     *
+     * @method  startScrollBarMouseMove
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     */
+
+  }, {
+    key: 'startScrollBarMouseMove',
+    value: function startScrollBarMouseMove() {
+      var _this4 = this;
+
+      _d3.select(document).on('mousemove', function () {
+        _this4.dragScrollbar(_d3.event);
+      });
+    }
+
+    /**
+     * Stop listening to the _mouseMove_ event when the scroll bar drag is over
+     *
+     * @method  stopScrollBarMouseMove
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     */
+
+  }, {
+    key: 'switchBarMode',
+
+
+    /**
+     * Switch node bar mode
+     *
+     * @method  switchBarMode
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {String}  mode  Bar mode. Either "one" or "two".
+     */
+    value: function switchBarMode(mode) {
+      this.svgD3.classed('one-bar', mode === 'one');
+      this.svgD3.classed('two-bar', mode === 'two');
+      this.nodes.bars.switchMode(mode, this.currentSorting);
+    }
+
+    /**
+     * Helper method to trigger an event
+     *
+     * @method  trigger
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {[type]}    event  [description]
+     * @param   {[type]}    data   [description]
+     * @return  {[type]}           [description]
+     */
+
+  }, {
+    key: 'trigger',
+    value: function trigger(event$$1, data) {
+      this.events.trigger(event$$1, data);
+    }
+
+    /**
+     * Toggle between the global and zoomed graph view.
+     *
+     * @method  toggleView
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     */
+
+  }, {
+    key: 'toggleView',
+    value: function toggleView() {
+      if (this.zoomedOut) {
+        this.zoomedOut = false;
+        this.zoomedView();
+      } else {
+        this.globalView();
+        this.zoomedOut = true;
+      }
+    }
+
+    /**
+     * Remove outside mouse click handler
+     *
+     * @method  unregisterOutSideClickHandler
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {String}  id  ID of the handler to be removed.
+     */
+
+  }, {
+    key: 'unregisterOutSideClickHandler',
+    value: function unregisterOutSideClickHandler(id) {
+      var handler = this.outsideClickHandler[id];
+
+      // Remove element `__id__` property.
+      for (var i = handler.els.length; i--;) {
+        handler.els[i].__id__ = undefined;
+        delete handler.els[i].__id__;
+      }
+
+      // Remove handler.
+      this.outsideClickHandler[id] = undefined;
+      delete this.outsideClickHandler[id];
+    }
+
+    /**
+     * Helper method to trigger an update of the columns' or levels' visibility
+     *
+     * @method  updateLevelsVisibility
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     */
+
+  }, {
+    key: 'updateLevelsVisibility',
+    value: function updateLevelsVisibility() {
+      this.levels.updateVisibility();
+    }
+
+    /**
+     * Update the scroll position and scroll-bar visibility.
+     *
+     * @description
+     * This method needs to be called after hiding or showing nodes.
+     *
+     * @method  updateScrolling
+     * @author  Fritz Lekschas
+     * @date    2016-02-21
+     */
+
+  }, {
+    key: 'updateScrolling',
+    value: function updateScrolling() {
+      var _this5 = this;
+
+      this.resetAllScrollPositions().call(allTransitionsEnded, function () {
+        _this5.levels.updateScrollProperties();
+        _this5.scrollbars.updateVisibility();
+      });
+    }
+
+    /**
+     * Update column sorting given the current sort settings.
+     *
+     * @method  updateSorting
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     */
+
+  }, {
+    key: 'updateSorting',
+    value: function updateSorting() {
+      var levels = Object.keys(this.currentSorting.local);
+      for (var i = levels.length; i--;) {
+        this.sortColumn(i, this.currentSorting.local[levels[i]].type, this.currentSorting.local[levels[i]].order, this.currentSorting.local[levels[i]].type);
+      }
+    }
+
+    /**
+     * Show original zoomed graph
+     *
+     * @method  zoomedView
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     */
+
+  }, {
+    key: 'zoomedView',
+    value: function zoomedView() {
+      if (!this.zoomedOut) {
+        this.nodes.makeAllTempVisible(true);
+        this.links.makeAllTempVisible(true);
+
+        this.svgD3.classed('zoomedOut', false).transition().duration(TRANSITION_SEMI_FAST).attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
+      }
     }
   }, {
     key: 'area',
     get: function get() {
       return this.container.node().getBoundingClientRect();
     }
-  }, {
-    key: 'dragMinX',
-    get: function get() {
-      return Math.min(0, this.width - this.area.width);
-    }
+
+    /**
+     * Get current bar mode.
+     *
+     * @method  barMode
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @return  {String}  Bar mode. Either "one" or "two".
+     */
+
   }, {
     key: 'barMode',
     get: function get() {
@@ -6913,17 +8041,37 @@ var ListGraph = function () {
         return this.nodes.bars.mode;
       }
       return this._barMode;
-    },
+    }
+
+    /**
+     * Set bar mode.
+     *
+     * @method  barMode
+     * @author  Fritz Lekschas
+     * @date    2016-10-02
+     * @param   {String}  mode  Bar mode. Either "one" or "two".
+     */
+    ,
     set: function set(mode) {
       if (this.bars) {
         this.nodes.bars.mode = mode;
       }
       this._barMode = mode;
     }
+  }, {
+    key: 'dragMinX',
+    get: function get() {
+      return Math.min(0, this.width - this.area.width);
+    }
   }], [{
     key: 'scrollElVertically',
     value: function scrollElVertically(el, offset) {
       _d3.select(el).attr('transform', 'translate(0, ' + offset + ')');
+    }
+  }, {
+    key: 'stopScrollBarMouseMove',
+    value: function stopScrollBarMouseMove() {
+      _d3.select(document).on('mousemove', null);
     }
   }]);
   return ListGraph;
