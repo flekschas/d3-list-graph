@@ -4,6 +4,7 @@ import Promise from '../../../node_modules/es6-promise/lib/es6-promise/promise';
 import debounce from '../../../node_modules/lodash-es/debounce';
 
 // Internal
+import * as config from './config';
 import { dropMenu } from '../commons/charts';
 import { requestNextAnimationFrame } from '../commons/animation-frame';
 import { allTransitionsEnded } from '../commons/d3-utils';
@@ -544,13 +545,27 @@ class NodeContextMenu {
   clickNodeInfo () {
     this.nodeInfoId = (this.nodeInfoId + 1) % this.infoFields.length;
 
-    this.textNodeInfo.select('.label').text(
-      this.infoFields[this.nodeInfoId].label
-    );
+    const wrapper = this.textNodeInfo.select('.label-wrapper');
 
-    this.textNodeInfo.select('.label-two').text(
-      this.getNodeProperty(this.infoFields[this.nodeInfoId].property)
-    );
+    wrapper
+      .attr('opacity', 1)
+      .transition()
+      .duration(config.TRANSITION_LIGHTNING_FAST)
+      .attr('opacity', 0)
+      .call(allTransitionsEnded, () => {
+        this.textNodeInfo.select('.label').text(
+          this.infoFields[this.nodeInfoId].label
+        );
+
+        this.textNodeInfo.select('.label-two').text(
+          this.getNodeProperty(this.infoFields[this.nodeInfoId].property)
+        );
+
+        wrapper
+          .transition()
+          .duration(config.TRANSITION_LIGHTNING_FAST)
+          .attr('opacity', 1);
+      });
   }
 
   /**
