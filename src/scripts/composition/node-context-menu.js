@@ -145,7 +145,7 @@ class NodeContextMenu {
     this.updateAppearance();
 
     this.bgWrapper = this.wrapper.append('g')
-      .classed('bgOuterWrapper', true)
+      .classed('bg-outer-wrapper', true)
       .attr(
         'transform',
         'translate(' +
@@ -153,7 +153,7 @@ class NodeContextMenu {
         ')'
       )
       .append('g')
-        .classed('bgInnerWrapper', true);
+        .classed('bg-inner-wrapper', true);
 
     this.bgBorder = this.bgWrapper.append('path')
       .attr('class', 'bgBorder')

@@ -11,7 +11,7 @@
     opacity: 1;
   }
 
-  >.bgOuterWrapper {
+  >.bg-outer-wrapper {
     .bg {
       fill: $white;
     }
@@ -21,7 +21,7 @@
       fill-opacity: 0.1;
     }
 
-    .bgInnerWrapper {
+    .bg-inner-wrapper {
       // Normally `scale(1,1)` should be regarded as the default value but when
       // the class `is-mirrored-horizontally` is removed dynamically this won't
       // load to a re-draw. Hence, we need to explicitely set the scale.
