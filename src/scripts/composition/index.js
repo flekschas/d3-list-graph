@@ -20,10 +20,22 @@ import { dropShadow } from '../commons/filters';
 import { requestNextAnimationFrame } from '../commons/animation-frame';
 import { setOption } from '../commons/utils';
 
-// Private Variables
+/**
+ * Private d3 object. Needed to handle cases where D3.js v3 and v4 are used.
+ *
+ * @type  {Object}
+ */
 let _d3 = d3;
 
 class ListGraph {
+  /**
+   * ListGraph App constructor.
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  init  Config object.
+   */
   constructor (init) {
     if (init.d3) {
       _d3 = init.d3;
@@ -350,7 +362,7 @@ class ListGraph {
         this.topbar.localControlWrapper
       ],
       'horizontal',
-      this.getDragLimits.bind(this),
+      this.dragLimits.bind(this),
       this.noDragging.bind(this),
       this.dragged,
       2
@@ -413,13 +425,35 @@ class ListGraph {
     this.getBoundingRect();
   }
 
-  dragMoveHandler (data, elsToBeDragged, orientation, limits, notWhenTrue) {
+  /**
+   * Drag-move handler instance.
+   *
+   * @method  dragMoveHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}           data            D3's drag event object.
+   * @param   {Array}            elsToBeDragged  Array of D3 selections.
+   * @param   {String}           orientation     Can either be "horizontal",
+   *   "vertical" or `undefined`, i.e. both directions.
+   * @param   {Object|Function}  limits          X and Y drag limits. E.g.
+   *   `{ x: { min: 0, max: 10 } }`.
+   */
+  dragMoveHandler (data, elsToBeDragged, orientation, limits) {
     dragMoveHandler(
-      data, elsToBeDragged, orientation, limits, notWhenTrue
+      data, elsToBeDragged, orientation, limits
     );
     this.checkNodeVisibility();
   }
 
+  /**
+   * Check which nodes of a level are visible.
+   *
+   * @method  checkNodeVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Number}  level            Index of the level or column.
+   * @param   {[type]}             customScrollTop  [description]
+   */
   checkNodeVisibility (level, customScrollTop) {
     const nodes = level ?
       this.nodes.nodes.filter(data => data.depth === level) : this.nodes.nodes;
@@ -427,9 +461,22 @@ class ListGraph {
     nodes.call(this.nodes.isInvisible.bind(this.nodes), customScrollTop);
   }
 
+  /**
+   * Register an outside mouse click handler
+   *
+   * @method  registerOutSideClickHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}     id            ID of the handler to be removed.
+   * @param   {Array}      els           Array of elements to be registered.
+   * @param   {[type]}     elClassNames  Element class names.
+   * @param   {Function}   callback      Callback function
+   * @return  {Number}                   Return number of outside click
+   *   handlers.
+   */
   registerOutSideClickHandler (id, els, elClassNames, callback) {
-    // We need to register a unique property to be able to indentify that
-    // element later efficiently.
+    // We need to register a unique property to be able to efficiently identify
+    // the element later.
     for (let i = els.length; i--;) {
       if (els[i].__id__) {
         els[i].__id__.push(id);
@@ -447,6 +494,14 @@ class ListGraph {
     return newLength;
   }
 
+  /**
+   * Remove outside mouse click handler
+   *
+   * @method  unregisterOutSideClickHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}  id  ID of the handler to be removed.
+   */
   unregisterOutSideClickHandler (id) {
     const handler = this.outsideClickHandler[id];
 
@@ -461,6 +516,14 @@ class ListGraph {
     delete this.outsideClickHandler[id];
   }
 
+  /**
+   * Check global mouse click
+   *
+   * @method  checkGlobalClick
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  target  DOM element
+   */
   checkGlobalClick (target) {
     const found = {};
     const checkClass = Object.keys(this.outsideClickClassHandler).length;
@@ -494,15 +557,39 @@ class ListGraph {
     }
   }
 
+  /**
+   * Get visually used area of the container
+   *
+   * @method  area
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Object}  Bounding client rectangle.
+   */
   get area () {
     return this.container.node().getBoundingClientRect();
   }
 
+  /**
+   * Get the minimal drag X value
+   *
+   * @method  dragMinX
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Number}  Minimal drag x value.
+   */
   get dragMinX () {
     return Math.min(0, this.width - this.area.width);
   }
 
-  getDragLimits () {
+  /**
+   * Get drag limits
+   *
+   * @method  dragLimits
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Object}  Min and max drag limits.
+   */
+  get dragLimits () {
     return {
       x: {
         min: this.dragMinX,
@@ -528,24 +615,59 @@ class ListGraph {
     this.top = this.svgEl.getBoundingClientRect().top;
   }
 
+  /**
+   * Interaction wrapper
+   *
+   * @description
+   * Cheks if interacctions are allowed first.
+   *
+   * @method  interactionWrapper
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Function}  callback  Callback function.
+   * @param   {Object}    params    Parameters of the callback function.
+   */
   interactionWrapper (callback, params) {
     if (!this.noInteractions) {
       callback.apply(this, params);
     }
   }
 
+  /**
+   * Drag start handler
+   *
+   * @method  dragStartHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   dragStartHandler () {
     if (!this.dragging) {
       this.noInteractions = (this.dragging = true);
     }
   }
 
+  /**
+   * Drag end handler
+   *
+   * @method  dragEndHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   dragEndHandler () {
     if (this.dragging) {
       this.noInteractions = (this.dragging = false);
     }
   }
 
+  /**
+   * Scroll an element vertically
+   *
+   * @method  scrollElVertically
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el      DOM element to be scrolled.
+   * @param   {Number}  offset  Number of pixel to be scrolled.
+   */
   static scrollElVertically (el, offset) {
     _d3.select(el).attr(
       'transform',
@@ -553,10 +675,31 @@ class ListGraph {
     );
   }
 
+  /**
+   * Check if dragging should be disabled.
+   *
+   * @description
+   * When the scrollbar or context menu is clicked the graph shouldn#t be
+   * draggable.
+   *
+   * @method  noDragging
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Boolean}  If `true` the graph shouldn't be draggable.
+   */
   noDragging () {
     return !!this.activeScrollbar || this.mouseDownOnContextMenu;
   }
 
+  /**
+   * Global _mouseUp_ event handler
+   *
+   * @method  globalMouseUp
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {[type]}       event  [description]
+   * @return  {[type]}              [description]
+   */
   globalMouseUp (event) {
     this.noInteractions = false;
     this.mouseDownOnContextMenu = false;
@@ -593,11 +736,25 @@ class ListGraph {
     }
   }
 
+  /**
+   * Start listening to the _mouseMove_ event when the scroll drag is started
+   *
+   * @method  startScrollBarMouseMove
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   startScrollBarMouseMove () {
     _d3.select(document)
       .on('mousemove', () => { this.dragScrollbar(_d3.event); });
   }
 
+  /**
+   * Stop listening to the _mouseMove_ event when the scroll bar drag is over
+   *
+   * @method  stopScrollBarMouseMove
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   static stopScrollBarMouseMove () {
     _d3.select(document).on('mousemove', null);
   }
@@ -679,6 +836,14 @@ class ListGraph {
     this.checkNodeVisibility(data.level, contentScrollTop);
   }
 
+  /**
+   * Get current bar mode.
+   *
+   * @method  barMode
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {String}  Bar mode. Either "one" or "two".
+   */
   get barMode () {
     if (this.bars) {
       return this.nodes.bars.mode;
@@ -686,6 +851,14 @@ class ListGraph {
     return this._barMode;
   }
 
+  /**
+   * Set bar mode.
+   *
+   * @method  barMode
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}  mode  Bar mode. Either "one" or "two".
+   */
   set barMode (mode) {
     if (this.bars) {
       this.nodes.bars.mode = mode;
@@ -693,6 +866,15 @@ class ListGraph {
     this._barMode = mode;
   }
 
+  /**
+   * Scrollbar _mouseDown_ handler
+   *
+   * @method  scrollbarMouseDown
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el     DOM element.
+   * @param   {Object}  event  D3 _mouseDown_ event object.
+   */
   scrollbarMouseDown (el, event) {
     this.noInteractions = true;
     this.activeScrollbar = _d3.select(el).classed('active', true);
@@ -700,6 +882,15 @@ class ListGraph {
     this.startScrollBarMouseMove();
   }
 
+  /**
+   * Scroll column by the mouseWheel action
+   *
+   * @method  mousewheelColumn
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el     DOM element
+   * @param   {Object}  event  jQuery event object.
+   */
   mousewheelColumn (el, event) {
     event.preventDefault();
 
@@ -719,6 +910,16 @@ class ListGraph {
     this.checkNodeVisibility(data.level);
   }
 
+  /**
+   * Scroll column of nodes.
+   *
+   * @method  scrollY
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}   columnData         D3 data object of the column.
+   * @param   {Boolean}  scrollbarDragging  If `true` column is scrolled by
+   *   dragging the scrollbar.
+   */
   scrollY (columnData, scrollbarDragging) {
     ListGraph.scrollElVertically(columnData.nodes, columnData.scrollTop);
 
@@ -768,6 +969,15 @@ class ListGraph {
     }
   }
 
+  /**
+   * Scroll to a certain vertical position in a column
+   *
+   * @method  scrollYTo
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  selection  D3 selection of columns.
+   * @param   {Number}  positionY  Position in pixel to be scrolled to.
+   */
   scrollYTo (selection, positionY) {
     return selection
       .transition()
@@ -781,14 +991,38 @@ class ListGraph {
       });
   }
 
+  /**
+   * Helper method to scroll all columns to the top.
+   *
+   * @method  resetAllScrollPositions
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   resetAllScrollPositions () {
     return this.scrollYTo(this.levels.groups, 0);
   }
 
+  /**
+   * Select elements by column
+   *
+   * @method  selectByLevel
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Number}  level     Index of the column or level.
+   * @param   {String}  selector  Query selector string.
+   * @return  {Object}            D3 selection.
+   */
   selectByLevel (level, selector) {
     return _d3.select(this.levels.groups._groups[0][level]).selectAll(selector);
   }
 
+  /**
+   * Update column sorting given the current sort settings.
+   *
+   * @method  updateSorting
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   updateSorting () {
     const levels = Object.keys(this.currentSorting.local);
     for (let i = levels.length; i--;) {
@@ -801,6 +1035,19 @@ class ListGraph {
     }
   }
 
+  /**
+   * Sort a column or level
+   *
+   * @method  sortColumn
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Integer}   level        Specifies the level which should be
+   *   sorted.
+   * @param   {String}    property     The property used for sorting. Can be one
+   *   of ['precision', 'recall', 'name'].
+   * @param   {Integer}   sortOrder    If `1` sort asc. If `-1` sort desc.
+   * @param   {String}    newSortType  Property to be sorted by.
+   */
   sortColumn (level, property, sortOrder, newSortType) {
     this.nodes.sort(
       this.layout
@@ -814,6 +1061,15 @@ class ListGraph {
     this.checkNodeVisibility();
   }
 
+  /**
+   * Sort all columns or levels
+   *
+   * @method  sortAllColumns
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}   property     Node property to be sorted by.
+   * @param   {Boolean}  newSortType  If `true` sorted by a new type.
+   */
   sortAllColumns (property, newSortType) {
     this.currentSorting.global.order =
       this.currentSorting.global.order === -1 && !newSortType ? 1 : -1;
@@ -831,12 +1087,30 @@ class ListGraph {
     this.checkNodeVisibility();
   }
 
+  /**
+   * Switch node bar mode
+   *
+   * @method  switchBarMode
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}  mode  Bar mode. Either "one" or "two".
+   */
   switchBarMode (mode) {
     this.svgD3.classed('one-bar', mode === 'one');
     this.svgD3.classed('two-bar', mode === 'two');
     this.nodes.bars.switchMode(mode, this.currentSorting);
   }
 
+  /**
+   * Helper method to trigger an event
+   *
+   * @method  trigger
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {[type]}    event  [description]
+   * @param   {[type]}    data   [description]
+   * @return  {[type]}           [description]
+   */
   trigger (event, data) {
     this.events.trigger(event, data);
   }
@@ -858,10 +1132,27 @@ class ListGraph {
     });
   }
 
+  /**
+   * Helper method to trigger an update of the columns' or levels' visibility
+   *
+   * @method  updateLevelsVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   updateLevelsVisibility () {
     this.levels.updateVisibility();
   }
 
+  /**
+   * Show the complete graph by zooming out
+   *
+   * @method  globalView
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  selectionInterst  D3 selection of nodes of interest,
+   *   which restrict the amount of zoom-out. If `undefined` the whole graph
+   *   will be shown.
+   */
   globalView (selectionInterst) {
     if (!this.zoomedOut) {
       let x = 0;
@@ -906,6 +1197,13 @@ class ListGraph {
     }
   }
 
+  /**
+   * Show original zoomed graph
+   *
+   * @method  zoomedView
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   zoomedView () {
     if (!this.zoomedOut) {
       this.nodes.makeAllTempVisible(true);
@@ -919,6 +1217,13 @@ class ListGraph {
     }
   }
 
+  /**
+   * Toggle between the global and zoomed graph view.
+   *
+   * @method  toggleView
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   toggleView () {
     if (this.zoomedOut) {
       this.zoomedOut = false;
