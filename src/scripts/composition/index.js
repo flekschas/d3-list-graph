@@ -147,6 +147,11 @@ class ListGraph {
       config.DISABLE_DEBOUNCED_CONTEXT_MENU
     );
 
+    // Create custom topbar buttons
+    this.customTopbarButtons = setOption(
+      init.customTopbarButtons, []
+    );
+
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
     // Holds the key of the property to be sorted initially. E.g. `precision`.
@@ -208,7 +213,9 @@ class ListGraph {
     this.barMode = init.barMode || config.DEFAULT_BAR_MODE;
     this.svgD3.classed(this.barMode + '-bar', true);
 
-    this.topbar = new Topbar(this, this.baseElD3, this.visData);
+    this.topbar = new Topbar(
+      this, this.baseElD3, this.visData, this.customTopbarButtons
+    );
 
     this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
 

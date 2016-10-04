@@ -15,15 +15,17 @@ class Topbar {
    * @method  constructor
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @param   {Object}  vis      List Graph App.
-   * @param   {Object}  baseEl   D3 base selection.
-   * @param   {Object}  visData  List Graph App data.
+   * @param   {Object}  vis                  List Graph App.
+   * @param   {Object}  baseEl               D3 base selection.
+   * @param   {Object}  visData              List Graph App data.
+   * @param   {Array}   customTopbarButtons  Array of custom topbar buttons.
    */
-  constructor (vis, baseEl, visData) {
+  constructor (vis, baseEl, visData, customTopbarButtons) {
     const self = this;
 
     this.vis = vis;
     this.visData = visData;
+    this.customTopbarButtons = customTopbarButtons;
     // Add base topbar element
     this.el = baseEl.select('.' + TOPBAR_CLASS);
 
@@ -281,6 +283,31 @@ class Topbar {
       .attr('class', 'icon-zoom-out')
       .append('use')
         .attr('xlink:href', this.vis.iconPath + '#zoom-out');
+
+    // Add custom button
+    for (let i = 0; i < this.customTopbarButtons.length; i++) {
+      const btn = this.globalControls.append('li')
+        .attr('class', 'control-btn')
+        .on('click', this.customTopbarButtons[i].callback);
+
+      const wrapper = btn.append('div')
+        .attr('class', 'wrapper')
+        .text(this.customTopbarButtons[i].label);
+
+      if (this.customTopbarButtons[i].iconSvg) {
+        wrapper
+          .append('svg')
+            .attr('class', 'icon')
+            .append('use')
+              .attr('xlink:href', this.customTopbarButtons[i].iconSvg);
+      }
+
+      if (this.customTopbarButtons[i].iconSpan) {
+        wrapper
+          .append('span')
+            .attr('class', 'icon ' + this.customTopbarButtons[i].iconSpan);
+      }
+    }
 
     this.localControlWrapper = this.el.append('div')
       .classed('local-controls', true);
