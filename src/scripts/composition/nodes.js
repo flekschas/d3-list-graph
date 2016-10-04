@@ -197,7 +197,7 @@ class Nodes {
             (this.visData.global.row.height / 2) + 1
         )
         .attr('width', 3)
-        .attr('height', 3)
+        .attr('height', 0)
         .attr('fill', data => linkDensityBg(data.refs.length));
     }
 
