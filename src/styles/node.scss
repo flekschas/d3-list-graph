@@ -24,7 +24,33 @@
     opacity: 0;
   }
 
-  .node.lock-directly .bg-border,
+  .node.lock-directly {
+    &.hovering-directly .bg-border {
+      opacity: 1;
+    }
+
+    .bg {
+      fill: $color-highlight-red;
+    }
+
+    .border {
+      stroke: $color-highlight-red;
+    }
+
+    .active .bar-magnitude {
+      fill-opacity: 0.2;
+    }
+
+    .bar-magnitude {
+      fill-opacity: 0.1;
+    }
+
+    .label {
+      color: $black;
+      font-weight: bold;
+    }
+  }
+
   .node.animating .bg-border {
     opacity: 1;
   }
