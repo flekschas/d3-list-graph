@@ -176,6 +176,9 @@ If `true` links that point to invisible nodes will not be shown.
 **nodeInfoContextMenu**: _Array_ [`[]`].
 An array of objects specifying which node properties the _node context menu_ should be displayed. E.g. `[{ label: 'ID', property: function (data) { return data.id } }]`.
 
+**customTopbarButtons**: _Array_ [`[]`].
+An array of objects specifying custom buttons in the topbar. E.g. `[{ label: 'Click me', callback: function () { ... }, iconSvg: 'path/to/icon.svg#icon-name' }, iconSpan: 'span class names']`.
+
 ## Develop
 
 To preview the toy development example website do:

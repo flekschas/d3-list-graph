@@ -164,6 +164,7 @@
   .list-graph .top-bar .controls .expandable-label .abbr,
   .list-graph .top-bar .controls li:hover .expandable-label .letter {
     max-width: 1rem; }
+  .list-graph .top-bar .control-btn .icon,
   .list-graph .top-bar .control-btn [class^='icon-'],
   .list-graph .top-bar .control-btn [class*=' icon-'] {
     position: absolute;
@@ -253,7 +254,25 @@
   stroke-width: 6px;
   opacity: 0; }
 
-.list-graph .node.lock-directly .bg-border,
+.list-graph .node.lock-directly.hovering-directly .bg-border {
+  opacity: 1; }
+
+.list-graph .node.lock-directly .bg {
+  fill: #f23e00; }
+
+.list-graph .node.lock-directly .border {
+  stroke: #f23e00; }
+
+.list-graph .node.lock-directly .active .bar-magnitude {
+  fill-opacity: 0.2; }
+
+.list-graph .node.lock-directly .bar-magnitude {
+  fill-opacity: 0.1; }
+
+.list-graph .node.lock-directly .label {
+  color: #000;
+  font-weight: bold; }
+
 .list-graph .node.animating .bg-border {
   opacity: 1; }
 

@@ -527,11 +527,12 @@ var Topbar = function () {
    * @method  constructor
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @param   {Object}  vis      List Graph App.
-   * @param   {Object}  baseEl   D3 base selection.
-   * @param   {Object}  visData  List Graph App data.
+   * @param   {Object}  vis                  List Graph App.
+   * @param   {Object}  baseEl               D3 base selection.
+   * @param   {Object}  visData              List Graph App data.
+   * @param   {Array}   customTopbarButtons  Array of custom topbar buttons.
    */
-  function Topbar(vis, baseEl, visData) {
+  function Topbar(vis, baseEl, visData, customTopbarButtons) {
     var _this = this;
 
     classCallCheck(this, Topbar);
@@ -540,6 +541,7 @@ var Topbar = function () {
 
     this.vis = vis;
     this.visData = visData;
+    this.customTopbarButtons = customTopbarButtons;
     // Add base topbar element
     this.el = baseEl.select('.' + TOPBAR_CLASS);
 
@@ -679,6 +681,21 @@ var Topbar = function () {
     this.globalZoomOutWrapper = this.globalZoomOut.append('div').attr('class', 'wrapper').text('Zoom Out');
 
     this.globalZoomOutWrapper.append('svg').attr('class', 'icon-zoom-out').append('use').attr('xlink:href', this.vis.iconPath + '#zoom-out');
+
+    // Add custom button
+    for (var i = 0; i < this.customTopbarButtons.length; i++) {
+      var btn = this.globalControls.append('li').attr('class', 'control-btn').on('click', this.customTopbarButtons[i].callback);
+
+      var wrapper = btn.append('div').attr('class', 'wrapper').text(this.customTopbarButtons[i].label);
+
+      if (this.customTopbarButtons[i].iconSvg) {
+        wrapper.append('svg').attr('class', 'icon').append('use').attr('xlink:href', this.customTopbarButtons[i].iconSvg);
+      }
+
+      if (this.customTopbarButtons[i].iconSpan) {
+        wrapper.append('span').attr('class', 'icon ' + this.customTopbarButtons[i].iconSpan);
+      }
+    }
 
     this.localControlWrapper = this.el.append('div').classed('local-controls', true);
 
@@ -1417,6 +1434,16 @@ var Links = function () {
         return source.node.y + source.offsetY + this.visData.global.row.height / 2;
       }
 
+      function addStraightOffset(path) {
+        var lineStart = path.indexOf('L');
+        var lineEnd = path.lastIndexOf('L');
+
+        var startPoint = path.substr(1, lineStart - 1).split(',');
+        var endPoint = path.substr(lineEnd + 1).split(',');
+
+        return 'M' + (parseInt(startPoint[0], 10) - extraOffsetX) + ',' + startPoint[1] + 'L' + startPoint[0] + ',' + startPoint[1] + path.substring(lineStart, lineEnd) + 'L' + endPoint[0] + ',' + endPoint[1] + 'L' + (parseInt(endPoint[0], 10) + extraOffsetX) + ',' + endPoint[1];
+      }
+
       var getLine = d3.line().x(function (data) {
         return data.x;
       }).y(function (data) {
@@ -1458,7 +1485,7 @@ var Links = function () {
           y: targetY
         });
 
-        return getLine(points);
+        return addStraightOffset(getLine(points));
       };
     }
   }]);
@@ -1798,12 +1825,6 @@ function Bar(baseEl, barData, nodeData, visData, bars) {
       return _this2.bars.generatePath(data, currentSorting);
     }).classed('bar-magnitude', true);
   }
-
-  function setupBorder(selection) {
-    selection.attr('x', 0).attr('y', this.visData.global.row.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight).attr('rx', 2).attr('ry', 2).classed('bar-border', true);
-  }
-
-  this.selection.append('rect').call(setupBorder.bind(this));
 
   this.selection.append('path').call(setupMagnitude.bind(this));
 };
@@ -6973,6 +6994,9 @@ var ListGraph = function () {
     // Enable or disable
     this.disableDebouncedContextMenu = setOption(init.disableDebouncedContextMenu, DISABLE_DEBOUNCED_CONTEXT_MENU);
 
+    // Create custom topbar buttons
+    this.customTopbarButtons = setOption(init.customTopbarButtons, []);
+
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
     // Holds the key of the property to be sorted initially. E.g. `precision`.
@@ -7023,7 +7047,7 @@ var ListGraph = function () {
     this.barMode = init.barMode || DEFAULT_BAR_MODE;
     this.svgD3.classed(this.barMode + '-bar', true);
 
-    this.topbar = new Topbar(this, this.baseElD3, this.visData);
+    this.topbar = new Topbar(this, this.baseElD3, this.visData, this.customTopbarButtons);
 
     this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
 
