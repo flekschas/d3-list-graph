@@ -2289,7 +2289,7 @@ var Nodes = function () {
 
       selection.datum(function (data) {
         return data.links[direction];
-      }).attr('class', className).attr('x', incoming ? -5 : this.visData.global.column.contentWidth + 2).attr('y', above ? this.visData.global.row.height / 2 - 1 : this.visData.global.row.height / 2 + 1).attr('width', 3).attr('height', 3).attr('fill', function (data) {
+      }).attr('class', className).attr('x', incoming ? -5 : this.visData.global.column.contentWidth + 2).attr('y', above ? this.visData.global.row.height / 2 - 1 : this.visData.global.row.height / 2 + 1).attr('width', 3).attr('height', 0).attr('fill', function (data) {
         return linkDensityBg(data.refs.length);
       });
     }
@@ -5557,7 +5557,7 @@ var NodeContextMenu = function () {
 
     this.updateAppearance();
 
-    this.bgWrapper = this.wrapper.append('g').classed('bgOuterWrapper', true).attr('transform', 'translate(' + this.visData.global.column.width / 2 + ' ' + this.height / 2 + ')').append('g').classed('bgInnerWrapper', true);
+    this.bgWrapper = this.wrapper.append('g').classed('bg-outer-wrapper', true).attr('transform', 'translate(' + this.visData.global.column.width / 2 + ' ' + this.height / 2 + ')').append('g').classed('bg-inner-wrapper', true);
 
     this.bgBorder = this.bgWrapper.append('path').attr('class', 'bgBorder').attr('d', dropMenu({
       x: -1,
@@ -5856,11 +5856,19 @@ var NodeContextMenu = function () {
   }, {
     key: 'clickNodeInfo',
     value: function clickNodeInfo() {
+      var _this2 = this;
+
       this.nodeInfoId = (this.nodeInfoId + 1) % this.infoFields.length;
 
-      this.textNodeInfo.select('.label').text(this.infoFields[this.nodeInfoId].label);
+      var wrapper = this.textNodeInfo.select('.label-wrapper');
 
-      this.textNodeInfo.select('.label-two').text(this.getNodeProperty(this.infoFields[this.nodeInfoId].property));
+      wrapper.attr('opacity', 1).transition().duration(TRANSITION_LIGHTNING_FAST).attr('opacity', 0).call(allTransitionsEnded, function () {
+        _this2.textNodeInfo.select('.label').text(_this2.infoFields[_this2.nodeInfoId].label);
+
+        _this2.textNodeInfo.select('.label-two').text(_this2.getNodeProperty(_this2.infoFields[_this2.nodeInfoId].property));
+
+        wrapper.transition().duration(TRANSITION_LIGHTNING_FAST).attr('opacity', 1);
+      });
     }
 
     /**
@@ -5915,18 +5923,18 @@ var NodeContextMenu = function () {
   }, {
     key: 'close',
     value: function close() {
-      var _this2 = this;
+      var _this3 = this;
 
       if (!this.closing) {
         this.closing = new Promise$2(function (resolve) {
-          _this2.opened = false;
-          _this2.updateAppearance();
+          _this3.opened = false;
+          _this3.updateAppearance();
 
           setTimeout(function () {
-            _this2.visible = false;
-            _this2.updateAppearance();
-            resolve(_this2.node.datum().id);
-            _this2.node = undefined;
+            _this3.visible = false;
+            _this3.updateAppearance();
+            resolve(_this3.node.datum().id);
+            _this3.node = undefined;
           }, TRANSITION_SPEED);
         });
       }
@@ -5985,13 +5993,13 @@ var NodeContextMenu = function () {
   }, {
     key: 'createButtonBg',
     value: function createButtonBg(selection, properties) {
-      var _this3 = this;
+      var _this4 = this;
 
       selection.datum(function (data) {
-        data.x = _this3.visData.global.row.padding;
-        data.y = _this3.visData.global.row.padding;
-        data.width = _this3.visData.global.column.width * (properties.fullWidth ? 1 : 0.5) - _this3.visData.global.row.padding * 2;
-        data.height = _this3.visData.global.row.contentHeight;
+        data.x = _this4.visData.global.row.padding;
+        data.y = _this4.visData.global.row.padding;
+        data.width = _this4.visData.global.column.width * (properties.fullWidth ? 1 : 0.5) - _this4.visData.global.row.padding * 2;
+        data.height = _this4.visData.global.row.contentHeight;
         data.rx = 2;
         data.ry = 2;
 
@@ -6181,27 +6189,27 @@ var NodeContextMenu = function () {
   }, {
     key: 'open',
     value: function open(node) {
-      var _this4 = this;
+      var _this5 = this;
 
       return new Promise$2(function (resolve) {
-        _this4.node = node;
-        _this4.closing = undefined;
+        _this5.node = node;
+        _this5.closing = undefined;
 
-        _this4.updateStates();
+        _this5.updateStates();
 
-        _this4._yOffset = _this4.visData.nodes[_this4.node.datum().depth].scrollTop;
-        _this4.translate = {
-          x: _this4.node.datum().x,
-          y: _this4.node.datum().y - _this4.height
+        _this5._yOffset = _this5.visData.nodes[_this5.node.datum().depth].scrollTop;
+        _this5.translate = {
+          x: _this5.node.datum().x,
+          y: _this5.node.datum().y - _this5.height
         };
-        _this4.checkOrientation();
+        _this5.checkOrientation();
 
-        _this4.updateAppearance();
-        _this4.opened = true;
-        _this4.visible = true;
+        _this5.updateAppearance();
+        _this5.opened = true;
+        _this5.visible = true;
 
         requestNextAnimationFrame(function () {
-          _this4.updateAppearance();
+          _this5.updateAppearance();
           setTimeout(function () {
             resolve(true);
           }, TRANSITION_SPEED);
@@ -6229,7 +6237,7 @@ var NodeContextMenu = function () {
   }, {
     key: 'positionComponent',
     value: function positionComponent(selection, distanceFromCenter, alignRight) {
-      var _this5 = this;
+      var _this6 = this;
 
       selection.datum(function (data) {
         // Lets cache some values to make our lives easier when checking the
@@ -6242,10 +6250,10 @@ var NodeContextMenu = function () {
         }
         return data;
       }).attr('transform', function (data) {
-        var x = data.alignRight ? _this5.visData.global.column.width / 2 : 0;
+        var x = data.alignRight ? _this6.visData.global.column.width / 2 : 0;
         // When the buttons are created I assume self the menu is positioned
         // above the node; i.e. `distanceFromCenter` needs to be inverted.
-        var y = _this5.visData.global.row.height * (_this5.toBottom ? data.distanceFromCenter : _this5.numButtonRows - data.distanceFromCenter - 1) + (_this5.toBottom ? ARROW_SIZE : 0);
+        var y = _this6.visData.global.row.height * (_this6.toBottom ? data.distanceFromCenter : _this6.numButtonRows - data.distanceFromCenter - 1) + (_this6.toBottom ? ARROW_SIZE : 0);
 
         return 'translate(' + x + ', ' + y + ')';
       });
@@ -6355,19 +6363,19 @@ var NodeContextMenu = function () {
      * @param   {Object}  node  D3 selection of the related node.
      */
     value: function toggle(node) {
-      var _this6 = this;
+      var _this7 = this;
 
       return new Promise$2(function (resolve) {
         var nodeId = node.datum().id;
         var closed = Promise$2.resolve();
 
-        if (_this6.visible) {
-          closed = _this6.close();
+        if (_this7.visible) {
+          closed = _this7.close();
         }
 
         closed.then(function (previousNodeId) {
           if (nodeId !== previousNodeId) {
-            _this6.open(node).then(function () {
+            _this7.open(node).then(function () {
               resolve(nodeId);
             });
           } else {
