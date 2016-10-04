@@ -48,21 +48,6 @@ class Bar {
         .classed('bar-magnitude', true);
     }
 
-    function setupBorder (selection) {
-      selection
-        .attr('x', 0)
-        .attr('y', this.visData.global.row.padding)
-        .attr('width', this.visData.global.column.contentWidth)
-        .attr('height', this.visData.global.row.contentHeight)
-        .attr('rx', 2)
-        .attr('ry', 2)
-        .classed('bar-border', true);
-    }
-
-    this.selection
-      .append('rect')
-        .call(setupBorder.bind(this));
-
     this.selection
       .append('path')
         .call(setupMagnitude.bind(this));
