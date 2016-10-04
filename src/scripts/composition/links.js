@@ -89,6 +89,26 @@ class Links {
         (this.visData.global.row.height / 2);
     }
 
+    function addStraightOffset (path) {
+      const lineStart = path.indexOf('L');
+      const lineEnd = path.lastIndexOf('L');
+
+      const startPoint = path.substr(1, lineStart - 1).split(',');
+      const endPoint = path.substr(lineEnd + 1).split(',');
+
+      return (
+        'M' +
+        (parseInt(startPoint[0], 10) - extraOffsetX) + ',' + startPoint[1] +
+        'L' +
+        startPoint[0] + ',' + startPoint[1] +
+        path.substring(lineStart, lineEnd) +
+        'L' +
+        endPoint[0] + ',' + endPoint[1] +
+        'L' +
+        (parseInt(endPoint[0], 10) + extraOffsetX) + ',' + endPoint[1]
+      );
+    }
+
     const getLine = d3.line()
       .x(data => data.x)
       .y(data => data.y)
@@ -129,7 +149,7 @@ class Links {
         y: targetY
       });
 
-      return getLine(points);
+      return addStraightOffset(getLine(points));
     };
   }
 
