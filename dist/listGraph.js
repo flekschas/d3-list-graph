@@ -665,15 +665,7 @@ var Topbar = function () {
     this.globalTwoBarsWrapper.append('svg').attr('class', 'icon-two-bars').append('use').attr('xlink:href', this.vis.iconPath + '#two-bars');
 
     // Add button for zoom-out
-    this.globalZoomOut = this.globalControls.append('li').attr('class', 'control-btn zoom-out').classed('active', this.vis.zoomedOut).on('mouseenter', function () {
-      _this.vis.interactionWrapper.call(_this.vis, function () {
-        _this.vis.globalView.call(_this.vis);
-      }, []);
-    }).on('mouseleave', function () {
-      _this.vis.interactionWrapper.call(_this.vis, function () {
-        _this.vis.zoomedView.call(_this.vis);
-      }, []);
-    }).on('click', function () {
+    this.globalZoomOut = this.globalControls.append('li').attr('class', 'control-btn zoom-out').classed('active', this.vis.zoomedOut).on('click', function () {
       self.vis.toggleView.call(self.vis);
       d3.select(this).classed('active', self.vis.zoomedOut);
     });

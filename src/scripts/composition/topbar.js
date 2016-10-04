@@ -260,16 +260,6 @@ class Topbar {
     this.globalZoomOut = this.globalControls.append('li')
       .attr('class', 'control-btn zoom-out')
       .classed('active', this.vis.zoomedOut)
-      .on('mouseenter', () => {
-        this.vis.interactionWrapper.call(this.vis, () => {
-          this.vis.globalView.call(this.vis);
-        }, []);
-      })
-      .on('mouseleave', () => {
-        this.vis.interactionWrapper.call(this.vis, () => {
-          this.vis.zoomedView.call(this.vis);
-        }, []);
-      })
       .on('click', function () {
         self.vis.toggleView.call(self.vis);
         d3.select(this).classed('active', self.vis.zoomedOut);
