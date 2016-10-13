@@ -107,10 +107,6 @@
     stroke: $color-highlight-red;
   }
 
-  .node.highlight-bar .border {
-    stroke-opacity: 0;
-  }
-
   .node.rooted,
   .node.query-and,
   .node.query-or,
