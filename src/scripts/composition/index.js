@@ -19,6 +19,8 @@ import { allTransitionsEnded } from '../commons/d3-utils';
 import { dropShadow } from '../commons/filters';
 import { requestNextAnimationFrame } from '../commons/animation-frame';
 import { setOption } from '../commons/utils';
+import { all as icons } from './icons';
+import { createSymbolIcon } from '../commons/symbols';
 
 /**
  * Private d3 object. Needed to handle cases where D3.js v3 and v4 are used.
@@ -153,6 +155,11 @@ class ListGraph {
     );
 
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
+
+    // Add SVG Icons
+    icons.forEach(
+      icon => createSymbolIcon(this.svgD3, icon.id, icon.paths, icon.viewBox)
+    );
 
     // Holds the key of the property to be sorted initially. E.g. `precision`.
     this.sortBy = init.sortBy;

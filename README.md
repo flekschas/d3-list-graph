@@ -49,7 +49,6 @@ This example assumes that you're using Bower to fetch all code.
       var graph = new ListGraph({
         data: data,
         element: document.querySelector('.list-graph'),
-        iconPath: '/dist/icons.svg',
         rootNodes: [1, 2]
       });
     });
@@ -92,7 +91,6 @@ Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. If you 
         d3: d3V4,
         data: data,
         element: document.querySelector('.list-graph'),
-        iconPath: '/dist/icons.svg',
         rootNodes: [1, 2]
       });
     });
@@ -116,9 +114,6 @@ Unique key-value list-like object. E.g.: `{1: {...}, 2: {...}, 3: {...}}`.
 **rootNodes**: _Array_.
 List of node ids that should act as root nodes.
 
-**iconPath**: _String_ [_Empty string_].
-Path to the SVG icon file. Default is an empty string, which is equivalent to inline SVG.
-
 ---
 
 #### Optional parameters:
@@ -140,6 +135,9 @@ Number of columns to be shown.
 
 **rows**: _Number_ [`5`].
 Number of rows to be shown.
+
+**iconPath**: _String_ [_Empty string_].
+Path to an SVG icon file. Default is an empty string, which is equivalent to inline SVG, meaning that the ListGraphs internal icons are used.
 
 **barMode**: _String_ [`one`].
 Initial bar mode. Can either be `one` or `two`.
