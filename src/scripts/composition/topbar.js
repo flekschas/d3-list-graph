@@ -327,9 +327,8 @@ class Topbar {
       };
 
       control.append('li')
-        .attr('class', 'control-btn toggle')
-        .style('width', self.visData.global.column.padding + 'px')
-        .on('click', self.toggleColumn);
+        .attr('class', 'control-btn')
+        .style('width', self.visData.global.column.padding + 'px');
 
       control.append('li')
         .attr('class', 'control-btn sort-precision ease-all')
@@ -437,14 +436,8 @@ class Topbar {
         );
 
       control.append('li')
-        .attr('class', 'control-btn options')
-        .style('width', self.visData.global.column.padding + 'px')
-        .on('click', self.toggleOptions)
-        .html(
-          '<svg class="icon-gear">' +
-          '  <use xlink:href="' + self.vis.iconPath + '#gear"></use>' +
-          '</svg>'
-        );
+        .attr('class', 'control-btn')
+        .style('width', self.visData.global.column.padding + 'px');
 
       if (self.vis.currentSorting.local[index].type) {
         self.vis.currentSorting.local[index].el = control.select(
