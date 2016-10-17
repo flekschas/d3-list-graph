@@ -38,11 +38,20 @@
   position: relative;
   height: 1.5rem;
   padding-bottom: 1px;
-  overflow: hidden;
-  box-shadow: inset 0 -1px 0 0 #e5e5e5; }
+  overflow: hidden; }
+  .list-graph .top-bar:after {
+    position: absolute;
+    z-index: 0;
+    display: block;
+    content: '';
+    height: 1px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: #e5e5e5; }
   .list-graph .top-bar .control-switch {
     position: absolute;
-    z-index: 2;
+    z-index: 3;
     top: 0;
     right: 0;
     height: 100%;
@@ -79,13 +88,17 @@
     white-space: nowrap;
     transition: margin 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .top-bar .global-controls {
+    z-index: 2; }
+  .list-graph .top-bar .local-controls {
     z-index: 1; }
   .list-graph .top-bar.details .global-controls {
     margin-top: -1.5rem; }
   .list-graph .top-bar .controls {
     display: inline-block;
     white-space: normal;
-    box-shadow: -1px 0 0 0 #e5e5e5; }
+    border-left: 1px solid #e5e5e5; }
+    .list-graph .top-bar .controls:first-child {
+      border-left: 0; }
   .list-graph .top-bar .control-btn {
     display: block;
     top: 0;
@@ -138,7 +151,7 @@
     position: relative;
     float: left;
     max-width: 16.6667%;
-    box-shadow: 1px 0 0 0 #e5e5e5; }
+    border-right: 1px solid #e5e5e5; }
   .list-graph .top-bar.details .global-controls .control-btn.active:before {
     opacity: 0; }
   .list-graph .top-bar .global-controls .control-btn .wrapper {
@@ -318,9 +331,6 @@
 .list-graph .column.active .node.focus-directly .border {
   stroke: #f23e00; }
 
-.list-graph .node.highlight-bar .border {
-  stroke-opacity: 0; }
-
 .list-graph .node.rooted .border,
 .list-graph .node.query-and .border,
 .list-graph .node.query-or .border,
@@ -443,7 +453,9 @@
 .list-graph .bar-magnitude {
   fill: #000;
   fill-opacity: 0.1;
-  shape-rendering: crispEdges; }
+  shape-rendering: crispEdges;
+  stroke-width: 2px;
+  stroke-opacity: 0; }
 
 .list-graph .column.active .bar-magnitude {
   fill-opacity: 0.15; }
@@ -482,7 +494,12 @@
 
 .list-graph .bar.highlight .bar-magnitude {
   fill: #66b8ff;
-  fill-opacity: 1 !important; }
+  fill-opacity: 1 !important;
+  stroke: #66b8ff;
+  stroke-opacity: 1; }
+
+.list-graph .bar.highlight.active .bar-magnitude {
+  stroke-opacity: 0; }
 
 .list-graph .link {
   fill: none; }
