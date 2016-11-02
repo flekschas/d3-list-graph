@@ -396,15 +396,15 @@ class Nodes {
 
       this.events.on(
         'd3ListGraphNodeRoot',
-        data => this.eventHelper(
-          data.nodeIds, this.toggleRoot, [false, true]
+        nodeIds => this.eventHelper(
+          nodeIds, this.toggleRoot, [false, true]
         )
       );
 
       this.events.on(
         'd3ListGraphNodeUnroot',
-        data => this.eventHelper(
-          data.nodeIds, this.toggleRoot, [true, true]
+        nodeIds => this.eventHelper(
+          nodeIds, this.toggleRoot, [true, true]
         )
       );
     }
