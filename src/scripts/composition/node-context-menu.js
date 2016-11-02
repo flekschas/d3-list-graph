@@ -296,9 +296,17 @@ class NodeContextMenu {
       this.rootHandler, BUTTON_ROOT_DEBOUNCE
     );
 
-    this.events.on('d3ListGraphNodeLock', () => this.liveUpdate());
+    this.events.on('d3ListGraphNodeLock', () => {
+      if (this.node) {
+        this.clickLockHandler();
+      }
+    });
 
-    this.events.on('d3ListGraphNodeUnlock', () => this.liveUpdate());
+    this.events.on('d3ListGraphNodeUnlock', () => this.updateStates());
+
+    this.events.on('d3ListGraphNodeRoot', () => this.updateStates());
+
+    this.events.on('d3ListGraphNodeUnroot', () => this.updateStates());
   }
 
   /* ---------------------------------------------------------------------------
@@ -923,29 +931,6 @@ class NodeContextMenu {
    */
   isOpenSameColumn (columnNum) {
     return this.opened && this.node.datum().depth === columnNum;
-  }
-
-  /* ---------------------------------- L ----------------------------------- */
-
-  /**
-   * Check for live updates coming in through the event API
-   *
-   * @description
-   * The only difference to `updateStatus()` is that this method visually
-   * changes the state of certain buttons more like as if the user direrctly
-   * interacted with it, e.g., using the BAM effect.
-   *
-   * @method  liveUpdate
-   * @author  Fritz Lekschas
-   * @date    2016-11-02
-   */
-  liveUpdate () {
-    if (this.node) {
-      this.clickLockHandler();
-      this.clickRootHandler();
-      this.updateQuery();
-      this.updateInfoText();
-    }
   }
 
   /* ---------------------------------- O ----------------------------------- */
