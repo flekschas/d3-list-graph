@@ -41,10 +41,12 @@ export function allTransitionsEnded (transition, callback) {
   if (transition.size() === 0) {
     callback();
   }
+
   let n = 0;
+
   transition
     .each(() => ++n)
-    .on('end', function (...args) {
+    .on('interrupt end', function end (...args) {
       if (!--n) callback.apply(this, args);
     });
 }
