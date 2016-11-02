@@ -295,6 +295,10 @@ class NodeContextMenu {
     this.debouncedRootHandler = debounce(
       this.rootHandler, BUTTON_ROOT_DEBOUNCE
     );
+
+    this.events.on('d3ListGraphNodeLock', () => this.liveUpdate());
+
+    this.events.on('d3ListGraphNodeUnlock', () => this.liveUpdate());
   }
 
   /* ---------------------------------------------------------------------------
@@ -411,16 +415,19 @@ class NodeContextMenu {
    */
   checkLock () {
     const checked = this.node.datum().data.state.lock;
-    this.buttonLock.classed('semi-active', checked);
+
+    this.buttonLock.classed('semi-active active', checked);
     this.checkboxLock.style(
       'transform',
       'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
     );
+
     if (checked) {
       NodeContextMenu.fillButton(this.buttonLockFill);
     } else {
       NodeContextMenu.emptyButton(this.buttonLockFill);
     }
+
     return checked;
   }
 
@@ -521,12 +528,9 @@ class NodeContextMenu {
   clickLockHandler () {
     this.buttonLock.classed('fill-effect', true);
     this.nodes.lockHandler(this.node);
+
     const checked = this.checkLock();
-    if (checked) {
-      this.buttonLock.classed('active', true);
-    } else {
-      this.buttonLock.classed('active', false);
-    }
+
     setTimeout(() => {
       if (checked) {
         NodeContextMenu.triggerButtonBamEffect(this.buttonLockBamEffect);
@@ -919,6 +923,29 @@ class NodeContextMenu {
    */
   isOpenSameColumn (columnNum) {
     return this.opened && this.node.datum().depth === columnNum;
+  }
+
+  /* ---------------------------------- L ----------------------------------- */
+
+  /**
+   * Check for live updates coming in through the event API
+   *
+   * @description
+   * The only difference to `updateStatus()` is that this method visually
+   * changes the state of certain buttons more like as if the user direrctly
+   * interacted with it, e.g., using the BAM effect.
+   *
+   * @method  liveUpdate
+   * @author  Fritz Lekschas
+   * @date    2016-11-02
+   */
+  liveUpdate () {
+    if (this.node) {
+      this.clickLockHandler();
+      this.clickRootHandler();
+      this.updateQuery();
+      this.updateInfoText();
+    }
   }
 
   /* ---------------------------------- O ----------------------------------- */
