@@ -304,9 +304,9 @@ class NodeContextMenu {
 
     this.events.on('d3ListGraphNodeUnlock', () => this.updateStates());
 
-    this.events.on('d3ListGraphNodeRoot', () => this.updateStates());
+    this.events.on('d3ListGraphNodeRoot', () => this.close());
 
-    this.events.on('d3ListGraphNodeUnroot', () => this.updateStates());
+    this.events.on('d3ListGraphNodeUnroot', () => this.close());
   }
 
   /* ---------------------------------------------------------------------------
@@ -418,13 +418,15 @@ class NodeContextMenu {
    *
    * @method  checkLock
    * @author  Fritz Lekschas
-   * @date    2016-09-13
-   * @return  {Boolean}  If `true` the lock button is active.
+   * @date    2016-11-02
+   * @param   {Boolean}  debounced  If `true` the root button will be debounced.
+   * @return  {Boolean}             If `true` the lock button is active.
    */
-  checkLock () {
+  checkLock (debounced) {
     const checked = this.node.datum().data.state.lock;
 
-    this.buttonLock.classed('semi-active active', checked);
+    this.buttonLock.classed('semi-active', checked);
+    this.buttonLock.classed('active', !debounced);
     this.checkboxLock.style(
       'transform',
       'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
@@ -520,6 +522,7 @@ class NodeContextMenu {
     }
 
     this.buttonRoot.classed('semi-active', checked);
+    this.buttonRoot.classed('active', !debounced);
     this.checkboxRoot.style(
       'transform',
       'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)'
@@ -537,11 +540,12 @@ class NodeContextMenu {
     this.buttonLock.classed('fill-effect', true);
     this.nodes.lockHandler(this.node);
 
-    const checked = this.checkLock();
+    const checked = this.checkLock(BUTTON_DEFAULT_DEBOUNCE);
 
     setTimeout(() => {
       if (checked) {
         NodeContextMenu.triggerButtonBamEffect(this.buttonLockBamEffect);
+        this.buttonLock.classed('active', true);
       }
       this.buttonLock.classed('fill-effect', false);
     }, BUTTON_DEFAULT_DEBOUNCE);
@@ -623,7 +627,7 @@ class NodeContextMenu {
    * @return  {Object}  Promise resolving to `true` when the menu is closed.
    */
   close () {
-    if (!this.closing) {
+    if (this.node && !this.closing) {
       this.closing = new Promise((resolve) => {
         this.opened = false;
         this.updateAppearance();
@@ -1050,7 +1054,6 @@ class NodeContextMenu {
    * @method  rootHandler
    * @author  Fritz Lekschas
    * @date    2016-09-13
-   * @param   {Boolean}  debounced  If `true` the handler will debounce.
    */
   rootHandler (debounced) {
     if (!debounced || this.tempRoot !== this.currentRootState) {
@@ -1063,7 +1066,7 @@ class NodeContextMenu {
     this.currentRootState = undefined;
     this.buttonRoot.classed('fill-effect', false);
 
-    this.buttonRoot.classed('active', this.node.datum().data.state.root);
+    // this.buttonRoot.classed('active', this.node.datum().data.state.root);
   }
 
   /* ---------------------------------- S ----------------------------------- */
