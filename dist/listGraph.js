@@ -2135,10 +2135,12 @@ function allTransitionsEnded(transition, callback) {
   if (transition.size() === 0) {
     callback();
   }
+
   var n = 0;
+
   transition.each(function () {
     return ++n;
-  }).on('end', function () {
+  }).on('interrupt end', function end() {
     for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
@@ -2409,12 +2411,12 @@ var Nodes = function () {
         return _this.eventHelper(nodeIds, _this.toggleLock, [true]);
       });
 
-      this.events.on('d3ListGraphNodeRoot', function (data) {
-        return _this.eventHelper(data.nodeIds, _this.toggleRoot, [false, true]);
+      this.events.on('d3ListGraphNodeRoot', function (nodeIds) {
+        return _this.eventHelper(nodeIds, _this.toggleRoot, [false, true]);
       });
 
-      this.events.on('d3ListGraphNodeUnroot', function (data) {
-        return _this.eventHelper(data.nodeIds, _this.toggleRoot, [true, true]);
+      this.events.on('d3ListGraphNodeUnroot', function (nodeIds) {
+        return _this.eventHelper(nodeIds, _this.toggleRoot, [true, true]);
       });
     }
 
@@ -2595,15 +2597,8 @@ var Nodes = function () {
       this.highlightNodes(d3.select(el));
 
       var eventData = {
-        id: data.id,
-        clone: false,
-        clonedFromId: undefined
+        id: data.clone ? data.originalNode.id : data.id
       };
-
-      if (data.clone) {
-        eventData.clone = true;
-        eventData.clonedFromId = data.originalNode.id;
-      }
 
       this.events.broadcast('d3ListGraphNodeEnter', eventData);
     }
@@ -2916,15 +2911,8 @@ var Nodes = function () {
       this.unhighlightNodes(d3.select(el));
 
       var eventData = {
-        id: data.id,
-        clone: false,
-        clonedFromId: undefined
+        id: data.clone ? data.originalNode.id : data.id
       };
-
-      if (data.clone) {
-        eventData.clone = true;
-        eventData.clonedFromId = data.originalNode.id;
-      }
 
       this.events.broadcast('d3ListGraphNodeLeave', eventData);
     }
@@ -2946,30 +2934,22 @@ var Nodes = function () {
       if (events.locked && events.unlocked) {
         this.events.broadcast('d3ListGraphNodeLockChange', {
           lock: {
-            id: events.locked.id,
-            clone: events.locked.clone,
-            clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+            id: events.locked.id
           },
           unlock: {
-            id: events.unlocked.id,
-            clone: events.unlocked.clone,
-            clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+            id: events.unlocked.id
           }
         });
       } else {
         if (events.locked) {
           this.events.broadcast('d3ListGraphNodeLock', {
-            id: events.locked.id,
-            clone: events.locked.clone,
-            clonedFromId: events.locked.clone ? events.locked.originalNode.id : undefined
+            id: events.locked.id
           });
         }
 
         if (events.unlocked) {
           this.events.broadcast('d3ListGraphNodeUnlock', {
-            id: events.unlocked.id,
-            clone: events.unlocked.clone,
-            clonedFromId: events.unlocked.clone ? events.unlocked.originalNode.id : undefined
+            id: events.unlocked.id
           });
         }
       }
@@ -3115,18 +3095,14 @@ var Nodes = function () {
         if (data.data.state.query !== previousMode) {
           event$$1.name = 'd3ListGraphNodeQuery';
           event$$1.data = {
-            id: data.id,
-            clone: data.clone,
-            clonedFromId: data.clone ? data.originalNode.id : undefined,
+            id: data.clone ? data.originalNode.id : data.id,
             mode: data.data.state.query
           };
         }
       } else {
         event$$1.name = 'd3ListGraphNodeUnquery';
         event$$1.data = {
-          id: data.id,
-          clone: data.clone,
-          clonedFromId: data.clone ? data.originalNode.id : undefined
+          id: data.clone ? data.originalNode.id : data.id
         };
       }
 
@@ -3159,30 +3135,22 @@ var Nodes = function () {
       if (events.rooted && events.unrooted) {
         this.events.broadcast('d3ListGraphNodeReroot', {
           rooted: {
-            id: events.rooted.id,
-            clone: events.rooted.clone,
-            clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
+            id: events.rooted.clone ? events.rooted.originalNode.id : events.rooted.id
           },
           unrooted: {
-            id: events.unrooted.id,
-            clone: events.unrooted.clone,
-            clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
+            id: events.unrooted.clone ? events.unrooted.originalNode.id : events.unrooted.id
           }
         });
       } else {
         if (events.rooted) {
           this.events.broadcast('d3ListGraphNodeRoot', {
-            id: events.rooted.id,
-            clone: events.rooted.clone,
-            clonedFromId: events.rooted.clone ? events.rooted.originalNode.id : undefined
+            id: events.rooted.clone ? events.rooted.originalNode.id : events.rooted.id
           });
         }
 
         if (events.unrooted) {
           this.events.broadcast('d3ListGraphNodeUnroot', {
-            id: events.unrooted.id,
-            clone: events.unrooted.clone,
-            clonedFromId: events.unrooted.clone ? events.unrooted.originalNode.id : undefined
+            id: events.unrooted.clone ? events.unrooted.originalNode.id : events.unrooted.id
           });
         }
       }
@@ -5539,6 +5507,8 @@ var NodeContextMenu = function () {
    * @param   {Object}   init  Initialization object. See example.
    */
   function NodeContextMenu(init) {
+    var _this = this;
+
     classCallCheck(this, NodeContextMenu);
 
     var self = this;
@@ -5663,6 +5633,24 @@ var NodeContextMenu = function () {
 
     this.debouncedQueryHandler = debounce(this.queryHandler, BUTTON_QUERY_DEBOUNCE);
     this.debouncedRootHandler = debounce(this.rootHandler, BUTTON_ROOT_DEBOUNCE);
+
+    this.events.on('d3ListGraphNodeLock', function () {
+      if (_this.node) {
+        _this.clickLockHandler();
+      }
+    });
+
+    this.events.on('d3ListGraphNodeUnlock', function () {
+      return _this.updateStates();
+    });
+
+    this.events.on('d3ListGraphNodeRoot', function () {
+      return _this.close();
+    });
+
+    this.events.on('d3ListGraphNodeUnroot', function () {
+      return _this.close();
+    });
   }
 
   /* ---------------------------------------------------------------------------
@@ -5731,21 +5719,26 @@ var NodeContextMenu = function () {
      *
      * @method  checkLock
      * @author  Fritz Lekschas
-     * @date    2016-09-13
-     * @return  {Boolean}  If `true` the lock button is active.
+     * @date    2016-11-02
+     * @param   {Boolean}  debounced  If `true` the root button will be debounced.
+     * @return  {Boolean}             If `true` the lock button is active.
      */
 
   }, {
     key: 'checkLock',
-    value: function checkLock() {
+    value: function checkLock(debounced) {
       var checked = this.node.datum().data.state.lock;
+
       this.buttonLock.classed('semi-active', checked);
+      this.buttonLock.classed('active', !debounced);
       this.checkboxLock.style('transform', 'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)');
+
       if (checked) {
         NodeContextMenu.fillButton(this.buttonLockFill);
       } else {
         NodeContextMenu.emptyButton(this.buttonLockFill);
       }
+
       return checked;
     }
 
@@ -5826,6 +5819,7 @@ var NodeContextMenu = function () {
       }
 
       this.buttonRoot.classed('semi-active', checked);
+      this.buttonRoot.classed('active', !debounced);
       this.checkboxRoot.style('transform', 'translateX(' + (checked ? this.checkBoxMovement : 0) + 'px)');
     }
 
@@ -5840,21 +5834,19 @@ var NodeContextMenu = function () {
   }, {
     key: 'clickLockHandler',
     value: function clickLockHandler() {
-      var _this = this;
+      var _this2 = this;
 
       this.buttonLock.classed('fill-effect', true);
       this.nodes.lockHandler(this.node);
-      var checked = this.checkLock();
-      if (checked) {
-        this.buttonLock.classed('active', true);
-      } else {
-        this.buttonLock.classed('active', false);
-      }
+
+      var checked = this.checkLock(BUTTON_DEFAULT_DEBOUNCE);
+
       setTimeout(function () {
         if (checked) {
-          NodeContextMenu.triggerButtonBamEffect(_this.buttonLockBamEffect);
+          NodeContextMenu.triggerButtonBamEffect(_this2.buttonLockBamEffect);
+          _this2.buttonLock.classed('active', true);
         }
-        _this.buttonLock.classed('fill-effect', false);
+        _this2.buttonLock.classed('fill-effect', false);
       }, BUTTON_DEFAULT_DEBOUNCE);
     }
 
@@ -5869,16 +5861,16 @@ var NodeContextMenu = function () {
   }, {
     key: 'clickNodeInfo',
     value: function clickNodeInfo() {
-      var _this2 = this;
+      var _this3 = this;
 
       this.nodeInfoId = (this.nodeInfoId + 1) % this.infoFields.length;
 
       var wrapper = this.textNodeInfo.select('.label-wrapper');
 
       wrapper.attr('opacity', 1).transition().duration(TRANSITION_LIGHTNING_FAST).attr('opacity', 0).call(allTransitionsEnded, function () {
-        _this2.textNodeInfo.select('.label').text(_this2.infoFields[_this2.nodeInfoId].label);
+        _this3.textNodeInfo.select('.label').text(_this3.infoFields[_this3.nodeInfoId].label);
 
-        _this2.textNodeInfo.select('.label-two').text(_this2.getNodeProperty(_this2.infoFields[_this2.nodeInfoId].property));
+        _this3.textNodeInfo.select('.label-two').text(_this3.getNodeProperty(_this3.infoFields[_this3.nodeInfoId].property));
 
         wrapper.transition().duration(TRANSITION_LIGHTNING_FAST).attr('opacity', 1);
       });
@@ -5936,18 +5928,18 @@ var NodeContextMenu = function () {
   }, {
     key: 'close',
     value: function close() {
-      var _this3 = this;
+      var _this4 = this;
 
-      if (!this.closing) {
+      if (this.node && !this.closing) {
         this.closing = new Promise$2(function (resolve) {
-          _this3.opened = false;
-          _this3.updateAppearance();
+          _this4.opened = false;
+          _this4.updateAppearance();
 
           setTimeout(function () {
-            _this3.visible = false;
-            _this3.updateAppearance();
-            resolve(_this3.node.datum().id);
-            _this3.node = undefined;
+            _this4.visible = false;
+            _this4.updateAppearance();
+            resolve(_this4.node.datum().id);
+            _this4.node = undefined;
           }, TRANSITION_SPEED);
         });
       }
@@ -6006,13 +5998,13 @@ var NodeContextMenu = function () {
   }, {
     key: 'createButtonBg',
     value: function createButtonBg(selection, properties) {
-      var _this4 = this;
+      var _this5 = this;
 
       selection.datum(function (data) {
-        data.x = _this4.visData.global.row.padding;
-        data.y = _this4.visData.global.row.padding;
-        data.width = _this4.visData.global.column.width * (properties.fullWidth ? 1 : 0.5) - _this4.visData.global.row.padding * 2;
-        data.height = _this4.visData.global.row.contentHeight;
+        data.x = _this5.visData.global.row.padding;
+        data.y = _this5.visData.global.row.padding;
+        data.width = _this5.visData.global.column.width * (properties.fullWidth ? 1 : 0.5) - _this5.visData.global.row.padding * 2;
+        data.height = _this5.visData.global.row.contentHeight;
         data.rx = 2;
         data.ry = 2;
 
@@ -6202,27 +6194,27 @@ var NodeContextMenu = function () {
   }, {
     key: 'open',
     value: function open(node) {
-      var _this5 = this;
+      var _this6 = this;
 
       return new Promise$2(function (resolve) {
-        _this5.node = node;
-        _this5.closing = undefined;
+        _this6.node = node;
+        _this6.closing = undefined;
 
-        _this5.updateStates();
+        _this6.updateStates();
 
-        _this5._yOffset = _this5.visData.nodes[_this5.node.datum().depth].scrollTop;
-        _this5.translate = {
-          x: _this5.node.datum().x,
-          y: _this5.node.datum().y - _this5.height
+        _this6._yOffset = _this6.visData.nodes[_this6.node.datum().depth].scrollTop;
+        _this6.translate = {
+          x: _this6.node.datum().x,
+          y: _this6.node.datum().y - _this6.height
         };
-        _this5.checkOrientation();
+        _this6.checkOrientation();
 
-        _this5.updateAppearance();
-        _this5.opened = true;
-        _this5.visible = true;
+        _this6.updateAppearance();
+        _this6.opened = true;
+        _this6.visible = true;
 
         requestNextAnimationFrame(function () {
-          _this5.updateAppearance();
+          _this6.updateAppearance();
           setTimeout(function () {
             resolve(true);
           }, TRANSITION_SPEED);
@@ -6250,7 +6242,7 @@ var NodeContextMenu = function () {
   }, {
     key: 'positionComponent',
     value: function positionComponent(selection, distanceFromCenter, alignRight) {
-      var _this6 = this;
+      var _this7 = this;
 
       selection.datum(function (data) {
         // Lets cache some values to make our lives easier when checking the
@@ -6263,10 +6255,10 @@ var NodeContextMenu = function () {
         }
         return data;
       }).attr('transform', function (data) {
-        var x = data.alignRight ? _this6.visData.global.column.width / 2 : 0;
+        var x = data.alignRight ? _this7.visData.global.column.width / 2 : 0;
         // When the buttons are created I assume self the menu is positioned
         // above the node; i.e. `distanceFromCenter` needs to be inverted.
-        var y = _this6.visData.global.row.height * (_this6.toBottom ? data.distanceFromCenter : _this6.numButtonRows - data.distanceFromCenter - 1) + (_this6.toBottom ? ARROW_SIZE : 0);
+        var y = _this7.visData.global.row.height * (_this7.toBottom ? data.distanceFromCenter : _this7.numButtonRows - data.distanceFromCenter - 1) + (_this7.toBottom ? ARROW_SIZE : 0);
 
         return 'translate(' + x + ', ' + y + ')';
       });
@@ -6315,7 +6307,6 @@ var NodeContextMenu = function () {
      * @method  rootHandler
      * @author  Fritz Lekschas
      * @date    2016-09-13
-     * @param   {Boolean}  debounced  If `true` the handler will debounce.
      */
 
   }, {
@@ -6331,7 +6322,7 @@ var NodeContextMenu = function () {
       this.currentRootState = undefined;
       this.buttonRoot.classed('fill-effect', false);
 
-      this.buttonRoot.classed('active', this.node.datum().data.state.root);
+      // this.buttonRoot.classed('active', this.node.datum().data.state.root);
     }
 
     /* ---------------------------------- S ----------------------------------- */
@@ -6376,19 +6367,19 @@ var NodeContextMenu = function () {
      * @param   {Object}  node  D3 selection of the related node.
      */
     value: function toggle(node) {
-      var _this7 = this;
+      var _this8 = this;
 
       return new Promise$2(function (resolve) {
         var nodeId = node.datum().id;
         var closed = Promise$2.resolve();
 
-        if (_this7.visible) {
-          closed = _this7.close();
+        if (_this8.visible) {
+          closed = _this8.close();
         }
 
         closed.then(function (previousNodeId) {
           if (nodeId !== previousNodeId) {
-            _this7.open(node).then(function () {
+            _this8.open(node).then(function () {
               resolve(nodeId);
             });
           } else {
