@@ -407,6 +407,20 @@ class Nodes {
           nodeIds, this.toggleRoot, [true, true]
         )
       );
+
+      this.events.on(
+        'd3ListGraphNodeQuery',
+        data => this.eventHelper(
+          data.nodeIds, this.queryHandler, ['query', data.mode, true]
+        )
+      );
+
+      this.events.on(
+        'd3ListGraphNodeUnquery',
+        data => this.eventHelper(
+          data.nodeIds, this.queryHandler, ['unquery', undefined, true]
+        )
+      );
     }
 
     this.nodes.call(this.isInvisible.bind(this));

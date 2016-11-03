@@ -297,9 +297,7 @@ class NodeContextMenu {
     );
 
     this.events.on('d3ListGraphNodeLock', () => {
-      if (this.node) {
-        this.clickLockHandler();
-      }
+      if (this.node) { this.clickLockHandler(); }
     });
 
     this.events.on('d3ListGraphNodeUnlock', () => this.updateStates());
@@ -307,6 +305,14 @@ class NodeContextMenu {
     this.events.on('d3ListGraphNodeRoot', () => this.close());
 
     this.events.on('d3ListGraphNodeUnroot', () => this.close());
+
+    this.events.on('d3ListGraphNodeQuery', () => requestNextAnimationFrame(
+      () => { this.updateStates(); })
+    );
+
+    this.events.on('d3ListGraphNodeUnquery', () => requestNextAnimationFrame(
+      () => { this.updateStates(); })
+    );
   }
 
   /* ---------------------------------------------------------------------------
