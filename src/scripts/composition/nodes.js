@@ -608,15 +608,8 @@ class Nodes {
     this.highlightNodes(d3.select(el));
 
     const eventData = {
-      id: data.id,
-      clone: false,
-      clonedFromId: undefined
+      id: data.clone ? data.originalNode.id : data.id
     };
-
-    if (data.clone) {
-      eventData.clone = true;
-      eventData.clonedFromId = data.originalNode.id;
-    }
 
     this.events.broadcast('d3ListGraphNodeEnter', eventData);
   }
@@ -948,15 +941,8 @@ class Nodes {
     this.unhighlightNodes(d3.select(el));
 
     const eventData = {
-      id: data.id,
-      clone: false,
-      clonedFromId: undefined
+      id: data.clone ? data.originalNode.id : data.id
     };
-
-    if (data.clone) {
-      eventData.clone = true;
-      eventData.clonedFromId = data.originalNode.id;
-    }
 
     this.events.broadcast('d3ListGraphNodeLeave', eventData);
   }
@@ -975,34 +961,22 @@ class Nodes {
     if (events.locked && events.unlocked) {
       this.events.broadcast('d3ListGraphNodeLockChange', {
         lock: {
-          id: events.locked.id,
-          clone: events.locked.clone,
-          clonedFromId: events.locked.clone ?
-            events.locked.originalNode.id : undefined
+          id: events.locked.id
         },
         unlock: {
-          id: events.unlocked.id,
-          clone: events.unlocked.clone,
-          clonedFromId: events.unlocked.clone ?
-            events.unlocked.originalNode.id : undefined
+          id: events.unlocked.id
         }
       });
     } else {
       if (events.locked) {
         this.events.broadcast('d3ListGraphNodeLock', {
-          id: events.locked.id,
-          clone: events.locked.clone,
-          clonedFromId: events.locked.clone ?
-            events.locked.originalNode.id : undefined
+          id: events.locked.id
         });
       }
 
       if (events.unlocked) {
         this.events.broadcast('d3ListGraphNodeUnlock', {
-          id: events.unlocked.id,
-          clone: events.unlocked.clone,
-          clonedFromId: events.unlocked.clone ?
-            events.unlocked.originalNode.id : undefined
+          id: events.unlocked.id
         });
       }
     }
@@ -1136,20 +1110,16 @@ class Nodes {
       if (data.data.state.query !== previousMode) {
         event.name = 'd3ListGraphNodeQuery';
         event.data = {
-          id: data.id,
-          clone: data.clone,
-          clonedFromId: data.clone ?
-            data.originalNode.id : undefined,
+          id: data.clone ?
+            data.originalNode.id : data.id,
           mode: data.data.state.query
         };
       }
     } else {
       event.name = 'd3ListGraphNodeUnquery';
       event.data = {
-        id: data.id,
-        clone: data.clone,
-        clonedFromId: data.clone ?
-          data.originalNode.id : undefined
+        id: data.clone ?
+          data.originalNode.id : data.id
       };
     }
 
@@ -1179,34 +1149,26 @@ class Nodes {
     if (events.rooted && events.unrooted) {
       this.events.broadcast('d3ListGraphNodeReroot', {
         rooted: {
-          id: events.rooted.id,
-          clone: events.rooted.clone,
-          clonedFromId: events.rooted.clone ?
-            events.rooted.originalNode.id : undefined
+          id: events.rooted.clone ?
+            events.rooted.originalNode.id : events.rooted.id
         },
         unrooted: {
-          id: events.unrooted.id,
-          clone: events.unrooted.clone,
-          clonedFromId: events.unrooted.clone ?
-            events.unrooted.originalNode.id : undefined
+          id: events.unrooted.clone ?
+            events.unrooted.originalNode.id : events.unrooted.id
         }
       });
     } else {
       if (events.rooted) {
         this.events.broadcast('d3ListGraphNodeRoot', {
-          id: events.rooted.id,
-          clone: events.rooted.clone,
-          clonedFromId: events.rooted.clone ?
-            events.rooted.originalNode.id : undefined
+          id: events.rooted.clone ?
+            events.rooted.originalNode.id : events.rooted.id
         });
       }
 
       if (events.unrooted) {
         this.events.broadcast('d3ListGraphNodeUnroot', {
-          id: events.unrooted.id,
-          clone: events.unrooted.clone,
-          clonedFromId: events.unrooted.clone ?
-            events.unrooted.originalNode.id : undefined
+          id: events.unrooted.clone ?
+            events.unrooted.originalNode.id : events.unrooted.id
         });
       }
     }
