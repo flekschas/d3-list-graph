@@ -2418,6 +2418,14 @@ var Nodes = function () {
       this.events.on('d3ListGraphNodeUnroot', function (nodeIds) {
         return _this.eventHelper(nodeIds, _this.toggleRoot, [true, true]);
       });
+
+      this.events.on('d3ListGraphNodeQuery', function (data) {
+        return _this.eventHelper(data.nodeIds, _this.queryHandler, ['query', data.mode, true]);
+      });
+
+      this.events.on('d3ListGraphNodeUnquery', function (data) {
+        return _this.eventHelper(data.nodeIds, _this.queryHandler, ['unquery', undefined, true]);
+      });
     }
 
     this.nodes.call(this.isInvisible.bind(this));
@@ -5650,6 +5658,18 @@ var NodeContextMenu = function () {
 
     this.events.on('d3ListGraphNodeUnroot', function () {
       return _this.close();
+    });
+
+    this.events.on('d3ListGraphNodeQuery', function () {
+      return requestNextAnimationFrame(function () {
+        _this.updateStates();
+      });
+    });
+
+    this.events.on('d3ListGraphNodeUnquery', function () {
+      return requestNextAnimationFrame(function () {
+        _this.updateStates();
+      });
     });
   }
 
