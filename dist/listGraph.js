@@ -8223,7 +8223,7 @@ var ListGraph = function () {
   return ListGraph;
 }();
 
-ListGraph.version = '0.17.0';
+ListGraph.version = '1.0.0';
 
 return ListGraph;
 
