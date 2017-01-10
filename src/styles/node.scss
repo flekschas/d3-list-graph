@@ -74,6 +74,10 @@
     stroke: #bfbfbf;
   }
 
+  .column.active .node.lock-directly .border {
+    stroke: $color-highlight-red;
+  }
+
   .node.clone .border {
     stroke-dasharray: 5, 2;
   }
@@ -137,6 +141,10 @@
 
   .column.active .node .label {
     color: $text-color-semi-highlight;
+  }
+
+  .column.active .node.lock-directly .label {
+    color: #000;
   }
 
   .node.hovering-directly .label,
