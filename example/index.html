@@ -53,10 +53,14 @@
       // console.log('Custom dispatcher: has ' + event, data);
     };
 
+    function customButtonCb () {
+      alert('You clicked on a custom button');
+    }
+
     function createListGraph (querySelector, data, rootNodes) {
       return new ListGraph({
         d3: d3V4,
-        columns: 5,
+        columns: 4,
         data: data,
         element: document.querySelector(querySelector),
         iconPath: '/dist/icons.svg',
@@ -78,6 +82,11 @@
         }, {
           label: 'Name',
           property: (data) => data.data.name
+        }],
+        customTopbarButtons: [{
+          label: 'Click me',
+          callback: customButtonCb,
+          iconSpan: '/dist/icons.svg#two-bars'
         }]
       });
     }

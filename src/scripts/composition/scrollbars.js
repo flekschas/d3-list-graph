@@ -4,18 +4,34 @@ import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
 // Internal
 import * as config from './config';
 
+/**
+ * Class name of scrollbar elements.
+ *
+ * @type  {String}
+ */
 const SCROLLBAR_CLASS = 'scrollbar';
 
 class Scrollbars {
-  constructor (baseSelection, visData, width) {
+  /**
+   * [constructor description]
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  baseEl   D3 selection of the element where the
+   *   scrollbars should be appended to.
+   * @param   {Object}  visData  List Graph App's data.
+   * @param   {Number}  width    Width of the scrollbar in pixels.
+   */
+  constructor (baseEl, visData, width) {
     this.visData = visData;
     this.width = width;
 
     // Add empty scrollbar element
-    this.all = baseSelection
+    this.all = baseEl
       .append('rect')
         .attr('class', SCROLLBAR_CLASS)
-        .call(selection => {
+        .call((selection) => {
           selection.each(function setScrollBarDomElement () {
             d3.select(this.parentNode).datum().scrollbar.el = this;
           });
@@ -29,14 +45,19 @@ class Scrollbars {
         .classed('ready', true);
   }
 
+  /**
+   * Update the viisual state of the scrollbar given the current data.
+   *
+   * @method  updateVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   */
   updateVisibility () {
     this.all
       .transition()
       .duration(config.TRANSITION_LIGHTNING_FAST)
-      .attr({
-        x: data => data.scrollbar.x,
-        height: data => data.scrollbar.height
-      });
+      .attr('x', data => data.scrollbar.x)
+      .attr('height', data => data.scrollbar.height);
   }
 }
 

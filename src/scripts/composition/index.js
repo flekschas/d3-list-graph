@@ -1,6 +1,6 @@
 // External
-import * as $ from '$';  // eslint-disable-line import/no-unresolved
-import * as d3 from 'd3';  // eslint-disable-line import/no-unresolved
+import '$';  // eslint-disable-line
+import * as d3 from 'd3';  // eslint-disable-line
 import isArray from '../../../node_modules/lodash-es/isArray';
 
 // Internal
@@ -13,24 +13,31 @@ import Links from './links';
 import Nodes from './nodes';
 import Scrollbars from './scrollbars';
 import Events from './events';
-import NodeContextMenu from './nodeContextMenu';
+import NodeContextMenu from './node-context-menu';
 import { onDragDrop, dragMoveHandler } from '../commons/event-handlers';
 import { allTransitionsEnded } from '../commons/d3-utils';
 import { dropShadow } from '../commons/filters';
-import { requestNextAnimationFrame } from '../commons/shims';
+import { requestNextAnimationFrame } from '../commons/animation-frame';
+import { setOption } from '../commons/utils';
+import { all as icons } from './icons';
+import { createSymbolIcon } from '../commons/symbols';
 
-// Private Variables
+/**
+ * Private d3 object. Needed to handle cases where D3.js v3 and v4 are used.
+ *
+ * @type  {Object}
+ */
 let _d3 = d3;
 
-function setOption (value, defaultValue, noFalsyValue) {
-  if (noFalsyValue) {
-    return value || defaultValue;
-  }
-
-  return typeof value !== 'undefined' ? value : defaultValue;
-}
-
 class ListGraph {
+  /**
+   * ListGraph App constructor.
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  init  Config object.
+   */
   constructor (init) {
     if (init.d3) {
       _d3 = init.d3;
@@ -44,7 +51,7 @@ class ListGraph {
       throw new LayoutNotAvailable();
     }
 
-    const that = this;
+    const self = this;
 
     this.baseEl = init.element;
     this.baseEl.__d3ListGraphBase__ = true;
@@ -142,7 +149,17 @@ class ListGraph {
       config.DISABLE_DEBOUNCED_CONTEXT_MENU
     );
 
+    // Create custom topbar buttons
+    this.customTopbarButtons = setOption(
+      init.customTopbarButtons, []
+    );
+
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
+
+    // Add SVG Icons
+    icons.forEach(
+      icon => createSymbolIcon(this.svgD3, icon.id, icon.paths, icon.viewBox)
+    );
 
     // Holds the key of the property to be sorted initially. E.g. `precision`.
     this.sortBy = init.sortBy;
@@ -163,17 +180,17 @@ class ListGraph {
       this.baseElJq.width(this.width);
     }
 
-    this.layout = new _d3.listGraph( // eslint-disable-line new-cap
-      [
+    this.layout = new _d3.listGraph({ // eslint-disable-line new-cap
+      size: [
         this.width,
         this.height
       ],
-      [
+      grid: [
         this.columns,
         this.rows
       ],
-      _d3
-    );
+      d3: _d3
+    });
 
     this.data = init.data;
     this.visData = this.layout.process(
@@ -203,7 +220,9 @@ class ListGraph {
     this.barMode = init.barMode || config.DEFAULT_BAR_MODE;
     this.svgD3.classed(this.barMode + '-bar', true);
 
-    this.topbar = new Topbar(this, this.baseElD3, this.visData);
+    this.topbar = new Topbar(
+      this, this.baseElD3, this.visData, this.customTopbarButtons
+    );
 
     this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
 
@@ -219,21 +238,23 @@ class ListGraph {
       this.links,
       this.events
     );
-    this.levels.scrollPreparation(this, this.scrollbarWidth);
+    this.levels.scrollPreparation(this.scrollbarWidth);
     this.scrollbars = new Scrollbars(
       this.levels.groups,
       this.visData,
       this.scrollbarWidth
     );
 
-    this.nodeContextMenu = new NodeContextMenu(
-      this,
-      this.visData,
-      this.container,
-      this.events,
-      this.querying,
-      this.nodeInfoContextMenu
-    );
+    this.nodeContextMenu = new NodeContextMenu({
+      visData: this.visData,
+      baseEl: this.container,
+      events: this.events,
+      nodes: this.nodes,
+      iconPath: this.iconPath,
+      infoFields: this.nodeInfoContextMenu,
+      isQueryable: this.querying,
+      isDebounced: !this.disableDebouncedContextMenu
+    });
 
     this.nodeContextMenu.wrapper.on('mousedown', () => {
       this.mouseDownOnContextMenu = true;
@@ -244,41 +265,41 @@ class ListGraph {
 
     // jQuery's mousewheel plugin is much nicer than D3's half-baked zoom event.
     // We are using delegated event listeners to provide better scaling
-    this.svgJq.on('mousewheel', '.' + this.levels.className, function (event) {
-      if (!that.zoomedOut) {
-        that.mousewheelColumn(this, event);
+    this.svgJq.on('mousewheel', '.' + Levels.className, function (event) {
+      if (!self.zoomedOut) {
+        self.mousewheelColumn(this, event);
       }
     });
 
-    this.svgJq.on('click', event => {
-      that.checkGlobalClick.call(that, event.target);
+    this.svgJq.on('click', (event) => {
+      self.checkGlobalClick.call(self, event.target);
     });
 
     // Add jQuery delegated event listeners instead of direct listeners of D3.
     this.svgJq.on(
       'click',
-      `.${this.nodes.classNodeVisible}`,
+      `.${Nodes.classNodeVisible}`,
       function () {
         // Add a new global outside click listener using this node and the
         // node context menu as the related elements.
         requestNextAnimationFrame(() => {
-          that.registerOutSideClickHandler(
+          self.registerOutSideClickHandler(
             'nodeContextMenu',
-            [that.nodeContextMenu.wrapper.node()],
+            [self.nodeContextMenu.wrapper.node()],
             ['visible-node'],
             () => {
               // The context of this method is the context of the outer click
               // handler.
-              that.nodeContextMenu.close();
-              that.unregisterOutSideClickHandler.call(
-                that, 'nodeContextMenu'
+              self.nodeContextMenu.close();
+              self.unregisterOutSideClickHandler.call(
+                self, 'nodeContextMenu'
               );
             }
           );
         });
 
-        that.nodeContextMenu.toggle.call(
-          that.nodeContextMenu,
+        self.nodeContextMenu.toggle.call(
+          self.nodeContextMenu,
           _d3.select(this.parentNode)
         );
       }
@@ -286,56 +307,48 @@ class ListGraph {
 
     this.svgJq.on(
       'click',
-      `.${this.nodes.classFocusControls}.${this.nodes.classRoot}`,
+      `.${Nodes.classFocusControls}.${Nodes.classRoot}`,
       function () {
-        that.nodes.rootHandler.call(that.nodes, _d3.select(this), true);
+        self.nodes.rootHandler.call(self.nodes, _d3.select(this), true);
       }
     );
 
     if (this.querying) {
       this.svgJq.on(
         'click',
-        `.${this.nodes.classFocusControls}.${this.nodes.classQuery}`,
+        `.${Nodes.classFocusControls}.${Nodes.classQuery}`,
         function () {
-          that.nodes.queryHandler.call(
-            that.nodes,
+          self.nodes.queryHandler.call(
+            self.nodes,
             _d3.select(this.parentNode),
             'unquery'
           );
-          that.nodeContextMenu.updateStates();
+          self.nodeContextMenu.updateStates();
         }
       );
     }
 
     this.svgJq.on(
-      'click',
-      `.${this.nodes.classFocusControls}.${this.nodes.classLock}`,
-      function () {
-        that.nodes.lockHandler.call(that.nodes, this, _d3.select(this).datum());
-      }
-    );
-
-    this.svgJq.on(
       'mouseenter',
-      `.${this.nodes.classNodeVisible}`,
+      `.${Nodes.classNodeVisible}`,
       function () {
-        that.interactionWrapper.call(that, function (domEl, data) {
+        self.interactionWrapper.call(self, function (domEl, data) {
           if (!this.vis.activeScrollbar) {
             this.enterHandler.call(this, domEl, data);
           }
-        }.bind(that.nodes), [this, _d3.select(this).datum()]);
+        }.bind(self.nodes), [this, _d3.select(this).datum()]);
       }
     );
 
     this.svgJq.on(
       'mouseleave',
-      `.${this.nodes.classNodeVisible}`,
+      `.${Nodes.classNodeVisible}`,
       function () {
-        that.interactionWrapper.call(that, function (domEl, data) {
+        self.interactionWrapper.call(self, function (domEl, data) {
           if (!this.vis.activeScrollbar) {
             this.leaveHandler.call(this, domEl, data);
           }
-        }.bind(that.nodes), [this, _d3.select(this).datum()]);
+        }.bind(self.nodes), [this, _d3.select(this).datum()]);
       }
     );
 
@@ -343,15 +356,14 @@ class ListGraph {
     // the class' `this` property instead of the DOM element we need to use an
     // arrow function.
     this.scrollbars.all.on('mousedown', function () {
-      that.scrollbarMouseDown(this, _d3.event);
+      self.scrollbarMouseDown(this, _d3.event);
     });
 
     // We need to listen to `mouseup` and `mousemove` globally otherwise
     // scrolling will only work as long as the cursor hovers the actual
     // scrollbar, which is super annoying.
     _d3.select(document)
-      .on('mouseup', () => { this.globalMouseUp(_d3.event); })
-      .on('mousemove', () => { this.globalMouseMove(_d3.event); });
+      .on('mouseup', () => { this.globalMouseUp(_d3.event); });
 
     // Enable dragging of the whole graph.
     this.svgD3.call(
@@ -366,7 +378,8 @@ class ListGraph {
       'horizontal',
       this.getDragLimits.bind(this),
       this.noDragging.bind(this),
-      this.dragged
+      this.dragged,
+      2
     );
 
     this.events.on(
@@ -378,7 +391,7 @@ class ListGraph {
       'd3ListGraphNodeRoot',
       () => {
         this.nodes.bars.updateAll(
-          this.layout.updateBars(this.data), this.currentSorting.global.type
+          _d3.listGraph.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
       }
@@ -388,7 +401,7 @@ class ListGraph {
       'd3ListGraphNodeUnroot',
       () => {
         this.nodes.bars.updateAll(
-          this.layout.updateBars(this.data), this.currentSorting.global.type
+          _d3.listGraph.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
       }
@@ -398,7 +411,7 @@ class ListGraph {
       'd3ListGraphUpdateBars',
       () => {
         this.nodes.bars.updateAll(
-          this.layout.updateBars(this.data), this.currentSorting.global.type
+          _d3.listGraph.updateBars(this.data), this.currentSorting.global.type
         );
         this.updateSorting();
       }
@@ -406,7 +419,7 @@ class ListGraph {
 
     this.events.on(
       'd3ListGraphActiveLevel',
-      nextLevel => {
+      (nextLevel) => {
         const oldLevel = this.activeLevel;
         this.activeLevel = Math.max(nextLevel, 0);
         if (this.nodes.rootedNode) {
@@ -426,54 +439,56 @@ class ListGraph {
     this.getBoundingRect();
   }
 
-  dragMoveHandler (data, elsToBeDragged, orientation, limits, notWhenTrue) {
-    dragMoveHandler(
-      data, elsToBeDragged, orientation, limits, notWhenTrue
-    );
-    this.checkNodeVisibility();
+  /**
+   * Get visually used area of the container
+   *
+   * @method  area
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Object}  Bounding client rectangle.
+   */
+  get area () {
+    return this.container.node().getBoundingClientRect();
   }
 
-  checkNodeVisibility (level, customScrollTop) {
-    const nodes = level ?
-      this.nodes.nodes.filter(data => data.depth === level) : this.nodes.nodes;
-
-    nodes.call(this.nodes.isInvisible.bind(this.nodes), customScrollTop);
-  }
-
-  registerOutSideClickHandler (id, els, elClassNames, callback) {
-    // We need to register a unique property to be able to indentify that
-    // element later efficiently.
-    for (let i = els.length; i--;) {
-      if (els[i].__id__) {
-        els[i].__id__.push(id);
-      } else {
-        els[i].__id__ = [id];
-      }
+  /**
+   * Get current bar mode.
+   *
+   * @method  barMode
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {String}  Bar mode. Either "one" or "two".
+   */
+  get barMode () {
+    if (this.bars) {
+      return this.nodes.bars.mode;
     }
-    const newLength = this.outsideClickHandler[id] = {
-      id, els, elClassNames, callback
-    };
-    for (let i = elClassNames.length; i--;) {
-      this.outsideClickClassHandler[elClassNames[i]] =
-        this.outsideClickHandler[id];
-    }
-    return newLength;
+    return this._barMode;
   }
 
-  unregisterOutSideClickHandler (id) {
-    const handler = this.outsideClickHandler[id];
-
-    // Remove element `__id__` property.
-    for (let i = handler.els.length; i--;) {
-      handler.els[i].__id__ = undefined;
-      delete handler.els[i].__id__;
+  /**
+   * Set bar mode.
+   *
+   * @method  barMode
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}  mode  Bar mode. Either "one" or "two".
+   */
+  set barMode (mode) {
+    if (this.bars) {
+      this.nodes.bars.mode = mode;
     }
-
-    // Remove handler.
-    this.outsideClickHandler[id] = undefined;
-    delete this.outsideClickHandler[id];
+    this._barMode = mode;
   }
 
+  /**
+   * Check global mouse click
+   *
+   * @method  checkGlobalClick
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  target  DOM element
+   */
   checkGlobalClick (target) {
     const found = {};
     const checkClass = Object.keys(this.outsideClickClassHandler).length;
@@ -507,21 +522,155 @@ class ListGraph {
     }
   }
 
-  get area () {
-    return this.container.node().getBoundingClientRect();
+  /**
+   * Check which nodes of a level are visible.
+   *
+   * @method  checkNodeVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Number}  level            Index of the level or column.
+   * @param   {[type]}             customScrollTop  [description]
+   */
+  checkNodeVisibility (level, customScrollTop) {
+    const nodes = level ?
+      this.nodes.nodes.filter(data => data.depth === level) : this.nodes.nodes;
+
+    nodes.call(this.nodes.isInvisible.bind(this.nodes), customScrollTop);
   }
 
+  /**
+   * Drag end handler
+   *
+   * @method  dragEndHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  dragEndHandler () {
+    if (this.dragging) {
+      this.noInteractions = (this.dragging = false);
+    }
+  }
+
+  /**
+   * Get the minimal drag X value
+   *
+   * @method  dragMinX
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Number}  Minimal drag x value.
+   */
   get dragMinX () {
     return Math.min(0, this.width - this.area.width);
   }
 
-  getDragLimits () {
-    return {
-      x: {
-        min: this.dragMinX,
-        max: 0
-      }
-    };
+  /**
+   * Drag-move handler instance.
+   *
+   * @method  dragMoveHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}           data            D3's drag event object.
+   * @param   {Array}            elsToBeDragged  Array of D3 selections.
+   * @param   {String}           orientation     Can either be "horizontal",
+   *   "vertical" or `undefined`, i.e. both directions.
+   * @param   {Object|Function}  limits          X and Y drag limits. E.g.
+   *   `{ x: { min: 0, max: 10 } }`.
+   */
+  dragMoveHandler (data, elsToBeDragged, orientation, limits) {
+    dragMoveHandler(
+      data, elsToBeDragged, orientation, limits
+    );
+    this.checkNodeVisibility();
+  }
+
+  /**
+   * Method for scrolling a column of nodes when the scrollbar is dragged.
+   *
+   * @method  dragScrollbar
+   * @author  Fritz Lekschas
+   * @date    2016-09-12
+   * @param   {Object}  event  D3's _mousemove_ event object.
+   */
+  dragScrollbar (event) {
+    event.preventDefault();
+    const data = this.activeScrollbar.datum();
+    const deltaY = data.scrollbar.clientY - event.clientY;
+
+    // Scroll scrollbar
+    ListGraph.scrollElVertically(
+      this.activeScrollbar.node(),
+      Math.min(
+        Math.max(
+          data.scrollbar.scrollTop - deltaY,
+          0
+        ),
+        data.scrollbar.scrollHeight
+      )
+    );
+
+    // Scroll content
+    const contentScrollTop = Math.max(
+      Math.min(
+        data.scrollTop +
+        data.invertedHeightScale(deltaY),
+        0
+      ),
+      -data.scrollHeight
+    );
+
+    ListGraph.scrollElVertically(
+      data.nodes,
+      contentScrollTop
+    );
+
+    // Scroll Links
+    if (data.level !== this.visData.nodes.length) {
+      this.links.scroll(
+        data.linkSelections.outgoing,
+        this.layout.offsetLinks(
+          data.level,
+          contentScrollTop,
+          'source'
+        )
+      );
+    }
+
+    if (data.level > 0) {
+      this.links.scroll(
+        data.linkSelections.incoming,
+        this.layout.offsetLinks(
+          data.level - 1,
+          contentScrollTop,
+          'target'
+        )
+      );
+    }
+
+    if (this.showLinkLocation) {
+      this.nodes.updateLinkLocationIndicators(
+        data.level - 1, data.level + 1
+      );
+    }
+
+    if (this.nodeContextMenu.opened) {
+      this.nodeContextMenu.scrollY(contentScrollTop);
+    }
+
+    // Check if nodes are visible.
+    this.checkNodeVisibility(data.level, contentScrollTop);
+  }
+
+  /**
+   * Drag start handler
+   *
+   * @method  dragStartHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  dragStartHandler () {
+    if (!this.dragging) {
+      this.noInteractions = (this.dragging = true);
+    }
   }
 
   /**
@@ -541,35 +690,32 @@ class ListGraph {
     this.top = this.svgEl.getBoundingClientRect().top;
   }
 
-  interactionWrapper (callback, params) {
-    if (!this.noInteractions) {
-      callback.apply(this, params);
-    }
+  /**
+   * Get drag limits
+   *
+   * @method  dragLimits
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Object}  Min and max drag limits.
+   */
+  getDragLimits () {
+    return {
+      x: {
+        min: this.dragMinX,
+        max: 0
+      }
+    };
   }
 
-  dragStartHandler () {
-    if (!this.dragging) {
-      this.noInteractions = (this.dragging = true);
-    }
-  }
-
-  dragEndHandler () {
-    if (this.dragging) {
-      this.noInteractions = (this.dragging = false);
-    }
-  }
-
-  static scrollElVertically (el, offset) {
-    _d3.select(el).attr(
-      'transform',
-      'translate(0, ' + offset + ')'
-    );
-  }
-
-  noDragging () {
-    return !!this.activeScrollbar || this.mouseDownOnContextMenu;
-  }
-
+  /**
+   * Global _mouseUp_ event handler
+   *
+   * @method  globalMouseUp
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {[type]}       event  [description]
+   * @return  {[type]}              [description]
+   */
   globalMouseUp (event) {
     this.noInteractions = false;
     this.mouseDownOnContextMenu = false;
@@ -601,106 +747,143 @@ class ListGraph {
       this.activeScrollbar.classed('active', false);
 
       this.activeScrollbar = undefined;
+
+      ListGraph.stopScrollBarMouseMove();
     }
   }
 
-  globalMouseMove (event) {
-    if (this.activeScrollbar) {
-      event.preventDefault();
-      const data = this.activeScrollbar.datum();
-      const deltaY = data.scrollbar.clientY - event.clientY;
+  /**
+   * Show the complete graph by zooming out
+   *
+   * @method  globalView
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  selectionInterst  D3 selection of nodes of interest,
+   *   which restrict the amount of zoom-out. If `undefined` the whole graph
+   *   will be shown.
+   */
+  globalView (selectionInterst) {
+    if (!this.zoomedOut) {
+      let x = 0;
+      let y = 0;
+      let width = 0;
+      let height = 0;
+      let cRect;
+      const contBBox = this.container.node().getBBox();
 
-      // Scroll scrollbar
-      ListGraph.scrollElVertically(
-        this.activeScrollbar.node(),
-        Math.min(
-          Math.max(
-            data.scrollbar.scrollTop - deltaY,
-            0
-          ),
-          data.scrollbar.scrollHeight
-        )
-      );
+      const globalCRect = this.svgD3.node().getBoundingClientRect();
 
-      // Scroll content
-      const contentScrollTop = Math.max(
-        Math.min(
-          data.scrollTop +
-          data.invertedHeightScale(deltaY),
-          0
-        ),
-        -data.scrollHeight
-      );
-
-      // Check if nodes are visible.
-      this.checkNodeVisibility(data.level, contentScrollTop);
-
-      ListGraph.scrollElVertically(
-        data.nodes,
-        contentScrollTop
-      );
-
-      // Scroll Links
-      if (data.level !== this.visData.nodes.length) {
-        this.links.scroll(
-          data.linkSelections.outgoing,
-          this.layout.offsetLinks(
-            data.level,
-            contentScrollTop,
-            'source'
-          )
-        );
+      if (selectionInterst && !selectionInterst.empty()) {
+        selectionInterst.each(function () {
+          cRect = this.getBoundingClientRect();
+          width = Math.max(
+            width,
+            cRect.left - (globalCRect.left + cRect.width)
+          );
+          height = Math.max(
+            height,
+            cRect.top - (globalCRect.top + cRect.height)
+          );
+        });
+        width = this.width > width ? this.width : width;
+        height = this.height > height ? this.height : height;
+      } else {
+        width = this.width > contBBox.width ? this.width : contBBox.width;
+        height = this.height > contBBox.height ? this.height : contBBox.height;
       }
 
-      if (data.level > 0) {
-        this.links.scroll(
-          data.linkSelections.incoming,
-          this.layout.offsetLinks(
-            data.level - 1,
-            contentScrollTop,
-            'target'
-          )
-        );
-      }
+      x = contBBox.x + this.dragged.x;
+      y = contBBox.y;
 
-      if (this.showLinkLocation) {
-        this.nodes.updateLinkLocationIndicators(
-          data.level - 1, data.level + 1
-        );
-      }
+      this.nodes.makeAllTempVisible();
+      this.links.makeAllTempVisible();
 
-      if (this.nodeContextMenu.opened) {
-        this.nodeContextMenu.scrollY(contentScrollTop);
-      }
+      this.svgD3
+        .classed('zoomedOut', true)
+        .transition()
+        .duration(config.TRANSITION_SEMI_FAST)
+        .attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
     }
   }
 
-  get barMode () {
-    if (this.bars) {
-      return this.nodes.bars.mode;
+  /**
+   * Interaction wrapper
+   *
+   * @description
+   * Cheks if interacctions are allowed first.
+   *
+   * @method  interactionWrapper
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Function}  callback  Callback function.
+   * @param   {Object}    params    Parameters of the callback function.
+   */
+  interactionWrapper (callback, params) {
+    if (!this.noInteractions) {
+      callback.apply(this, params);
     }
-    return this._barMode;
   }
 
-  set barMode (mode) {
-    if (this.bars) {
-      this.nodes.bars.mode = mode;
+  /**
+   * Check if an element is actually visible, i.e. within the boundaries of the
+   * SVG element.
+   *
+   * @method  isHidden
+   * @author  Fritz Lekschas
+   * @date    2016-02-24
+   * @param   {Object}    el  DOM element to be checked.
+   * @return  {Boolean}       If `true` element is not visible.
+   */
+  isHidden (el) {
+    const boundingRect = el.getBoundingClientRect();
+    return (
+      boundingRect.top + boundingRect.height <= this.top ||
+      boundingRect.left + boundingRect.width <= this.left ||
+      boundingRect.top >= this.top + this.height ||
+      boundingRect.left >= this.left + this.width
+    );
+  }
+
+  /**
+   * Assesses whether a link's end points outwards
+   *
+   * @method  linkPointsOutside
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  data  Link data.
+   * @return  {Number}  If link ends inwards returns `0`, if it points outwards
+   *   to the top returns `1` or `2` when it points to the bottom. If the node
+   *   pointed to is hidden return `16`.
+   */
+  linkPointsOutside (data) {
+    const y = data.node.y + data.offsetY;
+    if (data.node.hidden) {
+      return 16;
     }
-    this._barMode = mode;
+    if (
+      y + this.visData.global.row.height - this.visData.global.row.padding <= 0
+    ) {
+      return 1;
+    }
+    if (y + this.visData.global.row.padding >= this.height) {
+      return 2;
+    }
+    return 0;
   }
 
-  scrollbarMouseDown (el, event) {
-    this.noInteractions = true;
-    this.activeScrollbar = _d3.select(el).classed('active', true);
-    this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
-  }
-
+  /**
+   * Scroll column by the mouseWheel action
+   *
+   * @method  mousewheelColumn
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el     DOM element
+   * @param   {Object}  event  jQuery event object.
+   */
   mousewheelColumn (el, event) {
     event.preventDefault();
 
     const data = _d3.select(el).datum();
-
-    this.checkNodeVisibility(data.level);
 
     if (data.scrollHeight > 0) {
       // Scroll nodes
@@ -711,8 +894,167 @@ class ListGraph {
 
       this.scrollY(data);
     }
+
+    // Check if nodes are visible.
+    this.checkNodeVisibility(data.level);
   }
 
+  /**
+   * Check if dragging should be disabled.
+   *
+   * @description
+   * When the scrollbar or context menu is clicked the graph shouldn#t be
+   * draggable.
+   *
+   * @method  noDragging
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @return  {Boolean}  If `true` the graph shouldn't be draggable.
+   */
+  noDragging () {
+    return !!this.activeScrollbar || this.mouseDownOnContextMenu;
+  }
+
+  /**
+   * Assesses any of the two ends of a link points outwards.
+   *
+   * @description
+   * In order to be able to determine where a link points to, the output of
+   * `linkPointsOutside` for the source and target location is shifted bitwise
+   * in such a way that this method return 11 unique numbers.
+   * - 0: link is completely inwards
+   * - 1: source is outwards to the top
+   * - 2: source is outwards to the bottom
+   * - 4: target is outwards to the top
+   * - 8: target is outwards to the bottom
+   * - 5: source and target are outwards to the top
+   * - 6: source is outwards to the bottom and target is outwards to the top
+   * - 9: source is outwards to the top and target is outwards to the bottom
+   * - 10: source and target are outwards to the bottom
+   * - 16: source is invisible
+   * - 64: target is invisible
+   *
+   * If you're asking yourself: "WAT?!?!!" Think of a 4x4 binary matrix:
+   * |    target    |    source    |
+   * | bottom | top | bottom | top |
+   * |    0   |  0  |    0   |  0  | (=0)
+   * |    0   |  0  |    0   |  1  | (=1)
+   * |    0   |  0  |    1   |  0  | (=2)
+   * |    0   |  1  |    0   |  0  | (=4)
+   * |    1   |  0  |    0   |  0  | (=8)
+   * |    0   |  1  |    0   |  1  | (=5)
+   * |    0   |  1  |    1   |  0  | (=6)
+   * |    1   |  0  |    0   |  1  | (=9)
+   * |    1   |  0  |    1   |  0  | (=10)
+   *
+   * *Note: 16 and 64 are two special values when the source or target node is
+   * hidden. The numbers are so hight just because that the bitwise-and with 4
+   * and 8 results to 0.
+   *
+   * To check whether the source or target location is above, below or within
+   * the global SVG container is very simple. For example, to find out if the
+   * target location is above, all we need to do is `<VALUE> & 4 > 0`. This
+   * performs a bit-wise AND operation with only two possible outcomes: 4 and 0.
+   *
+   * @method  pointsOutside
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  data  Link data.
+   * @return  {Number}  Numberical represenation of the links constallation. See
+   *   description for details.
+   */
+  pointsOutside (data) {
+    const source = this.linkPointsOutside(data.source);
+    const target = this.linkPointsOutside(data.target) << 2;
+    return source | target;
+  }
+
+  /**
+   * Register an outside mouse click handler
+   *
+   * @method  registerOutSideClickHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}     id            ID of the handler to be removed.
+   * @param   {Array}      els           Array of elements to be registered.
+   * @param   {[type]}     elClassNames  Element class names.
+   * @param   {Function}   callback      Callback function
+   * @return  {Number}                   Return number of outside click
+   *   handlers.
+   */
+  registerOutSideClickHandler (id, els, elClassNames, callback) {
+    // We need to register a unique property to be able to efficiently identify
+    // the element later.
+    for (let i = els.length; i--;) {
+      if (els[i].__id__) {
+        els[i].__id__.push(id);
+      } else {
+        els[i].__id__ = [id];
+      }
+    }
+    const newLength = this.outsideClickHandler[id] = {
+      id, els, elClassNames, callback
+    };
+    for (let i = elClassNames.length; i--;) {
+      this.outsideClickClassHandler[elClassNames[i]] =
+        this.outsideClickHandler[id];
+    }
+    return newLength;
+  }
+
+  /**
+   * Helper method to scroll all columns to the top.
+   *
+   * @method  resetAllScrollPositions
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  resetAllScrollPositions () {
+    return this.scrollYTo(this.levels.groups, 0);
+  }
+
+  /**
+   * Scrollbar _mouseDown_ handler
+   *
+   * @method  scrollbarMouseDown
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el     DOM element.
+   * @param   {Object}  event  D3 _mouseDown_ event object.
+   */
+  scrollbarMouseDown (el, event) {
+    this.noInteractions = true;
+    this.activeScrollbar = _d3.select(el).classed('active', true);
+    this.activeScrollbar.datum().scrollbar.clientY = event.clientY;
+    this.startScrollBarMouseMove();
+  }
+
+  /**
+   * Scroll an element vertically
+   *
+   * @method  scrollElVertically
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  el      DOM element to be scrolled.
+   * @param   {Number}  offset  Number of pixel to be scrolled.
+   */
+  static scrollElVertically (el, offset) {
+    _d3.select(el).attr(
+      'transform',
+      'translate(0, ' + offset + ')'
+    );
+  }
+
+  /**
+   * Scroll column of nodes.
+   *
+   * @method  scrollY
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}   columnData         D3 data object of the column.
+   * @param   {Boolean}  scrollbarDragging  If `true` column is scrolled by
+   *   dragging the scrollbar.
+   */
   scrollY (columnData, scrollbarDragging) {
     ListGraph.scrollElVertically(columnData.nodes, columnData.scrollTop);
 
@@ -762,52 +1104,51 @@ class ListGraph {
     }
   }
 
+  /**
+   * Scroll to a certain vertical position in a column
+   *
+   * @method  scrollYTo
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Object}  selection  D3 selection of columns.
+   * @param   {Number}  positionY  Position in pixel to be scrolled to.
+   */
   scrollYTo (selection, positionY) {
     return selection
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
-      .tween('scrollY', data => {
+      .tween('scrollY', (data) => {
         const scrollPositionY = _d3.interpolateNumber(data.scrollTop, positionY);
-        return time => {
+        return (time) => {
           data.scrollTop = scrollPositionY(time);
           this.scrollY(data);
         };
       });
   }
 
-  resetAllScrollPositions () {
-    return this.scrollYTo(this.levels.groups, 0);
-  }
-
+  /**
+   * Select elements by column
+   *
+   * @method  selectByLevel
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Number}  level     Index of the column or level.
+   * @param   {String}  selector  Query selector string.
+   * @return  {Object}            D3 selection.
+   */
   selectByLevel (level, selector) {
     return _d3.select(this.levels.groups._groups[0][level]).selectAll(selector);
   }
 
-  updateSorting () {
-    const levels = Object.keys(this.currentSorting.local);
-    for (let i = levels.length; i--;) {
-      this.sortColumn(
-        i,
-        this.currentSorting.local[levels[i]].type,
-        this.currentSorting.local[levels[i]].order,
-        this.currentSorting.local[levels[i]].type
-      );
-    }
-  }
-
-  sortColumn (level, property, sortOrder, newSortType) {
-    this.nodes.sort(
-      this.layout
-        .sort(level, property, sortOrder)
-        .updateNodesVisibility()
-        .nodes(level),
-      newSortType
-    );
-    this.links.sort(this.layout.links(level - 1, level + 1));
-    this.nodeContextMenu.updatePosition();
-    this.checkNodeVisibility();
-  }
-
+  /**
+   * Sort all columns or levels
+   *
+   * @method  sortAllColumns
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}   property     Node property to be sorted by.
+   * @param   {Boolean}  newSortType  If `true` sorted by a new type.
+   */
   sortAllColumns (property, newSortType) {
     this.currentSorting.global.order =
       this.currentSorting.global.order === -1 && !newSortType ? 1 : -1;
@@ -825,14 +1166,131 @@ class ListGraph {
     this.checkNodeVisibility();
   }
 
+  /**
+   * Sort a column or level
+   *
+   * @method  sortColumn
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {Integer}   level        Specifies the level which should be
+   *   sorted.
+   * @param   {String}    property     The property used for sorting. Can be one
+   *   of ['precision', 'recall', 'name'].
+   * @param   {Integer}   sortOrder    If `1` sort asc. If `-1` sort desc.
+   * @param   {String}    newSortType  Property to be sorted by.
+   */
+  sortColumn (level, property, sortOrder, newSortType) {
+    this.nodes.sort(
+      this.layout
+        .sort(level, property, sortOrder)
+        .updateNodesVisibility()
+        .nodes(level),
+      newSortType
+    );
+    this.links.sort(this.layout.links(level - 1, level + 1));
+    this.nodeContextMenu.updatePosition();
+    this.checkNodeVisibility();
+  }
+
+  /**
+   * Start listening to the _mouseMove_ event when the scroll drag is started
+   *
+   * @method  startScrollBarMouseMove
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  startScrollBarMouseMove () {
+    _d3.select(document)
+      .on('mousemove', () => { this.dragScrollbar(_d3.event); });
+  }
+
+  /**
+   * Stop listening to the _mouseMove_ event when the scroll bar drag is over
+   *
+   * @method  stopScrollBarMouseMove
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  static stopScrollBarMouseMove () {
+    _d3.select(document).on('mousemove', null);
+  }
+
+  /**
+   * Switch node bar mode
+   *
+   * @method  switchBarMode
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}  mode  Bar mode. Either "one" or "two".
+   */
   switchBarMode (mode) {
     this.svgD3.classed('one-bar', mode === 'one');
     this.svgD3.classed('two-bar', mode === 'two');
     this.nodes.bars.switchMode(mode, this.currentSorting);
   }
 
+  /**
+   * Helper method to trigger an event
+   *
+   * @method  trigger
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {[type]}    event  [description]
+   * @param   {[type]}    data   [description]
+   * @return  {[type]}           [description]
+   */
   trigger (event, data) {
     this.events.trigger(event, data);
+  }
+
+  /**
+   * Toggle between the global and zoomed graph view.
+   *
+   * @method  toggleView
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  toggleView () {
+    if (this.zoomedOut) {
+      this.zoomedOut = false;
+      this.zoomedView();
+    } else {
+      this.globalView();
+      this.zoomedOut = true;
+    }
+  }
+
+  /**
+   * Remove outside mouse click handler
+   *
+   * @method  unregisterOutSideClickHandler
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   * @param   {String}  id  ID of the handler to be removed.
+   */
+  unregisterOutSideClickHandler (id) {
+    const handler = this.outsideClickHandler[id];
+
+    // Remove element `__id__` property.
+    for (let i = handler.els.length; i--;) {
+      handler.els[i].__id__ = undefined;
+      delete handler.els[i].__id__;
+    }
+
+    // Remove handler.
+    this.outsideClickHandler[id] = undefined;
+    delete this.outsideClickHandler[id];
+  }
+
+  /**
+   * Helper method to trigger an update of the columns' or levels' visibility
+   *
+   * @method  updateLevelsVisibility
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  updateLevelsVisibility () {
+    this.levels.updateVisibility();
   }
 
   /**
@@ -852,56 +1310,36 @@ class ListGraph {
     });
   }
 
-  updateLevelsVisibility () {
-    this.levels.updateVisibility();
-  }
-
-  globalView (selectionInterst) {
-    if (!this.zoomedOut) {
-      let x = 0;
-      let y = 0;
-      let width = 0;
-      let height = 0;
-      let cRect;
-      const contBBox = this.container.node().getBBox();
-
-      const globalCRect = this.svgD3.node().getBoundingClientRect();
-
-      if (selectionInterst && !selectionInterst.empty()) {
-        selectionInterst.each(function () {
-          cRect = this.getBoundingClientRect();
-          width = Math.max(
-            width,
-            cRect.left - (globalCRect.left + cRect.width)
-          );
-          height = Math.max(
-            height,
-            cRect.top - (globalCRect.top + cRect.height)
-          );
-        });
-        width = this.width > width ? this.width : width;
-        height = this.height > height ? this.height : height;
-      } else {
-        width = this.width > contBBox.width ? this.width : contBBox.width;
-        height = this.height > contBBox.height ? this.height : contBBox.height;
-      }
-
-      x = contBBox.x + this.dragged.x;
-      y = contBBox.y;
-
-      this.nodes.makeAllTempVisible();
-
-      this.svgD3
-        .classed('zoomedOut', true)
-        .transition()
-        .duration(config.TRANSITION_SEMI_FAST)
-        .attr('viewBox', x + ' ' + y + ' ' + width + ' ' + height);
+  /**
+   * Update column sorting given the current sort settings.
+   *
+   * @method  updateSorting
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
+  updateSorting () {
+    const levels = Object.keys(this.currentSorting.local);
+    for (let i = levels.length; i--;) {
+      this.sortColumn(
+        i,
+        this.currentSorting.local[levels[i]].type,
+        this.currentSorting.local[levels[i]].order,
+        this.currentSorting.local[levels[i]].type
+      );
     }
   }
 
+  /**
+   * Show original zoomed graph
+   *
+   * @method  zoomedView
+   * @author  Fritz Lekschas
+   * @date    2016-10-02
+   */
   zoomedView () {
     if (!this.zoomedOut) {
       this.nodes.makeAllTempVisible(true);
+      this.links.makeAllTempVisible(true);
 
       this.svgD3
         .classed('zoomedOut', false)
@@ -909,107 +1347,6 @@ class ListGraph {
         .duration(config.TRANSITION_SEMI_FAST)
         .attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
     }
-  }
-
-  toggleView () {
-    if (this.zoomedOut) {
-      this.zoomedOut = false;
-      this.zoomedView();
-    } else {
-      this.globalView();
-      this.zoomedOut = true;
-    }
-  }
-
-  /**
-   * Check if an element is actually visible, i.e. within the boundaries of the
-   * SVG element.
-   *
-   * @method  isHidden
-   * @author  Fritz Lekschas
-   * @date    2016-02-24
-   * @param   {Object}    el  DOM element to be checked.
-   * @return  {Boolean}       If `true` element is not visible.
-   */
-  isHidden (el) {
-    const boundingRect = el.getBoundingClientRect();
-    return (
-      boundingRect.top + boundingRect.height <= this.top ||
-      boundingRect.left + boundingRect.width <= this.left ||
-      boundingRect.top >= this.top + this.height ||
-      boundingRect.left >= this.left + this.width
-    );
-  }
-
-  /**
-   * Assesses any of the two ends of a link points outwards.
-   *
-   * @description
-   * In order to be able to determine where a link points to the output of
-   * `linkPointsOutside` for the source and target location is shifted bitwise
-   * in such a way that this method return 9 unique numbers.
-   * - 0: link is completely inwards
-   * - 1: source is outwards to the top
-   * - 2: source is outwards to the bottom
-   * - 4: target is outwards to the top
-   * - 8: target is outwards to the bottom
-   * - 5: source and target are outwards to the top
-   * - 6: source is outwards to the bottom and target is outwards to the top
-   * - 9: source is outwards to the top and target is outwards to the bottom
-   * - 10: source and target are outwards to the bottom
-   *
-   * If you're asking yourself: "WAT?!?!!" Think of a 4x4 matrix:
-   * |    target    |    source    |
-   * | bottom | top | bottom | top |
-   * |    0   |  0  |    0   |  0  | (=0)
-   * |    0   |  0  |    0   |  1  | (=1)
-   * |    0   |  0  |    1   |  0  | (=2)
-   * |    0   |  1  |    0   |  0  | (=4)
-   * |    1   |  0  |    0   |  0  | (=8)
-   * |    0   |  1  |    0   |  1  | (=5)
-   * |    0   |  1  |    1   |  0  | (=6)
-   * |    1   |  0  |    0   |  1  | (=9)
-   * |    1   |  0  |    1   |  0  | (=10)
-   *
-   * Checker whether the source or target location is above, below or within the
-   * global SVG container is very simple. For example, to find out if the target
-   * location is above, all we need to do is `<VALUE> & 4 > 0`. This performs a
-   * bit-wise AND operation with only two possible outcomes: 4 and 0.
-   *
-   * @method  pointsOutside
-   * @author  Fritz Lekschas
-   * @date    2016-02-29
-   * @param   {Object}  data  Link data.
-   * @return  {Number}  Numberical represenation of the links constallation. See
-   *   description for details.
-   */
-  pointsOutside (data) {
-    const source = this.linkPointsOutside(data.source);
-    const target = this.linkPointsOutside(data.target) << 2;
-    return source | target;
-  }
-
-  /**
-   * Assesses whether a link's end points outwards
-   *
-   * @method  linkPointsOutside
-   * @author  Fritz Lekschas
-   * @date    2016-02-29
-   * @param   {Object}  data  Link data.
-   * @return  {Number}  If link ends inwards returns `0`, if it points outwards
-   *   to the top returns `1` otherwise `2`.
-   */
-  linkPointsOutside (data) {
-    const y = data.node.y + data.offsetY;
-    if (
-      y + this.visData.global.row.height - this.visData.global.row.padding <= 0
-    ) {
-      return 1;
-    }
-    if (y + this.visData.global.row.padding >= this.height) {
-      return 2;
-    }
-    return 0;
   }
 }
 

@@ -1,4 +1,19 @@
-// Adapted from: http://bl.ocks.org/cpbotha/5200394
+/**
+ * Creates SVG filter element for simulating drop shadow.
+ *
+ * @description
+ * Adapted from: http://bl.ocks.org/cpbotha/5200394
+ *
+ * @method  dropShadow
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}  el       D3 selection.
+ * @param   {String}  name     Filter name.
+ * @param   {Number}  dx       Shadow x-distance.
+ * @param   {Number}  dy       Shadow y-distance.
+ * @param   {Number}  blur     Blurness.
+ * @param   {Number}  opacity  Opacity of the shadow with in [0,1].
+ */
 export function dropShadow (el, name, dx, dy, blur, opacity) {
   let defs = el.select('defs');
 

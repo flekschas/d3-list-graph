@@ -4,6 +4,9 @@
     "es6": true
   },
   "extends": "airbnb/base",
+  "globals": {
+    "$": false
+  },
   "parser": "babel-eslint",
   "rules": {
     "comma-dangle": [1, "never"],
@@ -38,6 +41,16 @@
     "no-underscore-dangle": 0,
     "import/prefer-default-export": 0,
     "no-lonely-if": 0,
-    "no-mixed-operators": ["error", {"allowSamePrecedence": true}]
+    "no-mixed-operators": [2, {"allowSamePrecedence": true}],
+    "no-plusplus": 0,
+    "no-bitwise": 0,
+    "import/no-extraneous-dependencies": [
+      2,
+      {
+        "devDependencies": true,
+        "optionalDependencies": false,
+        "peerDependencies": false
+      }
+    ]
   }
 }

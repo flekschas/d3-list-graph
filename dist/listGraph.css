@@ -38,11 +38,20 @@
   position: relative;
   height: 1.5rem;
   padding-bottom: 1px;
-  overflow: hidden;
-  box-shadow: inset 0 -1px 0 0 #e5e5e5; }
+  overflow: hidden; }
+  .list-graph .top-bar:after {
+    position: absolute;
+    z-index: 0;
+    display: block;
+    content: '';
+    height: 1px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: #e5e5e5; }
   .list-graph .top-bar .control-switch {
     position: absolute;
-    z-index: 2;
+    z-index: 3;
     top: 0;
     right: 0;
     height: 100%;
@@ -79,13 +88,17 @@
     white-space: nowrap;
     transition: margin 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .top-bar .global-controls {
+    z-index: 2; }
+  .list-graph .top-bar .local-controls {
     z-index: 1; }
   .list-graph .top-bar.details .global-controls {
     margin-top: -1.5rem; }
   .list-graph .top-bar .controls {
     display: inline-block;
     white-space: normal;
-    box-shadow: -1px 0 0 0 #e5e5e5; }
+    border-left: 1px solid #e5e5e5; }
+    .list-graph .top-bar .controls:first-child {
+      border-left: 0; }
   .list-graph .top-bar .control-btn {
     display: block;
     top: 0;
@@ -138,7 +151,7 @@
     position: relative;
     float: left;
     max-width: 16.6667%;
-    box-shadow: 1px 0 0 0 #e5e5e5; }
+    border-right: 1px solid #e5e5e5; }
   .list-graph .top-bar.details .global-controls .control-btn.active:before {
     opacity: 0; }
   .list-graph .top-bar .global-controls .control-btn .wrapper {
@@ -164,6 +177,7 @@
   .list-graph .top-bar .controls .expandable-label .abbr,
   .list-graph .top-bar .controls li:hover .expandable-label .letter {
     max-width: 1rem; }
+  .list-graph .top-bar .control-btn .icon,
   .list-graph .top-bar .control-btn [class^='icon-'],
   .list-graph .top-bar .control-btn [class*=' icon-'] {
     position: absolute;
@@ -253,7 +267,25 @@
   stroke-width: 6px;
   opacity: 0; }
 
-.list-graph .node.lock-directly .bg-border,
+.list-graph .node.lock-directly.hovering-directly .bg-border {
+  opacity: 1; }
+
+.list-graph .node.lock-directly .bg {
+  fill: #f23e00; }
+
+.list-graph .node.lock-directly .border {
+  stroke: #f23e00; }
+
+.list-graph .node.lock-directly .active .bar-magnitude {
+  fill-opacity: 0.2; }
+
+.list-graph .node.lock-directly .bar-magnitude {
+  fill-opacity: 0.1; }
+
+.list-graph .node.lock-directly .label {
+  color: #000;
+  font-weight: bold; }
+
 .list-graph .node.animating .bg-border {
   opacity: 1; }
 
@@ -298,9 +330,6 @@
 .list-graph .node.focus-directly .border,
 .list-graph .column.active .node.focus-directly .border {
   stroke: #f23e00; }
-
-.list-graph .node.highlight-bar .border {
-  stroke-opacity: 0; }
 
 .list-graph .node.rooted .border,
 .list-graph .node.query-and .border,
@@ -394,11 +423,6 @@
 .list-graph .node.query-not .focus-controls.query:hover .state-not {
   color: #fff; }
 
-.list-graph .node.query-and .query .state-inactive,
-.list-graph .node.query-or .query .state-inactive,
-.list-graph .node.query-not .query .state-inactive {
-  opacity: 0 !important; }
-
 .list-graph .node.rooted .focus-controls.root .state-active,
 .list-graph .node.query-and .focus-controls.query .state-and-or,
 .list-graph .node.query-or .focus-controls.query .state-and-or,
@@ -429,18 +453,15 @@
 .list-graph .bar-magnitude {
   fill: #000;
   fill-opacity: 0.1;
-  shape-rendering: crispEdges; }
+  shape-rendering: crispEdges;
+  stroke-width: 2px;
+  stroke-opacity: 0; }
 
 .list-graph .column.active .bar-magnitude {
   fill-opacity: 0.15; }
 
 .list-graph .node.focus-directly .bar-magnitude {
   fill-opacity: 0.2; }
-
-.list-graph .bar-indicator {
-  fill: #f23e00;
-  opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.3, 0.1, 0.6, 1); }
 
 .list-graph .bar.active .bar-magnitude {
   shape-rendering: auto; }
@@ -471,13 +492,14 @@
   fill: #f23e00;
   fill-opacity: 0.5; }
 
-.list-graph .node.hovering-directly .bar.active .bar-indicator,
-.list-graph .node.hovering-indirectly .bar.active .bar-indicator {
-  opacity: 1; }
-
 .list-graph .bar.highlight .bar-magnitude {
   fill: #66b8ff;
-  fill-opacity: 1 !important; }
+  fill-opacity: 1 !important;
+  stroke: #66b8ff;
+  stroke-opacity: 1; }
+
+.list-graph .bar.highlight.active .bar-magnitude {
+  stroke-opacity: 0; }
 
 .list-graph .link {
   fill: none; }
@@ -545,17 +567,14 @@
     transition: all 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .context-menu.open {
     opacity: 1; }
-  .list-graph .context-menu > .bg {
+  .list-graph .context-menu > .bg-outer-wrapper .bg {
     fill: #fff; }
-  .list-graph .context-menu > .bgBorder {
+  .list-graph .context-menu > .bg-outer-wrapper .bgBorder {
     fill: #000;
     fill-opacity: 0.1; }
-  .list-graph .context-menu > .bg,
-  .list-graph .context-menu > .bgBorder {
-    transform: scale(1, 1);
-    transform-origin: 50% 50%; }
-    .list-graph .context-menu > .bg.is-mirrored-horizontally,
-    .list-graph .context-menu > .bgBorder.is-mirrored-horizontally {
+  .list-graph .context-menu > .bg-outer-wrapper .bg-inner-wrapper {
+    transform: scale(1, 1); }
+    .list-graph .context-menu > .bg-outer-wrapper .bg-inner-wrapper.is-mirrored-horizontally {
       transform: scale(1, -1); }
   .list-graph .context-menu .button .bg {
     fill: #f2f2f2;
@@ -566,22 +585,21 @@
     transition: opacity 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
   .list-graph .context-menu .button.fill-effect .bg-fill-effect {
     opacity: 1; }
-  .list-graph .context-menu .button .bg-bam-effect {
-    fill: #0088ff;
-    opacity: 0;
-    transform-origin: 50% 50%;
-    animation-iteration-count: 1;
-    animation-iteration-count: infinite; }
-    .list-graph .context-menu .button .bg-bam-effect.active {
-      animation: bam-effect 0.66s cubic-bezier(0.2, 0.1, 0.2, 1); }
+  .list-graph .context-menu .button .bam-effect {
+    opacity: 0; }
+    .list-graph .context-menu .button .bam-effect .bam-effect-bg {
+      fill: #0088ff; }
+  .list-graph .context-menu .button .bam-effect.trigger {
+    animation: bam-effect 0.66s cubic-bezier(0.2, 0.1, 0.2, 1); }
   .list-graph .context-menu .toggler {
     opacity: 0;
     cursor: pointer;
     transition: all 0.15s cubic-bezier(0.3, 0.1, 0.6, 1); }
     .list-graph .context-menu .toggler:hover {
-      opacity: 1; }
+      color: #0088ff;
+      opacity: 1 !important; }
   .list-graph .context-menu:hover .toggler {
-    opacity: 0.5; }
+    opacity: 0.33; }
   .list-graph .context-menu .toggler > .bg {
     fill: white;
     opacity: 0.9; }
@@ -600,15 +618,21 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis; }
-  .list-graph .context-menu .component .label,
-  .list-graph .context-menu .component .label-two,
-  .list-graph .context-menu .component .separator {
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 0.75rem; }
-    .list-graph .context-menu .component .label.inactive,
-    .list-graph .context-menu .component .label-two.inactive,
-    .list-graph .context-menu .component .separator.inactive {
-      color: rgba(0, 0, 0, 0.2); }
+    .list-graph .context-menu .component .label-wrapper.unselectable,
+    .list-graph .context-menu .component .label-wrapper.unselectable * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none; }
+    .list-graph .context-menu .component .label-wrapper .label,
+    .list-graph .context-menu .component .label-wrapper .label-two,
+    .list-graph .context-menu .component .label-wrapper .separator {
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 0.75rem; }
+      .list-graph .context-menu .component .label-wrapper .label.inactive,
+      .list-graph .context-menu .component .label-wrapper .label-two.inactive,
+      .list-graph .context-menu .component .label-wrapper .separator.inactive {
+        color: rgba(0, 0, 0, 0.2); }
   .list-graph .context-menu .component.text-field .label,
   .list-graph .context-menu .component.text-field .separator {
     font-weight: bold; }

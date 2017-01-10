@@ -38,9 +38,23 @@ function _up (node, callback, depth, includeClones, child, visitedNodes) {
   }
 }
 
-export function up (node, callback, depth, includeClones, child) {
+/**
+ * Traverse the graph upwards from a given node until a certain depth.
+ *
+ * @method  up
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}    node           D3 data object of a selected DOM element.
+ * @param   {Function}  callback       Method to be called on every traversed
+ *   node.
+ * @param   {Number}    depth          Max steps to traverse upwards. If
+ *   `undefined` will traverse till the root node.
+ * @param   {Boolean}   includeClones  If `true` cloned nodes will be traversed
+ *   as well.
+ */
+export function up (node, callback, depth, includeClones) {
   const visitedNodes = {};
-  _up(node, callback, depth, includeClones, child, visitedNodes);
+  _up(node, callback, depth, includeClones, undefined, visitedNodes);
 }
 
 function _down (node, callback, depth, includeClones, visitedNodes) {
@@ -72,11 +86,41 @@ function _down (node, callback, depth, includeClones, visitedNodes) {
   }
 }
 
+/**
+ * Traverse the graph downwards from a given node until a certain depth.
+ *
+ * @method  down
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}    node           D3 data object of a selected DOM element.
+ * @param   {Function}  callback       Method to be called on every traversed
+ *   node.
+ * @param   {Number}    depth          Max steps to traverse downwards. If
+ *   `undefined` will traverse till leaf nodes.
+ * @param   {Boolean}   includeClones  If `true` cloned nodes will be traversed
+ *   as well.
+ */
 export function down (node, callback, depth, includeClones) {
   const visitedNodes = {};
   _down(node, callback, depth, includeClones, visitedNodes);
 }
 
+/**
+ * Traverse the graph up- and downwards from a given node until a certain depth.
+ *
+ * @method  upAndDown
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}    node           D3 data object of a selected DOM element.
+ * @param   {Function}  callback       Method to be called on every upwards
+ *   traversed node.
+ * @param   {Function}  callback       Method to be called on every downwards
+ *   traversed node.
+ * @param   {Number}    depth          Max steps to traverse downwards. If
+ *   `undefined` will traverse till leaf nodes.
+ * @param   {Boolean}   includeClones  If `true` cloned nodes will be traversed
+ *   as well.
+ */
 export function upAndDown (
   node, callbackUp, callbackDown, depth, includeClones
 ) {
@@ -90,6 +134,15 @@ export function upAndDown (
   }
 }
 
+/**
+ * Traverse siblings from a given nodes.
+ *
+ * @method  siblings
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}    node      D3 data object of a selected DOM element.
+ * @param   {Function}  callback   Method to be called on every visited node.
+ */
 export function siblings (node, callback) {
   const parentsId = Object.keys(node.parents);
   for (let i = parentsId.length; i--;) {

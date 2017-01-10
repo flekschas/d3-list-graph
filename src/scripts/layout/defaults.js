@@ -56,4 +56,4 @@ export const ROW_REL_PADDING = 0.05;
  *
  * @type  {Number}
  */
-export const CELL_REL_INNER_PADDING = 0.05;
+export const NODE_REL_INNER_PADDING = 0.05;

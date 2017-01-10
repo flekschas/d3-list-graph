@@ -1,4 +1,18 @@
-// Credits go to Mike Bostock: http://bl.ocks.org/mbostock/3468167
+/**
+ * Returns the path for a rounded rectangle
+ *
+ * Credits go to Mike Bostock: http://bl.ocks.org/mbostock/3468167
+ *
+ * @method  roundRect
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Number}    x       X coordinate.
+ * @param   {Number}    y       Y coordinate.
+ * @param   {Number}    width   Width of the rectangle.
+ * @param   {Number}    height  Height of the rectangle.
+ * @param   {Number}    radius  Radius.
+ * @return  {String}            Path string of the rounded rectangle.
+ */
 export function roundRect (x, y, width, height, radius) {
   const topLeft = radius.topLeft || 0;
   const topRight = radius.topRight || 0;

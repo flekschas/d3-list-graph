@@ -11,27 +11,31 @@
     opacity: 1;
   }
 
-  >.bg {
-    fill: $white;
-  }
+  >.bg-outer-wrapper {
+    .bg {
+      fill: $white;
+    }
 
-  >.bgBorder {
-    fill: $black;
-    fill-opacity: 0.1;
-  }
+    .bgBorder {
+      fill: $black;
+      fill-opacity: 0.1;
+    }
 
-  >.bg,
-  >.bgBorder {
-    // Normally `scale(1,1)` should be regarded as the default value but when
-    // the class `is-mirrored-horizontally` is removed dynamically this won't
-    // load to a re-draw. Hence, we need to explicitely set the scale.
-    transform: scale(1, 1);
-    transform-origin: 50% 50%;
+    .bg-inner-wrapper {
+      // Normally `scale(1,1)` should be regarded as the default value but when
+      // the class `is-mirrored-horizontally` is removed dynamically this won't
+      // load to a re-draw. Hence, we need to explicitely set the scale.
+      transform: scale(1, 1);
 
-    // We also need this to avoid having to extend the base class with
-    // `!important`.
-    &.is-mirrored-horizontally {
-      transform: scale(1, -1);
+      // Normally we would just use `transform-origin: 50% 50%;` but FF doesn't
+      // support relative values for SVG elements...
+      // transform-origin: 50% 50%;
+
+      // We also need this to avoid having to extend the base class with
+      // `!important`.
+      &.is-mirrored-horizontally {
+        transform: scale(1, -1);
+      }
     }
   }
 
@@ -50,16 +54,16 @@
     opacity: 1;
   }
 
-  .button .bg-bam-effect {
-    fill: $color-highlight-blue;
+  .button .bam-effect {
     opacity: 0;
-    transform-origin: 50% 50%;
-    animation-iteration-count: 1;
-    animation-iteration-count: infinite;
 
-    &.active {
-      animation: bam-effect $transition-slow $ease-in-out-quadric;
+    .bam-effect-bg {
+      fill: $color-highlight-blue;
     }
+  }
+
+  .button .bam-effect.trigger {
+    animation: bam-effect $transition-slow $ease-in-out-quadric;
   }
 
   .toggler {
@@ -68,12 +72,13 @@
     transition: all $transition-lightning-fast $ease-in-out-cubic;
 
     &:hover {
-      opacity: 1;
+      color: $color-highlight-blue;
+      opacity: 1 !important;
     }
   }
 
   &:hover .toggler {
-    opacity: 0.5;
+    opacity: 0.33;
   }
 
   .toggler > .bg {
@@ -100,16 +105,24 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
 
-  .component .label,
-  .component .label-two,
-  .component .separator {
-    color: $text-color-normal-rgba;
-    font-size: 0.75rem;
+    &.unselectable,
+    &.unselectable * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
 
-    &.inactive {
-      color: $text-color-inactive-rgba;
+    .label,
+    .label-two,
+    .separator {
+      color: $text-color-normal-rgba;
+      font-size: 0.75rem;
+
+      &.inactive {
+        color: $text-color-inactive-rgba;
+      }
     }
   }
 

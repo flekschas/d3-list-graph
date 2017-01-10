@@ -1,6 +1,40 @@
 // External
 import * as d3 from 'd3';
 
+/**
+ * Creates an SVG element for a linear gradient.
+ *
+ *  * @example
+ * ```
+ * linearGradient(
+ *   d3.select('svg'),
+ *   {
+ *     color: #fff,
+ *     offset: 10,
+ *     opacity: 0.5,
+ *     x: 0,
+ *     y: 0
+ *   },
+ *   {
+ *     color: #000,
+ *     offset: 10,
+ *     opacity: 1,
+ *     x: 1,
+ *     y: 1
+ *   },
+ *   'myFancyGradient',
+ * );
+ * ```
+ *
+ * @method  linearGradient
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}  el     D3 selection where the gradient element should be
+ *   appended to.
+ * @param   {Object}  start  Object holding the properties of the first color.
+ * @param   {Object}  end    Object holding the properties of the second color.
+ * @param   {String}  name   Name of the gradient.
+ */
 export function linearGradient (el, start, end, name) {
   const gradient = el.append('defs')
     .append('linearGradient')

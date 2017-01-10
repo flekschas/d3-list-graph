@@ -3,11 +3,22 @@
   height: 1.5rem;
   padding-bottom: 1px;
   overflow: hidden;
-  box-shadow: inset 0 -1px 0 0 $grey-lighter;
+
+  &:after {
+    position: absolute;
+    z-index: 0;
+    display: block;
+    content: '';
+    height: 1px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: $grey-lighter;
+  }
 
   .control-switch {
     position: absolute;
-    z-index: 2;
+    z-index: 3;
     top: 0;
     right: 0;
     height: 100%;
@@ -58,6 +69,10 @@
   }
 
   .global-controls {
+    z-index: 2;
+  }
+
+  .local-controls {
     z-index: 1;
   }
 
@@ -68,7 +83,11 @@
   .controls {
     display: inline-block;
     white-space: normal;
-    box-shadow: -1px 0 0 0 $grey-lighter;
+    border-left: 1px solid $grey-lighter;
+
+    &:first-child {
+      border-left: 0;
+    }
   }
 
   .control-btn {
@@ -143,7 +162,7 @@
     position: relative;
     float: left;
     max-width: 16.6667%;
-    box-shadow: 1px 0 0 0 $grey-lighter;
+    border-right: 1px solid $grey-lighter;
   }
 
   &.details .global-controls .control-btn.active:before {
@@ -187,6 +206,7 @@
     max-width: 1rem;
   }
 
+  .control-btn .icon,
   .control-btn [class^='icon-'],
   .control-btn [class*=' icon-'] {
     position: absolute;

@@ -22,7 +22,7 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  *
  * @method  onDragDrop
  * @author  Fritz Lekschas
- * @date    2016-04-04
+ * @date    2016-09-12
  * @param   {Object}  selection        D3 selection to listen for the drag
  *   event.
  * @param   {Object}           dragMoveHandler         Handler for drag-move.
@@ -38,10 +38,14 @@ export class LimitsUnsupportedFormat extends ExtendableError {
  * @param   {Array}             noDraggingWhenTrue     List if function
  *   returning a Boolean value which should prevent the dragMoveHandler from
  *   working.
+ * @param   {String}           clickTolerance          Specify the number of
+ *   pixel that are allowed to move but still trigger a click event. Sometimes
+ *   it is useful to allow the user to move 1 or 2 pixel, especially in high
+ *   res environments. [Default is 0]
  */
 export function onDragDrop (
   selection, dragStartHandler, dragMoveHandler, dropHandler, elsToBeDragged,
-  orientation, limits, noDraggingWhenTrue, dragData
+  orientation, limits, noDraggingWhenTrue, dragData, clickTolerance
 ) {
   const drag = d3.drag();
   const checkWhenDragging = isFunction(noDraggingWhenTrue);
@@ -54,7 +58,10 @@ export function onDragDrop (
 
   drag.filter(filter);
 
+  let d2;
+
   drag.on('start', () => {
+    d2 = 0;
     if (typeof limits === 'function') {
       appliedLimits = limits();
     }
@@ -70,11 +77,20 @@ export function onDragDrop (
       dragMoveHandler.call(
         this, data, elsToBeDragged, orientation, appliedLimits
       );
+
+      d2 += (d3.event.dx * d3.event.dx) + (d3.event.dy * d3.event.dy);
     });
   }
 
   if (dropHandler) {
-    drag.on('end', dropHandler);
+    drag.on('end', function () {
+      dropHandler.call(this);
+
+      if (d2 <= (clickTolerance || 0)) {
+        // Don't supress the click event for minor mouse movements.
+        d3.select(window).on('click.drag', null);
+      }
+    });
   }
 
   selection.each(function (data) {
@@ -91,6 +107,19 @@ export function onDragDrop (
   });
 }
 
+/**
+ * Custom drag-move handler used by the custom drag-drop handler.
+ *
+ * @method  dragMoveHandler
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Object}           data            D3's drag event object.
+ * @param   {Array}            elsToBeDragged  Array of D3 selections.
+ * @param   {String}           orientation     Can either be "horizontal",
+ *   "vertical" or `undefined`, i.e. both directions.
+ * @param   {Object|Function}  limits          X and Y drag limits. E.g.
+ *   `{ x: { min: 0, max: 10 } }`.
+ */
 export function dragMoveHandler (
   data, elsToBeDragged, orientation, limits
 ) {

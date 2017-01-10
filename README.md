@@ -49,7 +49,6 @@ This example assumes that you're using Bower to fetch all code.
       var graph = new ListGraph({
         data: data,
         element: document.querySelector('.list-graph'),
-        iconPath: '/dist/icons.svg',
         rootNodes: [1, 2]
       });
     });
@@ -61,6 +60,8 @@ This example assumes that you're using Bower to fetch all code.
 ### Migration from D3.js v3 to v4
 
 Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. If you still need to run old code on D3.js v4 please stick to the following pattern to load both versions but use v4 for the tree graph.
+
+**Note:** D3.js v4 does not actually create a new object and overwrite the global `d3` object because it embraces extensibility and modularization. Therefore, you have to load D3.js v4 **first**, reassign the variable, and then overwrite it with D3.js v3.
 
 ```html
 <!DOCTYPE html>
@@ -90,7 +91,6 @@ Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. If you 
         d3: d3V4,
         data: data,
         element: document.querySelector('.list-graph'),
-        iconPath: '/dist/icons.svg',
         rootNodes: [1, 2]
       });
     });
@@ -114,9 +114,6 @@ Unique key-value list-like object. E.g.: `{1: {...}, 2: {...}, 3: {...}}`.
 **rootNodes**: _Array_.
 List of node ids that should act as root nodes.
 
-**iconPath**: _String_ [_Empty string_].
-Path to the SVG icon file. Default is an empty string, which is equivalent to inline SVG.
-
 ---
 
 #### Optional parameters:
@@ -138,6 +135,9 @@ Number of columns to be shown.
 
 **rows**: _Number_ [`5`].
 Number of rows to be shown.
+
+**iconPath**: _String_ [_Empty string_].
+Path to an SVG icon file. Default is an empty string, which is equivalent to inline SVG, meaning that the ListGraphs internal icons are used.
 
 **barMode**: _String_ [`one`].
 Initial bar mode. Can either be `one` or `two`.
@@ -173,6 +173,9 @@ If `true` links that point to invisible nodes will not be shown.
 
 **nodeInfoContextMenu**: _Array_ [`[]`].
 An array of objects specifying which node properties the _node context menu_ should be displayed. E.g. `[{ label: 'ID', property: function (data) { return data.id } }]`.
+
+**customTopbarButtons**: _Array_ [`[]`].
+An array of objects specifying custom buttons in the topbar. E.g. `[{ label: 'Click me', callback: function () { ... }, iconSvg: 'path/to/icon.svg#icon-name' }, iconSpan: 'span class names']`.
 
 ## Develop
 

@@ -1,3 +1,13 @@
+/**
+ * Polyfill-safe method for requesting an animation frame
+ *
+ * @method  requestAnimationFrame
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Function}  callback  Function to be called after a animation frame
+ *   has been delivered.
+ * @return  {Integer}             ID of the request.
+ */
 export const requestAnimationFrame = (function () {
   let lastTime = 0;
 
@@ -17,6 +27,14 @@ export const requestAnimationFrame = (function () {
     };
 }());
 
+/**
+ * Polyfill-safe method for canceling a requested animation frame
+ *
+ * @method  cancelAnimationFrame
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @param   {Integer}  id  ID of the animation frame request to be canceled.
+ */
 export const cancelAnimationFrame = (function () {
   return window.cancelAnimationFrame ||
     window.webkitCancelAnimationFrame ||
@@ -31,6 +49,15 @@ export const cancelAnimationFrame = (function () {
     function (id) { window.clearTimeout(id); };
 }());
 
+/**
+ * Requests the next animation frame.
+ *
+ * @method  nextAnimationFrame
+ * @author  Fritz Lekschas
+ * @date    2016-09-12
+ * @return  {Object}  Object holding the _request_ and _cancel_ method for
+ *   requesting the next animation frame.
+ */
 const nextAnimationFrame = (function () {
   const ids = {};
 
@@ -47,7 +74,7 @@ const nextAnimationFrame = (function () {
       const id = requestId();
 
       ids[id] = requestAnimationFrame(() => {
-        ids[id] = requestAnimationFrame(ts => {
+        ids[id] = requestAnimationFrame((ts) => {
           delete ids[id];
           callback(ts);
         }, element);

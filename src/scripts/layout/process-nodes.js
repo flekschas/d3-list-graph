@@ -1,6 +1,6 @@
 // External
-import isArray from '../../../node_modules/lodash-es/isArray.js';
-import isObject from '../../../node_modules/lodash-es/isObject.js';
+import isArray from '../../../node_modules/lodash-es/isArray';
+import isObject from '../../../node_modules/lodash-es/isObject';
 
 /**
  * Traverse graph in a breadth-first search fashion and process nodes along

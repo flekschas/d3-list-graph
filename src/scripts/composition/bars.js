@@ -9,34 +9,60 @@ import { roundRect } from '../commons/charts';
 const BARS_CLASS = 'bars';
 
 class Bars {
-  constructor (vis, selection, mode, visData) {
-    const that = this;
+  /**
+   * [constructor description]
+   *
+   * @method  constructor
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  baseEl   D3 selection where the group of bars should be
+   *   appended to.
+   * @param   {String}  mode     Display more. Can be either `one` or `two`.
+   * @param   {Object}  visData  Object with the list graph app data.
+   */
+  constructor (baseEl, mode, visData) {
+    const self = this;
 
-    this.vis = vis;
     this.mode = mode;
     this.visData = visData;
 
-    this.indicatorX = d3.scaleLinear()
+    this.xScale = d3.scaleLinear()
       .domain([0, 1])
       .range([1, this.visData.global.column.contentWidth - 3]);
 
-    this.selection = selection.append('g').attr('class', BARS_CLASS);
+    this.baseEl = baseEl.append('g').attr('class', BARS_CLASS);
 
-    this.selection.each(function (datum) {
-      new Bar(d3.select(this), datum.data.bars, datum, that.visData, that);
+    this.baseEl.each(function (datum) {
+      new Bar(d3.select(this), datum.data.bars, datum, self.visData, self);
     });
   }
 
+  /**
+   * Updates all bar magnitude elements.
+   *
+   * @method  updateAll
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  update  Object with the current data.
+   * @param   {String}  sortBy  Name of the poperty to be sorted by.
+   */
   updateAll (update, sortBy) {
-    this.selection.selectAll('.bar-magnitude')
+    this.baseEl.selectAll('.bar-magnitude')
       .data(update, data => data.barId)
       .transition()
       .duration(config.TRANSITION_SEMI_FAST)
-      .attr('d', data => this.generatePath(
-        data, this.mode, sortBy, this.visData
-      ));
+      .attr('d', data => this.generatePath(data, sortBy));
   }
 
+  /**
+   * Update bars when switching the bar mode.
+   *
+   * @method  update
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}  selection  D3 selection
+   * @param   {String}  sortBy     Name of the poperty to be sorted by.
+   */
   update (selection, sortBy) {
     selection.each(function (data) {
       const el = d3.select(this);
@@ -62,17 +88,22 @@ class Bars {
       .attr('d', data => this.generatePath(data, sortBy));
   }
 
-  updateIndicator (selection, referenceValue) {
-    selection
-      .attr('x', this.indicatorX(referenceValue))
-      .attr('width', 2);
-  }
-
+  /**
+   * Switch one and two-bar display mode.
+   *
+   * @method  switchMode
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {String}  mode            Name of the display mode. Can either be
+   *   `one` or `two`.
+   * @param   {String}  currentSorting  Name if the property currently sorted
+   *   by.
+   */
   switchMode (mode, currentSorting) {
     if (this.mode !== mode) {
       if (mode === 'one') {
         if (currentSorting.global.type) {
-          this.selection.selectAll('.bar').selectAll('.bar-magnitude')
+          this.baseEl.selectAll('.bar').selectAll('.bar-magnitude')
             .transition()
             .duration(config.TRANSITION_SEMI_FAST)
             .attr('d', data => this.generateOneBarPath(
@@ -87,12 +118,12 @@ class Bars {
       }
 
       if (mode === 'two') {
-        this.selection.selectAll('.bar.precision').selectAll('.bar-magnitude')
+        this.baseEl.selectAll('.bar.precision').selectAll('.bar-magnitude')
           .transition()
           .duration(config.TRANSITION_SEMI_FAST)
           .attr('d', data => this.generateTwoBarsPath(data));
 
-        this.selection.selectAll('.bar.recall').selectAll('.bar-magnitude')
+        this.baseEl.selectAll('.bar.recall').selectAll('.bar-magnitude')
           .transition()
           .duration(config.TRANSITION_SEMI_FAST)
           .attr('d', data => this.generateTwoBarsPath(data, true));
@@ -102,23 +133,35 @@ class Bars {
     }
   }
 
-  generatePath (
-    data, currentSorting, indicator, adjustWidth, bottom
-  ) {
+  /**
+   * Helper method to generate path used as a bar.
+   *
+   * @method  generatePath
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}   data             Data object.
+   * @param   {String}   sortBy           Name of the property currently sorted
+   *   by.
+   */
+  generatePath (data, sortBy) {
     if (this.mode === 'two') {
-      return this.generateTwoBarsPath(data, bottom);
+      return this.generateTwoBarsPath(data);
     }
-    return this.generateOneBarPath(
-      data, currentSorting, indicator, adjustWidth
-    );
+    return this.generateOneBarPath(data, sortBy);
   }
 
-  generateOneBarPath (
-    data, currentSorting, indicator, adjustWidth
-  ) {
+  /**
+   * Generates a bar when one-bar display mode is active.
+   *
+   * @method  generateOneBarPath
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}   data    Data object.
+   * @param   {String}   sortBy  Name of the property currently sorted by.
+   */
+  generateOneBarPath (data, sortBy) {
     const height = this.visData.global.row.contentHeight;
     const normValue = Math.min(data.value, 1) || 0;
-    const normIndicator = Math.min(indicator, 1) || 0;
 
     let x = 0;
     let width = 2;
@@ -128,25 +171,9 @@ class Bars {
       bottomLeft: 2
     };
 
-    if (indicator) {
+    if (data.id !== sortBy) {
+      x = this.xScale(normValue);
       radius = {};
-    }
-
-    if (data.id !== currentSorting && typeof indicator === 'undefined') {
-      x = this.indicatorX(normValue);
-      radius = {};
-    } else if (indicator) {
-      x = normIndicator * this.visData.global.column.contentWidth;
-      if (adjustWidth) {
-        if (normValue < normIndicator) {
-          x = normValue * this.visData.global.column.contentWidth;
-        }
-        width = Math.max(
-          Math.abs(normIndicator - normValue) *
-            this.visData.global.column.contentWidth
-          , 2
-        );
-      }
     } else {
       width = this.visData.global.column.contentWidth * normValue;
     }
@@ -162,7 +189,17 @@ class Bars {
     );
   }
 
-  generateTwoBarsPath (data, bottom) {
+  /**
+   * Generates a bar when two-bar display mode is active.
+   *
+   * @method  generateTwoBarsPath
+   * @author  Fritz Lekschas
+   * @date    2016-09-14
+   * @param   {Object}   data      Data object.
+   * @param   {Boolean}  isBottom  If `true` then the bottom bar should be
+   *   generated.
+   */
+  generateTwoBarsPath (data, isBottom) {
     const normValue = Math.min(data.value, 1);
     const height = this.visData.global.row.contentHeight / 2;
     const width = this.visData.global.column.contentWidth * normValue;
@@ -170,7 +207,7 @@ class Bars {
     let y = this.visData.global.row.padding;
     let radius = { topLeft: 2 };
 
-    if (bottom) {
+    if (isBottom) {
       radius = { bottomLeft: 2 };
       y += height;
     }
