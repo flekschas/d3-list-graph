@@ -9,7 +9,7 @@
   <title>D3 List Graph</title>
 </head>
 <body>
-  <h1>D3 List Graph <em>v0.15.2</em></h1>
+  <h1>D3 List Graph <em id="version"></em></h1>
   <h2>Small: 28 nodes</h2>
   <div id="example-small" class="list-graph">
     <div class="top-bar"></div>
@@ -33,14 +33,20 @@
   <script src="jquery.min.js"></script>
   <script src="jquery.mousewheel.min.js"></script>
   <script src="d3.min.js"></script>
-  <script src="d3.layout.listGraph.min.js"></script>
-  <script src="listGraph.min.js"></script>
+  <script src="d3.listGraph.optimized.min.js"></script>
+  <script src="listGraph.optimized.min.js"></script>
   <script>
     'use strict';
+
+    document.querySelector('#version').innerHTML = 'v' + ListGraph.version;
 
     var customDispatcher = function (event, data) {
       console.log('Custom dispatcher: has ' + event, data);
     };
+
+    function customButtonCb () {
+      alert('You clicked on a custom button');
+    }
 
     function createListGraph (querySelector, data, rootNodes) {
       return new ListGraph({
@@ -59,7 +65,18 @@
         querying: true,
         hideOutwardsLinks: true,
         showLinkLocation: true,
-        noRootActiveLevelDiff: 1
+        nodeInfoContextMenu: [{
+          label: 'ID',
+          property: (data) => data.id
+        }, {
+          label: 'Name',
+          property: (data) => data.data.name
+        }],
+        customTopbarButtons: [{
+          label: 'Click me',
+          callback: customButtonCb,
+          iconSpan: 'icons.svg#two-bars'
+        }]
       });
     }
 

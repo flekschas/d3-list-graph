@@ -11,15 +11,14 @@ h1 {
 }
 
 h1 em {
-  font-weight: normal;
   color: #808080;
+  font-weight: normal;
 }
 
 h2 {
   display: block;
   width: 800px;
   margin: 1em auto 0.25em;
-  font-size: 1em;
 }
 
 .list-graph {
