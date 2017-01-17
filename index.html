@@ -10,7 +10,7 @@
 </head>
 <body>
   <h1>D3 List Graph <em id="version"></em></h1>
-  <h2>Small: 28 nodes</h2>
+  <h2>Small: 28 nodes <em onclick="toggleSize('#example-small')">[toggle size]</em></h2>
   <div id="example-small" class="list-graph">
     <div class="top-bar"></div>
     <div class="wrapper"><svg class="base"></svg></div>
@@ -105,6 +105,8 @@
         }]
       });
     }
+
+    var graphs = {};
 
     d3.json('data.json', function (error, data) {
       if (error) throw error;
