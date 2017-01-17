@@ -679,36 +679,6 @@ class ListGraph {
   }
 
   /**
-   * Deep update a nested object
-   *
-   * @method  deepUpdate
-   * @author  Fritz Lekschas
-   * @date    2017-01-16
-   * @param   {Object}    oldObj  Object to be updated
-   * @param   {Object}    newObj  Object with the updated information
-   */
-  deepUpdate (oldObj, newObj) {
-    if (typeof oldObj !== 'object') {
-      return oldObj;
-    }
-
-    const keys = Object.keys(oldObj);
-
-    for (let key of keys) {
-      if (newObj[key]) {
-        if (oldObj[key] instanceof Array) {
-          oldObj[key] = newObj[key];
-        } else if (oldObj[key] instanceof Object) {
-          this.deepUpdate(oldObj[key], newObj[key]);
-        } else {
-          // Primitiv value
-          oldObj[key] = newObj[key];
-        }
-      }
-    }
-  }
-
-  /**
    * Helper method to get the top and left position of the base `svg`.
    *
    * @Description
