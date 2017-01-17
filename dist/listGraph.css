@@ -304,6 +304,9 @@
 .list-graph .column.active .node .border {
   stroke: #bfbfbf; }
 
+.list-graph .column.active .node.lock-directly .border {
+  stroke: #f23e00; }
+
 .list-graph .node.clone .border {
   stroke-dasharray: 5, 2; }
 
@@ -360,6 +363,9 @@
 
 .list-graph .column.active .node .label {
   color: #333; }
+
+.list-graph .column.active .node.lock-directly .label {
+  color: #000; }
 
 .list-graph .node.hovering-directly .label,
 .list-graph .node.focus-directly .label,

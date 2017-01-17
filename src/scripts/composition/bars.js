@@ -38,6 +38,24 @@ class Bars {
   }
 
   /**
+   * Re-render
+   *
+   * @method  reRender
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}  newVisData  New vid data.
+   * @param   {String}  sortBy  Name of the poperty to be sorted by.
+   */
+  reRender (newVisData, sortBy) {
+    if (newVisData) {
+      this.visData = newVisData;
+    }
+
+    this.baseEl.selectAll('.bar-magnitude')
+      .attr('d', data => this.generatePath(data, sortBy));
+  }
+
+  /**
    * Updates all bar magnitude elements.
    *
    * @method  updateAll

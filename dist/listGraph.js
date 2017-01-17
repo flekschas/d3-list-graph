@@ -30,6 +30,1932 @@
  */
 var isArray = Array.isArray;
 
+/**
+ * Removes all key-value entries from the list cache.
+ *
+ * @private
+ * @name clear
+ * @memberOf ListCache
+ */
+function listCacheClear() {
+  this.__data__ = [];
+  this.size = 0;
+}
+
+/**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+ */
+function eq(value, other) {
+  return value === other || (value !== value && other !== other);
+}
+
+/**
+ * Gets the index at which the `key` is found in `array` of key-value pairs.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} key The key to search for.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function assocIndexOf(array, key) {
+  var length = array.length;
+  while (length--) {
+    if (eq(array[length][0], key)) {
+      return length;
+    }
+  }
+  return -1;
+}
+
+/** Used for built-in method references. */
+var arrayProto = Array.prototype;
+
+/** Built-in value references. */
+var splice = arrayProto.splice;
+
+/**
+ * Removes `key` and its value from the list cache.
+ *
+ * @private
+ * @name delete
+ * @memberOf ListCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function listCacheDelete(key) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  if (index < 0) {
+    return false;
+  }
+  var lastIndex = data.length - 1;
+  if (index == lastIndex) {
+    data.pop();
+  } else {
+    splice.call(data, index, 1);
+  }
+  --this.size;
+  return true;
+}
+
+/**
+ * Gets the list cache value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf ListCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function listCacheGet(key) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  return index < 0 ? undefined : data[index][1];
+}
+
+/**
+ * Checks if a list cache value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf ListCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function listCacheHas(key) {
+  return assocIndexOf(this.__data__, key) > -1;
+}
+
+/**
+ * Sets the list cache `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf ListCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the list cache instance.
+ */
+function listCacheSet(key, value) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  if (index < 0) {
+    ++this.size;
+    data.push([key, value]);
+  } else {
+    data[index][1] = value;
+  }
+  return this;
+}
+
+/**
+ * Creates an list cache object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function ListCache(entries) {
+  var index = -1,
+      length = entries ? entries.length : 0;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+// Add methods to `ListCache`.
+ListCache.prototype.clear = listCacheClear;
+ListCache.prototype['delete'] = listCacheDelete;
+ListCache.prototype.get = listCacheGet;
+ListCache.prototype.has = listCacheHas;
+ListCache.prototype.set = listCacheSet;
+
+/**
+ * Removes all key-value entries from the stack.
+ *
+ * @private
+ * @name clear
+ * @memberOf Stack
+ */
+function stackClear() {
+  this.__data__ = new ListCache;
+  this.size = 0;
+}
+
+/**
+ * Removes `key` and its value from the stack.
+ *
+ * @private
+ * @name delete
+ * @memberOf Stack
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function stackDelete(key) {
+  var data = this.__data__,
+      result = data['delete'](key);
+
+  this.size = data.size;
+  return result;
+}
+
+/**
+ * Gets the stack value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Stack
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function stackGet(key) {
+  return this.__data__.get(key);
+}
+
+/**
+ * Checks if a stack value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Stack
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function stackHas(key) {
+  return this.__data__.has(key);
+}
+
+/**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+function isObject(value) {
+  var type = typeof value;
+  return value != null && (type == 'object' || type == 'function');
+}
+
+/** `Object#toString` result references. */
+var funcTag$1 = '[object Function]';
+var genTag$1 = '[object GeneratorFunction]';
+
+/** Used for built-in method references. */
+var objectProto$1 = Object.prototype;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var objectToString = objectProto$1.toString;
+
+/**
+ * Checks if `value` is classified as a `Function` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ *
+ * _.isFunction(/abc/);
+ * // => false
+ */
+function isFunction(value) {
+  // The use of `Object#toString` avoids issues with the `typeof` operator
+  // in Safari 8-9 which returns 'object' for typed array and other constructors.
+  var tag = isObject(value) ? objectToString.call(value) : '';
+  return tag == funcTag$1 || tag == genTag$1;
+}
+
+/** Detect free variable `global` from Node.js. */
+var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+
+/** Detect free variable `self`. */
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+/** Used as a reference to the global object. */
+var root = freeGlobal || freeSelf || Function('return this')();
+
+/** Used to detect overreaching core-js shims. */
+var coreJsData = root['__core-js_shared__'];
+
+/** Used to detect methods masquerading as native. */
+var maskSrcKey = (function() {
+  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+  return uid ? ('Symbol(src)_1.' + uid) : '';
+}());
+
+/**
+ * Checks if `func` has its source masked.
+ *
+ * @private
+ * @param {Function} func The function to check.
+ * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+ */
+function isMasked(func) {
+  return !!maskSrcKey && (maskSrcKey in func);
+}
+
+/** Used for built-in method references. */
+var funcProto$1 = Function.prototype;
+
+/** Used to resolve the decompiled source of functions. */
+var funcToString$1 = funcProto$1.toString;
+
+/**
+ * Converts `func` to its source code.
+ *
+ * @private
+ * @param {Function} func The function to process.
+ * @returns {string} Returns the source code.
+ */
+function toSource(func) {
+  if (func != null) {
+    try {
+      return funcToString$1.call(func);
+    } catch (e) {}
+    try {
+      return (func + '');
+    } catch (e) {}
+  }
+  return '';
+}
+
+/**
+ * Used to match `RegExp`
+ * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+ */
+var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+
+/** Used to detect host constructors (Safari). */
+var reIsHostCtor = /^\[object .+?Constructor\]$/;
+
+/** Used for built-in method references. */
+var funcProto = Function.prototype;
+var objectProto = Object.prototype;
+
+/** Used to resolve the decompiled source of functions. */
+var funcToString = funcProto.toString;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/** Used to detect if a method is native. */
+var reIsNative = RegExp('^' +
+  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
+  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
+);
+
+/**
+ * The base implementation of `_.isNative` without bad shim checks.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a native function,
+ *  else `false`.
+ */
+function baseIsNative(value) {
+  if (!isObject(value) || isMasked(value)) {
+    return false;
+  }
+  var pattern = isFunction(value) ? reIsNative : reIsHostCtor;
+  return pattern.test(toSource(value));
+}
+
+/**
+ * Gets the value at `key` of `object`.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
+function getValue(object, key) {
+  return object == null ? undefined : object[key];
+}
+
+/**
+ * Gets the native function at `key` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the method to get.
+ * @returns {*} Returns the function if it's native, else `undefined`.
+ */
+function getNative(object, key) {
+  var value = getValue(object, key);
+  return baseIsNative(value) ? value : undefined;
+}
+
+/* Built-in method references that are verified to be native. */
+var Map = getNative(root, 'Map');
+
+/* Built-in method references that are verified to be native. */
+var nativeCreate = getNative(Object, 'create');
+
+/**
+ * Removes all key-value entries from the hash.
+ *
+ * @private
+ * @name clear
+ * @memberOf Hash
+ */
+function hashClear() {
+  this.__data__ = nativeCreate ? nativeCreate(null) : {};
+  this.size = 0;
+}
+
+/**
+ * Removes `key` and its value from the hash.
+ *
+ * @private
+ * @name delete
+ * @memberOf Hash
+ * @param {Object} hash The hash to modify.
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function hashDelete(key) {
+  var result = this.has(key) && delete this.__data__[key];
+  this.size -= result ? 1 : 0;
+  return result;
+}
+
+/** Used to stand-in for `undefined` hash values. */
+var HASH_UNDEFINED = '__lodash_hash_undefined__';
+
+/** Used for built-in method references. */
+var objectProto$2 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$1 = objectProto$2.hasOwnProperty;
+
+/**
+ * Gets the hash value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Hash
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function hashGet(key) {
+  var data = this.__data__;
+  if (nativeCreate) {
+    var result = data[key];
+    return result === HASH_UNDEFINED ? undefined : result;
+  }
+  return hasOwnProperty$1.call(data, key) ? data[key] : undefined;
+}
+
+/** Used for built-in method references. */
+var objectProto$3 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$2 = objectProto$3.hasOwnProperty;
+
+/**
+ * Checks if a hash value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Hash
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function hashHas(key) {
+  var data = this.__data__;
+  return nativeCreate ? data[key] !== undefined : hasOwnProperty$2.call(data, key);
+}
+
+/** Used to stand-in for `undefined` hash values. */
+var HASH_UNDEFINED$1 = '__lodash_hash_undefined__';
+
+/**
+ * Sets the hash `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Hash
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the hash instance.
+ */
+function hashSet(key, value) {
+  var data = this.__data__;
+  this.size += this.has(key) ? 0 : 1;
+  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED$1 : value;
+  return this;
+}
+
+/**
+ * Creates a hash object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function Hash(entries) {
+  var index = -1,
+      length = entries ? entries.length : 0;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+// Add methods to `Hash`.
+Hash.prototype.clear = hashClear;
+Hash.prototype['delete'] = hashDelete;
+Hash.prototype.get = hashGet;
+Hash.prototype.has = hashHas;
+Hash.prototype.set = hashSet;
+
+/**
+ * Removes all key-value entries from the map.
+ *
+ * @private
+ * @name clear
+ * @memberOf MapCache
+ */
+function mapCacheClear() {
+  this.size = 0;
+  this.__data__ = {
+    'hash': new Hash,
+    'map': new (Map || ListCache),
+    'string': new Hash
+  };
+}
+
+/**
+ * Checks if `value` is suitable for use as unique object key.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
+ */
+function isKeyable(value) {
+  var type = typeof value;
+  return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
+    ? (value !== '__proto__')
+    : (value === null);
+}
+
+/**
+ * Gets the data for `map`.
+ *
+ * @private
+ * @param {Object} map The map to query.
+ * @param {string} key The reference key.
+ * @returns {*} Returns the map data.
+ */
+function getMapData(map, key) {
+  var data = map.__data__;
+  return isKeyable(key)
+    ? data[typeof key == 'string' ? 'string' : 'hash']
+    : data.map;
+}
+
+/**
+ * Removes `key` and its value from the map.
+ *
+ * @private
+ * @name delete
+ * @memberOf MapCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function mapCacheDelete(key) {
+  var result = getMapData(this, key)['delete'](key);
+  this.size -= result ? 1 : 0;
+  return result;
+}
+
+/**
+ * Gets the map value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf MapCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function mapCacheGet(key) {
+  return getMapData(this, key).get(key);
+}
+
+/**
+ * Checks if a map value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf MapCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function mapCacheHas(key) {
+  return getMapData(this, key).has(key);
+}
+
+/**
+ * Sets the map `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf MapCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the map cache instance.
+ */
+function mapCacheSet(key, value) {
+  var data = getMapData(this, key),
+      size = data.size;
+
+  data.set(key, value);
+  this.size += data.size == size ? 0 : 1;
+  return this;
+}
+
+/**
+ * Creates a map cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function MapCache(entries) {
+  var index = -1,
+      length = entries ? entries.length : 0;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+// Add methods to `MapCache`.
+MapCache.prototype.clear = mapCacheClear;
+MapCache.prototype['delete'] = mapCacheDelete;
+MapCache.prototype.get = mapCacheGet;
+MapCache.prototype.has = mapCacheHas;
+MapCache.prototype.set = mapCacheSet;
+
+/** Used as the size to enable large array optimizations. */
+var LARGE_ARRAY_SIZE = 200;
+
+/**
+ * Sets the stack `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Stack
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the stack cache instance.
+ */
+function stackSet(key, value) {
+  var data = this.__data__;
+  if (data instanceof ListCache) {
+    var pairs = data.__data__;
+    if (!Map || (pairs.length < LARGE_ARRAY_SIZE - 1)) {
+      pairs.push([key, value]);
+      this.size = ++data.size;
+      return this;
+    }
+    data = this.__data__ = new MapCache(pairs);
+  }
+  data.set(key, value);
+  this.size = data.size;
+  return this;
+}
+
+/**
+ * Creates a stack cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function Stack(entries) {
+  var data = this.__data__ = new ListCache(entries);
+  this.size = data.size;
+}
+
+// Add methods to `Stack`.
+Stack.prototype.clear = stackClear;
+Stack.prototype['delete'] = stackDelete;
+Stack.prototype.get = stackGet;
+Stack.prototype.has = stackHas;
+Stack.prototype.set = stackSet;
+
+/**
+ * A specialized version of `_.forEach` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns `array`.
+ */
+function arrayEach(array, iteratee) {
+  var index = -1,
+      length = array ? array.length : 0;
+
+  while (++index < length) {
+    if (iteratee(array[index], index, array) === false) {
+      break;
+    }
+  }
+  return array;
+}
+
+/** Built-in value references. */
+var defineProperty = Object.defineProperty;
+
+/**
+ * The base implementation of `assignValue` and `assignMergeValue` without
+ * value checks.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
+function baseAssignValue(object, key, value) {
+  if (key == '__proto__' && defineProperty) {
+    defineProperty(object, key, {
+      'configurable': true,
+      'enumerable': true,
+      'value': value,
+      'writable': true
+    });
+  } else {
+    object[key] = value;
+  }
+}
+
+/** Used for built-in method references. */
+var objectProto$4 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$3 = objectProto$4.hasOwnProperty;
+
+/**
+ * Assigns `value` to `key` of `object` if the existing value is not equivalent
+ * using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
+function assignValue(object, key, value) {
+  var objValue = object[key];
+  if (!(hasOwnProperty$3.call(object, key) && eq(objValue, value)) ||
+      (value === undefined && !(key in object))) {
+    baseAssignValue(object, key, value);
+  }
+}
+
+/**
+ * Copies properties of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy properties from.
+ * @param {Array} props The property identifiers to copy.
+ * @param {Object} [object={}] The object to copy properties to.
+ * @param {Function} [customizer] The function to customize copied values.
+ * @returns {Object} Returns `object`.
+ */
+function copyObject(source, props, object, customizer) {
+  var isNew = !object;
+  object || (object = {});
+
+  var index = -1,
+      length = props.length;
+
+  while (++index < length) {
+    var key = props[index];
+
+    var newValue = customizer
+      ? customizer(object[key], source[key], key, object, source)
+      : undefined;
+
+    if (newValue === undefined) {
+      newValue = source[key];
+    }
+    if (isNew) {
+      baseAssignValue(object, key, newValue);
+    } else {
+      assignValue(object, key, newValue);
+    }
+  }
+  return object;
+}
+
+/**
+ * The base implementation of `_.times` without support for iteratee shorthands
+ * or max array length checks.
+ *
+ * @private
+ * @param {number} n The number of times to invoke `iteratee`.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the array of results.
+ */
+function baseTimes(n, iteratee) {
+  var index = -1,
+      result = Array(n);
+
+  while (++index < n) {
+    result[index] = iteratee(index);
+  }
+  return result;
+}
+
+/** Used as references for various `Number` constants. */
+var MAX_SAFE_INTEGER = 9007199254740991;
+
+/**
+ * Checks if `value` is a valid array-like length.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+ * @example
+ *
+ * _.isLength(3);
+ * // => true
+ *
+ * _.isLength(Number.MIN_VALUE);
+ * // => false
+ *
+ * _.isLength(Infinity);
+ * // => false
+ *
+ * _.isLength('3');
+ * // => false
+ */
+function isLength(value) {
+  return typeof value == 'number' &&
+    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+}
+
+/**
+ * Checks if `value` is array-like. A value is considered array-like if it's
+ * not a function and has a `value.length` that's an integer greater than or
+ * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
+ * @example
+ *
+ * _.isArrayLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLike(document.body.children);
+ * // => true
+ *
+ * _.isArrayLike('abc');
+ * // => true
+ *
+ * _.isArrayLike(_.noop);
+ * // => false
+ */
+function isArrayLike(value) {
+  return value != null && isLength(value.length) && !isFunction(value);
+}
+
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike(value) {
+  return value != null && typeof value == 'object';
+}
+
+/**
+ * This method is like `_.isArrayLike` except that it also checks if `value`
+ * is an object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array-like object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArrayLikeObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLikeObject(document.body.children);
+ * // => true
+ *
+ * _.isArrayLikeObject('abc');
+ * // => false
+ *
+ * _.isArrayLikeObject(_.noop);
+ * // => false
+ */
+function isArrayLikeObject(value) {
+  return isObjectLike(value) && isArrayLike(value);
+}
+
+/** `Object#toString` result references. */
+var argsTag$1 = '[object Arguments]';
+
+/** Used for built-in method references. */
+var objectProto$6 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$5 = objectProto$6.hasOwnProperty;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var objectToString$1 = objectProto$6.toString;
+
+/** Built-in value references. */
+var propertyIsEnumerable = objectProto$6.propertyIsEnumerable;
+
+/**
+ * Checks if `value` is likely an `arguments` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArguments(function() { return arguments; }());
+ * // => true
+ *
+ * _.isArguments([1, 2, 3]);
+ * // => false
+ */
+function isArguments(value) {
+  // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
+  return isArrayLikeObject(value) && hasOwnProperty$5.call(value, 'callee') &&
+    (!propertyIsEnumerable.call(value, 'callee') || objectToString$1.call(value) == argsTag$1);
+}
+
+/** Used as references for various `Number` constants. */
+var MAX_SAFE_INTEGER$1 = 9007199254740991;
+
+/** Used to detect unsigned integer values. */
+var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+/**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+ */
+function isIndex(value, length) {
+  length = length == null ? MAX_SAFE_INTEGER$1 : length;
+  return !!length &&
+    (typeof value == 'number' || reIsUint.test(value)) &&
+    (value > -1 && value % 1 == 0 && value < length);
+}
+
+/** Used for built-in method references. */
+var objectProto$5 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$4 = objectProto$5.hasOwnProperty;
+
+/**
+ * Creates an array of the enumerable property names of the array-like `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @param {boolean} inherited Specify returning inherited property names.
+ * @returns {Array} Returns the array of property names.
+ */
+function arrayLikeKeys(value, inherited) {
+  // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
+  // Safari 9 makes `arguments.length` enumerable in strict mode.
+  var result = (isArray(value) || isArguments(value))
+    ? baseTimes(value.length, String)
+    : [];
+
+  var length = result.length,
+      skipIndexes = !!length;
+
+  for (var key in value) {
+    if ((inherited || hasOwnProperty$4.call(value, key)) &&
+        !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
+      result.push(key);
+    }
+  }
+  return result;
+}
+
+/** Used for built-in method references. */
+var objectProto$8 = Object.prototype;
+
+/**
+ * Checks if `value` is likely a prototype object.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
+ */
+function isPrototype(value) {
+  var Ctor = value && value.constructor,
+      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto$8;
+
+  return value === proto;
+}
+
+/**
+ * Creates a unary function that invokes `func` with its argument transformed.
+ *
+ * @private
+ * @param {Function} func The function to wrap.
+ * @param {Function} transform The argument transform.
+ * @returns {Function} Returns the new function.
+ */
+function overArg(func, transform) {
+  return function(arg) {
+    return func(transform(arg));
+  };
+}
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeKeys = overArg(Object.keys, Object);
+
+/** Used for built-in method references. */
+var objectProto$7 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$6 = objectProto$7.hasOwnProperty;
+
+/**
+ * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
+function baseKeys(object) {
+  if (!isPrototype(object)) {
+    return nativeKeys(object);
+  }
+  var result = [];
+  for (var key in Object(object)) {
+    if (hasOwnProperty$6.call(object, key) && key != 'constructor') {
+      result.push(key);
+    }
+  }
+  return result;
+}
+
+/**
+ * Creates an array of the own enumerable property names of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects. See the
+ * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
+ * for more details.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.keys(new Foo);
+ * // => ['a', 'b'] (iteration order is not guaranteed)
+ *
+ * _.keys('hi');
+ * // => ['0', '1']
+ */
+function keys(object) {
+  return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
+}
+
+/**
+ * The base implementation of `_.assign` without support for multiple sources
+ * or `customizer` functions.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @returns {Object} Returns `object`.
+ */
+function baseAssign(object, source) {
+  return object && copyObject(source, keys(source), object);
+}
+
+/** Detect free variable `exports`. */
+var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
+
+/** Detect free variable `module`. */
+var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
+
+/** Detect the popular CommonJS extension `module.exports`. */
+var moduleExports = freeModule && freeModule.exports === freeExports;
+
+/** Built-in value references. */
+var Buffer = moduleExports ? root.Buffer : undefined;
+var allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined;
+
+/**
+ * Creates a clone of  `buffer`.
+ *
+ * @private
+ * @param {Buffer} buffer The buffer to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Buffer} Returns the cloned buffer.
+ */
+function cloneBuffer(buffer, isDeep) {
+  if (isDeep) {
+    return buffer.slice();
+  }
+  var length = buffer.length,
+      result = allocUnsafe ? allocUnsafe(length) : new buffer.constructor(length);
+
+  buffer.copy(result);
+  return result;
+}
+
+/**
+ * Copies the values of `source` to `array`.
+ *
+ * @private
+ * @param {Array} source The array to copy values from.
+ * @param {Array} [array=[]] The array to copy values to.
+ * @returns {Array} Returns `array`.
+ */
+function copyArray(source, array) {
+  var index = -1,
+      length = source.length;
+
+  array || (array = Array(length));
+  while (++index < length) {
+    array[index] = source[index];
+  }
+  return array;
+}
+
+/**
+ * This method returns a new empty array.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {Array} Returns the new empty array.
+ * @example
+ *
+ * var arrays = _.times(2, _.stubArray);
+ *
+ * console.log(arrays);
+ * // => [[], []]
+ *
+ * console.log(arrays[0] === arrays[1]);
+ * // => false
+ */
+function stubArray() {
+  return [];
+}
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeGetSymbols = Object.getOwnPropertySymbols;
+
+/**
+ * Creates an array of the own enumerable symbol properties of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of symbols.
+ */
+var getSymbols = nativeGetSymbols ? overArg(nativeGetSymbols, Object) : stubArray;
+
+/**
+ * Copies own symbol properties of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy symbols from.
+ * @param {Object} [object={}] The object to copy symbols to.
+ * @returns {Object} Returns `object`.
+ */
+function copySymbols(source, object) {
+  return copyObject(source, getSymbols(source), object);
+}
+
+/**
+ * Appends the elements of `values` to `array`.
+ *
+ * @private
+ * @param {Array} array The array to modify.
+ * @param {Array} values The values to append.
+ * @returns {Array} Returns `array`.
+ */
+function arrayPush(array, values) {
+  var index = -1,
+      length = values.length,
+      offset = array.length;
+
+  while (++index < length) {
+    array[offset + index] = values[index];
+  }
+  return array;
+}
+
+/**
+ * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
+ * `keysFunc` and `symbolsFunc` to get the enumerable property names and
+ * symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @param {Function} symbolsFunc The function to get the symbols of `object`.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function baseGetAllKeys(object, keysFunc, symbolsFunc) {
+  var result = keysFunc(object);
+  return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
+}
+
+/**
+ * Creates an array of own enumerable property names and symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function getAllKeys(object) {
+  return baseGetAllKeys(object, keys, getSymbols);
+}
+
+/* Built-in method references that are verified to be native. */
+var DataView = getNative(root, 'DataView');
+
+/* Built-in method references that are verified to be native. */
+var Promise$1 = getNative(root, 'Promise');
+
+/* Built-in method references that are verified to be native. */
+var Set = getNative(root, 'Set');
+
+/* Built-in method references that are verified to be native. */
+var WeakMap = getNative(root, 'WeakMap');
+
+/** Used for built-in method references. */
+var objectProto$10 = Object.prototype;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var objectToString$3 = objectProto$10.toString;
+
+/**
+ * The base implementation of `getTag`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+function baseGetTag(value) {
+  return objectToString$3.call(value);
+}
+
+/** `Object#toString` result references. */
+var mapTag$1 = '[object Map]';
+var objectTag$1 = '[object Object]';
+var promiseTag = '[object Promise]';
+var setTag$1 = '[object Set]';
+var weakMapTag$1 = '[object WeakMap]';
+
+var dataViewTag$1 = '[object DataView]';
+
+/** Used for built-in method references. */
+var objectProto$9 = Object.prototype;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var objectToString$2 = objectProto$9.toString;
+
+/** Used to detect maps, sets, and weakmaps. */
+var dataViewCtorString = toSource(DataView);
+var mapCtorString = toSource(Map);
+var promiseCtorString = toSource(Promise$1);
+var setCtorString = toSource(Set);
+var weakMapCtorString = toSource(WeakMap);
+
+/**
+ * Gets the `toStringTag` of `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+var getTag = baseGetTag;
+
+// Fallback for data views, maps, sets, and weak maps in IE 11 and promises in Node.js < 6.
+if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag$1) ||
+    (Map && getTag(new Map) != mapTag$1) ||
+    (Promise$1 && getTag(Promise$1.resolve()) != promiseTag) ||
+    (Set && getTag(new Set) != setTag$1) ||
+    (WeakMap && getTag(new WeakMap) != weakMapTag$1)) {
+  getTag = function(value) {
+    var result = objectToString$2.call(value),
+        Ctor = result == objectTag$1 ? value.constructor : undefined,
+        ctorString = Ctor ? toSource(Ctor) : undefined;
+
+    if (ctorString) {
+      switch (ctorString) {
+        case dataViewCtorString: return dataViewTag$1;
+        case mapCtorString: return mapTag$1;
+        case promiseCtorString: return promiseTag;
+        case setCtorString: return setTag$1;
+        case weakMapCtorString: return weakMapTag$1;
+      }
+    }
+    return result;
+  };
+}
+
+var getTag$1 = getTag;
+
+/** Used for built-in method references. */
+var objectProto$11 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$7 = objectProto$11.hasOwnProperty;
+
+/**
+ * Initializes an array clone.
+ *
+ * @private
+ * @param {Array} array The array to clone.
+ * @returns {Array} Returns the initialized clone.
+ */
+function initCloneArray(array) {
+  var length = array.length,
+      result = array.constructor(length);
+
+  // Add properties assigned by `RegExp#exec`.
+  if (length && typeof array[0] == 'string' && hasOwnProperty$7.call(array, 'index')) {
+    result.index = array.index;
+    result.input = array.input;
+  }
+  return result;
+}
+
+/** Built-in value references. */
+var Uint8Array = root.Uint8Array;
+
+/**
+ * Creates a clone of `arrayBuffer`.
+ *
+ * @private
+ * @param {ArrayBuffer} arrayBuffer The array buffer to clone.
+ * @returns {ArrayBuffer} Returns the cloned array buffer.
+ */
+function cloneArrayBuffer(arrayBuffer) {
+  var result = new arrayBuffer.constructor(arrayBuffer.byteLength);
+  new Uint8Array(result).set(new Uint8Array(arrayBuffer));
+  return result;
+}
+
+/**
+ * Creates a clone of `dataView`.
+ *
+ * @private
+ * @param {Object} dataView The data view to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned data view.
+ */
+function cloneDataView(dataView, isDeep) {
+  var buffer = isDeep ? cloneArrayBuffer(dataView.buffer) : dataView.buffer;
+  return new dataView.constructor(buffer, dataView.byteOffset, dataView.byteLength);
+}
+
+/**
+ * Adds the key-value `pair` to `map`.
+ *
+ * @private
+ * @param {Object} map The map to modify.
+ * @param {Array} pair The key-value pair to add.
+ * @returns {Object} Returns `map`.
+ */
+function addMapEntry(map, pair) {
+  // Don't return `map.set` because it's not chainable in IE 11.
+  map.set(pair[0], pair[1]);
+  return map;
+}
+
+/**
+ * A specialized version of `_.reduce` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @param {*} [accumulator] The initial value.
+ * @param {boolean} [initAccum] Specify using the first element of `array` as
+ *  the initial value.
+ * @returns {*} Returns the accumulated value.
+ */
+function arrayReduce(array, iteratee, accumulator, initAccum) {
+  var index = -1,
+      length = array ? array.length : 0;
+
+  if (initAccum && length) {
+    accumulator = array[++index];
+  }
+  while (++index < length) {
+    accumulator = iteratee(accumulator, array[index], index, array);
+  }
+  return accumulator;
+}
+
+/**
+ * Converts `map` to its key-value pairs.
+ *
+ * @private
+ * @param {Object} map The map to convert.
+ * @returns {Array} Returns the key-value pairs.
+ */
+function mapToArray(map) {
+  var index = -1,
+      result = Array(map.size);
+
+  map.forEach(function(value, key) {
+    result[++index] = [key, value];
+  });
+  return result;
+}
+
+/**
+ * Creates a clone of `map`.
+ *
+ * @private
+ * @param {Object} map The map to clone.
+ * @param {Function} cloneFunc The function to clone values.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned map.
+ */
+function cloneMap(map, isDeep, cloneFunc) {
+  var array = isDeep ? cloneFunc(mapToArray(map), true) : mapToArray(map);
+  return arrayReduce(array, addMapEntry, new map.constructor);
+}
+
+/** Used to match `RegExp` flags from their coerced string values. */
+var reFlags = /\w*$/;
+
+/**
+ * Creates a clone of `regexp`.
+ *
+ * @private
+ * @param {Object} regexp The regexp to clone.
+ * @returns {Object} Returns the cloned regexp.
+ */
+function cloneRegExp(regexp) {
+  var result = new regexp.constructor(regexp.source, reFlags.exec(regexp));
+  result.lastIndex = regexp.lastIndex;
+  return result;
+}
+
+/**
+ * Adds `value` to `set`.
+ *
+ * @private
+ * @param {Object} set The set to modify.
+ * @param {*} value The value to add.
+ * @returns {Object} Returns `set`.
+ */
+function addSetEntry(set, value) {
+  // Don't return `set.add` because it's not chainable in IE 11.
+  set.add(value);
+  return set;
+}
+
+/**
+ * Converts `set` to an array of its values.
+ *
+ * @private
+ * @param {Object} set The set to convert.
+ * @returns {Array} Returns the values.
+ */
+function setToArray(set) {
+  var index = -1,
+      result = Array(set.size);
+
+  set.forEach(function(value) {
+    result[++index] = value;
+  });
+  return result;
+}
+
+/**
+ * Creates a clone of `set`.
+ *
+ * @private
+ * @param {Object} set The set to clone.
+ * @param {Function} cloneFunc The function to clone values.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned set.
+ */
+function cloneSet(set, isDeep, cloneFunc) {
+  var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
+  return arrayReduce(array, addSetEntry, new set.constructor);
+}
+
+/** Built-in value references. */
+var Symbol$1 = root.Symbol;
+
+/** Used to convert symbols to primitives and strings. */
+var symbolProto = Symbol$1 ? Symbol$1.prototype : undefined;
+var symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+
+/**
+ * Creates a clone of the `symbol` object.
+ *
+ * @private
+ * @param {Object} symbol The symbol object to clone.
+ * @returns {Object} Returns the cloned symbol object.
+ */
+function cloneSymbol(symbol) {
+  return symbolValueOf ? Object(symbolValueOf.call(symbol)) : {};
+}
+
+/**
+ * Creates a clone of `typedArray`.
+ *
+ * @private
+ * @param {Object} typedArray The typed array to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned typed array.
+ */
+function cloneTypedArray(typedArray, isDeep) {
+  var buffer = isDeep ? cloneArrayBuffer(typedArray.buffer) : typedArray.buffer;
+  return new typedArray.constructor(buffer, typedArray.byteOffset, typedArray.length);
+}
+
+/** `Object#toString` result references. */
+var boolTag$1 = '[object Boolean]';
+var dateTag$1 = '[object Date]';
+var mapTag$2 = '[object Map]';
+var numberTag$1 = '[object Number]';
+var regexpTag$1 = '[object RegExp]';
+var setTag$2 = '[object Set]';
+var stringTag$1 = '[object String]';
+var symbolTag$1 = '[object Symbol]';
+
+var arrayBufferTag$1 = '[object ArrayBuffer]';
+var dataViewTag$2 = '[object DataView]';
+var float32Tag$1 = '[object Float32Array]';
+var float64Tag$1 = '[object Float64Array]';
+var int8Tag$1 = '[object Int8Array]';
+var int16Tag$1 = '[object Int16Array]';
+var int32Tag$1 = '[object Int32Array]';
+var uint8Tag$1 = '[object Uint8Array]';
+var uint8ClampedTag$1 = '[object Uint8ClampedArray]';
+var uint16Tag$1 = '[object Uint16Array]';
+var uint32Tag$1 = '[object Uint32Array]';
+
+/**
+ * Initializes an object clone based on its `toStringTag`.
+ *
+ * **Note:** This function only supports cloning values with tags of
+ * `Boolean`, `Date`, `Error`, `Number`, `RegExp`, or `String`.
+ *
+ * @private
+ * @param {Object} object The object to clone.
+ * @param {string} tag The `toStringTag` of the object to clone.
+ * @param {Function} cloneFunc The function to clone values.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the initialized clone.
+ */
+function initCloneByTag(object, tag, cloneFunc, isDeep) {
+  var Ctor = object.constructor;
+  switch (tag) {
+    case arrayBufferTag$1:
+      return cloneArrayBuffer(object);
+
+    case boolTag$1:
+    case dateTag$1:
+      return new Ctor(+object);
+
+    case dataViewTag$2:
+      return cloneDataView(object, isDeep);
+
+    case float32Tag$1: case float64Tag$1:
+    case int8Tag$1: case int16Tag$1: case int32Tag$1:
+    case uint8Tag$1: case uint8ClampedTag$1: case uint16Tag$1: case uint32Tag$1:
+      return cloneTypedArray(object, isDeep);
+
+    case mapTag$2:
+      return cloneMap(object, isDeep, cloneFunc);
+
+    case numberTag$1:
+    case stringTag$1:
+      return new Ctor(object);
+
+    case regexpTag$1:
+      return cloneRegExp(object);
+
+    case setTag$2:
+      return cloneSet(object, isDeep, cloneFunc);
+
+    case symbolTag$1:
+      return cloneSymbol(object);
+  }
+}
+
+/** Built-in value references. */
+var objectCreate = Object.create;
+
+/**
+ * The base implementation of `_.create` without support for assigning
+ * properties to the created object.
+ *
+ * @private
+ * @param {Object} proto The object to inherit from.
+ * @returns {Object} Returns the new object.
+ */
+var baseCreate = (function() {
+  function object() {}
+  return function(proto) {
+    if (!isObject(proto)) {
+      return {};
+    }
+    if (objectCreate) {
+      return objectCreate(proto);
+    }
+    object.prototype = prototype;
+    var result = new object;
+    object.prototype = undefined;
+    return result;
+  };
+}());
+
+/** Built-in value references. */
+var getPrototype = overArg(Object.getPrototypeOf, Object);
+
+/**
+ * Initializes an object clone.
+ *
+ * @private
+ * @param {Object} object The object to clone.
+ * @returns {Object} Returns the initialized clone.
+ */
+function initCloneObject(object) {
+  return (typeof object.constructor == 'function' && !isPrototype(object))
+    ? baseCreate(getPrototype(object))
+    : {};
+}
+
+/**
+ * This method returns `false`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {boolean} Returns `false`.
+ * @example
+ *
+ * _.times(2, _.stubFalse);
+ * // => [false, false]
+ */
+function stubFalse() {
+  return false;
+}
+
+/** Detect free variable `exports`. */
+var freeExports$1 = typeof exports == 'object' && exports && !exports.nodeType && exports;
+
+/** Detect free variable `module`. */
+var freeModule$1 = freeExports$1 && typeof module == 'object' && module && !module.nodeType && module;
+
+/** Detect the popular CommonJS extension `module.exports`. */
+var moduleExports$1 = freeModule$1 && freeModule$1.exports === freeExports$1;
+
+/** Built-in value references. */
+var Buffer$1 = moduleExports$1 ? root.Buffer : undefined;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeIsBuffer = Buffer$1 ? Buffer$1.isBuffer : undefined;
+
+/**
+ * Checks if `value` is a buffer.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.3.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a buffer, else `false`.
+ * @example
+ *
+ * _.isBuffer(new Buffer(2));
+ * // => true
+ *
+ * _.isBuffer(new Uint8Array(2));
+ * // => false
+ */
+var isBuffer = nativeIsBuffer || stubFalse;
+
+/** `Object#toString` result references. */
+var argsTag = '[object Arguments]';
+var arrayTag = '[object Array]';
+var boolTag = '[object Boolean]';
+var dateTag = '[object Date]';
+var errorTag = '[object Error]';
+var funcTag = '[object Function]';
+var genTag = '[object GeneratorFunction]';
+var mapTag = '[object Map]';
+var numberTag = '[object Number]';
+var objectTag = '[object Object]';
+var regexpTag = '[object RegExp]';
+var setTag = '[object Set]';
+var stringTag = '[object String]';
+var symbolTag = '[object Symbol]';
+var weakMapTag = '[object WeakMap]';
+
+var arrayBufferTag = '[object ArrayBuffer]';
+var dataViewTag = '[object DataView]';
+var float32Tag = '[object Float32Array]';
+var float64Tag = '[object Float64Array]';
+var int8Tag = '[object Int8Array]';
+var int16Tag = '[object Int16Array]';
+var int32Tag = '[object Int32Array]';
+var uint8Tag = '[object Uint8Array]';
+var uint8ClampedTag = '[object Uint8ClampedArray]';
+var uint16Tag = '[object Uint16Array]';
+var uint32Tag = '[object Uint32Array]';
+
+/** Used to identify `toStringTag` values supported by `_.clone`. */
+var cloneableTags = {};
+cloneableTags[argsTag] = cloneableTags[arrayTag] =
+cloneableTags[arrayBufferTag] = cloneableTags[dataViewTag] =
+cloneableTags[boolTag] = cloneableTags[dateTag] =
+cloneableTags[float32Tag] = cloneableTags[float64Tag] =
+cloneableTags[int8Tag] = cloneableTags[int16Tag] =
+cloneableTags[int32Tag] = cloneableTags[mapTag] =
+cloneableTags[numberTag] = cloneableTags[objectTag] =
+cloneableTags[regexpTag] = cloneableTags[setTag] =
+cloneableTags[stringTag] = cloneableTags[symbolTag] =
+cloneableTags[uint8Tag] = cloneableTags[uint8ClampedTag] =
+cloneableTags[uint16Tag] = cloneableTags[uint32Tag] = true;
+cloneableTags[errorTag] = cloneableTags[funcTag] =
+cloneableTags[weakMapTag] = false;
+
+/**
+ * The base implementation of `_.clone` and `_.cloneDeep` which tracks
+ * traversed objects.
+ *
+ * @private
+ * @param {*} value The value to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @param {boolean} [isFull] Specify a clone including symbols.
+ * @param {Function} [customizer] The function to customize cloning.
+ * @param {string} [key] The key of `value`.
+ * @param {Object} [object] The parent object of `value`.
+ * @param {Object} [stack] Tracks traversed objects and their clone counterparts.
+ * @returns {*} Returns the cloned value.
+ */
+function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
+  var result;
+  if (customizer) {
+    result = object ? customizer(value, key, object, stack) : customizer(value);
+  }
+  if (result !== undefined) {
+    return result;
+  }
+  if (!isObject(value)) {
+    return value;
+  }
+  var isArr = isArray(value);
+  if (isArr) {
+    result = initCloneArray(value);
+    if (!isDeep) {
+      return copyArray(value, result);
+    }
+  } else {
+    var tag = getTag$1(value),
+        isFunc = tag == funcTag || tag == genTag;
+
+    if (isBuffer(value)) {
+      return cloneBuffer(value, isDeep);
+    }
+    if (tag == objectTag || tag == argsTag || (isFunc && !object)) {
+      result = initCloneObject(isFunc ? {} : value);
+      if (!isDeep) {
+        return copySymbols(value, baseAssign(result, value));
+      }
+    } else {
+      if (!cloneableTags[tag]) {
+        return object ? value : {};
+      }
+      result = initCloneByTag(value, tag, baseClone, isDeep);
+    }
+  }
+  // Check for circular references and return its corresponding clone.
+  stack || (stack = new Stack);
+  var stacked = stack.get(value);
+  if (stacked) {
+    return stacked;
+  }
+  stack.set(value, result);
+
+  if (!isArr) {
+    var props = isFull ? getAllKeys(value) : keys(value);
+  }
+  arrayEach(props || value, function(subValue, key) {
+    if (props) {
+      key = subValue;
+      subValue = value[key];
+    }
+    // Recursively populate clone (susceptible to call stack limits).
+    assignValue(result, key, baseClone(subValue, isDeep, isFull, customizer, key, value, stack));
+  });
+  return result;
+}
+
+/**
+ * This method is like `_.clone` except that it recursively clones `value`.
+ *
+ * @static
+ * @memberOf _
+ * @since 1.0.0
+ * @category Lang
+ * @param {*} value The value to recursively clone.
+ * @returns {*} Returns the deep cloned value.
+ * @see _.clone
+ * @example
+ *
+ * var objects = [{ 'a': 1 }, { 'b': 2 }];
+ *
+ * var deep = _.cloneDeep(objects);
+ * console.log(deep[0] === objects[0]);
+ * // => false
+ */
+function cloneDeep(value) {
+  return baseClone(value, true, true);
+}
+
 var asyncGenerator = function () {
   function AwaitValue(value) {
     this.value = value;
@@ -831,6 +2757,33 @@ var Topbar = function () {
     }
 
     /**
+     * Re-render
+     *
+     * @method  reRender
+     * @author  Fritz Lekschas
+     * @date    2017-01-16
+     * @param   {Object}  newVisData  New vid data.
+     */
+
+  }, {
+    key: 'reRender',
+    value: function reRender(newVisData) {
+      if (newVisData) {
+        this.visData = newVisData;
+      }
+
+      this.controlSwitch.style('width', this.visData.global.column.padding + 'px');
+
+      this.localControls.style('width', this.visData.global.column.width + 'px');
+
+      this.localControls.selectAll('.control-btn').style('width', this.visData.global.column.padding + 'px');
+
+      this.localControls.selectAll('.control-btn.sort-precision').style('width', this.visData.global.column.contentWidth / 2 + 'px').style('left', this.visData.global.column.padding + 'px');
+
+      this.localControls.selectAll('.control-btn.sort-recall').style('width', this.visData.global.column.contentWidth / 2 + 'px').style('left', this.visData.global.column.contentWidth / 2 + this.visData.global.column.padding + 'px');
+    }
+
+    /**
      * Select nodes by level by button.
      *
      * @method  selectNodesLevel
@@ -1039,7 +2992,7 @@ var Levels = function () {
     // We need to add an empty rectangle that fills up the whole column to ensure
     // that the `g`'s size is at a maximum, otherwise scrolling will be halted
     // when the cursor leaves an actually drawn element.
-    this.groups.append('rect').attr('class', SCROLL_CONTAINER_CLASS).attr('x', function (data) {
+    this.scrollHelper = this.groups.append('rect').attr('class', SCROLL_CONTAINER_CLASS).attr('x', function (data) {
       return data.x;
     }).attr('y', function (data) {
       return data.y;
@@ -1047,16 +3000,41 @@ var Levels = function () {
   }
 
   /**
-   * Prepare column for scrolling.
+   * Re-render
    *
-   * @method  scrollPreparation
+   * @method  reRender
    * @author  Fritz Lekschas
-   * @date    2016-09-14
-   * @param   {Number}  scrollbarWidth  Width of the scrollbar in pixel.
+   * @date    2017-01-16
+   * @param   {Object}  newVisData  New vid data.
    */
 
 
   createClass(Levels, [{
+    key: 'reRender',
+    value: function reRender(newVisData) {
+      if (newVisData) {
+        this.visData = newVisData;
+      }
+
+      this.groups.data(this.visData.nodes);
+
+      this.scrollHelper.data(this.visData.nodes).attr('x', function (data) {
+        return data.x;
+      }).attr('y', function (data) {
+        return data.y;
+      }).attr('width', this.visData.global.column.width + 1).attr('height', this.visData.global.column.height);
+    }
+
+    /**
+     * Prepare column for scrolling.
+     *
+     * @method  scrollPreparation
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Number}  scrollbarWidth  Width of the scrollbar in pixel.
+     */
+
+  }, {
     key: 'scrollPreparation',
     value: function scrollPreparation(scrollbarWidth) {
       var _this2 = this;
@@ -1075,7 +3053,7 @@ var Levels = function () {
         data.scrollTop = 0;
         data.scrollbar = {
           el: undefined,
-          x: data.x + (_this2.visData.global.column.width - scrollbarWidth),
+          x: data.x + (_this2.visData.global.column.width - scrollbarWidth) - 1,
           y: 0,
           width: scrollbarWidth,
           height: scrollbarHeight,
@@ -1108,6 +3086,7 @@ var Levels = function () {
         data.height = contentHeight;
         data.scrollHeight = scrollHeight;
         data.scrollTop = 0;
+        data.scrollbar.x = data.x + (_this3.visData.global.column.width - data.scrollbar.width) - 1;
         data.scrollbar.y = 0;
         data.scrollbar.height = scrollbarHeight;
         data.scrollbar.scrollHeight = _this3.visData.global.column.height - scrollbarHeight;
@@ -1330,6 +3309,35 @@ var Links = function () {
     }
 
     /**
+     * Re-render
+     *
+     * @method  reRender
+     * @author  Fritz Lekschas
+     * @date    2017-01-16
+     * @param   {Object}  newVisData  New vid data.
+     */
+
+  }, {
+    key: 'reRender',
+    value: function reRender(newVisData) {
+      var _this2 = this;
+
+      if (newVisData) {
+        this.visData = newVisData;
+
+        this.groups.data(this.visData.nodes);
+
+        this.links.data(function (data, index) {
+          return _this2.layout.links(index);
+        });
+      }
+
+      this.links.selectAll('path').attr('d', this.diagonal);
+
+      this.makeAllTempVisible(true);
+    }
+
+    /**
      * Scroll links when the container is scrolled.
      *
      * @method  scroll
@@ -1410,7 +3418,7 @@ var Links = function () {
   }, {
     key: 'diagonal',
     get: function get() {
-      var _this2 = this;
+      var _this3 = this;
 
       var extraOffsetX = this.vis.showLinkLocation ? 6 : 0;
 
@@ -1445,11 +3453,11 @@ var Links = function () {
       return function (data) {
         var points = [];
 
-        var sourceX = getSourceX.call(_this2, data.source);
-        var sourceY = getY.call(_this2, data.source);
+        var sourceX = getSourceX.call(_this3, data.source);
+        var sourceY = getY.call(_this3, data.source);
 
-        var targetX = getTargetX.call(_this2, data.target);
-        var targetY = getY.call(_this2, data.target);
+        var targetX = getTargetX.call(_this3, data.target);
+        var targetY = getY.call(_this3, data.target);
 
         var middleX = (sourceX + targetX) / 2;
         var relMiddleX = (targetX - (sourceX + targetX) / 2) * 2 / 3;
@@ -1483,83 +3491,6 @@ var Links = function () {
   }]);
   return Links;
 }();
-
-/**
- * Checks if `value` is the
- * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
- * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an object, else `false`.
- * @example
- *
- * _.isObject({});
- * // => true
- *
- * _.isObject([1, 2, 3]);
- * // => true
- *
- * _.isObject(_.noop);
- * // => true
- *
- * _.isObject(null);
- * // => false
- */
-function isObject(value) {
-  var type = typeof value;
-  return value != null && (type == 'object' || type == 'function');
-}
-
-/** `Object#toString` result references. */
-var funcTag = '[object Function]';
-var genTag = '[object GeneratorFunction]';
-
-/** Used for built-in method references. */
-var objectProto = Object.prototype;
-
-/**
- * Used to resolve the
- * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
- * of values.
- */
-var objectToString = objectProto.toString;
-
-/**
- * Checks if `value` is classified as a `Function` object.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a function, else `false`.
- * @example
- *
- * _.isFunction(_);
- * // => true
- *
- * _.isFunction(/abc/);
- * // => false
- */
-function isFunction(value) {
-  // The use of `Object#toString` avoids issues with the `typeof` operator
-  // in Safari 8-9 which returns 'object' for typed array and other constructors.
-  var tag = isObject(value) ? objectToString.call(value) : '';
-  return tag == funcTag || tag == genTag;
-}
-
-/** Detect free variable `global` from Node.js. */
-var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
-
-/** Detect free variable `self`. */
-var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-
-/** Used as a reference to the global object. */
-var root = freeGlobal || freeSelf || Function('return this')();
 
 /* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeIsFinite = root.isFinite;
@@ -1906,25 +3837,49 @@ var Bars = function () {
   }
 
   /**
-   * Updates all bar magnitude elements.
+   * Re-render
    *
-   * @method  updateAll
+   * @method  reRender
    * @author  Fritz Lekschas
-   * @date    2016-09-14
-   * @param   {Object}  update  Object with the current data.
+   * @date    2017-01-16
+   * @param   {Object}  newVisData  New vid data.
    * @param   {String}  sortBy  Name of the poperty to be sorted by.
    */
 
 
   createClass(Bars, [{
+    key: 'reRender',
+    value: function reRender(newVisData, sortBy) {
+      var _this = this;
+
+      if (newVisData) {
+        this.visData = newVisData;
+      }
+
+      this.baseEl.selectAll('.bar-magnitude').attr('d', function (data) {
+        return _this.generatePath(data, sortBy);
+      });
+    }
+
+    /**
+     * Updates all bar magnitude elements.
+     *
+     * @method  updateAll
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     * @param   {Object}  update  Object with the current data.
+     * @param   {String}  sortBy  Name of the poperty to be sorted by.
+     */
+
+  }, {
     key: 'updateAll',
     value: function updateAll(update, sortBy) {
-      var _this = this;
+      var _this2 = this;
 
       this.baseEl.selectAll('.bar-magnitude').data(update, function (data) {
         return data.barId;
       }).transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-        return _this.generatePath(data, sortBy);
+        return _this2.generatePath(data, sortBy);
       });
     }
 
@@ -1941,7 +3896,7 @@ var Bars = function () {
   }, {
     key: 'update',
     value: function update(selection, sortBy) {
-      var _this2 = this;
+      var _this3 = this;
 
       selection.each(function (data) {
         var el = d3.select(this);
@@ -1959,7 +3914,7 @@ var Bars = function () {
       });
 
       selection.selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-        return _this2.generatePath(data, sortBy);
+        return _this3.generatePath(data, sortBy);
       });
     }
 
@@ -1978,13 +3933,13 @@ var Bars = function () {
   }, {
     key: 'switchMode',
     value: function switchMode(mode, currentSorting) {
-      var _this3 = this;
+      var _this4 = this;
 
       if (this.mode !== mode) {
         if (mode === 'one') {
           if (currentSorting.global.type) {
             this.baseEl.selectAll('.bar').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-              return _this3.generateOneBarPath(data, currentSorting.global.type);
+              return _this4.generateOneBarPath(data, currentSorting.global.type);
             });
           } else {
             // console.error(
@@ -1996,11 +3951,11 @@ var Bars = function () {
 
         if (mode === 'two') {
           this.baseEl.selectAll('.bar.precision').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-            return _this3.generateTwoBarsPath(data);
+            return _this4.generateTwoBarsPath(data);
           });
 
           this.baseEl.selectAll('.bar.recall').selectAll('.bar-magnitude').transition().duration(TRANSITION_SEMI_FAST).attr('d', function (data) {
-            return _this3.generateTwoBarsPath(data, true);
+            return _this4.generateTwoBarsPath(data, true);
           });
         }
 
@@ -2270,8 +4225,6 @@ var Nodes = function () {
 
     classCallCheck(this, Nodes);
 
-    var self = this;
-
     this.vis = vis;
     this.visData = visData;
     this.links = links;
@@ -2279,46 +4232,7 @@ var Nodes = function () {
     this.currentLinks = {};
     this.iconDimension = Math.min(this.visData.global.row.contentHeight / 2 - this.visData.global.cell.padding * 2, this.visData.global.column.padding / 2 - 4);
 
-    var linkDensityBg = d3.scaleLinear().domain([1, this.vis.rows]).range(['#ccc', '#000']);
-
-    function drawLinkIndicator(selection, direction) {
-      var incoming = direction === 'incoming';
-
-      selection.attr('class', CLASS_INDICATOR_BAR + ' ' + (incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING)).attr('d', roundRect(incoming ? -7 : this.visData.global.column.contentWidth, this.visData.global.row.height / 2 - 1, 7, 2, {
-        topLeft: incoming ? 1 : 0,
-        topRight: incoming ? 0 : 1,
-        bottomLeft: incoming ? 1 : 0,
-        bottomRight: incoming ? 0 : 1
-      })).attr('fill', function (data) {
-        return linkDensityBg(data.links[direction].refs.length);
-      }).classed('visible', function (data) {
-        return data.links[direction].refs.length > 0;
-      }).style('transform-origin', (incoming ? 0 : this.visData.global.column.contentWidth) + 'px ' + this.visData.global.row.height / 2 + 'px');
-    }
-
-    function drawLinkLocationIndicator(selection, direction, position) {
-      var above = position === 'above';
-      var incoming = direction === 'incoming';
-
-      var className = CLASS_INDICATOR_LOCATION + ' ' + (incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING) + ' ' + (above ? CLASS_INDICATOR_ABOVE : CLASS_INDICATOR_BELOW);
-
-      selection.datum(function (data) {
-        return data.links[direction];
-      }).attr('class', className).attr('x', incoming ? -5 : this.visData.global.column.contentWidth + 2).attr('y', above ? this.visData.global.row.height / 2 - 1 : this.visData.global.row.height / 2 + 1).attr('width', 3).attr('height', 0).attr('fill', function (data) {
-        return linkDensityBg(data.refs.length);
-      });
-    }
-
-    // Helper
-    function drawFullSizeRect(selection, className, shrinking, noRoundBorder) {
-      var shrinkingAmount = shrinking || 0;
-
-      selection.attr('x', shrinkingAmount).attr('y', self.visData.global.row.padding + shrinkingAmount).attr('width', self.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', self.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
-    }
-
-    function drawMaxSizedRect(selection) {
-      selection.attr('x', 0).attr('y', 0).attr('width', self.visData.global.column.contentWidth).attr('height', self.visData.global.row.height).attr('class', 'invisible-container');
-    }
+    this.linkDensityBg = d3.scaleLinear().domain([1, this.vis.rows]).range(['#ccc', '#000']);
 
     this.groups = baseEl.append('g').attr('class', CLASS_NODES).call(function (selection) {
       selection.each(function storeLinkToGroupNode() {
@@ -2334,22 +4248,22 @@ var Nodes = function () {
       return 'translate(' + (data.x + _this.visData.global.column.padding) + ', ' + data.y + ')';
     });
 
-    this.nodes.append('rect').call(drawMaxSizedRect);
+    this.nodes.append('rect').call(this.drawMaxSizedRect.bind(this));
 
     this.visNodes = this.nodes.append('g').attr('class', CLASS_NODE_VISIBLE);
 
-    this.visNodes.append('rect').call(drawFullSizeRect, 'bg-border');
+    this.visNodes.append('rect').call(this.drawFullSizeRect.bind(this), 'bg-border');
 
-    this.visNodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
+    this.visNodes.append('rect').call(this.drawFullSizeRect.bind(this), 'bg', 1, true);
 
     if (this.vis.showLinkLocation) {
-      this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'incoming', 'above');
-      this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'incoming', 'bottom');
-      this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'outgoing', 'above');
-      this.nodes.append('rect').call(drawLinkLocationIndicator.bind(this), 'outgoing', 'bottom');
+      this.nodes.append('rect').call(this.drawLinkLocationIndicator.bind(this), 'incoming', 'above');
+      this.nodes.append('rect').call(this.drawLinkLocationIndicator.bind(this), 'incoming', 'bottom');
+      this.nodes.append('rect').call(this.drawLinkLocationIndicator.bind(this), 'outgoing', 'above');
+      this.nodes.append('rect').call(this.drawLinkLocationIndicator.bind(this), 'outgoing', 'bottom');
 
-      this.nodes.append('path').call(drawLinkIndicator.bind(this), 'incoming');
-      this.nodes.append('path').call(drawLinkIndicator.bind(this), 'outgoing');
+      this.nodes.append('path').call(this.drawLinkIndicator.bind(this), 'incoming');
+      this.nodes.append('path').call(this.drawLinkIndicator.bind(this), 'outgoing');
 
       // Set all the link location indicator bars.
       this.groups.each(function (data, index) {
@@ -2358,31 +4272,31 @@ var Nodes = function () {
     }
 
     // Rooting icons
-    var nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT);
+    this.nodeRooted = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_ROOT);
 
-    nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'hover-helper', 'hover-helper');
+    this.nodeRooted.append('rect').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'hover-helper', 'hover-helper');
 
-    nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
+    this.nodeRooted.append('svg').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'icon', 'ease-all state-active invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#locked');
 
     // Querying icons
     if (this.vis.querying) {
-      var nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY);
+      this.nodeQuery = this.nodes.append('g').attr('class', CLASS_FOCUS_CONTROLS + ' ' + CLASS_QUERY);
 
-      nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'hover-helper', 'hover-helper');
+      this.nodeQuery.append('rect').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'hover-helper', 'hover-helper');
 
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
+      this.nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-and-or invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#union');
 
-      nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
+      this.nodeQuery.append('svg').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-not invisible-default icon').append('use').attr('xlink:href', this.vis.iconPath + '#not');
     }
 
     this.bars = new Bars(this.visNodes, this.vis.barMode, this.visData);
 
-    this.visNodes.append('rect').call(drawFullSizeRect, 'border');
+    this.visNodes.append('rect').call(this.drawFullSizeRect.bind(this), 'border');
 
     // Add node label
     this.visNodes.append('foreignObject').attr('x', this.visData.global.cell.padding).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2).attr('class', CLASS_LABEL_WRAPPER).append('xhtml:div').attr('class', 'label').attr('title', function (data) {
       return data.data.name;
-    }).style('line-height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2 + 'px').append('xhtml:span').text(function (data) {
+    }).style('line-height', Math.floor(this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2) + 'px').append('xhtml:span').text(function (data) {
       return data.data.name;
     });
 
@@ -2589,8 +4503,102 @@ var Nodes = function () {
      */
 
   }, {
-    key: 'enterHandler',
+    key: 'drawLinkIndicator',
 
+
+    /**
+     * Draw link indicator
+     *
+     * @method  drawLinkIndicator
+     * @author  Fritz Lekschas
+     * @date    2017-01-16
+     * @param   {Object}  selection  D3 selection
+     * @param   {String}  direction  Direction: incoming or outgoing
+     */
+    value: function drawLinkIndicator(selection, direction) {
+      var _this2 = this;
+
+      var incoming = direction === 'incoming';
+
+      selection.attr('class', CLASS_INDICATOR_BAR + ' ' + (incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING)).attr('d', roundRect(incoming ? -7 : this.visData.global.column.contentWidth, this.visData.global.row.height / 2 - 1, 7, 2, {
+        topLeft: incoming ? 1 : 0,
+        topRight: incoming ? 0 : 1,
+        bottomLeft: incoming ? 1 : 0,
+        bottomRight: incoming ? 0 : 1
+      })).attr('fill', function (data) {
+        return _this2.linkDensityBg(data.links[direction].refs.length);
+      }).classed('visible', function (data) {
+        return data.links[direction].refs.length > 0;
+      }).style('transform-origin', (incoming ? 0 : this.visData.global.column.contentWidth) + 'px ' + this.visData.global.row.height / 2 + 'px');
+    }
+
+    /**
+     * Draw link location indicator
+     *
+     * @method  drawLinkLocationIndicator
+     * @author  Fritz Lekschas
+     * @date    2017-01-16
+     * @param   {Object}   selection  D3 selection
+     * @param   {String}   direction  Direction: incoming or outgoing
+     * @param   {String}   position   Position: above or below
+     * @param   {Boolean}  update     If `true` only updates
+     */
+
+  }, {
+    key: 'drawLinkLocationIndicator',
+    value: function drawLinkLocationIndicator(selection, direction, position, update) {
+      var _this3 = this;
+
+      var above = position === 'above';
+      var incoming = direction === 'incoming';
+
+      var className = CLASS_INDICATOR_LOCATION + ' ' + (incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING) + ' ' + (above ? CLASS_INDICATOR_ABOVE : CLASS_INDICATOR_BELOW);
+
+      if (!update) {
+        selection.datum(function (data) {
+          return data.links[direction];
+        });
+      }
+
+      selection.attr('class', className).attr('x', incoming ? -5 : this.visData.global.column.contentWidth + 2).attr('y', above ? this.visData.global.row.height / 2 - 1 : this.visData.global.row.height / 2 + 1).attr('width', 3).attr('height', 0).attr('fill', function (data) {
+        return _this3.linkDensityBg(data.refs.length);
+      });
+    }
+
+    /**
+     * Draw full sized rectangle
+     *
+     * @method  drawFullSizeRect
+     * @author  Fritz Lekschas
+     * @date    2017-01-16
+     * @param   {Object}   selection      D3 selection
+     * @param   {String}   className      Class name
+     * @param   {Number}   shrinking      Shrinking amount
+     * @param   {Boolean}  noRoundBorder  If `true` no round border
+     */
+
+  }, {
+    key: 'drawFullSizeRect',
+    value: function drawFullSizeRect(selection, className, shrinking, noRoundBorder) {
+      var shrinkingAmount = shrinking || 0;
+
+      selection.attr('x', shrinkingAmount).attr('y', this.visData.global.row.padding + shrinkingAmount).attr('width', this.visData.global.column.contentWidth - 2 * shrinkingAmount).attr('height', this.visData.global.row.contentHeight - 2 * shrinkingAmount).attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount).attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount).classed(className, true);
+    }
+
+    /**
+     * Draw a maximal sized rectangle
+     *
+     * @method  drawMaxSizedRect
+     * @author  Fritz Lekschas
+     * @date    2017-01-16
+     * @param   {Object}  selection  D3 selection
+     */
+
+  }, {
+    key: 'drawMaxSizedRect',
+    value: function drawMaxSizedRect(selection) {
+      selection.attr('x', 0).attr('y', 0).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.height).attr('class', 'invisible-container');
+    }
 
     /**
      * Node _mouse enter_ handler.
@@ -2601,6 +4609,9 @@ var Nodes = function () {
      * @param   {Object}  el    DOM element.
      * @param   {Object}  data  D3 data object of the DOM element.
      */
+
+  }, {
+    key: 'enterHandler',
     value: function enterHandler(el, data) {
       this.highlightNodes(d3.select(el));
 
@@ -2756,7 +4767,7 @@ var Nodes = function () {
   }, {
     key: 'highlightNodes',
     value: function highlightNodes(d3El, className, restriction, excludeClones, noVisibilityCheck) {
-      var _this2 = this;
+      var _this4 = this;
 
       var self = this;
       var data = d3El.datum();
@@ -2787,7 +4798,7 @@ var Nodes = function () {
           // Store: (parent)->(child)
           // Ignore: (parent)->(siblings of child)
           if (nodeData.links.outgoing.refs[i].target.node.id === childData.id) {
-            _this2.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
+            _this4.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
           }
         }
       };
@@ -2795,7 +4806,7 @@ var Nodes = function () {
       var traverseCallbackDown = function traverseCallbackDown(nodeData) {
         nodeData.hovering = 2;
         for (var i = nodeData.links.outgoing.refs.length; i--;) {
-          _this2.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
+          _this4.currentLinks[appliedClassName][nodeId][nodeData.links.outgoing.refs[i].id] = true;
         }
       };
 
@@ -2878,25 +4889,25 @@ var Nodes = function () {
   }, {
     key: 'isInvisible',
     value: function isInvisible(selection, customScrollTop) {
-      var _this3 = this;
+      var _this5 = this;
 
       selection.classed('invisible', function (data) {
-        var scrollTop = customScrollTop || _this3.visData.nodes[data.depth].scrollTop;
+        var scrollTop = customScrollTop || _this5.visData.nodes[data.depth].scrollTop;
 
         // Node is right to the visible container
-        if (data.x + _this3.vis.dragged.x >= _this3.vis.width) {
+        if (data.x + _this5.vis.dragged.x >= _this5.vis.width) {
           return data.invisible = true;
         }
         // Node is below the visible container
-        if (data.y + scrollTop >= _this3.vis.height) {
+        if (data.y + scrollTop >= _this5.vis.height) {
           return data.invisible = true;
         }
         // Node is above the visible container
-        if (data.y + _this3.visData.global.row.height + scrollTop <= 0) {
+        if (data.y + _this5.visData.global.row.height + scrollTop <= 0) {
           return data.invisible = true;
         }
         // Node is left to the visible container
-        if (data.x + _this3.vis.dragged.x + _this3.visData.global.column.width <= 0) {
+        if (data.x + _this5.vis.dragged.x + _this5.visData.global.column.width <= 0) {
           return data.invisible = true;
         }
         return data.invisible = false;
@@ -3122,6 +5133,85 @@ var Nodes = function () {
     }
 
     /**
+     * Re-render
+     *
+     * @method  reRender
+     * @author  Fritz Lekschas
+     * @date    2017-01-16
+     * @param   {Object}  newVisData  New vid data.
+     */
+
+  }, {
+    key: 'reRender',
+    value: function reRender(newVisData) {
+      var _this6 = this;
+
+      if (newVisData) {
+        this.visData = newVisData;
+
+        this.groups.data(this.visData.nodes).call(function (selection) {
+          selection.each(function storeLinkToGroupNode() {
+            d3.select(this.parentNode).datum().nodes = this;
+          });
+        });
+      }
+
+      this.nodes = this.groups.selectAll('.' + CLASS_NODE).data(function (data) {
+        return data.rows;
+      }).attr('transform', function (data) {
+        return 'translate(' + (data.x + _this6.visData.global.column.padding) + ', ' + data.y + ')';
+      });
+
+      this.nodes.selectAll('.invisible-container').call(this.drawMaxSizedRect.bind(this));
+
+      this.visNodes.selectAll('.bg-border').call(this.drawFullSizeRect.bind(this), 'bg-border');
+
+      this.visNodes.selectAll('.bg').call(this.drawFullSizeRect.bind(this), 'bg', 1, true);
+
+      this.visNodes.selectAll('.border').call(this.drawFullSizeRect.bind(this), 'border');
+
+      if (this.vis.showLinkLocation) {
+        this.nodes.selectAll('.link-location-indicator.incoming.above').call(this.drawLinkLocationIndicator.bind(this), 'incoming', 'above', true);
+
+        this.nodes.selectAll('.link-location-indicator.incoming.below').call(this.drawLinkLocationIndicator.bind(this), 'incoming', 'bottom', true);
+
+        this.nodes.selectAll('.link-location-indicator.outgoing.above').call(this.drawLinkLocationIndicator.bind(this), 'outgoing', 'above', true);
+
+        this.nodes.selectAll('.link-location-indicator.outgoing.below').call(this.drawLinkLocationIndicator.bind(this), 'outgoing', 'bottom', true);
+
+        this.nodes.selectAll('.link-indicator.incoming').call(this.drawLinkIndicator.bind(this), 'incoming');
+
+        this.nodes.selectAll('.link-indicator.outgoing').call(this.drawLinkIndicator.bind(this), 'outgoing');
+
+        this.groups.each(function (data, index) {
+          _this6.calcHeightLinkLocationIndicator(index, true, true);
+        });
+      }
+
+      // selection, location, position, mode, className
+      this.nodes.selectAll('.' + CLASS_FOCUS_CONTROLS + '.' + CLASS_ROOT + ' .hover-helper').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'hover-helper', 'hover-helper');
+
+      this.nodes.selectAll('.' + CLASS_FOCUS_CONTROLS + '.' + CLASS_ROOT + ' .icon').call(this.setUpFocusControls.bind(this), 'left', 0.6, 'icon', 'ease-all state-active invisible-default icon');
+
+      if (this.vis.querying) {
+        this.nodes.selectAll('.' + CLASS_FOCUS_CONTROLS + '.' + CLASS_QUERY + ' .hover-helper').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'hover-helper', 'hover-helper');
+
+        this.nodes.selectAll('.' + CLASS_FOCUS_CONTROLS + '.' + CLASS_QUERY + ' .state-and-or.icon').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-and-or invisible-default icon');
+
+        this.nodes.selectAll('.' + CLASS_FOCUS_CONTROLS + '.' + CLASS_QUERY + ' .state-not.icon').call(this.setUpFocusControls.bind(this), 'right', 0.6, 'icon', 'ease-all state-not invisible-default icon');
+      }
+
+      this.bars.reRender(this.visData, this.vis.currentSorting.global.type);
+
+      // Add node label
+      this.visNodes.selectAll('.' + CLASS_LABEL_WRAPPER).attr('x', this.visData.global.cell.padding).attr('y', this.visData.global.row.padding + this.visData.global.cell.padding).attr('width', this.visData.global.column.contentWidth).attr('height', this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2);
+
+      this.visNodes.selectAll('.' + CLASS_LABEL_WRAPPER + ' .label').style('line-height', Math.floor(this.visData.global.row.contentHeight - this.visData.global.cell.padding * 2) + 'px');
+
+      this.nodes.call(this.isInvisible.bind(this));
+    }
+
+    /**
      * Handler managing _root_ events.
      *
      * @method  rootHandler
@@ -3243,9 +5333,9 @@ var Nodes = function () {
       if (mode === 'bg') {
         selection.attr('class', className).attr('cx', x + this.iconDimension / 2).attr('cy', y + this.iconDimension / 2).attr('r', this.iconDimension * 3 / 4);
       } else if (mode === 'hover-helper') {
-        selection.attr('class', className).attr('x', x - 4).attr('y', y - 4).attr('width', this.iconDimension + 8).attr('height', this.iconDimension + 8).attr('rx', this.iconDimension).attr('ry', this.iconDimension);
+        selection.attr('class', className).attr('x', x - 4).attr('y', (this.visData.global.row.height - (this.iconDimension + 8)) / 2).attr('width', this.iconDimension + 8).attr('height', this.iconDimension + 8).attr('rx', this.iconDimension).attr('ry', this.iconDimension);
       } else {
-        selection.attr('class', className).attr('x', x).attr('y', y).attr('width', this.iconDimension).attr('height', this.iconDimension);
+        selection.attr('class', className).attr('x', x).attr('y', (this.visData.global.row.height - this.iconDimension) / 2).attr('width', this.iconDimension).attr('height', this.iconDimension);
       }
     }
 
@@ -3276,7 +5366,7 @@ var Nodes = function () {
   }, {
     key: 'sort',
     value: function sort(update, newSortType) {
-      var _this4 = this;
+      var _this7 = this;
 
       for (var i = update.length; i--;) {
         var selection = this.nodes.data(update[i].rows, function (data) {
@@ -3285,11 +5375,11 @@ var Nodes = function () {
 
         this.vis.svgD3.classed('sorting', true);
         selection.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-          return 'translate(' + (data.x + _this4.visData.global.column.padding) + ', ' + data.y + ')';
+          return 'translate(' + (data.x + _this7.visData.global.column.padding) + ', ' + data.y + ')';
         }).call(allTransitionsEnded, function () {
-          _this4.vis.svgD3.classed('sorting', false);
-          _this4.vis.updateLevelsVisibility();
-          _this4.vis.updateScrolling();
+          _this7.vis.svgD3.classed('sorting', false);
+          _this7.vis.updateLevelsVisibility();
+          _this7.vis.updateScrolling();
         });
 
         if (newSortType && this.vis.currentSorting.local[update[i].level].type !== 'name') {
@@ -3649,18 +5739,18 @@ var Nodes = function () {
   }, {
     key: 'updateVisibility',
     value: function updateVisibility() {
-      var _this5 = this;
+      var _this8 = this;
 
       // Calls the D3 list graph layout method to update the nodes position.
       this.vis.layout.updateNodesVisibility();
 
       // Transition to the updated position
       this.nodes.transition().duration(TRANSITION_SEMI_FAST).attr('transform', function (data) {
-        return 'translate(' + (data.x + _this5.visData.global.column.padding) + ', ' + data.y + ')';
+        return 'translate(' + (data.x + _this8.visData.global.column.padding) + ', ' + data.y + ')';
       }).call(allTransitionsEnded, function () {
-        _this5.vis.updateLevelsVisibility();
-        _this5.vis.updateScrolling();
-        _this5.nodes.call(_this5.isInvisible.bind(_this5));
+        _this8.vis.updateLevelsVisibility();
+        _this8.vis.updateScrolling();
+        _this8.nodes.call(_this8.isInvisible.bind(_this8));
       });
 
       this.vis.links.updateVisibility();
@@ -3772,15 +5862,40 @@ var Scrollbars = function () {
   }
 
   /**
-   * Update the viisual state of the scrollbar given the current data.
+   * Re-render
    *
-   * @method  updateVisibility
+   * @method  reRender
    * @author  Fritz Lekschas
-   * @date    2016-09-14
+   * @date    2017-01-16
+   * @param   {Object}  newVisData  New vid data.
    */
 
 
   createClass(Scrollbars, [{
+    key: 'reRender',
+    value: function reRender(newVisData) {
+      if (newVisData) {
+        this.visData = newVisData;
+      }
+
+      this.all.data(this.visData.nodes).call(function (selection) {
+        selection.each(function setScrollBarDomElement() {
+          d3.select(this.parentNode).datum().scrollbar.el = this;
+        });
+      });
+
+      this.updateVisibility();
+    }
+
+    /**
+     * Update the visual state of the scrollbar given the current data.
+     *
+     * @method  updateVisibility
+     * @author  Fritz Lekschas
+     * @date    2016-09-14
+     */
+
+  }, {
     key: 'updateVisibility',
     value: function updateVisibility() {
       this.all.transition().duration(TRANSITION_LIGHTNING_FAST).attr('x', function (data) {
@@ -4424,7 +6539,7 @@ Enumerator$1.prototype._eachEntry = function(entry, i) {
     } else if (typeof then$$1 !== 'function') {
       this._remaining--;
       this._result[i] = entry;
-    } else if (c === Promise$2) {
+    } else if (c === Promise$4) {
       var promise = new c(noop);
       handleMaybeThenable(promise, entry, then$$1);
       this._willSettleAt(promise, i);
@@ -4751,27 +6866,27 @@ function needsNew() {
   Useful for tooling.
   @constructor
 */
-function Promise$2(resolver) {
+function Promise$4(resolver) {
   this[PROMISE_ID] = nextId();
   this._result = this._state = undefined;
   this._subscribers = [];
 
   if (noop !== resolver) {
     typeof resolver !== 'function' && needsResolver();
-    this instanceof Promise$2 ? initializePromise(this, resolver) : needsNew();
+    this instanceof Promise$4 ? initializePromise(this, resolver) : needsNew();
   }
 }
 
-Promise$2.all = all;
-Promise$2.race = race;
-Promise$2.resolve = resolve$1;
-Promise$2.reject = reject$1;
-Promise$2._setScheduler = setScheduler;
-Promise$2._setAsap = setAsap;
-Promise$2._asap = asap;
+Promise$4.all = all;
+Promise$4.race = race;
+Promise$4.resolve = resolve$1;
+Promise$4.reject = reject$1;
+Promise$4._setScheduler = setScheduler;
+Promise$4._setAsap = setAsap;
+Promise$4._asap = asap;
 
-Promise$2.prototype = {
-  constructor: Promise$2,
+Promise$4.prototype = {
+  constructor: Promise$4,
 
 /**
   The primary way of interacting with a promise is through its `then` method,
@@ -5020,46 +7135,18 @@ var now = function() {
   return root.Date.now();
 };
 
-/**
- * Checks if `value` is object-like. A value is object-like if it's not `null`
- * and has a `typeof` result of "object".
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
- * @example
- *
- * _.isObjectLike({});
- * // => true
- *
- * _.isObjectLike([1, 2, 3]);
- * // => true
- *
- * _.isObjectLike(_.noop);
- * // => false
- *
- * _.isObjectLike(null);
- * // => false
- */
-function isObjectLike(value) {
-  return value != null && typeof value == 'object';
-}
-
 /** `Object#toString` result references. */
-var symbolTag = '[object Symbol]';
+var symbolTag$2 = '[object Symbol]';
 
 /** Used for built-in method references. */
-var objectProto$1 = Object.prototype;
+var objectProto$12 = Object.prototype;
 
 /**
  * Used to resolve the
  * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
  * of values.
  */
-var objectToString$1 = objectProto$1.toString;
+var objectToString$4 = objectProto$12.toString;
 
 /**
  * Checks if `value` is classified as a `Symbol` primitive or object.
@@ -5080,7 +7167,7 @@ var objectToString$1 = objectProto$1.toString;
  */
 function isSymbol(value) {
   return typeof value == 'symbol' ||
-    (isObjectLike(value) && objectToString$1.call(value) == symbolTag);
+    (isObjectLike(value) && objectToString$4.call(value) == symbolTag$2);
 }
 
 /** Used as references for various `Number` constants. */
@@ -5951,7 +8038,7 @@ var NodeContextMenu = function () {
       var _this4 = this;
 
       if (this.node && !this.closing) {
-        this.closing = new Promise$2(function (resolve) {
+        this.closing = new Promise$4(function (resolve) {
           _this4.opened = false;
           _this4.updateAppearance();
 
@@ -6133,6 +8220,33 @@ var NodeContextMenu = function () {
       selection.datum(properties).call(this.addLabel.bind(this), true, properties.labels[this.nodeInfoId].label, true, isToggable).call(this.positionComponent.bind(this), properties.distanceFromCenter, properties.alignRight);
     }
 
+    /* ---------------------------------- D ----------------------------------- */
+
+    /**
+     * Destroy the node context menu
+     *
+     * @description
+     * Removes the DOM elements and all related event listeners
+     *
+     * @method  destroy
+     * @author  Fritz Lekschas
+     * @date    2017-01-17
+     */
+
+  }, {
+    key: 'destroy',
+    value: function destroy() {
+      // Clone the old elements first, which will remove all existing event
+      // handlers
+      var newEl = this.wrapper.node().cloneNode(true);
+
+      // Replace the old DOM elements with new ones
+      this.baseEl.node().replaceChild(newEl, this.wrapper.node());
+
+      // Remove all DOM elements
+      this.baseEl.node().removeChild(newEl);
+    }
+
     /* ---------------------------------- E ----------------------------------- */
 
     /**
@@ -6216,7 +8330,7 @@ var NodeContextMenu = function () {
     value: function open(node) {
       var _this6 = this;
 
-      return new Promise$2(function (resolve) {
+      return new Promise$4(function (resolve) {
         _this6.node = node;
         _this6.closing = undefined;
 
@@ -6389,9 +8503,9 @@ var NodeContextMenu = function () {
     value: function toggle(node) {
       var _this8 = this;
 
-      return new Promise$2(function (resolve) {
+      return new Promise$4(function (resolve) {
         var nodeId = node.datum().id;
-        var closed = Promise$2.resolve();
+        var closed = Promise$4.resolve();
 
         if (_this8.visible) {
           closed = _this8.close();
@@ -7020,6 +9134,7 @@ var ListGraph = function () {
 
     var self = this;
 
+    this.init = init;
     this.baseEl = init.element;
     this.baseEl.__d3ListGraphBase__ = true;
 
@@ -7137,7 +9252,7 @@ var ListGraph = function () {
       d3: _d3
     });
 
-    this.data = init.data;
+    this.data = cloneDeep(init.data);
     this.visData = this.layout.process(this.data, this.rootNodes, {
       showLinkLocation: this.showLinkLocation,
       linkLocationBucketSize: this.linkLocationBucketSize,
@@ -7170,8 +9285,11 @@ var ListGraph = function () {
     this.levels = new Levels(this.container, this, this.visData);
 
     this.links = new Links(this, this.levels.groups, this.visData, this.layout);
+
     this.nodes = new Nodes(this, this.levels.groups, this.visData, this.links, this.events);
+
     this.levels.scrollPreparation(this.scrollbarWidth);
+
     this.scrollbars = new Scrollbars(this.levels.groups, this.visData, this.scrollbarWidth);
 
     this.nodeContextMenu = new NodeContextMenu({
@@ -7818,6 +9936,66 @@ var ListGraph = function () {
     }
 
     /**
+     * Render the list graph
+     *
+     * @method  reRender
+     * @author  Fritz Lekschas
+     * @date    2017-01-16
+     * @param   {Object}  update  Update grid
+     */
+
+  }, {
+    key: 'reRender',
+    value: function reRender(update) {
+      this.width = setOption(this.init.width, this.svgJq.width(), true);
+      this.height = setOption(this.init.height, this.svgJq.height(), true);
+
+      if (update && update.grid) {
+        this.columns = update.grid.columns || this.columns;
+        this.rows = update.grid.rows || this.rows;
+      }
+
+      if (this.init.forceWidth) {
+        this.baseElJq.width(this.width);
+      }
+
+      this.layout.size([this.width, this.height]);
+
+      this.layout.grid([this.columns, this.rows]);
+
+      this.visData = this.layout.process(this.data, this.rootNodes, {
+        showLinkLocation: this.showLinkLocation,
+        linkLocationBucketSize: this.linkLocationBucketSize,
+        sortBy: this.currentSorting.global.type,
+        sortOrder: this.currentSorting.global.order
+      });
+
+      this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
+
+      this.topbar.reRender(this.visData);
+      this.levels.reRender(this.visData);
+      this.links.reRender(this.visData);
+      this.nodes.reRender(this.visData);
+
+      this.levels.scrollPreparation(this.scrollbarWidth);
+      this.scrollbars.reRender(this.visData);
+
+      this.nodeContextMenu.destroy();
+      this.nodeContextMenu = new NodeContextMenu({
+        visData: this.visData,
+        baseEl: this.container,
+        events: this.events,
+        nodes: this.nodes,
+        iconPath: this.iconPath,
+        infoFields: this.nodeInfoContextMenu,
+        isQueryable: this.querying,
+        isDebounced: !this.disableDebouncedContextMenu
+      });
+
+      this.getBoundingRect();
+    }
+
+    /**
      * Helper method to scroll all columns to the top.
      *
      * @method  resetAllScrollPositions
@@ -8147,6 +10325,15 @@ var ListGraph = function () {
       }
     }
 
+    // get visData () {
+    //   console.log('request visData');
+    //   return this._visData;
+    // }
+
+    // set visData (value) {
+    //   this._visData = value;
+    // }
+
     /**
      * Show original zoomed graph
      *
@@ -8223,7 +10410,10 @@ var ListGraph = function () {
   return ListGraph;
 }();
 
-ListGraph.version = '0.17.0';
+// Will be set by Gulp during the build process
+
+
+ListGraph.version = '1.1.0';
 
 return ListGraph;
 

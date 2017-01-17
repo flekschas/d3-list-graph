@@ -1472,25 +1472,27 @@ function traverseGraph(graph, starts, columnCache, nodeOrder, scale, links) {
   function processLink(source, target) {
     var id = '(' + source.id + ')->(' + target.id + ')';
 
-    links[id] = {
-      id: id,
-      source: {
-        node: source,
-        offsetX: 0,
-        offsetY: 0
-      },
-      target: {
-        node: target,
-        offsetX: 0,
-        offsetY: 0
-      }
-    };
+    if (!links[id]) {
+      links[id] = {
+        id: id,
+        source: {
+          node: source,
+          offsetX: 0,
+          offsetY: 0
+        },
+        target: {
+          node: target,
+          offsetX: 0,
+          offsetY: 0
+        }
+      };
 
-    source.links.outgoing.refs.push(links[id]);
-    target.links.incoming.refs.push(links[id]);
+      source.links.outgoing.refs.push(links[id]);
+      target.links.incoming.refs.push(links[id]);
 
-    source.links.outgoing.total++;
-    target.links.incoming.total++;
+      source.links.outgoing.total++;
+      target.links.incoming.total++;
+    }
   }
 
   /**
@@ -1533,17 +1535,19 @@ function traverseGraph(graph, starts, columnCache, nodeOrder, scale, links) {
       // clone because then the parent can simple link to the _original node_.
       if (parent.depth + 1 !== node.depth && !skip) {
         var cloneId = id + '.' + (node.clones.length + 1);
-        graph[cloneId] = {
-          children: [],
-          clone: true,
-          cloneId: cloneId,
-          cloneNum: node.clones.length + 1,
-          // Data will be referenced rather than copied to avoid inconsistencies
-          data: node.data,
-          originalId: id.toString(),
-          // Reference to the original node
-          originalNode: node
-        };
+        if (!graph[cloneId]) {
+          graph[cloneId] = {
+            children: [],
+            clone: true,
+            cloneId: cloneId,
+            cloneNum: node.clones.length + 1,
+            // Data will be referenced rather than copied to avoid inconsistencies
+            data: node.data,
+            originalId: id.toString(),
+            // Reference to the original node
+            originalNode: node
+          };
+        }
         _id = cloneId;
         _node = graph[cloneId];
         // Add a reference to the original node that points to the clone.
@@ -1696,10 +1700,12 @@ var _grid = {
   columns: GRID.columns,
   rows: GRID.rows
 };
+
 var _size = {
   width: SIZE.width,
   height: SIZE.height
 };
+
 var _links = {};
 
 /**
@@ -1868,30 +1874,48 @@ var ListGraphLayout = function () {
   }
 
   /**
-   * Convert an object-based list of nodes into an array of arrays of nodes.
+   * Helper function to get the layout data
    *
-   * @description
-   * Representing a graph using hierarchical data structures such as an Array is
-   * difficult. To save resources and avoid complex structures a graph is
-   * represented as a simple list of nodes. The list correspondes to an objects
-   * where the object's keys stand for node identifiers. This ensures uniqueness
-   * but has the disadvantage that D3 doesn't know what to do with it, thus we
-   * have to convert that structure into a fat array of array of nodes. It's
-   * important to notice that the nodes are *not* cloned into the array but
-   * instead simply linked using references.
-   *
+   * @method  getData
    * @author  Fritz Lekschas
-   * @date  2015-12-04
-   *
-   * @method  nodesToMatrix
-   * @memberOf  ListGraph
-   * @public
-   * @param  {Integer}  Level for which nodes should be returned.
-   * @return  {Array}  Fat array of arrays of nodes.
+   * @date    2017-01-16
+   * @return  {Object}  Layout data
    */
 
 
   createClass(ListGraphLayout, [{
+    key: 'getData',
+    value: function getData() {
+      return {
+        global: ListGraphLayout.compileGlobalProps(),
+        nodes: this.nodesToMatrix()
+      };
+    }
+
+    /**
+     * Convert an object-based list of nodes into an array of arrays of nodes.
+     *
+     * @description
+     * Representing a graph using hierarchical data structures such as an Array is
+     * difficult. To save resources and avoid complex structures a graph is
+     * represented as a simple list of nodes. The list correspondes to an objects
+     * where the object's keys stand for node identifiers. This ensures uniqueness
+     * but has the disadvantage that D3 doesn't know what to do with it, thus we
+     * have to convert that structure into a fat array of array of nodes. It's
+     * important to notice that the nodes are *not* cloned into the array but
+     * instead simply linked using references.
+     *
+     * @author  Fritz Lekschas
+     * @date  2015-12-04
+     *
+     * @method  nodesToMatrix
+     * @memberOf  ListGraph
+     * @public
+     * @param  {Integer}  Level for which nodes should be returned.
+     * @return  {Array}  Fat array of arrays of nodes.
+     */
+
+  }, {
     key: 'nodesToMatrix',
     value: function nodesToMatrix(level) {
       var arr = [];
@@ -1944,6 +1968,9 @@ var ListGraphLayout = function () {
       this.data = data || this.data;
       this.rootIds = rootIds || this.rootIds;
 
+      // Make sure we start with a clean slate
+      this.columnCache = {};
+
       if (!isArray(this.rootIds)) {
         if (isFinite(this.rootIds)) {
           this.rootIds = [this.rootIds];
@@ -1964,10 +1991,7 @@ var ListGraphLayout = function () {
         this.sort(undefined, options.sortBy, options.sortOrder || 'desc');
       }
 
-      return {
-        global: ListGraphLayout.compileGlobalProps(),
-        nodes: this.nodesToMatrix()
-      };
+      return this.getData();
     }
 
     /**

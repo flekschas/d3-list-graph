@@ -10,7 +10,7 @@
 </head>
 <body>
   <h1>D3 List Graph <em id="version"></em></h1>
-  <h2>Small: 28 nodes</h2>
+  <h2>Small: 28 nodes <em onclick="toggleSize('#example-small')">[toggle size]</em></h2>
   <div id="example-small" class="list-graph">
     <div class="top-bar"></div>
     <div class="wrapper"><svg class="base"></svg></div>
@@ -57,6 +57,32 @@
       alert('You clicked on a custom button');
     }
 
+    function toggleSize (selector) {
+      var el = document.querySelector(selector);
+
+      if (el.isBigger) {
+        el.className = el.className.substr(0, el.className.length - 7);
+        el.isBigger = false;
+
+        graphs[selector].reRender({
+          grid: {
+            columns: 4,
+            rows: 8
+          }
+        });
+      } else {
+        el.className += ' bigger';
+        el.isBigger = true;
+
+        graphs[selector].reRender({
+          grid: {
+            columns: 6,
+            rows: 12
+          }
+        });
+      }
+    }
+
     function createListGraph (querySelector, data, rootNodes) {
       return new ListGraph({
         d3: d3V4,
@@ -67,7 +93,7 @@
         rootNodes: rootNodes || [-1],
         activeLevel: 1,
         noRootActiveLevelDiff: 1,
-        forceWidth: true,
+        forceWidth: false,
         rows: 8,
         sortBy: 'precision',
         dispatcher: customDispatcher,
@@ -75,7 +101,6 @@
         querying: true,
         hideOutwardsLinks: true,
         showLinkLocation: true,
-        noRootActiveLevelDiff: 1,
         nodeInfoContextMenu: [{
           label: 'ID',
           property: function (data) { return data.id; }
@@ -91,10 +116,12 @@
       });
     }
 
+    var graphs = {};
+
     d3.json('data.json', function (error, data) {
       if (error) throw error;
 
-      var graph = createListGraph('#example-small', data, [1, 2]);
+      graphs['#example-small'] = createListGraph('#example-small', data, [1, 2]);
 
       // setTimeout(function () {
       //   graphSmall.trigger('d3ListGraphFocusNodes', {
@@ -243,19 +270,19 @@
     d3.json('data-100.json', function (error, data) {
       if (error) throw error;
 
-      var graph = createListGraph('#example-medium', data);
+      graphs['#example-medium'] = createListGraph('#example-medium', data);
     });
 
     d3.json('data-500.json', function (error, data) {
       if (error) throw error;
 
-      var graph = createListGraph('#example-large', data);
+      graphs['#example-large'] = createListGraph('#example-large', data);
     });
 
     d3.json('data-1000.json', function (error, data) {
       if (error) throw error;
 
-      var graph = createListGraph('#example-extra-large', data);
+      graphs['#example-extra-large'] = createListGraph('#example-extra-large', data);
     });
 
     // d3.json('data-10000.json', function (error, data) {

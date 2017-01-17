@@ -839,6 +839,30 @@ class NodeContextMenu {
       );
   }
 
+  /* ---------------------------------- D ----------------------------------- */
+
+  /**
+   * Destroy the node context menu
+   *
+   * @description
+   * Removes the DOM elements and all related event listeners
+   *
+   * @method  destroy
+   * @author  Fritz Lekschas
+   * @date    2017-01-17
+   */
+  destroy () {
+    // Clone the old elements first, which will remove all existing event
+    // handlers
+    const newEl = this.wrapper.node().cloneNode(true);
+
+    // Replace the old DOM elements with new ones
+    this.baseEl.node().replaceChild(newEl, this.wrapper.node());
+
+    // Remove all DOM elements
+    this.baseEl.node().removeChild(newEl);
+  }
+
   /* ---------------------------------- E ----------------------------------- */
 
   /**

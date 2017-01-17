@@ -54,13 +54,36 @@ class Levels {
     // We need to add an empty rectangle that fills up the whole column to ensure
     // that the `g`'s size is at a maximum, otherwise scrolling will be halted
     // when the cursor leaves an actually drawn element.
-    this.groups
+    this.scrollHelper = this.groups
       .append('rect')
         .attr('class', SCROLL_CONTAINER_CLASS)
         .attr('x', data => data.x)
         .attr('y', data => data.y)
         .attr('width', this.visData.global.column.width + 1)
         .attr('height', this.visData.global.column.height);
+  }
+
+  /**
+   * Re-render
+   *
+   * @method  reRender
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}  newVisData  New vid data.
+   */
+  reRender (newVisData) {
+    if (newVisData) {
+      this.visData = newVisData;
+    }
+
+    this.groups.data(this.visData.nodes);
+
+    this.scrollHelper
+      .data(this.visData.nodes)
+      .attr('x', data => data.x)
+      .attr('y', data => data.y)
+      .attr('width', this.visData.global.column.width + 1)
+      .attr('height', this.visData.global.column.height);
   }
 
   /**
@@ -97,7 +120,7 @@ class Levels {
       data.scrollTop = 0;
       data.scrollbar = {
         el: undefined,
-        x: data.x + (this.visData.global.column.width - scrollbarWidth),
+        x: data.x + (this.visData.global.column.width - scrollbarWidth) - 1,
         y: 0,
         width: scrollbarWidth,
         height: scrollbarHeight,
@@ -137,6 +160,9 @@ class Levels {
       data.height = contentHeight;
       data.scrollHeight = scrollHeight;
       data.scrollTop = 0;
+      data.scrollbar.x = data.x + (
+        this.visData.global.column.width - data.scrollbar.width
+      ) - 1;
       data.scrollbar.y = 0;
       data.scrollbar.height = scrollbarHeight;
       data.scrollbar.scrollHeight = this.visData.global.column.height -

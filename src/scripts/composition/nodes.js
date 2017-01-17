@@ -124,8 +124,6 @@ class Nodes {
    * @param   {Object}  events   Event class.
    */
   constructor (vis, baseEl, visData, links, events) {
-    const self = this;
-
     this.vis = vis;
     this.visData = visData;
     this.links = links;
@@ -139,96 +137,9 @@ class Nodes {
       (this.visData.global.column.padding / 2) - 4
     );
 
-    const linkDensityBg = d3.scaleLinear()
+    this.linkDensityBg = d3.scaleLinear()
       .domain([1, this.vis.rows])
       .range(['#ccc', '#000']);
-
-    function drawLinkIndicator (selection, direction) {
-      const incoming = direction === 'incoming';
-
-      selection
-        .attr(
-          'class',
-          CLASS_INDICATOR_BAR + ' ' + (incoming ?
-            CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING)
-        )
-        .attr(
-          'd',
-          roundRect(
-            incoming ? -7 : this.visData.global.column.contentWidth,
-            (this.visData.global.row.height / 2) - 1,
-            7,
-            2,
-            {
-              topLeft: incoming ? 1 : 0,
-              topRight: incoming ? 0 : 1,
-              bottomLeft: incoming ? 1 : 0,
-              bottomRight: incoming ? 0 : 1
-            }
-          )
-        )
-        .attr('fill', data => linkDensityBg(data.links[direction].refs.length))
-        .classed('visible', data => data.links[direction].refs.length > 0)
-        .style(
-          'transform-origin',
-          (incoming ? 0 : this.visData.global.column.contentWidth) + 'px ' +
-          (this.visData.global.row.height / 2) + 'px'
-        );
-    }
-
-    function drawLinkLocationIndicator (selection, direction, position) {
-      const above = position === 'above';
-      const incoming = direction === 'incoming';
-
-      const className = CLASS_INDICATOR_LOCATION + ' ' + (
-        incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING
-      ) + ' ' + (
-        above ? CLASS_INDICATOR_ABOVE : CLASS_INDICATOR_BELOW
-      );
-
-      selection
-        .datum(data => data.links[direction])
-        .attr('class', className)
-        .attr('x', incoming ? -5 : this.visData.global.column.contentWidth + 2)
-        .attr(
-          'y',
-          above ?
-            (this.visData.global.row.height / 2) - 1 :
-            (this.visData.global.row.height / 2) + 1
-        )
-        .attr('width', 3)
-        .attr('height', 0)
-        .attr('fill', data => linkDensityBg(data.refs.length));
-    }
-
-    // Helper
-    function drawFullSizeRect (selection, className, shrinking, noRoundBorder) {
-      const shrinkingAmount = shrinking || 0;
-
-      selection
-        .attr('x', shrinkingAmount)
-        .attr('y', self.visData.global.row.padding + shrinkingAmount)
-        .attr(
-          'width',
-          self.visData.global.column.contentWidth - (2 * shrinkingAmount)
-        )
-        .attr(
-          'height',
-          self.visData.global.row.contentHeight - (2 * shrinkingAmount)
-        )
-        .attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount)
-        .attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount)
-        .classed(className, true);
-    }
-
-    function drawMaxSizedRect (selection) {
-      selection
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('width', self.visData.global.column.contentWidth)
-        .attr('height', self.visData.global.row.height)
-        .attr('class', 'invisible-container');
-    }
 
     this.groups = baseEl.append('g')
       .attr('class', CLASS_NODES)
@@ -239,7 +150,7 @@ class Nodes {
       });
 
     this.nodes = this.groups
-      .selectAll('.' + CLASS_NODE)
+      .selectAll(`.${CLASS_NODE}`)
       .data(data => data.rows)
       .enter()
       .append('g')
@@ -248,26 +159,26 @@ class Nodes {
         .attr('transform', data => 'translate(' +
           (data.x + this.visData.global.column.padding) + ', ' + data.y + ')');
 
-    this.nodes.append('rect').call(drawMaxSizedRect);
+    this.nodes.append('rect').call(this.drawMaxSizedRect.bind(this));
 
     this.visNodes = this.nodes.append('g').attr('class', CLASS_NODE_VISIBLE);
 
-    this.visNodes.append('rect').call(drawFullSizeRect, 'bg-border');
+    this.visNodes.append('rect').call(this.drawFullSizeRect.bind(this), 'bg-border');
 
-    this.visNodes.append('rect').call(drawFullSizeRect, 'bg', 1, true);
+    this.visNodes.append('rect').call(this.drawFullSizeRect.bind(this), 'bg', 1, true);
 
     if (this.vis.showLinkLocation) {
       this.nodes.append('rect')
-          .call(drawLinkLocationIndicator.bind(this), 'incoming', 'above');
+          .call(this.drawLinkLocationIndicator.bind(this), 'incoming', 'above');
       this.nodes.append('rect')
-          .call(drawLinkLocationIndicator.bind(this), 'incoming', 'bottom');
+          .call(this.drawLinkLocationIndicator.bind(this), 'incoming', 'bottom');
       this.nodes.append('rect')
-          .call(drawLinkLocationIndicator.bind(this), 'outgoing', 'above');
+          .call(this.drawLinkLocationIndicator.bind(this), 'outgoing', 'above');
       this.nodes.append('rect')
-          .call(drawLinkLocationIndicator.bind(this), 'outgoing', 'bottom');
+          .call(this.drawLinkLocationIndicator.bind(this), 'outgoing', 'bottom');
 
-      this.nodes.append('path').call(drawLinkIndicator.bind(this), 'incoming');
-      this.nodes.append('path').call(drawLinkIndicator.bind(this), 'outgoing');
+      this.nodes.append('path').call(this.drawLinkIndicator.bind(this), 'incoming');
+      this.nodes.append('path').call(this.drawLinkIndicator.bind(this), 'outgoing');
 
       // Set all the link location indicator bars.
       this.groups.each((data, index) => {
@@ -276,10 +187,10 @@ class Nodes {
     }
 
     // Rooting icons
-    const nodeRooted = this.nodes.append('g')
+    this.nodeRooted = this.nodes.append('g')
       .attr('class', `${CLASS_FOCUS_CONTROLS} ${CLASS_ROOT}`);
 
-    nodeRooted.append('rect')
+    this.nodeRooted.append('rect')
       .call(
         this.setUpFocusControls.bind(this),
         'left',
@@ -288,7 +199,7 @@ class Nodes {
         'hover-helper'
       );
 
-    nodeRooted.append('svg')
+    this.nodeRooted.append('svg')
       .call(
         this.setUpFocusControls.bind(this),
         'left',
@@ -301,12 +212,12 @@ class Nodes {
 
     // Querying icons
     if (this.vis.querying) {
-      const nodeQuery = this.nodes.append('g')
+      this.nodeQuery = this.nodes.append('g')
         .attr(
           'class', `${CLASS_FOCUS_CONTROLS} ${CLASS_QUERY}`
         );
 
-      nodeQuery.append('rect')
+      this.nodeQuery.append('rect')
         .call(
           this.setUpFocusControls.bind(this),
           'right',
@@ -315,7 +226,7 @@ class Nodes {
           'hover-helper'
         );
 
-      nodeQuery.append('svg')
+      this.nodeQuery.append('svg')
         .call(
           this.setUpFocusControls.bind(this),
           'right',
@@ -326,7 +237,7 @@ class Nodes {
         .append('use')
           .attr('xlink:href', this.vis.iconPath + '#union');
 
-      nodeQuery.append('svg')
+      this.nodeQuery.append('svg')
         .call(
           this.setUpFocusControls.bind(this),
           'right',
@@ -342,7 +253,7 @@ class Nodes {
 
     this.visNodes
       .append('rect')
-        .call(drawFullSizeRect, 'border');
+        .call(this.drawFullSizeRect.bind(this), 'border');
 
     // Add node label
     this.visNodes.append('foreignObject')
@@ -356,7 +267,7 @@ class Nodes {
       .append('xhtml:div')
         .attr('class', 'label')
         .attr('title', data => data.data.name)
-        .style('line-height', (this.visData.global.row.contentHeight -
+        .style('line-height', Math.floor(this.visData.global.row.contentHeight -
           (this.visData.global.cell.padding * 2)) + 'px')
         .append('xhtml:span')
           .text(data => data.data.name);
@@ -608,6 +519,134 @@ class Nodes {
    * @return  {String}  CSS name.
    */
   static get classQuery () { return CLASS_QUERY; }
+
+  /**
+   * Draw link indicator
+   *
+   * @method  drawLinkIndicator
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}  selection  D3 selection
+   * @param   {String}  direction  Direction: incoming or outgoing
+   */
+  drawLinkIndicator (selection, direction) {
+    const incoming = direction === 'incoming';
+
+    selection
+      .attr(
+        'class',
+        CLASS_INDICATOR_BAR + ' ' + (incoming ?
+          CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING)
+      )
+      .attr(
+        'd',
+        roundRect(
+          incoming ? -7 : this.visData.global.column.contentWidth,
+          (this.visData.global.row.height / 2) - 1,
+          7,
+          2,
+          {
+            topLeft: incoming ? 1 : 0,
+            topRight: incoming ? 0 : 1,
+            bottomLeft: incoming ? 1 : 0,
+            bottomRight: incoming ? 0 : 1
+          }
+        )
+      )
+      .attr('fill', data => this.linkDensityBg(data.links[direction].refs.length))
+      .classed('visible', data => data.links[direction].refs.length > 0)
+      .style(
+        'transform-origin',
+        (incoming ? 0 : this.visData.global.column.contentWidth) + 'px ' +
+        (this.visData.global.row.height / 2) + 'px'
+      );
+  }
+
+  /**
+   * Draw link location indicator
+   *
+   * @method  drawLinkLocationIndicator
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}   selection  D3 selection
+   * @param   {String}   direction  Direction: incoming or outgoing
+   * @param   {String}   position   Position: above or below
+   * @param   {Boolean}  update     If `true` only updates
+   */
+  drawLinkLocationIndicator (selection, direction, position, update) {
+    const above = position === 'above';
+    const incoming = direction === 'incoming';
+
+    const className = CLASS_INDICATOR_LOCATION + ' ' + (
+      incoming ? CLASS_INDICATOR_INCOMING : CLASS_INDICATOR_OUTGOING
+    ) + ' ' + (
+      above ? CLASS_INDICATOR_ABOVE : CLASS_INDICATOR_BELOW
+    );
+
+    if (!update) {
+      selection.datum(data => data.links[direction]);
+    }
+
+    selection
+      .attr('class', className)
+      .attr('x', incoming ? -5 : this.visData.global.column.contentWidth + 2)
+      .attr(
+        'y',
+        above ?
+          (this.visData.global.row.height / 2) - 1 :
+          (this.visData.global.row.height / 2) + 1
+      )
+      .attr('width', 3)
+      .attr('height', 0)
+      .attr('fill', data => this.linkDensityBg(data.refs.length));
+  }
+
+  /**
+   * Draw full sized rectangle
+   *
+   * @method  drawFullSizeRect
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}   selection      D3 selection
+   * @param   {String}   className      Class name
+   * @param   {Number}   shrinking      Shrinking amount
+   * @param   {Boolean}  noRoundBorder  If `true` no round border
+   */
+  drawFullSizeRect (selection, className, shrinking, noRoundBorder) {
+    const shrinkingAmount = shrinking || 0;
+
+    selection
+      .attr('x', shrinkingAmount)
+      .attr('y', this.visData.global.row.padding + shrinkingAmount)
+      .attr(
+        'width',
+        this.visData.global.column.contentWidth - (2 * shrinkingAmount)
+      )
+      .attr(
+        'height',
+        this.visData.global.row.contentHeight - (2 * shrinkingAmount)
+      )
+      .attr('rx', noRoundBorder ? 0 : 2 - shrinkingAmount)
+      .attr('ry', noRoundBorder ? 0 : 2 - shrinkingAmount)
+      .classed(className, true);
+  }
+
+  /**
+   * Draw a maximal sized rectangle
+   *
+   * @method  drawMaxSizedRect
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}  selection  D3 selection
+   */
+  drawMaxSizedRect (selection) {
+    selection
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', this.visData.global.column.contentWidth)
+      .attr('height', this.visData.global.row.height)
+      .attr('class', 'invisible-container');
+  }
 
   /**
    * Node _mouse enter_ handler.
@@ -1145,6 +1184,170 @@ class Nodes {
   }
 
   /**
+   * Re-render
+   *
+   * @method  reRender
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}  newVisData  New vid data.
+   */
+  reRender (newVisData) {
+    if (newVisData) {
+      this.visData = newVisData;
+
+      this.groups
+        .data(this.visData.nodes)
+        .call((selection) => {
+          selection.each(function storeLinkToGroupNode () {
+            d3.select(this.parentNode).datum().nodes = this;
+          });
+        });
+    }
+
+    this.nodes = this.groups.selectAll(`.${CLASS_NODE}`)
+      .data(data => data.rows)
+      .attr('transform', data => 'translate(' +
+          (data.x + this.visData.global.column.padding) + ', ' + data.y + ')'
+      );
+
+    this.nodes
+      .selectAll('.invisible-container')
+      .call(this.drawMaxSizedRect.bind(this));
+
+    this.visNodes
+      .selectAll('.bg-border')
+      .call(this.drawFullSizeRect.bind(this), 'bg-border');
+
+    this.visNodes
+      .selectAll('.bg')
+      .call(this.drawFullSizeRect.bind(this), 'bg', 1, true);
+
+    this.visNodes
+      .selectAll('.border')
+      .call(this.drawFullSizeRect.bind(this), 'border');
+
+    if (this.vis.showLinkLocation) {
+      this.nodes
+        .selectAll('.link-location-indicator.incoming.above')
+        .call(
+          this.drawLinkLocationIndicator.bind(this),
+          'incoming',
+          'above',
+          true
+        );
+
+      this.nodes
+        .selectAll('.link-location-indicator.incoming.below')
+        .call(
+          this.drawLinkLocationIndicator.bind(this),
+          'incoming',
+          'bottom',
+          true
+        );
+
+      this.nodes
+        .selectAll('.link-location-indicator.outgoing.above')
+        .call(
+          this.drawLinkLocationIndicator.bind(this),
+          'outgoing',
+          'above',
+          true
+        );
+
+      this.nodes
+        .selectAll('.link-location-indicator.outgoing.below')
+        .call(
+          this.drawLinkLocationIndicator.bind(this),
+          'outgoing',
+          'bottom',
+          true
+        );
+
+      this.nodes
+        .selectAll('.link-indicator.incoming')
+        .call(this.drawLinkIndicator.bind(this), 'incoming');
+
+      this.nodes
+        .selectAll('.link-indicator.outgoing')
+        .call(this.drawLinkIndicator.bind(this), 'outgoing');
+
+      this.groups.each((data, index) => {
+        this.calcHeightLinkLocationIndicator(index, true, true);
+      });
+    }
+
+    // selection, location, position, mode, className
+    this.nodes
+      .selectAll(`.${CLASS_FOCUS_CONTROLS}.${CLASS_ROOT} .hover-helper`)
+      .call(
+        this.setUpFocusControls.bind(this),
+        'left',
+        0.6,
+        'hover-helper',
+        'hover-helper'
+      );
+
+    this.nodes
+      .selectAll(`.${CLASS_FOCUS_CONTROLS}.${CLASS_ROOT} .icon`)
+      .call(
+        this.setUpFocusControls.bind(this),
+        'left',
+        0.6,
+        'icon',
+        'ease-all state-active invisible-default icon'
+      );
+
+    if (this.vis.querying) {
+      this.nodes
+        .selectAll(`.${CLASS_FOCUS_CONTROLS}.${CLASS_QUERY} .hover-helper`)
+        .call(
+          this.setUpFocusControls.bind(this),
+          'right',
+          0.6,
+          'hover-helper',
+          'hover-helper'
+        );
+
+      this.nodes
+        .selectAll(`.${CLASS_FOCUS_CONTROLS}.${CLASS_QUERY} .state-and-or.icon`)
+        .call(
+          this.setUpFocusControls.bind(this),
+          'right',
+          0.6,
+          'icon',
+          'ease-all state-and-or invisible-default icon'
+        );
+
+      this.nodes
+        .selectAll(`.${CLASS_FOCUS_CONTROLS}.${CLASS_QUERY} .state-not.icon`)
+        .call(
+          this.setUpFocusControls.bind(this),
+          'right',
+          0.6,
+          'icon',
+          'ease-all state-not invisible-default icon'
+        );
+    }
+
+    this.bars.reRender(this.visData, this.vis.currentSorting.global.type);
+
+    // Add node label
+    this.visNodes.selectAll(`.${CLASS_LABEL_WRAPPER}`)
+      .attr('x', this.visData.global.cell.padding)
+      .attr('y', this.visData.global.row.padding +
+        this.visData.global.cell.padding)
+      .attr('width', this.visData.global.column.contentWidth)
+      .attr('height', this.visData.global.row.contentHeight -
+        (this.visData.global.cell.padding * 2));
+
+    this.visNodes.selectAll(`.${CLASS_LABEL_WRAPPER} .label`)
+      .style('line-height', Math.floor(this.visData.global.row.contentHeight -
+        (this.visData.global.cell.padding * 2)) + 'px');
+
+    this.nodes.call(this.isInvisible.bind(this));
+  }
+
+  /**
    * Handler managing _root_ events.
    *
    * @method  rootHandler
@@ -1282,7 +1485,7 @@ class Nodes {
       selection
         .attr('class', className)
         .attr('x', x - 4)
-        .attr('y', y - 4)
+        .attr('y', (this.visData.global.row.height - (this.iconDimension + 8)) / 2)
         .attr('width', this.iconDimension + 8)
         .attr('height', this.iconDimension + 8)
         .attr('rx', this.iconDimension)
@@ -1291,7 +1494,7 @@ class Nodes {
       selection
         .attr('class', className)
         .attr('x', x)
-        .attr('y', y)
+        .attr('y', (this.visData.global.row.height - this.iconDimension) / 2)
         .attr('width', this.iconDimension)
         .attr('height', this.iconDimension);
     }

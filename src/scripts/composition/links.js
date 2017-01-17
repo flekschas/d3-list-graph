@@ -200,6 +200,28 @@ class Links {
   }
 
   /**
+   * Re-render
+   *
+   * @method  reRender
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}  newVisData  New vid data.
+   */
+  reRender (newVisData) {
+    if (newVisData) {
+      this.visData = newVisData;
+
+      this.groups.data(this.visData.nodes);
+
+      this.links.data((data, index) => this.layout.links(index));
+    }
+
+    this.links.selectAll('path').attr('d', this.diagonal);
+
+    this.makeAllTempVisible(true);
+  }
+
+  /**
    * Scroll links when the container is scrolled.
    *
    * @method  scroll

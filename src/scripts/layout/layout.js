@@ -18,10 +18,12 @@ const _grid = {
   columns: defaults.GRID.columns,
   rows: defaults.GRID.rows
 };
+
 const _size = {
   width: defaults.SIZE.width,
   height: defaults.SIZE.height
 };
+
 const _links = {};
 
 /**
@@ -197,6 +199,21 @@ class ListGraphLayout {
   }
 
   /**
+   * Helper function to get the layout data
+   *
+   * @method  getData
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @return  {Object}  Layout data
+   */
+  getData () {
+    return {
+      global: ListGraphLayout.compileGlobalProps(),
+      nodes: this.nodesToMatrix()
+    };
+  }
+
+  /**
    * Convert an object-based list of nodes into an array of arrays of nodes.
    *
    * @description
@@ -266,6 +283,9 @@ class ListGraphLayout {
     this.data = data || this.data;
     this.rootIds = rootIds || this.rootIds;
 
+    // Make sure we start with a clean slate
+    this.columnCache = {};
+
     if (!isArray(this.rootIds)) {
       if (isFinite(this.rootIds)) {
         this.rootIds = [this.rootIds];
@@ -293,10 +313,7 @@ class ListGraphLayout {
       this.sort(undefined, options.sortBy, options.sortOrder || 'desc');
     }
 
-    return {
-      global: ListGraphLayout.compileGlobalProps(),
-      nodes: this.nodesToMatrix()
-    };
+    return this.getData();
   }
 
   /**

@@ -2,6 +2,7 @@
 import '$';  // eslint-disable-line
 import * as d3 from 'd3';  // eslint-disable-line
 import isArray from '../../../node_modules/lodash-es/isArray';
+import cloneDeep from '../../../node_modules/lodash-es/cloneDeep';
 
 // Internal
 import { D3VersionFourRequired } from '../commons/errors';
@@ -53,6 +54,7 @@ class ListGraph {
 
     const self = this;
 
+    this.init = init;
     this.baseEl = init.element;
     this.baseEl.__d3ListGraphBase__ = true;
 
@@ -192,7 +194,7 @@ class ListGraph {
       d3: _d3
     });
 
-    this.data = init.data;
+    this.data = cloneDeep(init.data);
     this.visData = this.layout.process(
       this.data,
       this.rootNodes,
@@ -231,6 +233,7 @@ class ListGraph {
     this.levels = new Levels(this.container, this, this.visData);
 
     this.links = new Links(this, this.levels.groups, this.visData, this.layout);
+
     this.nodes = new Nodes(
       this,
       this.levels.groups,
@@ -238,7 +241,9 @@ class ListGraph {
       this.links,
       this.events
     );
+
     this.levels.scrollPreparation(this.scrollbarWidth);
+
     this.scrollbars = new Scrollbars(
       this.levels.groups,
       this.visData,
@@ -1003,6 +1008,73 @@ class ListGraph {
   }
 
   /**
+   * Render the list graph
+   *
+   * @method  reRender
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}  update  Update grid
+   */
+  reRender (update) {
+    this.width = setOption(this.init.width, this.svgJq.width(), true);
+    this.height = setOption(this.init.height, this.svgJq.height(), true);
+
+    if (update && update.grid) {
+      this.columns = update.grid.columns || this.columns;
+      this.rows = update.grid.rows || this.rows;
+    }
+
+    if (this.init.forceWidth) {
+      this.baseElJq.width(this.width);
+    }
+
+    this.layout.size([
+      this.width,
+      this.height
+    ]);
+
+    this.layout.grid([
+      this.columns,
+      this.rows
+    ]);
+
+    this.visData = this.layout.process(
+      this.data,
+      this.rootNodes,
+      {
+        showLinkLocation: this.showLinkLocation,
+        linkLocationBucketSize: this.linkLocationBucketSize,
+        sortBy: this.currentSorting.global.type,
+        sortOrder: this.currentSorting.global.order
+      }
+    );
+
+    this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
+
+    this.topbar.reRender(this.visData);
+    this.levels.reRender(this.visData);
+    this.links.reRender(this.visData);
+    this.nodes.reRender(this.visData);
+
+    this.levels.scrollPreparation(this.scrollbarWidth);
+    this.scrollbars.reRender(this.visData);
+
+    this.nodeContextMenu.destroy();
+    this.nodeContextMenu = new NodeContextMenu({
+      visData: this.visData,
+      baseEl: this.container,
+      events: this.events,
+      nodes: this.nodes,
+      iconPath: this.iconPath,
+      infoFields: this.nodeInfoContextMenu,
+      isQueryable: this.querying,
+      isDebounced: !this.disableDebouncedContextMenu
+    });
+
+    this.getBoundingRect();
+  }
+
+  /**
    * Helper method to scroll all columns to the top.
    *
    * @method  resetAllScrollPositions
@@ -1329,6 +1401,15 @@ class ListGraph {
     }
   }
 
+  // get visData () {
+  //   console.log('request visData');
+  //   return this._visData;
+  // }
+
+  // set visData (value) {
+  //   this._visData = value;
+  // }
+
   /**
    * Show original zoomed graph
    *
@@ -1350,6 +1431,7 @@ class ListGraph {
   }
 }
 
-ListGraph.version = '0.17.0';
+// Will be set by Gulp during the build process
+ListGraph.version = '';
 
 export default ListGraph;
