@@ -2380,6 +2380,13 @@ var SHOW_LINK_LOCATION = false;
 var DISABLE_DEBOUNCED_CONTEXT_MENU = false;
 
 /**
+ * Show title
+ *
+ * @type  {Boolean}
+ */
+var SHOW_TITLE = false;
+
+/**
  * Default transition speed in milliseconds for super fast transition.
  *
  * @type  {Number}
@@ -2392,23 +2399,27 @@ var TRANSITION_LIGHTNING_FAST = 150;
  * @type  {Number}
  */
 
+
 /**
  * Default transition speed in milliseconds for semi-fast transition.
  *
  * @type  {Number}
  */
 var TRANSITION_SEMI_FAST = 250;
+
 /**
  * Default transition speed in milliseconds for normal transition.
  *
  * @type  {Number}
  */
 
+
 /**
  * Default transition speed in milliseconds for slow transition.
  *
  * @type  {Number}
  */
+
 
 /**
  * Default transition speed in milliseconds for slow transition.
@@ -2453,12 +2464,13 @@ var Topbar = function () {
    * @method  constructor
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @param   {Object}  vis                  List Graph App.
-   * @param   {Object}  baseEl               D3 base selection.
-   * @param   {Object}  visData              List Graph App data.
-   * @param   {Array}   customTopbarButtons  Array of custom topbar buttons.
+   * @param   {Object}   vis                  List Graph App.
+   * @param   {Object}   baseEl               D3 base selection.
+   * @param   {Object}   visData              List Graph App data.
+   * @param   {Array}    customTopbarButtons  Array of custom topbar buttons.
+   * @param   {Boolean}  showTitle            If `true` show title.
    */
-  function Topbar(vis, baseEl, visData, customTopbarButtons) {
+  function Topbar(vis, baseEl, visData, customTopbarButtons, showTitle) {
     var _this = this;
 
     classCallCheck(this, Topbar);
@@ -2468,6 +2480,8 @@ var Topbar = function () {
     this.vis = vis;
     this.visData = visData;
     this.customTopbarButtons = customTopbarButtons;
+    this.showTitle = showTitle;
+
     // Add base topbar element
     this.el = baseEl.select('.' + TOPBAR_CLASS);
 
@@ -2480,6 +2494,8 @@ var Topbar = function () {
     this.switchArrow = this.controlSwitch.append('svg').append('use').attr('xlink:href', this.vis.iconPath + '#arrow-down').attr('class', 'switch-arrow');
 
     this.globalControls = this.el.append(TOPBAR_CONTROL_EL).classed(TOPBAR_GLOBAL_CONTROL_CLASS, true);
+
+    this.globalPrecision = this.globalControls.append('li').attr('class', 'title').text('List Graph').classed('show', this.showTitle);
 
     // Add button for sorting by precision
     this.globalPrecision = this.globalControls.append('li').attr('class', 'control-btn sort-precision').classed('active', function () {
@@ -9221,6 +9237,9 @@ var ListGraph = function () {
     // Create custom topbar buttons
     this.customTopbarButtons = setOption(init.customTopbarButtons, []);
 
+    // Height of the vis. If `undefined` the SVG's height will be used.
+    this.showTitle = setOption(init.showTitle, SHOW_TITLE);
+
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
     // Add SVG Icons
@@ -9276,7 +9295,7 @@ var ListGraph = function () {
     this.barMode = init.barMode || DEFAULT_BAR_MODE;
     this.svgD3.classed(this.barMode + '-bar', true);
 
-    this.topbar = new Topbar(this, this.baseElD3, this.visData, this.customTopbarButtons);
+    this.topbar = new Topbar(this, this.baseElD3, this.visData, this.customTopbarButtons, this.showTitle);
 
     this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
 
@@ -10413,7 +10432,7 @@ var ListGraph = function () {
 // Will be set by Gulp during the build process
 
 
-ListGraph.version = '1.1.0';
+ListGraph.version = '1.1.1';
 
 return ListGraph;
 
