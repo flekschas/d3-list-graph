@@ -78,10 +78,10 @@
         noRootActiveLevelDiff: 1,
         nodeInfoContextMenu: [{
           label: 'ID',
-          property: (data) => data.id
+          property: function (data) { return data.id; }
         }, {
           label: 'Name',
-          property: (data) => data.data.name
+          property: function (data) { return data.data.name; }
         }],
         customTopbarButtons: [{
           label: 'Click me',
