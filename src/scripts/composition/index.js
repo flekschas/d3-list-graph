@@ -156,6 +156,9 @@ class ListGraph {
       init.customTopbarButtons, []
     );
 
+    // Height of the vis. If `undefined` the SVG's height will be used.
+    this.showTitle = setOption(init.showTitle, config.SHOW_TITLE);
+
     this.baseElD3.classed('less-animations', this.lessTransitionsCss);
 
     // Add SVG Icons
@@ -223,7 +226,11 @@ class ListGraph {
     this.svgD3.classed(this.barMode + '-bar', true);
 
     this.topbar = new Topbar(
-      this, this.baseElD3, this.visData, this.customTopbarButtons
+      this,
+      this.baseElD3,
+      this.visData,
+      this.customTopbarButtons,
+      this.showTitle
     );
 
     this.svgD3.attr('viewBox', '0 0 ' + this.width + ' ' + this.height);

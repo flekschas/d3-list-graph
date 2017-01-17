@@ -15,17 +15,20 @@ class Topbar {
    * @method  constructor
    * @author  Fritz Lekschas
    * @date    2016-10-02
-   * @param   {Object}  vis                  List Graph App.
-   * @param   {Object}  baseEl               D3 base selection.
-   * @param   {Object}  visData              List Graph App data.
-   * @param   {Array}   customTopbarButtons  Array of custom topbar buttons.
+   * @param   {Object}   vis                  List Graph App.
+   * @param   {Object}   baseEl               D3 base selection.
+   * @param   {Object}   visData              List Graph App data.
+   * @param   {Array}    customTopbarButtons  Array of custom topbar buttons.
+   * @param   {Boolean}  showTitle            If `true` show title.
    */
-  constructor (vis, baseEl, visData, customTopbarButtons) {
+  constructor (vis, baseEl, visData, customTopbarButtons, showTitle) {
     const self = this;
 
     this.vis = vis;
     this.visData = visData;
     this.customTopbarButtons = customTopbarButtons;
+    this.showTitle = showTitle;
+
     // Add base topbar element
     this.el = baseEl.select('.' + TOPBAR_CLASS);
 
@@ -46,6 +49,11 @@ class Topbar {
 
     this.globalControls = this.el.append(TOPBAR_CONTROL_EL)
       .classed(TOPBAR_GLOBAL_CONTROL_CLASS, true);
+
+    this.globalPrecision = this.globalControls.append('li')
+      .attr('class', 'title')
+      .text('List Graph')
+      .classed('show', this.showTitle);
 
     // Add button for sorting by precision
     this.globalPrecision = this.globalControls.append('li')

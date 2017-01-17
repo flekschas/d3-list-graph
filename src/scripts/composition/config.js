@@ -96,6 +96,13 @@ export const SHOW_LINK_LOCATION = false;
 export const DISABLE_DEBOUNCED_CONTEXT_MENU = false;
 
 /**
+ * Show title
+ *
+ * @type  {Boolean}
+ */
+export const SHOW_TITLE = false;
+
+/**
  * Default transition speed in milliseconds for super fast transition.
  *
  * @type  {Number}
@@ -108,24 +115,28 @@ export const TRANSITION_LIGHTNING_FAST = 150;
  * @type  {Number}
  */
 export const TRANSITION_FAST = 200;
+
 /**
  * Default transition speed in milliseconds for semi-fast transition.
  *
  * @type  {Number}
  */
 export const TRANSITION_SEMI_FAST = 250;
+
 /**
  * Default transition speed in milliseconds for normal transition.
  *
  * @type  {Number}
  */
 export const TRANSITION_NORMAL = 333;
+
 /**
  * Default transition speed in milliseconds for slow transition.
  *
  * @type  {Number}
  */
 export const TRANSITION_SLOW = 666;
+
 /**
  * Default transition speed in milliseconds for slow transition.
  *
