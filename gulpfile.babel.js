@@ -15,6 +15,7 @@ import opn from 'opn';
 import path from 'path';
 import plumber from 'gulp-plumber';
 import rename from 'gulp-rename';
+import replace from 'gulp-replace';
 import runSequence from 'run-sequence';
 import sass from 'gulp-sass';
 import semver from 'semver';
@@ -123,6 +124,9 @@ gulp.task('bundle', () => gulp
     return bundlePath;
   }))
   .pipe(flatten())
+  .pipe(replace(
+    "ListGraph.version = ''", `ListGraph.version = '${packageJson.version}'`
+  ))
   .pipe(sourcemaps.write('.'))
   .pipe(gulp.dest(config.globalPaths.dist))
   // Exclude everything when we are not in production mode.

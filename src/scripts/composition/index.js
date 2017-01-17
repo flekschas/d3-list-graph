@@ -1431,6 +1431,7 @@ class ListGraph {
   }
 }
 
-ListGraph.version = '1.0.0';
+// Will be set by Gulp during the build process
+ListGraph.version = '';
 
 export default ListGraph;
