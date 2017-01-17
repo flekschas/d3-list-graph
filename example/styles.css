@@ -21,8 +21,25 @@ h2 {
   margin: 1em auto 0.25em;
 }
 
+h2 em {
+  float: right;
+  display: inline-block;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 0.625em;
+  text-transform: uppercase;
+  color: #808080;
+  line-height: 3em;
+}
+
+h2 em:hover {
+  color: #000;
+  cursor: pointer;
+}
+
 .list-graph {
   margin: 1em auto;
+  width: 800px;
   border: 1px solid #efefef;
 }
 
@@ -30,6 +47,15 @@ h2 {
   display: block;
   width: 800px;
   height: 200px;
+}
+
+.list-graph.bigger,
+.list-graph.bigger svg.base {
+  width: 1280px;
+}
+
+.list-graph.bigger svg.base {
+  height: 300px;
 }
 
 #example-two.list-graph svg.base {
