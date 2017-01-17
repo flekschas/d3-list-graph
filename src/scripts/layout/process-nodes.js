@@ -119,25 +119,27 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, scale, links) {
   function processLink (source, target) {
     const id = '(' + source.id + ')->(' + target.id + ')';
 
-    links[id] = {
-      id,
-      source: {
-        node: source,
-        offsetX: 0,
-        offsetY: 0
-      },
-      target: {
-        node: target,
-        offsetX: 0,
-        offsetY: 0
-      }
-    };
+    if (!links[id]) {
+      links[id] = {
+        id,
+        source: {
+          node: source,
+          offsetX: 0,
+          offsetY: 0
+        },
+        target: {
+          node: target,
+          offsetX: 0,
+          offsetY: 0
+        }
+      };
 
-    source.links.outgoing.refs.push(links[id]);
-    target.links.incoming.refs.push(links[id]);
+      source.links.outgoing.refs.push(links[id]);
+      target.links.incoming.refs.push(links[id]);
 
-    source.links.outgoing.total++;
-    target.links.incoming.total++;
+      source.links.outgoing.total++;
+      target.links.incoming.total++;
+    }
   }
 
   /**
@@ -180,17 +182,19 @@ function traverseGraph (graph, starts, columnCache, nodeOrder, scale, links) {
       // clone because then the parent can simple link to the _original node_.
       if (parent.depth + 1 !== node.depth && !skip) {
         const cloneId = id + '.' + (node.clones.length + 1);
-        graph[cloneId] = {
-          children: [],
-          clone: true,
-          cloneId,
-          cloneNum: node.clones.length + 1,
-          // Data will be referenced rather than copied to avoid inconsistencies
-          data: node.data,
-          originalId: id.toString(),
-          // Reference to the original node
-          originalNode: node
-        };
+        if (!graph[cloneId]) {
+          graph[cloneId] = {
+            children: [],
+            clone: true,
+            cloneId,
+            cloneNum: node.clones.length + 1,
+            // Data will be referenced rather than copied to avoid inconsistencies
+            data: node.data,
+            originalId: id.toString(),
+            // Reference to the original node
+            originalNode: node
+          };
+        }
         _id = cloneId;
         _node = graph[cloneId];
         // Add a reference to the original node that points to the clone.

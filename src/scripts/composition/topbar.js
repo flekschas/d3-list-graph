@@ -511,6 +511,41 @@ class Topbar {
   }
 
   /**
+   * Re-render
+   *
+   * @method  reRender
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}  newVisData  New vid data.
+   */
+  reRender (newVisData) {
+    if (newVisData) {
+      this.visData = newVisData;
+    }
+
+    this.controlSwitch
+      .style('width', this.visData.global.column.padding + 'px');
+
+    this.localControls
+      .style('width', this.visData.global.column.width + 'px');
+
+    this.localControls.selectAll('.control-btn')
+        .style('width', this.visData.global.column.padding + 'px');
+
+    this.localControls.selectAll('.control-btn.sort-precision')
+        .style('width', (this.visData.global.column.contentWidth / 2) + 'px')
+        .style('left', this.visData.global.column.padding + 'px');
+
+    this.localControls.selectAll('.control-btn.sort-recall')
+        .style('width', (this.visData.global.column.contentWidth / 2) + 'px')
+        .style(
+          'left',
+          (this.visData.global.column.contentWidth / 2) +
+            this.visData.global.column.padding + 'px'
+        );
+  }
+
+  /**
    * Select nodes by level by button.
    *
    * @method  selectNodesLevel

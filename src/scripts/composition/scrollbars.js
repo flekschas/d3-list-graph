@@ -46,7 +46,31 @@ class Scrollbars {
   }
 
   /**
-   * Update the viisual state of the scrollbar given the current data.
+   * Re-render
+   *
+   * @method  reRender
+   * @author  Fritz Lekschas
+   * @date    2017-01-16
+   * @param   {Object}  newVisData  New vid data.
+   */
+  reRender (newVisData) {
+    if (newVisData) {
+      this.visData = newVisData;
+    }
+
+    this.all
+      .data(this.visData.nodes)
+      .call((selection) => {
+        selection.each(function setScrollBarDomElement () {
+          d3.select(this.parentNode).datum().scrollbar.el = this;
+        });
+      });
+
+    this.updateVisibility();
+  }
+
+  /**
+   * Update the visual state of the scrollbar given the current data.
    *
    * @method  updateVisibility
    * @author  Fritz Lekschas
