@@ -2,9 +2,11 @@
 
 > A flat horizontal scrollable node-link diagram, implemented in ES6 and orchestrated by D3 **v4**.
 
-Demo: https://flekschas.github.io/d3-list-graph/
+**Demo**: https://flekschas.github.io/d3-list-graph/
 
-Note: Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. Please use D3.js **v4.x** instead. If you need to both version please [see here](#migration-d3js-v3-to-v4).
+**Usage**: [SATORI](http://satori.refinery-platform.org)
+
+**Note**: Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. Please use D3.js **v4.x** instead. If you need to both version please [see here](#migration-d3js-v3-to-v4).
 
 ## Install
 
