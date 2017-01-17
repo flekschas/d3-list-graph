@@ -1043,10 +1043,16 @@ class ListGraph {
    * @method  reRender
    * @author  Fritz Lekschas
    * @date    2017-01-16
+   * @param   {Object}  update  Update grid
    */
-  reRender () {
+  reRender (update) {
     this.width = setOption(this.init.width, this.svgJq.width(), true);
     this.height = setOption(this.init.height, this.svgJq.height(), true);
+
+    if (update && update.grid) {
+      this.columns = update.grid.columns || this.columns;
+      this.rows = update.grid.rows || this.rows;
+    }
 
     if (this.init.forceWidth) {
       this.baseElJq.width(this.width);
@@ -1055,6 +1061,11 @@ class ListGraph {
     this.layout.size([
       this.width,
       this.height
+    ]);
+
+    this.layout.grid([
+      this.columns,
+      this.rows
     ]);
 
     this.visData = this.layout.process(
