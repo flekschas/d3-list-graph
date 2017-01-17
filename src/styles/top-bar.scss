@@ -90,12 +90,31 @@
     }
   }
 
+  .title,
   .control-btn {
-    display: block;
+    float: left;
     top: 0;
     margin: 0;
-    padding: 0;
     height: 100%;
+    line-height: 1.5rem;
+    text-transform: uppercase;
+  }
+
+  .title {
+    display: none;
+    padding: 0 0.5rem;
+    font-size: 0.875em;
+    font-weight: bold;
+    border-right: 1px solid $grey-lighter;
+
+    &.show {
+      display: block;
+    }
+  }
+
+  .control-btn {
+    display: block;
+    padding: 0;
     color: #666;
     font-size: 0.75rem;
     line-height: 1.5rem;
