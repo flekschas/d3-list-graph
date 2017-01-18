@@ -1165,7 +1165,9 @@ class Nodes {
         event.data = {
           id: data.clone ?
             data.originalNode.id : data.id,
-          mode: data.data.state.query
+          mode: data.data.state.query,
+          name: data.clone ?
+            data.originalNode.data.name : data.data.name
         };
       }
     } else {

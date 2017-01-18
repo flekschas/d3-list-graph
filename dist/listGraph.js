@@ -5131,7 +5131,8 @@ var Nodes = function () {
           event$$1.name = 'd3ListGraphNodeQuery';
           event$$1.data = {
             id: data.clone ? data.originalNode.id : data.id,
-            mode: data.data.state.query
+            mode: data.data.state.query,
+            name: data.clone ? data.originalNode.data.name : data.data.name
           };
         }
       } else {
@@ -10432,7 +10433,7 @@ var ListGraph = function () {
 // Will be set by Gulp during the build process
 
 
-ListGraph.version = '1.1.1';
+ListGraph.version = '1.1.2';
 
 return ListGraph;
 
