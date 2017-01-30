@@ -2,7 +2,6 @@
 import '$';  // eslint-disable-line
 import * as d3 from 'd3';  // eslint-disable-line
 import isArray from '../../../node_modules/lodash-es/isArray';
-import cloneDeep from '../../../node_modules/lodash-es/cloneDeep';
 
 // Internal
 import { D3VersionFourRequired } from '../commons/errors';
@@ -197,7 +196,7 @@ class ListGraph {
       d3: _d3
     });
 
-    this.data = cloneDeep(init.data);
+    this.data = init.data;
     this.visData = this.layout.process(
       this.data,
       this.rootNodes,
