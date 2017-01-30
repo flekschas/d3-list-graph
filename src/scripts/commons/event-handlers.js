@@ -61,6 +61,9 @@ export function onDragDrop (
   let d2;
 
   drag.on('start', () => {
+    if (d3.event.sourceEvent.which !== 1) {
+      return;
+    }
     d2 = 0;
     if (typeof limits === 'function') {
       appliedLimits = limits();
@@ -69,6 +72,9 @@ export function onDragDrop (
 
   if (dragMoveHandler) {
     drag.on('drag', function (data) {
+      if (d3.event.sourceEvent.which !== 1) {
+        return;
+      }
       if (checkWhenDragging && noDraggingWhenTrue()) {
         return;
       }
