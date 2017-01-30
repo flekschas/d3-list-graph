@@ -8615,7 +8615,7 @@ var ListGraph = function () {
 // Will be set by Gulp during the build process
 
 
-ListGraph.version = '1.1.2';
+ListGraph.version = '1.1.4';
 
 return ListGraph;
 
