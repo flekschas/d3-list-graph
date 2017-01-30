@@ -5881,7 +5881,7 @@ var NodeContextMenu = function () {
     if (this.isQueryable) {
       this.buttonQuery = this.wrapper.append('g').call(this.createButton.bind(this), {
         alignRight: false,
-        classNames: [],
+        classNames: ['menu-button-query'],
         distanceFromCenter: 1,
         fullWidth: true,
         label: 'Query',
@@ -5897,7 +5897,7 @@ var NodeContextMenu = function () {
 
     this.buttonRoot = this.wrapper.append('g').call(this.createButton.bind(this), {
       alignRight: false,
-      classNames: [],
+      classNames: ['menu-button-root'],
       distanceFromCenter: 0,
       fullWidth: false,
       label: 'Root',
@@ -5910,7 +5910,7 @@ var NodeContextMenu = function () {
 
     this.buttonLock = this.wrapper.append('g').call(this.createButton.bind(this), {
       alignRight: true,
-      classNames: [],
+      classNames: ['menu-button-focus'],
       distanceFromCenter: 0,
       fullWidth: false,
       label: 'Lock',
