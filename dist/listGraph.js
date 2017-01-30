@@ -7028,6 +7028,9 @@ function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, e
   var d2 = void 0;
 
   drag$$1.on('start', function () {
+    if (d3.event.sourceEvent.which !== 1) {
+      return;
+    }
     d2 = 0;
     if (typeof limits === 'function') {
       appliedLimits = limits();
@@ -7036,6 +7039,9 @@ function onDragDrop(selection, dragStartHandler, dragMoveHandler, dropHandler, e
 
   if (dragMoveHandler) {
     drag$$1.on('drag', function (data) {
+      if (d3.event.sourceEvent.which !== 1) {
+        return;
+      }
       if (checkWhenDragging && noDraggingWhenTrue()) {
         return;
       }
@@ -8615,7 +8621,7 @@ var ListGraph = function () {
 // Will be set by Gulp during the build process
 
 
-ListGraph.version = '1.1.4';
+ListGraph.version = '1.1.5';
 
 return ListGraph;
 

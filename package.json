@@ -1,6 +1,6 @@
 {
   "name": "d3-list-graph",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "D3 layout for a graph composed of adjacent lists of nodes",
   "author": "Fritz Lekschas",
   "license": "MIT",
