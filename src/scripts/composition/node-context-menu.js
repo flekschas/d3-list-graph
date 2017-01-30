@@ -240,7 +240,7 @@ class NodeContextMenu {
       this.buttonQuery = this.wrapper.append('g')
         .call(this.createButton.bind(this), {
           alignRight: false,
-          classNames: [],
+          classNames: ['menu-button-query'],
           distanceFromCenter: 1,
           fullWidth: true,
           label: 'Query',
@@ -258,7 +258,7 @@ class NodeContextMenu {
     this.buttonRoot = this.wrapper.append('g')
       .call(this.createButton.bind(this), {
         alignRight: false,
-        classNames: [],
+        classNames: ['menu-button-root'],
         distanceFromCenter: 0,
         fullWidth: false,
         label: 'Root',
@@ -273,7 +273,7 @@ class NodeContextMenu {
     this.buttonLock = this.wrapper.append('g')
       .call(this.createButton.bind(this), {
         alignRight: true,
-        classNames: [],
+        classNames: ['menu-button-focus'],
         distanceFromCenter: 0,
         fullWidth: false,
         label: 'Lock',

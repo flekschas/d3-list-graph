@@ -1161,13 +1161,14 @@ class Nodes {
 
     if (data.data.state.query) {
       if (data.data.state.query !== previousMode) {
+        const node = data.clone ? data.originalNode : data;
+
         event.name = 'd3ListGraphNodeQuery';
         event.data = {
-          id: data.clone ?
-            data.originalNode.id : data.id,
-          mode: data.data.state.query,
-          name: data.clone ?
-            data.originalNode.data.name : data.data.name
+          id: node.id,
+          mode: node.data.state.query,
+          name: node.data.name,
+          root: node.data.state.root
         };
       }
     } else {

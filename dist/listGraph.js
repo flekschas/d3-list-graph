@@ -3279,11 +3279,14 @@ var Nodes = function () {
 
       if (data.data.state.query) {
         if (data.data.state.query !== previousMode) {
+          var node = data.clone ? data.originalNode : data;
+
           event$$1.name = 'd3ListGraphNodeQuery';
           event$$1.data = {
-            id: data.clone ? data.originalNode.id : data.id,
-            mode: data.data.state.query,
-            name: data.clone ? data.originalNode.data.name : data.data.name
+            id: node.id,
+            mode: node.data.state.query,
+            name: node.data.name,
+            root: node.data.state.root
           };
         }
       } else {
@@ -5878,7 +5881,7 @@ var NodeContextMenu = function () {
     if (this.isQueryable) {
       this.buttonQuery = this.wrapper.append('g').call(this.createButton.bind(this), {
         alignRight: false,
-        classNames: [],
+        classNames: ['menu-button-query'],
         distanceFromCenter: 1,
         fullWidth: true,
         label: 'Query',
@@ -5894,7 +5897,7 @@ var NodeContextMenu = function () {
 
     this.buttonRoot = this.wrapper.append('g').call(this.createButton.bind(this), {
       alignRight: false,
-      classNames: [],
+      classNames: ['menu-button-root'],
       distanceFromCenter: 0,
       fullWidth: false,
       label: 'Root',
@@ -5907,7 +5910,7 @@ var NodeContextMenu = function () {
 
     this.buttonLock = this.wrapper.append('g').call(this.createButton.bind(this), {
       alignRight: true,
-      classNames: [],
+      classNames: ['menu-button-focus'],
       distanceFromCenter: 0,
       fullWidth: false,
       label: 'Lock',
@@ -8612,7 +8615,7 @@ var ListGraph = function () {
 // Will be set by Gulp during the build process
 
 
-ListGraph.version = '1.1.3';
+ListGraph.version = '1.1.4';
 
 return ListGraph;
 
