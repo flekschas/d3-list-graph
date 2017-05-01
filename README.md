@@ -184,13 +184,13 @@ An array of objects specifying custom buttons in the topbar. E.g. `[{ label: 'Cl
 To preview the toy development example website do:
 
 ```shell
-gulp --open
+npm start
 ```
 
 In order to build a final production ready library run:
 
 ```shell
-gulp build --production
+npm run build
 ```
 
 **Note:** You can also pass `--production` to `gulp` in order to test if the
