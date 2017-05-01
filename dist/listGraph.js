@@ -7916,8 +7916,8 @@ var ListGraph = function () {
           if (selectionInterst && !selectionInterst.empty()) {
             selectionInterst.each(function () {
               cRect = this.getBoundingClientRect();
-              width = Math.max(width, cRect.left - (globalCRect.left + cRect.width));
-              height = Math.max(height, cRect.top - (globalCRect.top + cRect.height));
+              width = Math.max(width, cRect.left + cRect.width - globalCRect.left);
+              height = Math.max(height, cRect.top + cRect.height - globalCRect.top);
             });
             width = _this2.width > width ? _this2.width : width;
             height = _this2.height > height ? _this2.height : height;
@@ -8621,7 +8621,7 @@ var ListGraph = function () {
 // Will be set by Gulp during the build process
 
 
-ListGraph.version = '1.1.5';
+ListGraph.version = '1.1.6';
 
 return ListGraph;
 
