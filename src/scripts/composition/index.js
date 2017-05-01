@@ -789,11 +789,11 @@ class ListGraph {
           cRect = this.getBoundingClientRect();
           width = Math.max(
             width,
-            cRect.left - (globalCRect.left + cRect.width)
+            (cRect.left + cRect.width) - globalCRect.left
           );
           height = Math.max(
             height,
-            cRect.top - (globalCRect.top + cRect.height)
+            (cRect.top + cRect.height) - globalCRect.top
           );
         });
         width = this.width > width ? this.width : width;
