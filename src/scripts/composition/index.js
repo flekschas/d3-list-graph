@@ -779,6 +779,7 @@ class ListGraph {
       let y = 0;
       let width = 0;
       let height = 0;
+      let top = 0;
       let cRect;
       const contBBox = this.container.node().getBBox();
 
@@ -795,16 +796,22 @@ class ListGraph {
             height,
             (cRect.top + cRect.height) - globalCRect.top
           );
+          top = Math.min(top, cRect.top - globalCRect.top);
         });
+        height = Math.abs(top) + height;
+
         width = this.width > width ? this.width : width;
         height = this.height > height ? this.height : height;
+
+        x = contBBox.x + this.dragged.x;
+        y = top;
       } else {
         width = this.width > contBBox.width ? this.width : contBBox.width;
         height = this.height > contBBox.height ? this.height : contBBox.height;
-      }
 
-      x = contBBox.x + this.dragged.x;
-      y = contBBox.y;
+        x = contBBox.x + this.dragged.x;
+        y = contBBox.y;
+      }
 
       this.nodes.makeAllTempVisible();
       this.links.makeAllTempVisible();

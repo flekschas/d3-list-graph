@@ -7908,6 +7908,7 @@ var ListGraph = function () {
           var y = 0;
           var width = 0;
           var height = 0;
+          var top = 0;
           var cRect = void 0;
           var contBBox = _this2.container.node().getBBox();
 
@@ -7918,16 +7919,22 @@ var ListGraph = function () {
               cRect = this.getBoundingClientRect();
               width = Math.max(width, cRect.left + cRect.width - globalCRect.left);
               height = Math.max(height, cRect.top + cRect.height - globalCRect.top);
+              top = Math.min(top, cRect.top - globalCRect.top);
             });
+            height = Math.abs(top) + height;
+
             width = _this2.width > width ? _this2.width : width;
             height = _this2.height > height ? _this2.height : height;
+
+            x = contBBox.x + _this2.dragged.x;
+            y = top;
           } else {
             width = _this2.width > contBBox.width ? _this2.width : contBBox.width;
             height = _this2.height > contBBox.height ? _this2.height : contBBox.height;
-          }
 
-          x = contBBox.x + _this2.dragged.x;
-          y = contBBox.y;
+            x = contBBox.x + _this2.dragged.x;
+            y = contBBox.y;
+          }
 
           _this2.nodes.makeAllTempVisible();
           _this2.links.makeAllTempVisible();
