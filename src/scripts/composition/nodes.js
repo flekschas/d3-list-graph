@@ -1277,6 +1277,8 @@ class Nodes {
       this.groups.each((data, index) => {
         this.calcHeightLinkLocationIndicator(index, true, true);
       });
+
+      this.updateVisibility();
     }
 
     // selection, location, position, mode, className

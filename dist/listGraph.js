@@ -3357,6 +3357,8 @@ var Nodes = function () {
         this.groups.each(function (data, index) {
           _this6.calcHeightLinkLocationIndicator(index, true, true);
         });
+
+        this.updateVisibility();
       }
 
       // selection, location, position, mode, className
@@ -8628,7 +8630,7 @@ var ListGraph = function () {
 // Will be set by Gulp during the build process
 
 
-ListGraph.version = '1.1.6';
+ListGraph.version = '1.1.7';
 
 return ListGraph;
 
