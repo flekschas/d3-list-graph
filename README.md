@@ -2,6 +2,8 @@
 
 > A flat horizontal scrollable node-link diagram, implemented in ES6 and orchestrated by D3 **v4**.
 
+![Teaser Image](teaser.png)
+
 **Demo**: https://flekschas.github.io/d3-list-graph/
 
 **Usage**: [SATORI](http://satori.refinery-platform.org)
