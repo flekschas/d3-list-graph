@@ -51,7 +51,7 @@
     "d3-shape": "1.0.3",
     "d3-transition": "1.0.2",
     "es6-promise": "3.2.1",
-    "lodash-es": "4.16.2"
+    "lodash-es": "4.17.15"
   },
   "repository": {
     "type": "git",
