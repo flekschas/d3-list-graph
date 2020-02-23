@@ -6,7 +6,7 @@
 
 **Demo**: https://flekschas.github.io/d3-list-graph/
 
-**Usage**: [SATORI](http://satori.refinery-platform.org)
+**Background Information / Application**: [SATORI](http://satori.lekschas.de)
 
 **Note**: Starting from version **0.17.0**, D3.js **v3.x** is no longer supported. Please use D3.js **v4.x** instead. If you need to both version please [see here](#migration-d3js-v3-to-v4).
 
